@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   BarChart3,
+  Calculator,
 } from 'lucide-react'
 
 const navItems = [
@@ -31,6 +32,11 @@ const navItems = [
     href: '/dashboard/analytics',
     icon: BarChart3,
   },
+  {
+    name: 'Calculators',
+    href: '/dashboard/calculators',
+    icon: Calculator,
+  },
 ]
 
 export default function DashboardLayout({
@@ -46,51 +52,56 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
+    // TEMPORARILY BYPASSING LOGIN - Skip auth check
+    setUserEmail('demo@example.com') // Demo user
+    setLoading(false)
 
-        if (!session) {
-          router.push('/login')
-          return
-        }
+    // TODO: Re-enable auth check when needed
+    // const checkAuth = async () => {
+    //   try {
+    //     const { data: { session } } = await supabase.auth.getSession()
+    //     if (!session) {
+    //       router.push('/login')
+    //       return
+    //     }
+    //     setUserEmail(session.user.email || null)
+    //   } catch (error) {
+    //     console.error('Auth check error:', error)
+    //     router.push('/login')
+    //   } finally {
+    //     setLoading(false)
+    //   }
+    // }
+    // checkAuth()
 
-        setUserEmail(session.user.email || null)
-      } catch (error) {
-        console.error('Auth check error:', error)
-        router.push('/login')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    checkAuth()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_OUT' || !session) {
-          router.push('/login')
-        } else if (session) {
-          setUserEmail(session.user.email || null)
-        }
-      }
-    )
-
-    return () => {
-      subscription.unsubscribe()
-    }
+    // const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    //   (event, session) => {
+    //     if (event === 'SIGNED_OUT' || !session) {
+    //       router.push('/login')
+    //     } else if (session) {
+    //       setUserEmail(session.user.email || null)
+    //     }
+    //   }
+    // )
+    // return () => {
+    //   subscription.unsubscribe()
+    // }
   }, [router])
 
   const handleLogout = async () => {
-    setLoggingOut(true)
-    try {
-      await supabase.auth.signOut()
-      router.push('/login')
-    } catch (error) {
-      console.error('Logout error:', error)
-    } finally {
-      setLoggingOut(false)
-    }
+    // TEMPORARILY DISABLED - No login to sign out from
+    alert('Login/Logout functionality is temporarily disabled')
+    
+    // TODO: Re-enable when login is restored
+    // setLoggingOut(true)
+    // try {
+    //   await supabase.auth.signOut()
+    //   router.push('/login')
+    // } catch (error) {
+    //   console.error('Logout error:', error)
+    // } finally {
+    //   setLoggingOut(false)
+    // }
   }
 
   const isActive = (href: string) => {

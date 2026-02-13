@@ -1,9 +1,21 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// Use provided Supabase credentials with fallbacks
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dhqdhmlelprreniddodp.supabase.co'
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRocWRobWxlbHBycmVuaWRkb2RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MDUxMDEsImV4cCI6MjA4MDQ4MTEwMX0.y-cOeeuhlbn6t3UW2byLdkjMSugFSUhm3gedTgb6bro'
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Validate that we have the required credentials
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables')
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+})
 
 // Database types (we'll expand this later)
 export type Profile = {

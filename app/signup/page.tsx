@@ -80,12 +80,19 @@ export default function SignupPage() {
       })
 
       if (authError) {
-        setErrors({ general: authError.message })
+        // Handle specific error types
+        if (authError.message.includes('Failed to fetch') || authError.message.includes('ERR_NAME_NOT_RESOLVED')) {
+          setErrors({ general: 'Unable to connect to server. Please check your internet connection and try again.' })
+        } else {
+          setErrors({ general: authError.message })
+        }
+        setLoading(false)
         return
       }
 
       if (!authData.user) {
         setErrors({ general: 'Failed to create account. Please try again.' })
+        setLoading(false)
         return
       }
 
@@ -109,11 +116,32 @@ export default function SignupPage() {
         // or the user can update their profile later
       }
 
-      // Success - redirect to dashboard
-      router.push('/dashboard')
-    } catch (err) {
-      setErrors({ general: 'An unexpected error occurred. Please try again.' })
-    } finally {
+      // Check if email confirmation is required
+      if (authData.session) {
+        // User is already logged in - redirect to dashboard
+        router.push('/dashboard')
+        router.refresh()
+      } else {
+        // Email confirmation required - show message
+        setErrors({ 
+          general: 'Account created! Please check your email to confirm your account, then you can log in.' 
+        })
+        // Redirect to login after 3 seconds
+        setTimeout(() => {
+          router.push('/login')
+        }, 3000)
+        setLoading(false)
+      }
+    } catch (err: any) {
+      console.error('Signup error:', err)
+      // Handle network errors
+      if (err.message?.includes('Failed to fetch') || err.message?.includes('ERR_NAME_NOT_RESOLVED')) {
+        setErrors({ general: 'Network error: Unable to connect to authentication server. Please check your internet connection.' })
+      } else if (err.message) {
+        setErrors({ general: err.message })
+      } else {
+        setErrors({ general: 'An unexpected error occurred. Please try again.' })
+      }
       setLoading(false)
     }
   }

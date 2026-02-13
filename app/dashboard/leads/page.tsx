@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase, Lead } from '@/lib/supabase'
+import { User } from '@supabase/supabase-js'
 import { AddLeadModal } from '@/components/AddLeadModal'
 import {
   Users,
@@ -54,6 +55,7 @@ function getRelativeTime(date: string): string {
 
 export default function LeadsPage() {
   const router = useRouter()
+  const [user, setUser] = useState<User | null>(null)
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -183,23 +185,110 @@ export default function LeadsPage() {
       setError(null)
 
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       if (!session) {
-        router.push('/login')
+        // MOCK DATA FALLBACK
+        console.log('No session found - Using MOCK DATA for leads')
+        const mockUser = {
+          id: 'mock-user-id',
+          email: 'demo@example.com',
+          user_metadata: { full_name: 'Demo Agent' },
+          app_metadata: {},
+          aud: 'authenticated',
+          created_at: new Date().toISOString()
+        } as User
+
+        setUser(mockUser)
+
+        // Create some mock leads (reusing similar data from dashboard for consistency)
+        const mockLeads: Lead[] = [
+          {
+            id: 'lead-1',
+            agent_id: 'mock-user-id',
+            name: 'Rahul Sharma',
+            email: 'rahul.sharma@example.com',
+            phone: '+91 98765 43210',
+            source: 'Website',
+            source_detail: 'Premium Listing',
+            property_type: '3BHK Apartment',
+            locations: ['Bandra West', 'Khar'],
+            budget_min: 45000000,
+            budget_max: 60000000,
+            timeline: 'Immediate',
+            intent_score: 85,
+            score_breakdown: { activity: 30, budget: 20 },
+            status: 'Active',
+            first_contact_date: new Date().toISOString(), // Simplified date
+            last_activity_date: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: 'lead-2',
+            agent_id: 'mock-user-id',
+            name: 'Priya Patel',
+            email: 'priya.p@example.com',
+            phone: '+91 99887 76655',
+            source: 'Referral',
+            source_detail: 'Existing Client',
+            property_type: 'Villa',
+            locations: ['Juhu', 'Versova'],
+            budget_min: 80000000,
+            budget_max: 120000000,
+            timeline: '3 months',
+            intent_score: 72,
+            score_breakdown: { budget: 30, profile: 20 },
+            status: 'Negotiation',
+            first_contact_date: new Date().toISOString(),
+            last_activity_date: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: 'lead-3',
+            agent_id: 'mock-user-id',
+            name: 'Amit Verma',
+            email: 'amit.v@example.com',
+            phone: '+91 91234 56789',
+            source: 'MagicBricks',
+            source_detail: null,
+            property_type: '2BHK',
+            locations: ['Andheri East'],
+            budget_min: 15000000,
+            budget_max: 20000000,
+            timeline: '1 month',
+            intent_score: 45,
+            score_breakdown: {},
+            status: 'New',
+            first_contact_date: new Date().toISOString(),
+            last_activity_date: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+        ]
+        setLeads(mockLeads)
+        setLoading(false)
         return
       }
 
-      const { data, error: fetchError } = await supabase
-        .from('leads')
-        .select('*')
-        .eq('agent_id', session.user.id)
-        .order('created_at', { ascending: false })
+      if (session) {
+        setUser(session.user)
 
-      if (fetchError) {
-        throw fetchError
+        const { data: leadsData, error: fetchError } = await supabase
+          .from('leads')
+          .select('*')
+          .eq('agent_id', session.user.id)
+          .order('created_at', { ascending: false })
+
+        if (fetchError) {
+          throw fetchError
+        }
+
+        if (leadsData) {
+          setLeads(leadsData)
+        }
       }
-
-      setLeads(data || [])
+      setLoading(false)
     } catch (err) {
       console.error('Error fetching leads:', err)
       setError('Failed to load leads. Please try again.')
@@ -327,9 +416,8 @@ export default function LeadsPage() {
                       setStatusFilter(status)
                       setShowFilterDropdown(false)
                     }}
-                    className={`w-full px-4 py-2.5 text-left hover:bg-slate-700 transition-colors capitalize ${
-                      statusFilter === status ? 'bg-slate-700 text-emerald-400' : 'text-white'
-                    }`}
+                    className={`w-full px-4 py-2.5 text-left hover:bg-slate-700 transition-colors capitalize ${statusFilter === status ? 'bg-slate-700 text-emerald-400' : 'text-white'
+                      }`}
                   >
                     {status === 'all' ? 'All Status' : status}
                   </button>
