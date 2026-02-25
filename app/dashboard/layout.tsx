@@ -17,33 +17,21 @@ import {
 } from 'lucide-react'
 
 const navItems = [
-  {
-    name: 'Dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-  },
-  {
-    name: 'Leads',
-    href: '/dashboard/leads',
-    icon: Users,
-  },
-  {
-    name: 'Analytics',
-    href: '/dashboard/analytics',
-    icon: BarChart3,
-  },
-  {
-    name: 'Calculators',
-    href: '/dashboard/calculators',
-    icon: Calculator,
-  },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Leads', href: '/dashboard/leads', icon: Users },
+  { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+  { name: 'Calculators', href: '/dashboard/calculators', icon: Calculator },
 ]
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+// Design tokens (matching analytics page)
+const BG_SIDEBAR = '#080D18'
+const BG_PANEL = '#0E1623'
+const BORDER = 'rgba(255,255,255,0.06)'
+const AMBER = '#F59E0B'
+const TEXT = '#F1F5F9'
+const MUTED = 'rgba(255,255,255,0.35)'
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const [loading, setLoading] = useState(true)
@@ -52,191 +40,135 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
-    // TEMPORARILY BYPASSING LOGIN - Skip auth check
-    setUserEmail('demo@example.com') // Demo user
+    setUserEmail('demo@example.com')
     setLoading(false)
-
-    // TODO: Re-enable auth check when needed
-    // const checkAuth = async () => {
-    //   try {
-    //     const { data: { session } } = await supabase.auth.getSession()
-    //     if (!session) {
-    //       router.push('/login')
-    //       return
-    //     }
-    //     setUserEmail(session.user.email || null)
-    //   } catch (error) {
-    //     console.error('Auth check error:', error)
-    //     router.push('/login')
-    //   } finally {
-    //     setLoading(false)
-    //   }
-    // }
-    // checkAuth()
-
-    // const { data: { subscription } } = supabase.auth.onAuthStateChange(
-    //   (event, session) => {
-    //     if (event === 'SIGNED_OUT' || !session) {
-    //       router.push('/login')
-    //     } else if (session) {
-    //       setUserEmail(session.user.email || null)
-    //     }
-    //   }
-    // )
-    // return () => {
-    //   subscription.unsubscribe()
-    // }
   }, [router])
 
   const handleLogout = async () => {
-    // TEMPORARILY DISABLED - No login to sign out from
     alert('Login/Logout functionality is temporarily disabled')
-    
-    // TODO: Re-enable when login is restored
-    // setLoggingOut(true)
-    // try {
-    //   await supabase.auth.signOut()
-    //   router.push('/login')
-    // } catch (error) {
-    //   console.error('Logout error:', error)
-    // } finally {
-    //   setLoggingOut(false)
-    // }
   }
 
   const isActive = (href: string) => {
-    if (href === '/dashboard') {
-      return pathname === '/dashboard'
-    }
+    if (href === '/dashboard') return pathname === '/dashboard'
     return pathname.startsWith(href)
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 text-emerald-500 animate-spin" />
-          <p className="text-slate-400 text-sm">Loading...</p>
-        </div>
+      <div style={{ minHeight: '100vh', background: BG_SIDEBAR, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader2 style={{ width: 28, height: 28, color: AMBER, animation: 'spin 1s linear infinite' }} />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      {/* Mobile sidebar backdrop */}
+    <div style={{ minHeight: '100vh', background: '#080D18', display: 'flex' }}>
+      {/* Mobile backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40, backdropFilter: 'blur(4px)' }}
+          className="lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
+      {/* ── SIDEBAR ── */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-64 bg-slate-900/95 backdrop-blur-xl border-r border-slate-800 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        style={{
+          position: 'fixed', top: 0, left: 0, zIndex: 50, height: '100%', width: 220,
+          background: BG_SIDEBAR,
+          borderRight: `1px solid ${BORDER}`,
+          display: 'flex', flexDirection: 'column',
+          transform: sidebarOpen ? 'translateX(0)' : undefined,
+          transition: 'transform 0.25s ease',
+        }}
+        className={`lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-4 border-b border-slate-800">
-            <Link href="/dashboard" className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/20">
-                <Building2 className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-lg font-semibold text-white">
-                RealEstate
-              </span>
-            </Link>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="p-2 hover:bg-slate-800 rounded-lg transition-colors lg:hidden"
-            >
-              <X className="h-5 w-5 text-slate-400" />
-            </button>
-          </div>
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 58, padding: '0 16px', borderBottom: `1px solid ${BORDER}` }}>
+          <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+            <div style={{ width: 30, height: 30, borderRadius: 9, background: AMBER, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Building2 style={{ width: 16, height: 16, color: '#000' }} />
+            </div>
+            <span style={{ fontSize: 15, fontWeight: 700, color: TEXT, letterSpacing: '-0.2px' }}>PropIQ</span>
+          </Link>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4 }}
+            className="lg:hidden"
+          >
+            <X style={{ width: 16, height: 16, color: MUTED }} />
+          </button>
+        </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-            {navItems.map((item) => {
-              const active = isActive(item.href)
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
-                    active
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                  }`}
-                >
-                  <item.icon
-                    className={`h-5 w-5 transition-colors ${
-                      active ? 'text-emerald-400' : 'text-slate-500 group-hover:text-slate-300'
-                    }`}
-                  />
-                  <span className="font-medium">{item.name}</span>
-                </Link>
-              )
-            })}
-          </nav>
+        {/* Nav */}
+        <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
+          {navItems.map(item => {
+            const active = isActive(item.href)
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setSidebarOpen(false)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '9px 12px', borderRadius: 10,
+                  textDecoration: 'none', fontSize: 13, fontWeight: active ? 600 : 500,
+                  color: active ? TEXT : MUTED,
+                  background: active ? 'rgba(245,158,11,0.1)' : 'transparent',
+                  borderLeft: active ? `2px solid ${AMBER}` : '2px solid transparent',
+                  transition: 'all 0.15s',
+                }}
+              >
+                <item.icon style={{ width: 16, height: 16, color: active ? AMBER : MUTED, flexShrink: 0 }} />
+                {item.name}
+              </Link>
+            )
+          })}
+        </nav>
 
-          {/* User section */}
-          <div className="p-4 border-t border-slate-800">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-800 border border-slate-700">
-                <span className="text-sm font-medium text-white">
-                  {userEmail?.charAt(0).toUpperCase()}
-                </span>
+        {/* User section */}
+        <div style={{ padding: 12, borderTop: `1px solid ${BORDER}` }}>
+          <div style={{ background: BG_PANEL, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '10px 12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(245,158,11,0.15)', border: `1px solid rgba(245,158,11,0.3)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: AMBER }}>{userEmail?.charAt(0).toUpperCase()}</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">
-                  {userEmail}
-                </p>
-                <p className="text-xs text-slate-500">Agent</p>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: TEXT, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userEmail}</p>
+                <p style={{ fontSize: 11, color: MUTED, margin: 0 }}>Agent</p>
               </div>
             </div>
             <button
               onClick={handleLogout}
               disabled={loggingOut}
-              className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', padding: '7px 0', background: 'rgba(255,255,255,0.04)', border: `1px solid ${BORDER}`, borderRadius: 8, color: MUTED, fontSize: 12, fontWeight: 500, cursor: 'pointer' }}
             >
-              {loggingOut ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <LogOut className="h-4 w-4" />
-              )}
+              {loggingOut ? <Loader2 style={{ width: 13, height: 13, animation: 'spin 1s linear infinite' }} /> : <LogOut style={{ width: 13, height: 13 }} />}
               Sign out
             </button>
           </div>
         </div>
       </aside>
 
-      {/* Main content */}
-      <div className="lg:pl-64">
+      {/* ── MAIN CONTENT ── */}
+      <div style={{ flex: 1, paddingLeft: 220 }} className="lg:pl-[220px]">
         {/* Mobile header */}
-        <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800 lg:hidden">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
-          >
-            <Menu className="h-6 w-6 text-slate-400" />
+        <header style={{ position: 'sticky', top: 0, zIndex: 30, display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 56, padding: '0 16px', background: BG_SIDEBAR, borderBottom: `1px solid ${BORDER}` }} className="lg:hidden">
+          <button onClick={() => setSidebarOpen(true)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 6 }}>
+            <Menu style={{ width: 20, height: 20, color: MUTED }} />
           </button>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600">
-              <Building2 className="w-4 h-4 text-white" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 26, height: 26, borderRadius: 8, background: AMBER, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Building2 style={{ width: 13, height: 13, color: '#000' }} />
             </div>
-            <span className="font-semibold text-white">RealEstate</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: TEXT }}>PropIQ</span>
           </div>
-          <div className="w-10" /> {/* Spacer for centering */}
+          <div style={{ width: 32 }} />
         </header>
 
-        {/* Page content */}
         <main>{children}</main>
       </div>
     </div>
   )
 }
-

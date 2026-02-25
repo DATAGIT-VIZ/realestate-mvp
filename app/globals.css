@@ -1,33 +1,248 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
+/* ─── PropIQ Design System — Deep Navy + Amber ─────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #080D18;
+  --panel: #0E1623;
+  --border: rgba(255, 255, 255, 0.06);
+  --amber: #F59E0B;
+  --amber-dim: rgba(245, 158, 11, 0.12);
+  --emerald: #10B981;
+  --text: #F1F5F9;
+  --muted: rgba(255, 255, 255, 0.35);
+
+  /* Legacy tokens kept for compatibility */
+  --background: #080D18;
+  --foreground: #F1F5F9;
+  --primary: #F59E0B;
+  --primary-light: rgba(245, 158, 11, 0.1);
+  --primary-hover: #D97706;
+  --card-bg: #0E1623;
+  --card-border: rgba(255, 255, 255, 0.06);
+  --text-primary: #F1F5F9;
+  --text-secondary: rgba(255, 255, 255, 0.55);
+  --text-muted: rgba(255, 255, 255, 0.35);
+  --sidebar-bg: #080D18;
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --status-hot: #FB923C;
+  --status-warm: #F59E0B;
+  --status-cold: #475569;
+  --success: #10B981;
+  --danger: #EF4444;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: 'Inter', var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* ─── Base ──────────────────────────────────────────────────────────────────── */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-/* Custom Scrollbar Styles */
+/* ─── Dashboard-wide dark overrides ─────────────────────────────────────────
+   These safely restyle Tailwind light classes used in dashboard/page.tsx
+   and calculators/page.tsx without touching their JSX.
+───────────────────────────────────────────────────────────────────────────── */
+
+/* White & light gray card backgrounds → dark panels */
+.bg-white {
+  background-color: #0E1623 !important;
+}
+
+.bg-gray-50 {
+  background-color: #111927 !important;
+}
+
+.bg-gray-100 {
+  background-color: #141E2E !important;
+}
+
+.bg-gray-200 {
+  background-color: #1A2538 !important;
+}
+
+/* Text colors — light → dark palette */
+.text-gray-900 {
+  color: #F1F5F9 !important;
+}
+
+.text-gray-800 {
+  color: #E2E8F0 !important;
+}
+
+.text-gray-700 {
+  color: #CBD5E1 !important;
+}
+
+.text-gray-600 {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+.text-gray-500 {
+  color: rgba(255, 255, 255, 0.40) !important;
+}
+
+.text-gray-400 {
+  color: rgba(255, 255, 255, 0.30) !important;
+}
+
+/* Borders */
+.border-gray-200,
+.border-gray-100 {
+  border-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+.border-gray-300 {
+  border-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+/* Hover backgrounds */
+.hover\:bg-gray-50:hover {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+.hover\:bg-gray-100:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Purple primary → amber */
+.bg-\[\#7B5EA7\] {
+  background-color: #F59E0B !important;
+  color: #000 !important;
+}
+
+.hover\:bg-\[\#6A4F91\]:hover {
+  background-color: #D97706 !important;
+}
+
+.text-\[\#7B5EA7\] {
+  color: #F59E0B !important;
+}
+
+.border-\[\#7B5EA7\] {
+  border-color: #F59E0B !important;
+}
+
+.bg-\[\#F0EBFA\] {
+  background-color: rgba(245, 158, 11, 0.10) !important;
+}
+
+.focus\:ring-\[\#7B5EA7\]\/20:focus {
+  --tw-ring-color: rgba(245, 158, 11, 0.2) !important;
+}
+
+.focus\:border-\[\#7B5EA7\]:focus {
+  border-color: #F59E0B !important;
+}
+
+/* Input fields */
+input,
+select,
+textarea {
+  background-color: #111927 !important;
+  color: #F1F5F9 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.25) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #F59E0B !important;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.15) !important;
+}
+
+/* Range slider accent */
+input[type="range"] {
+  accent-color: #F59E0B !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Tables */
+table {
+  color: #F1F5F9 !important;
+}
+
+thead tr {
+  border-bottom-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+tbody tr {
+  border-bottom-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+td,
+th {
+  color: inherit !important;
+}
+
+/* Smart Action Queue white card */
+[class*="Smart Action"],
+[class*="action-queue"] {
+  background: #0E1623 !important;
+  border-color: rgba(255, 255, 255, 0.07) !important;
+  color: #F1F5F9 !important;
+}
+
+/* Badge overrides — preserve positive/negative semantic colors */
+.bg-red-50 {
+  background-color: rgba(251, 146, 60, 0.12) !important;
+}
+
+.bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.10) !important;
+}
+
+.border-red-200 {
+  border-color: rgba(251, 146, 60, 0.25) !important;
+}
+
+.border-amber-200 {
+  border-color: rgba(245, 158, 11, 0.25) !important;
+}
+
+/* Gradient backgrounds for hero cards — keep as-is (they're already dark) */
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.10);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 158, 11, 0.4);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.10) transparent;
+}
+
+/* ─── Custom scrollbar (dark) ─────────────────────────────────────────────── */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -35,61 +250,26 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: rgba(255, 255, 255, 0.10);
   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: rgba(245, 158, 11, 0.4);
 }
 
-/* Firefox */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #334155 transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.10) transparent;
 }
 
-/* Confetti Animation */
-@keyframes confetti {
-  0% {
-    transform: translateY(0) rotate(0deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(100vh) rotate(720deg);
-    opacity: 0;
-  }
-}
-
-.animate-confetti {
-  animation: confetti linear forwards;
-}
-
-/* Bounce In Animation */
-@keyframes bounce-in {
-  0% {
-    transform: scale(0.5);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.animate-bounce-in {
-  animation: bounce-in 0.5s ease-out forwards;
-}
-
-/* Fade In Animation */
+/* ─── Animations ─────────────────────────────────────────────────────────── */
 @keyframes fade-in {
   from {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -100,10 +280,32 @@ body {
   animation: fade-in 0.3s ease-out forwards;
 }
 
-/* Stagger Animation Delays */
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.2s; }
-.stagger-3 { animation-delay: 0.3s; }
-.stagger-4 { animation-delay: 0.4s; }
-.stagger-5 { animation-delay: 0.5s; }
-.stagger-6 { animation-delay: 0.6s; }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.stagger-1 {
+  animation-delay: 0.1s;
+}
+
+.stagger-2 {
+  animation-delay: 0.2s;
+}
+
+.stagger-3 {
+  animation-delay: 0.3s;
+}
+
+.stagger-4 {
+  animation-delay: 0.4s;
+}
+
+.stagger-5 {
+  animation-delay: 0.5s;
+}
+
+.stagger-6 {
+  animation-delay: 0.6s;
+}
