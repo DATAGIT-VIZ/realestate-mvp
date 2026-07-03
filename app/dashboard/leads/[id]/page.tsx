@@ -9,11 +9,12 @@ import { WhatsAppModal } from '@/components/WhatsAppModal'
 import { CallModal } from '@/components/CallModal'
 import { FollowUpWriter } from '@/components/FollowUpWriter'
 import { PropertyMatcher } from '@/components/PropertyMatcher'
+import { EnrollSequenceModal } from '@/components/EnrollSequenceModal'
 import {
   ArrowLeft, Phone, Mail, MapPin, Building2, Clock, Tag,
   TrendingUp, Calendar, Edit2, Trash2, Loader2, Activity,
   AlertCircle, Plus, MessageCircle, CheckCircle, XCircle,
-  MinusCircle, HelpCircle, ChevronDown, IndianRupee, User,
+  MinusCircle, HelpCircle, ChevronDown, IndianRupee, User, Zap,
 } from 'lucide-react'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -170,6 +171,7 @@ export default function LeadDetailPage() {
   const [showActivityModal, setShowActivityModal] = useState(false)
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
   const [showCallModal, setShowCallModal]         = useState(false)
+  const [showSequenceModal, setShowSequenceModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting]   = useState(false)
   const [stageChanging, setStageChanging] = useState(false)
@@ -311,6 +313,11 @@ export default function LeadDetailPage() {
                 <MessageCircle style={{ width: 14, height: 14 }} />WhatsApp
               </button>
             )}
+            <button onClick={() => setShowSequenceModal(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.25)', borderRadius: 10, color: '#7C3AED', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            >
+              <Zap style={{ width: 14, height: 14 }} />Sequence
+            </button>
             <button onClick={() => setShowActivityModal(true)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: BLUE, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
             >
@@ -557,6 +564,15 @@ export default function LeadDetailPage() {
         leadName={lead ? `${lead.name.firstName} ${lead.name.lastName}`.trim() : ''}
         leadPhone={lead?.phones.primaryPhoneNumber ?? ''}
         city={lead?.city ?? ''}
+      />
+
+      <EnrollSequenceModal
+        isOpen={showSequenceModal}
+        onClose={() => setShowSequenceModal(false)}
+        leadId={leadId}
+        leadName={name}
+        leadPhone={phone}
+        onEnrolled={() => setShowSequenceModal(false)}
       />
 
       <CallModal

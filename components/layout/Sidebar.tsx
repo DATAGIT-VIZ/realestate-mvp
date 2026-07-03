@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import {
   LayoutDashboard, Users, HandshakeIcon, Building2,
   Megaphone, Phone, BarChart3, Calculator, Settings,
-  ChevronLeft, ChevronRight, LogOut, Loader2, Activity,
+  ChevronLeft, ChevronRight, LogOut, Loader2, Activity, MessageCircle, CreditCard,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
@@ -28,8 +28,9 @@ const NAV_SECTIONS = [
   {
     label: 'Engage',
     items: [
-      { name: 'Outreach', href: '/dashboard/outreach', icon: Megaphone, exact: false },
-      { name: 'Calls',    href: '/dashboard/calls',    icon: Phone,      exact: false },
+      { name: 'Sequences',  href: '/dashboard/outreach/sequences', icon: Megaphone,      exact: false },
+      { name: 'Broadcast',  href: '/dashboard/outreach/broadcast', icon: MessageCircle,  exact: false },
+      { name: 'Calls',      href: '/dashboard/calls',              icon: Phone,          exact: false },
     ],
   },
   {
@@ -37,6 +38,13 @@ const NAV_SECTIONS = [
     items: [
       { name: 'Analytics',   href: '/dashboard/analytics',   icon: BarChart3,  exact: false },
       { name: 'Calculators', href: '/dashboard/calculators', icon: Calculator, exact: false },
+    ],
+  },
+  {
+    label: 'Settings',
+    items: [
+      { name: 'Billing', href: '/dashboard/settings/billing', icon: CreditCard, exact: false },
+      { name: 'Settings', href: '/dashboard/settings',        icon: Settings,   exact: true  },
     ],
   },
 ]

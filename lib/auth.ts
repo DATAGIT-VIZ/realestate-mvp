@@ -14,6 +14,11 @@ export async function requireAuth(): Promise<{
   userId: string | null
   response: NextResponse | null
 }> {
+  // Dev bypass: set DEV_BYPASS_AUTH=true in .env.local to skip login
+  if (process.env.DEV_BYPASS_AUTH === 'true') {
+    return { userId: 'dev-user', response: null }
+  }
+
   try {
     const cookieStore = await cookies()
     const supabase = createServerClient(

@@ -465,13 +465,13 @@ export default function AnalyticsPage() {
                 <Tooltip content={<Tip />} />
                 <Bar dataKey="count" name="Leads" radius={[6, 6, 0, 0]}>
                   {portalBreakdown.map((_, i) => {
-                    const colors = [C.blue, C.orange, C.emerald, C.purple, C.amber, '#0EA5E9', '#EC4899', '#14B8A6']
+                    const colors = [C.blue, C.emerald, C.amber, C.purple, C.red]
                     return <Cell key={i} fill={colors[i % colors.length]} fillOpacity={0.8} />
                   })}
                 </Bar>
                 <Bar dataKey="hot" name="Hot leads" radius={[6, 6, 0, 0]}>
                   {portalBreakdown.map((_, i) => {
-                    const colors = [C.blue, C.orange, C.emerald, C.purple, C.amber, '#0EA5E9', '#EC4899', '#14B8A6']
+                    const colors = [C.blue, C.emerald, C.amber, C.purple, C.red]
                     return <Cell key={i} fill={colors[i % colors.length]} />
                   })}
                 </Bar>
