@@ -31,12 +31,14 @@ CREATE INDEX IF NOT EXISTS deals_stage_idx ON deals(stage);
 
 ALTER TABLE deals ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "users manage own deals"   ON deals;
+DROP POLICY IF EXISTS "service role full access" ON deals;
+
 CREATE POLICY "users manage own deals"
   ON deals FOR ALL
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
--- Service role bypass (for API routes using getAdminClient)
 CREATE POLICY "service role full access"
   ON deals FOR ALL
   TO service_role

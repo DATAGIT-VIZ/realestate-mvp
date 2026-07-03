@@ -44,6 +44,13 @@ ALTER TABLE sequences           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sequence_steps      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sequence_enrollments ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "auth full access" ON sequences;
+DROP POLICY IF EXISTS "auth full access" ON sequence_steps;
+DROP POLICY IF EXISTS "auth full access" ON sequence_enrollments;
+DROP POLICY IF EXISTS "svc full access"  ON sequences;
+DROP POLICY IF EXISTS "svc full access"  ON sequence_steps;
+DROP POLICY IF EXISTS "svc full access"  ON sequence_enrollments;
+
 CREATE POLICY "auth full access" ON sequences            FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "auth full access" ON sequence_steps       FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "auth full access" ON sequence_enrollments FOR ALL TO authenticated USING (true) WITH CHECK (true);

@@ -1,4 +1,5 @@
 -- Razorpay billing tables for RealEdge CRM
+-- Safe to re-run: uses IF NOT EXISTS + drops policies before recreating
 
 CREATE TABLE IF NOT EXISTS subscriptions (
   id                        uuid        DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -19,7 +20,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 CREATE TABLE IF NOT EXISTS billing_events (
   id                        uuid        DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id                   uuid,
-  event_type                text        NOT NULL,  -- 'subscription.activated' | 'subscription.charged' | 'subscription.cancelled' etc.
+  event_type                text        NOT NULL,
   razorpay_payment_id       text,
   razorpay_subscription_id  text,
   amount                    integer,               -- in paise (divide by 100 for ₹)
@@ -36,10 +37,13 @@ CREATE INDEX IF NOT EXISTS billing_events_type_idx     ON billing_events(event_t
 ALTER TABLE subscriptions   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE billing_events  ENABLE ROW LEVEL SECURITY;
 
--- Authenticated users can read their own records
-CREATE POLICY "users read own subscription"  ON subscriptions  FOR SELECT TO authenticated USING (user_id = auth.uid());
-CREATE POLICY "users read own events"        ON billing_events FOR SELECT TO authenticated USING (user_id = auth.uid());
+-- Drop before recreating so re-runs don't fail
+DROP POLICY IF EXISTS "users read own subscription"    ON subscriptions;
+DROP POLICY IF EXISTS "users read own events"          ON billing_events;
+DROP POLICY IF EXISTS "svc full access subscriptions"  ON subscriptions;
+DROP POLICY IF EXISTS "svc full access billing_events" ON billing_events;
 
--- Service role has full access (used by webhook + server-side billing routes)
+CREATE POLICY "users read own subscription"    ON subscriptions  FOR SELECT TO authenticated USING (user_id = auth.uid());
+CREATE POLICY "users read own events"          ON billing_events FOR SELECT TO authenticated USING (user_id = auth.uid());
 CREATE POLICY "svc full access subscriptions"  ON subscriptions  FOR ALL TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY "svc full access billing_events" ON billing_events FOR ALL TO service_role USING (true) WITH CHECK (true);
