@@ -6,6 +6,9 @@ import Link from 'next/link'
 import { type CRMLead } from '@/lib/twenty'
 import { LogActivityModal } from '@/components/LogActivityModal'
 import { WhatsAppModal } from '@/components/WhatsAppModal'
+import { CallModal } from '@/components/CallModal'
+import { FollowUpWriter } from '@/components/FollowUpWriter'
+import { PropertyMatcher } from '@/components/PropertyMatcher'
 import {
   ArrowLeft, Phone, Mail, MapPin, Building2, Clock, Tag,
   TrendingUp, Calendar, Edit2, Trash2, Loader2, Activity,
@@ -166,6 +169,7 @@ export default function LeadDetailPage() {
   const [error, setError]         = useState<string | null>(null)
   const [showActivityModal, setShowActivityModal] = useState(false)
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
+  const [showCallModal, setShowCallModal]         = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting]   = useState(false)
   const [stageChanging, setStageChanging] = useState(false)
@@ -294,11 +298,11 @@ export default function LeadDetailPage() {
           {/* Quick actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {phone && (
-              <a href={`tel:${phone}`}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 10, color: EMERALD, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
+              <button onClick={() => setShowCallModal(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 10, color: EMERALD, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
               >
                 <Phone style={{ width: 14, height: 14 }} />Call
-              </a>
+              </button>
             )}
             {phone && (
               <button onClick={() => setShowWhatsAppModal(true)}
@@ -508,6 +512,32 @@ export default function LeadDetailPage() {
                 <InfoRow label="Last updated" value={formatDate(lead.updatedAt)} />
               </div>
             </Card>
+
+            {/* AI Property Matcher */}
+            <PropertyMatcher lead={{
+              name,
+              city:         lead.city ?? null,
+              budgetMin:    lead.budgetMin ?? null,
+              budgetMax:    lead.budgetMax ?? null,
+              propertyType: lead.propertyType ?? null,
+              timeline:     lead.timeline ?? null,
+              localities:   lead.localities ?? null,
+              phone:        phone || null,
+            }} />
+
+            {/* AI Follow-up Writer */}
+            <FollowUpWriter lead={{
+              leadId:       leadId,
+              name,
+              city:         lead.city ?? null,
+              budget:       formatBudget(lead.budgetMin, lead.budgetMax) !== '—' ? formatBudget(lead.budgetMin, lead.budgetMax) : null,
+              propertyType: lead.propertyType?.join(', ') ?? null,
+              timeline:     lead.timeline ?? null,
+              score,
+              lastActivity: activities[0]?.type ?? null,
+              status:       lead.status ?? null,
+              phone:        phone || null,
+            }} />
           </div>
         </div>
       </div>
@@ -527,6 +557,15 @@ export default function LeadDetailPage() {
         leadName={lead ? `${lead.name.firstName} ${lead.name.lastName}`.trim() : ''}
         leadPhone={lead?.phones.primaryPhoneNumber ?? ''}
         city={lead?.city ?? ''}
+      />
+
+      <CallModal
+        isOpen={showCallModal}
+        onClose={() => setShowCallModal(false)}
+        leadId={leadId}
+        leadName={lead ? `${lead.name.firstName} ${lead.name.lastName}`.trim() : ''}
+        leadPhone={lead?.phones.primaryPhoneNumber ?? ''}
+        onLogged={fetchLead}
       />
 
       {/* Delete confirm */}
