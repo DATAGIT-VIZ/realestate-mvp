@@ -6,7 +6,8 @@ import { useEffect, useState } from 'react'
 import {
   LayoutDashboard, Users, HandshakeIcon, Building2,
   Megaphone, Phone, BarChart3, Calculator, Settings,
-  ChevronLeft, ChevronRight, LogOut, Loader2, Activity, MessageCircle, CreditCard,
+  ChevronLeft, ChevronRight, LogOut, Loader2, Activity,
+  MessageCircle, CreditCard, UserCheck, GitBranch,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
@@ -23,14 +24,15 @@ const NAV_SECTIONS = [
       { name: 'Ingestion Log',  href: '/dashboard/leads/ingestion',  icon: Activity,      exact: false },
       { name: 'Deals',          href: '/dashboard/deals',            icon: HandshakeIcon, exact: false },
       { name: 'Properties',     href: '/dashboard/properties',       icon: Building2,     exact: false },
+      { name: 'Team',           href: '/dashboard/team',             icon: UserCheck,     exact: false },
     ],
   },
   {
     label: 'Engage',
     items: [
-      { name: 'Sequences',  href: '/dashboard/outreach/sequences', icon: Megaphone,      exact: false },
-      { name: 'Broadcast',  href: '/dashboard/outreach/broadcast', icon: MessageCircle,  exact: false },
-      { name: 'Calls',      href: '/dashboard/calls',              icon: Phone,          exact: false },
+      { name: 'Sequences',     href: '/dashboard/outreach/sequences', icon: Megaphone,     exact: false },
+      { name: 'Broadcast',     href: '/dashboard/outreach/broadcast', icon: MessageCircle, exact: false },
+      { name: 'Power Dialer',  href: '/dashboard/calls',              icon: Phone,         exact: false },
     ],
   },
   {
@@ -43,8 +45,9 @@ const NAV_SECTIONS = [
   {
     label: 'Settings',
     items: [
-      { name: 'Billing', href: '/dashboard/settings/billing', icon: CreditCard, exact: false },
-      { name: 'Settings', href: '/dashboard/settings',        icon: Settings,   exact: true  },
+      { name: 'Lead Routing', href: '/dashboard/settings/routing',  icon: GitBranch, exact: false },
+      { name: 'Billing',      href: '/dashboard/settings/billing',  icon: CreditCard, exact: false },
+      { name: 'Settings',     href: '/dashboard/settings',          icon: Settings,   exact: true  },
     ],
   },
 ]

@@ -16,7 +16,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/outreach/sequences': 'Sequences',
   '/dashboard/outreach/sequences/new': 'New Sequence',
   '/dashboard/outreach/broadcast': 'Bulk Broadcast',
-  '/dashboard/calls': 'Call Log',
+  '/dashboard/calls': 'Power Dialer',
   '/dashboard/analytics': 'Analytics',
   '/dashboard/calculators': 'Calculators',
   '/dashboard/settings': 'Settings',
