@@ -1,377 +1,152 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { Mail, Lock, LogIn, Loader2, Building2 } from 'lucide-react'
+import { Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react'
+import { Suspense } from 'react'
 
-export default function LoginPage() {
- const router = useRouter()
- const [email, setEmail] = useState('')
- const [password, setPassword] = useState('')
- const [error, setError] = useState<string | null>(null)
- const [loading, setLoading] = useState(false)
- const [creatingTest, setCreatingTest] = useState(false)
- const [clearingSession, setClearingSession] = useState(false)
-
- // Check for existing session on page load
- useEffect(() => {
-  const checkSession = async () => {
-   try {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
-    // If there's a valid session, redirect to dashboard
-    if (session && session.user && !sessionError) {
-     router.push('/dashboard')
-    }
-   } catch (err) {
-    // Silently handle any errors - we're already on the login page
-    console.log('Session check completed')
-   }
-  }
-
-  checkSession()
- }, [router])
-
- const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault()
-  setError(null)
-  setLoading(true)
-
-  try {
-   const { data, error: authError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-   })
-
-   if (authError) {
-    // Handle specific error types
-    if (authError.message.includes('Failed to fetch') || authError.message.includes('ERR_NAME_NOT_RESOLVED')) {
-     setError('Unable to connect to server. Please check your internet connection and try again.')
-    } else if (authError.message.includes('Invalid login credentials')) {
-     setError('Invalid email or password. Please try again.')
-    } else if (authError.message.includes('Email not confirmed')) {
-     setError('Please check your email and confirm your account before logging in.')
-    } else {
-     setError(authError.message)
-    }
-    setLoading(false)
-    return
-   }
-
-   if (data.user && data.session) {
-    // Successfully logged in, redirect to dashboard
-    router.push('/dashboard')
-    router.refresh()
-   } else {
-    setError('Login successful but no session created. Please try again.')
-    setLoading(false)
-   }
-  } catch (err: any) {
-   console.error('Login error:', err)
-   // Handle network errors
-   if (err.message?.includes('Failed to fetch') || err.message?.includes('ERR_NAME_NOT_RESOLVED')) {
-    setError('Network error: Unable to connect to authentication server. Please check your internet connection.')
-   } else if (err.message) {
-    setError(err.message)
-   } else {
-    setError('An unexpected error occurred. Please try again.')
-   }
-   setLoading(false)
-  }
- }
-
- const handleCreateTestAccount = async () => {
-  setCreatingTest(true)
-  setError(null)
-  
-  const testEmail = `test${Date.now()}@example.com`
-  const testPassword = 'Test123456'
-  const testName = 'Test User'
-
-  try {
-   // Create test account via API
-   const response = await fetch('/api/test-user', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-     email: testEmail,
-     password: testPassword,
-     full_name: testName,
-    }),
-   })
-
-   const result = await response.json()
-
-   if (result.success) {
-    // Auto-fill credentials
-    setEmail(testEmail)
-    setPassword(testPassword)
-    
-    // If session is provided, user is already logged in
-    if (result.session) {
-     router.push('/dashboard')
-     router.refresh()
-     return
-    }
-
-    // If email confirmation is required
-    if (result.requiresEmailConfirmation) {
-     setError('Account created! If email confirmation is enabled, please check your email. Otherwise, try logging in now.')
-     setCreatingTest(false)
-     // Auto-submit login form after a moment
-     setTimeout(() => {
-      const form = document.querySelector('form')
-      if (form) {
-       form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))
-      }
-     }, 1000)
-     return
-    }
-    
-    // Try to login immediately
-    const { data, error: authError } = await supabase.auth.signInWithPassword({
-     email: testEmail,
-     password: testPassword,
-    })
-
-    if (authError) {
-     if (authError.message.includes('Email not confirmed')) {
-      setError('Account created! Please check your email to confirm, or disable email confirmation in Supabase settings.')
-     } else {
-      setError(`Account created but login failed: ${authError.message}. Credentials are filled - try clicking Sign in.`)
-     }
-     setCreatingTest(false)
-     return
-    }
-
-    if (data.user) {
-     router.push('/dashboard')
-     router.refresh()
-    }
-   } else {
-    setError(result.error || 'Failed to create test account')
-    setCreatingTest(false)
-   }
-  } catch (err: any) {
-   console.error('Test account creation error:', err)
-   setError('Failed to create test account. Please try signing up manually.')
-   setCreatingTest(false)
-  }
- }
-
- const handleClearSession = async () => {
-  setClearingSession(true)
-  setError(null)
-  
-  try {
-   // Sign out from Supabase
-   await supabase.auth.signOut()
-   
-   // Clear all localStorage items related to auth
-   if (typeof window !== 'undefined') {
-    Object.keys(localStorage).forEach(key => {
-     if (key.includes('supabase') || key.includes('sb-') || key.includes('auth')) {
-      try {
-       localStorage.removeItem(key)
-      } catch (e) {
-       // Ignore errors
-      }
-     }
-    })
-   }
-   
-   // Reload the page to clear any state
-   window.location.reload()
-  } catch (err) {
-   console.error('Error clearing session:', err)
-   setError('Failed to clear session. Please refresh the page manually.')
-   setClearingSession(false)
-  }
- }
-
- return (
-  <div className="min-h-screen bg-[#F7F8FC] flex items-center justify-center px-4 sm:px-6 lg:px-8">
-   {/* Background decoration */}
-   <div className="absolute inset-0 overflow-hidden pointer-events-none">
-    <div className="absolute -top-40 -right-40 w-80 h-80 bg-[#7B5EA7]/10 rounded-full blur-3xl" />
-    <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
-   </div>
-
-   <div className="relative w-full max-w-md">
-    {/* Logo/Brand */}
-    <div className="text-center mb-8">
-     <div className="inline-flex items-center justify-center w-16 h-16 rounded-lg bg-gradient-to-br from-[#7B5EA7] to-[#6A4F91] shadow-lg shadow-[#7B5EA7]/10 mb-4">
-      <Building2 className="w-8 h-8 text-gray-900" />
-     </div>
-     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-      Welcome back
-     </h1>
-     <p className="text-gray-500 mt-2">
-      Sign in to your account to continue
-     </p>
-    </div>
-
-    {/* Login Form */}
-    <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-2xl">
-     <form onSubmit={handleLogin} className="space-y-5">
-      {/* Email Input */}
-      <div>
-       <label htmlFor="email" className="block text-sm font-medium text-gray-600 mb-2">
-        Email address
-       </label>
-       <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-         <Mail className="h-5 w-5 text-gray-400" />
-        </div>
-        <input
-         id="email"
-         name="email"
-         type="email"
-         autoComplete="email"
-         required
-         value={email}
-         onChange={(e) => setEmail(e.target.value)}
-         className="block w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-[#7B5EA7] transition-all duration-200"
-         placeholder="you@example.com"
-        />
-       </div>
-      </div>
-
-      {/* Password Input */}
-      <div>
-       <label htmlFor="password" className="block text-sm font-medium text-gray-600 mb-2">
-        Password
-       </label>
-       <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-         <Lock className="h-5 w-5 text-gray-400" />
-        </div>
-        <input
-         id="password"
-         name="password"
-         type="password"
-         autoComplete="current-password"
-         required
-         value={password}
-         onChange={(e) => setPassword(e.target.value)}
-         className="block w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-[#7B5EA7] transition-all duration-200"
-         placeholder="••••••••"
-        />
-       </div>
-      </div>
-
-      {/* Error Message */}
-      {error && (
-       <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
-        <p className="text-sm text-red-400 flex items-center gap-2">
-         <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-         </svg>
-         {error}
-        </p>
-       </div>
-      )}
-
-      {/* Submit Button */}
-      <button
-       type="submit"
-       disabled={loading}
-       className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-[#7B5EA7] to-[#6A4F91] hover:from-emerald-600 hover:to-emerald-700 text-gray-900 font-semibold rounded-lg shadow-lg shadow-[#7B5EA7]/10 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-      >
-       {loading ? (
-        <>
-         <Loader2 className="h-5 w-5 animate-spin" />
-         Signing in...
-        </>
-       ) : (
-        <>
-         <LogIn className="h-5 w-5" />
-         Sign in
-        </>
-       )}
-      </button>
-     </form>
-
-     {/* Quick Test Account Button */}
-     <div className="mt-4 space-y-2">
-      <button
-       type="button"
-       onClick={handleCreateTestAccount}
-       disabled={creatingTest || loading}
-       className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 hover:text-gray-900 text-sm font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-       {creatingTest ? (
-        <>
-         <Loader2 className="h-4 w-4 animate-spin" />
-         Creating test account...
-        </>
-       ) : (
-        <>
-         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-         </svg>
-         Quick Test Account (Auto-login)
-        </>
-       )}
-      </button>
-      
-      {/* Clear Session Button */}
-      <button
-       type="button"
-       onClick={handleClearSession}
-       disabled={clearingSession || loading}
-       className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 hover:text-red-300 text-xs font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-       {clearingSession ? (
-        <>
-         <Loader2 className="h-3 w-3 animate-spin" />
-         Clearing...
-        </>
-       ) : (
-        <>
-         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-         </svg>
-         Clear Stale Session (Fix Token Errors)
-        </>
-       )}
-      </button>
-     </div>
-
-     {/* Divider */}
-     <div className="mt-6 pt-6 border-t border-gray-200">
-      <p className="text-center text-gray-500 text-sm">
-       Don&apos;t have an account?{' '}
-       <Link
-        href="/signup"
-        className="text-[#7B5EA7] hover:text-emerald-300 font-medium transition-colors"
-       >
-        Create one now
-       </Link>
-      </p>
-     </div>
-    </div>
-
-    {/* Info Section */}
-    <div className="mt-6 space-y-3">
-     <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-      <p className="text-blue-400 text-xs text-center mb-2">
-        <strong>Quick Start:</strong> Click &quot;Quick Test Account&quot; above to automatically create and login
-      </p>
-      <p className="text-blue-300/70 text-xs text-center">
-        <strong>Note:</strong> If login fails, disable &quot;Confirm email&quot; in Supabase Dashboard → Authentication → Providers → Email
-      </p>
-     </div>
-    </div>
-
-    {/* Footer */}
-    <p className="text-center text-slate-600 text-xs mt-8">
-     Protected by industry-standard encryption
-    </p>
-   </div>
-  </div>
- )
+const C = {
+  bg:     '#F8FAFC',
+  panel:  '#FFFFFF',
+  border: '#E2E8F0',
+  text:   '#0F172A',
+  muted:  '#64748B',
+  label:  '#94A3B8',
+  blue:   '#2563EB',
+  red:    '#EF4444',
 }
 
+function LoginForm() {
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo   = searchParams.get('redirectTo') ?? '/dashboard'
+
+  const [email,     setEmail]     = useState('')
+  const [password,  setPassword]  = useState('')
+  const [showPass,  setShowPass]  = useState(false)
+  const [loading,   setLoading]   = useState(false)
+  const [error,     setError]     = useState<string | null>(null)
+
+  // If already logged in, go straight to dashboard
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace(redirectTo)
+    })
+  }, [router, redirectTo])
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
+
+    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (authError) {
+      if (authError.message.includes('Invalid login credentials')) {
+        setError('Incorrect email or password.')
+      } else if (authError.message.includes('Email not confirmed')) {
+        setError('Please confirm your email before signing in.')
+      } else {
+        setError(authError.message)
+      }
+      setLoading(false)
+      return
+    }
+
+    if (data.session) {
+      router.push(redirectTo)
+      router.refresh()
+    }
+  }
+
+  const inp: React.CSSProperties = {
+    width: '100%', padding: '11px 12px 11px 42px',
+    border: `1px solid ${C.border}`, borderRadius: 10,
+    fontSize: 14, color: C.text, outline: 'none',
+    background: '#FAFBFC', boxSizing: 'border-box',
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
+      <div style={{ width: '100%', maxWidth: 400 }}>
+
+        {/* Brand */}
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <span style={{ fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px' }}>RE</span>
+          </div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: '0 0 6px' }}>Welcome back</h1>
+          <p style={{ fontSize: 14, color: C.muted, margin: 0 }}>Sign in to RealEdge CRM</p>
+        </div>
+
+        {/* Card */}
+        <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 20, padding: '32px 28px', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+
+            {/* Email */}
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 7, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</label>
+              <div style={{ position: 'relative' }}>
+                <Mail style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 16, height: 16, color: C.label }} />
+                <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
+                  placeholder="you@example.com" autoComplete="email" style={inp} />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Password</label>
+                <a href="#" style={{ fontSize: 12, color: C.blue, textDecoration: 'none', fontWeight: 500 }}>Forgot password?</a>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <Lock style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 16, height: 16, color: C.label }} />
+                <input type={showPass ? 'text' : 'password'} required value={password} onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••" autoComplete="current-password" style={{ ...inp, paddingRight: 42 }} />
+                <button type="button" onClick={() => setShowPass(v => !v)}
+                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: C.label, display: 'flex' }}>
+                  {showPass ? <EyeOff style={{ width: 16, height: 16 }} /> : <Eye style={{ width: 16, height: 16 }} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div style={{ background: 'rgba(239,68,68,0.06)', border: `1px solid rgba(239,68,68,0.2)`, borderRadius: 10, padding: '10px 14px', fontSize: 13, color: C.red }}>
+                {error}
+              </div>
+            )}
+
+            {/* Submit */}
+            <button type="submit" disabled={loading}
+              style={{ padding: '12px 0', background: loading ? '#E2E8F0' : C.blue, border: 'none', borderRadius: 12, color: loading ? C.label : '#fff', fontSize: 14, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 }}>
+              {loading ? <><Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> Signing in…</> : 'Sign in'}
+            </button>
+          </form>
+
+          <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 24, paddingTop: 20, textAlign: 'center' }}>
+            <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>
+              Don't have an account?{' '}
+              <Link href="/signup" style={{ color: C.blue, fontWeight: 600, textDecoration: 'none' }}>Create one free</Link>
+            </p>
+          </div>
+        </div>
+
+        <p style={{ textAlign: 'center', fontSize: 12, color: C.label, marginTop: 20 }}>
+          Your data is encrypted and never shared.
+        </p>
+      </div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  )
+}
