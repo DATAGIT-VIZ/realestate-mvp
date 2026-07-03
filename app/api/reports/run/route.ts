@@ -103,11 +103,12 @@ export async function POST(req: NextRequest) {
   }
 
   if (source === 'portal_leads') {
-    let q = sb.from('portal_leads').select('*').eq('user_id', userId)
+    // portal_leads is not scoped by user_id (ingestion log is workspace-wide)
+    let q = sb.from('portal_leads').select('*')
     if (filters.dateFrom) q = q.gte('created_at', filters.dateFrom)
     if (filters.dateTo)   q = q.lte('created_at', filters.dateTo + 'T23:59:59')
     if (filters.source)   q = q.eq('source_portal', filters.source)
-    if (filters.city)     q = q.ilike('city', `%${filters.city}%`)
+    // city is not a column on portal_leads; filter is ignored
 
     const { data, error } = await q
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
