@@ -1,400 +1,267 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import { calculateLeadScore } from '@/lib/scoring'
-import {
-  X,
-  User,
-  Phone,
-  Mail,
-  Building,
-  DollarSign,
-  Clock,
-  Tag,
-  Loader2,
-  UserPlus,
-} from 'lucide-react'
+import { X, User, Phone, Mail, MapPin, IndianRupee, Clock, Tag, Loader2, UserPlus, AlertCircle } from 'lucide-react'
 
-type AddLeadModalProps = {
-  onClose: () => void
-  onSuccess: () => void
-}
+type Props = { onClose: () => void; onSuccess: () => void }
 
-type FormData = {
-  name: string
+type Form = {
+  firstName: string
+  lastName: string
   phone: string
   email: string
-  source: string
-  property_type: string
-  budget_min: string
-  budget_max: string
+  city: string
+  budgetMin: string
+  budgetMax: string
+  sourcePortal: string
+  propertyType: string
   timeline: string
-}
-
-type FormErrors = {
-  name?: string
-  phone?: string
-  general?: string
+  localities: string
 }
 
 const SOURCE_OPTIONS = [
-  { value: '', label: 'Select source' },
-  { value: 'Website', label: 'Website' },
-  { value: 'Referral', label: 'Referral' },
-  { value: 'Social Media', label: 'Social Media' },
-  { value: 'Cold Call', label: 'Cold Call' },
-  { value: 'Walk-in', label: 'Walk-in' },
-  { value: 'Property Portal', label: 'Property Portal' },
-  { value: 'Other', label: 'Other' },
+  'MagicBricks', '99acres', 'Housing.com', 'NoBroker',
+  'Website', 'Referral', 'Facebook Ads', 'Google Ads',
+  'Walk-in', 'Cold Call', 'WhatsApp', 'Other',
 ]
 
-const PROPERTY_TYPE_OPTIONS = [
-  { value: '', label: 'Select property type' },
-  { value: 'Apartment', label: 'Apartment' },
-  { value: 'Villa', label: 'Villa' },
-  { value: 'Plot', label: 'Plot' },
-  { value: 'Commercial', label: 'Commercial' },
-  { value: 'Office Space', label: 'Office Space' },
-  { value: 'Retail', label: 'Retail' },
-  { value: 'Other', label: 'Other' },
+const PROPERTY_TYPES = [
+  'Apartment', 'Villa', 'Plot', 'Independent House',
+  'Commercial', 'Office Space', 'Retail', 'Warehouse', 'Other',
 ]
 
 const TIMELINE_OPTIONS = [
-  { value: '', label: 'Select timeline' },
-  { value: 'Immediate', label: 'Immediate (within 1 month)' },
-  { value: '1-3 months', label: '1-3 months' },
-  { value: '3-6 months', label: '3-6 months' },
-  { value: '6-12 months', label: '6-12 months' },
-  { value: '12+ months', label: '12+ months' },
-  { value: 'Just browsing', label: 'Just browsing' },
+  'Immediate (within 2 weeks)',
+  'Within 1 Month',
+  'Within 1–3 Months',
+  'Within 3–6 Months',
+  'Within 6–12 Months',
+  'Just Exploring',
 ]
 
-export function AddLeadModal({ onClose, onSuccess }: AddLeadModalProps) {
-  const [formData, setFormData] = useState<FormData>({
-    name: '',
-    phone: '',
-    email: '',
-    source: '',
-    property_type: '',
-    budget_min: '',
-    budget_max: '',
-    timeline: '',
-  })
-  const [errors, setErrors] = useState<FormErrors>({})
+const EMPTY: Form = {
+  firstName: '', lastName: '', phone: '', email: '',
+  city: '', budgetMin: '', budgetMax: '',
+  sourcePortal: '', propertyType: '', timeline: '', localities: '',
+}
+
+// Design tokens
+const BG_OVERLAY = 'rgba(15,23,42,0.4)'
+const BG_MODAL   = '#FFFFFF'
+const BORDER     = '#E2E8F0'
+const AMBER      = '#D97706'
+const TEXT       = '#0F172A'
+const MUTED      = '#64748B'
+
+function Field({ label, icon: Icon, children }: { label: string; icon: React.ElementType; children: React.ReactNode }) {
+  return (
+    <div>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+        <Icon style={{ width: 11, height: 11 }} />{label}
+      </label>
+      {children}
+    </div>
+  )
+}
+
+const inputStyle: React.CSSProperties = {
+  width: '100%', padding: '9px 12px', background: '#F8FAFC',
+  border: `1px solid ${BORDER}`, borderRadius: 9, color: TEXT, fontSize: 13,
+  outline: 'none', boxSizing: 'border-box',
+}
+
+const selectStyle: React.CSSProperties = { ...inputStyle, cursor: 'pointer' }
+
+export function AddLeadModal({ onClose, onSuccess }: Props) {
+  const [form, setForm] = useState<Form>(EMPTY)
+  const [errors, setErrors] = useState<Partial<Form & { general: string }>>({})
   const [loading, setLoading] = useState(false)
+  const [duplicate, setDuplicate] = useState<{ id: string; name: string } | null>(null)
 
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {}
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required'
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required'
-    } else if (formData.phone.trim().length < 10) {
-      newErrors.phone = 'Please enter a valid phone number'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+  const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm(prev => ({ ...prev, [k]: e.target.value }))
+    setErrors(prev => ({ ...prev, [k]: undefined, general: undefined }))
+    setDuplicate(null)
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-    if (errors[name as keyof FormErrors]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }))
+  const validate = (): boolean => {
+    const errs: Partial<Form & { general: string }> = {}
+    if (!form.firstName.trim()) errs.firstName = 'First name is required'
+    if (!form.phone.trim()) errs.phone = 'Phone number is required'
+    else if (!/^[+\d\s\-()]{7,15}$/.test(form.phone.trim())) errs.phone = 'Enter a valid phone number'
+    if (form.email && !/\S+@\S+\.\S+/.test(form.email)) errs.email = 'Enter a valid email'
+    if (form.budgetMin && form.budgetMax && Number(form.budgetMin) > Number(form.budgetMax)) {
+      errs.budgetMax = 'Max must be greater than min'
     }
+    setErrors(errs)
+    return Object.keys(errs).length === 0
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!validateForm()) return
-
+    if (!validate()) return
     setLoading(true)
-    setErrors({})
-
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/crm/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: form.firstName.trim(),
+          lastName: form.lastName.trim() || undefined,
+          phone: form.phone.trim(),
+          email: form.email.trim() || undefined,
+          city: form.city.trim() || undefined,
+          budgetMin: form.budgetMin ? Number(form.budgetMin) : undefined,
+          budgetMax: form.budgetMax ? Number(form.budgetMax) : undefined,
+          sourcePortal: form.sourcePortal || undefined,
+          propertyType: form.propertyType ? [form.propertyType] : undefined,
+          timeline: form.timeline || undefined,
+          localities: form.localities ? form.localities.split(',').map(s => s.trim()).filter(Boolean) : undefined,
+          status: 'New',
+        }),
+      })
+      const json = await res.json()
 
-      if (!session) {
-        setErrors({ general: 'You must be logged in to add leads' })
+      if (res.status === 409 && json.duplicate) {
+        setDuplicate({ id: json.existingId, name: json.error.replace('Lead already exists: ', '') })
         return
       }
-
-      const { score: intentScore, breakdown: scoreBreakdown } = calculateLeadScore(formData)
-      const now = new Date().toISOString()
-
-      const leadData = {
-        agent_id: session.user.id,
-        name: formData.name.trim(),
-        phone: formData.phone.trim(),
-        email: formData.email.trim() || null,
-        source: formData.source || null,
-        property_type: formData.property_type || null,
-        budget_min: formData.budget_min ? parseFloat(formData.budget_min) : null,
-        budget_max: formData.budget_max ? parseFloat(formData.budget_max) : null,
-        timeline: formData.timeline || null,
-        intent_score: intentScore,
-        score_breakdown: scoreBreakdown,
-        status: 'new',
-        first_contact_date: now,
-        last_activity_date: now,
-      }
-
-      const { error: insertError } = await supabase.from('leads').insert(leadData)
-
-      if (insertError) {
-        throw insertError
-      }
-
+      if (json.error) throw new Error(json.error)
       onSuccess()
     } catch (err) {
-      console.error('Error adding lead:', err)
-      setErrors({ general: 'Failed to add lead. Please try again.' })
+      setErrors({ general: err instanceof Error ? err.message : 'Something went wrong' })
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/20"
-        onClick={onClose}
-      />
+    <div style={{ position: 'fixed', inset: 0, background: BG_OVERLAY, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div style={{ background: BG_MODAL, border: `1px solid ${BORDER}`, borderRadius: 20, width: '100%', maxWidth: 560, maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 16px', borderBottom: `1px solid ${BORDER}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <UserPlus style={{ width: 16, height: 16, color: AMBER }} />
+            </div>
+            <div>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: TEXT, margin: 0 }}>Add New Lead</h2>
+              <p style={{ fontSize: 12, color: MUTED, margin: 0 }}>Score is calculated automatically</p>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${BORDER}`, background: 'transparent', color: MUTED, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <X style={{ width: 15, height: 15 }} />
+          </button>
+        </div>
 
-      {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-lg bg-white border border-gray-200 rounded-xl shadow-xl">
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <UserPlus className="h-5 w-5 text-[#7B5EA7]" />
-              Add New Lead
-            </h2>
-            <button
-              onClick={onClose}
-              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="h-5 w-5 text-gray-400" />
-            </button>
+        {/* Body */}
+        <form onSubmit={handleSubmit} style={{ padding: '20px 24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* Duplicate warning */}
+          {duplicate && (
+            <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 10, padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <AlertCircle style={{ width: 15, height: 15, color: AMBER, flexShrink: 0, marginTop: 1 }} />
+              <div>
+                <p style={{ fontSize: 13, color: AMBER, fontWeight: 600, margin: '0 0 2px' }}>Duplicate detected</p>
+                <p style={{ fontSize: 12, color: MUTED, margin: 0 }}>
+                  A lead with this phone already exists: <strong style={{ color: TEXT }}>{duplicate.name}</strong>
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* General error */}
+          {errors.general && (
+            <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 14px' }}>
+              <p style={{ color: '#EF4444', fontSize: 13, margin: 0 }}>{errors.general}</p>
+            </div>
+          )}
+
+          {/* Name row */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Field label="First Name *" icon={User}>
+              <input value={form.firstName} onChange={set('firstName')} placeholder="Rajesh" style={{ ...inputStyle, borderColor: errors.firstName ? 'rgba(239,68,68,0.5)' : BORDER }} />
+              {errors.firstName && <p style={{ fontSize: 11, color: '#EF4444', margin: '4px 0 0' }}>{errors.firstName}</p>}
+            </Field>
+            <Field label="Last Name" icon={User}>
+              <input value={form.lastName} onChange={set('lastName')} placeholder="Sharma" style={inputStyle} />
+            </Field>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            {/* Name */}
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Name <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-2.5 bg-white border rounded-lg text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7B5EA7]/20 focus:border-[#7B5EA7] transition-all ${errors.name ? 'border-red-400' : 'border-gray-200'
-                    }`}
-                  placeholder="John Doe"
-                />
-              </div>
-              {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
-            </div>
+          {/* Contact row */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Field label="Phone *" icon={Phone}>
+              <input value={form.phone} onChange={set('phone')} placeholder="+91 98765 43210" style={{ ...inputStyle, borderColor: errors.phone ? 'rgba(239,68,68,0.5)' : BORDER }} />
+              {errors.phone && <p style={{ fontSize: 11, color: '#EF4444', margin: '4px 0 0' }}>{errors.phone}</p>}
+            </Field>
+            <Field label="Email" icon={Mail}>
+              <input value={form.email} onChange={set('email')} type="email" placeholder="rajesh@example.com" style={{ ...inputStyle, borderColor: errors.email ? 'rgba(239,68,68,0.5)' : BORDER }} />
+              {errors.email && <p style={{ fontSize: 11, color: '#EF4444', margin: '4px 0 0' }}>{errors.email}</p>}
+            </Field>
+          </div>
 
-            {/* Phone */}
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Phone <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className={`w-full pl-10 pr-4 py-2.5 bg-white border rounded-lg text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7B5EA7]/20 focus:border-[#7B5EA7] transition-all ${errors.phone ? 'border-red-400' : 'border-gray-200'
-                    }`}
-                  placeholder="+1 (555) 000-0000"
-                />
-              </div>
-              {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone}</p>}
-            </div>
+          {/* Budget row */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Field label="Budget Min (₹)" icon={IndianRupee}>
+              <input value={form.budgetMin} onChange={set('budgetMin')} type="number" placeholder="5000000" style={inputStyle} />
+            </Field>
+            <Field label="Budget Max (₹)" icon={IndianRupee}>
+              <input value={form.budgetMax} onChange={set('budgetMax')} type="number" placeholder="8000000" style={{ ...inputStyle, borderColor: errors.budgetMax ? 'rgba(239,68,68,0.5)' : BORDER }} />
+              {errors.budgetMax && <p style={{ fontSize: 11, color: '#EF4444', margin: '4px 0 0' }}>{errors.budgetMax}</p>}
+            </Field>
+          </div>
 
-            {/* Email */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Email
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7B5EA7]/20 focus:border-[#7B5EA7] transition-all"
-                  placeholder="john@example.com"
-                />
-              </div>
-            </div>
+          {/* Source + Property type */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Field label="Source Portal" icon={Tag}>
+              <select value={form.sourcePortal} onChange={set('sourcePortal')} style={selectStyle}>
+                <option value="">Select source</option>
+                {SOURCE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </Field>
+            <Field label="Property Type" icon={Tag}>
+              <select value={form.propertyType} onChange={set('propertyType')} style={selectStyle}>
+                <option value="">Select type</option>
+                {PROPERTY_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </Field>
+          </div>
 
-            {/* Source and Property Type */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="source" className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Source
-                </label>
-                <div className="relative">
-                  <Tag className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <select
-                    id="source"
-                    name="source"
-                    value={formData.source}
-                    onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#7B5EA7]/20 focus:border-[#7B5EA7] transition-all appearance-none"
-                  >
-                    {SOURCE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+          {/* Timeline + City */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Field label="Timeline" icon={Clock}>
+              <select value={form.timeline} onChange={set('timeline')} style={selectStyle}>
+                <option value="">Select timeline</option>
+                {TIMELINE_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </Field>
+            <Field label="City" icon={MapPin}>
+              <input value={form.city} onChange={set('city')} placeholder="Mumbai, Pune, Bangalore…" style={inputStyle} />
+            </Field>
+          </div>
 
-              <div>
-                <label htmlFor="property_type" className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Property Type
-                </label>
-                <div className="relative">
-                  <Building className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <select
-                    id="property_type"
-                    name="property_type"
-                    value={formData.property_type}
-                    onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#7B5EA7]/20 focus:border-[#7B5EA7] transition-all appearance-none"
-                  >
-                    {PROPERTY_TYPE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
+          {/* Localities */}
+          <Field label="Preferred Localities (comma-separated)" icon={MapPin}>
+            <input value={form.localities} onChange={set('localities')} placeholder="Baner, Wakad, Kothrud" style={inputStyle} />
+          </Field>
+        </form>
 
-            {/* Budget */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="budget_min" className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Budget Min
-                </label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    id="budget_min"
-                    name="budget_min"
-                    type="number"
-                    value={formData.budget_min}
-                    onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7B5EA7]/20 focus:border-[#7B5EA7] transition-all"
-                    placeholder="50,000"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="budget_max" className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Budget Max
-                </label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    id="budget_max"
-                    name="budget_max"
-                    type="number"
-                    value={formData.budget_max}
-                    onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7B5EA7]/20 focus:border-[#7B5EA7] transition-all"
-                    placeholder="100,000"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Timeline */}
-            <div>
-              <label htmlFor="timeline" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Timeline
-              </label>
-              <div className="relative">
-                <Clock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <select
-                  id="timeline"
-                  name="timeline"
-                  value={formData.timeline}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#7B5EA7]/20 focus:border-[#7B5EA7] transition-all appearance-none"
-                >
-                  {TIMELINE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* General Error */}
-            {errors.general && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-sm text-red-600">{errors.general}</p>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 py-2.5 px-4 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-[#7B5EA7] hover:bg-[#6A4F91] text-white text-sm font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Adding...
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="h-4 w-4" />
-                    Add Lead
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
+        {/* Footer */}
+        <div style={{ padding: '16px 24px', borderTop: `1px solid ${BORDER}`, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          <button type="button" onClick={onClose}
+            style={{ padding: '9px 20px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 10, color: MUTED, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
+          >
+            Cancel
+          </button>
+          <button onClick={handleSubmit} disabled={loading}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 20px', background: loading ? 'rgba(245,158,11,0.6)' : AMBER, border: 'none', borderRadius: 10, color: '#000', fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}
+          >
+            {loading ? <><Loader2 style={{ width: 13, height: 13, animation: 'spin 1s linear infinite' }} />Saving…</> : <><UserPlus style={{ width: 13, height: 13 }} />Add Lead</>}
+          </button>
         </div>
       </div>
     </div>
   )
 }
-

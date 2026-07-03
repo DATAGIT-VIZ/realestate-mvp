@@ -267,7 +267,7 @@ function BuyVsRentCalculator({ onInputChange }: { onInputChange?: (inputs: Recor
     {/* Property Details */}
     <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
      <h3 className="text-gray-900 font-semibold mb-4 flex items-center gap-2">
-      <Building className="h-5 w-5 text-[#7B5EA7]" />
+      <Building className="h-5 w-5 text-[#2563EB]" />
       Property Details
      </h3>
 
@@ -316,7 +316,7 @@ function BuyVsRentCalculator({ onInputChange }: { onInputChange?: (inputs: Recor
     {/* Purchase Financing */}
     <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
      <h3 className="text-gray-900 font-semibold mb-4 flex items-center gap-2">
-      <Wallet className="h-5 w-5 text-[#7B5EA7]" />
+      <Wallet className="h-5 w-5 text-[#2563EB]" />
       Purchase Financing
      </h3>
 
@@ -324,7 +324,7 @@ function BuyVsRentCalculator({ onInputChange }: { onInputChange?: (inputs: Recor
       <div>
        <div className="flex justify-between mb-2">
         <label className="text-sm text-gray-500">Down Payment</label>
-        <span className="text-sm text-[#7B5EA7]">{downPaymentPercent}%</span>
+        <span className="text-sm text-[#2563EB]">{downPaymentPercent}%</span>
        </div>
        <input
         type="range"
@@ -342,7 +342,7 @@ function BuyVsRentCalculator({ onInputChange }: { onInputChange?: (inputs: Recor
       <div>
        <div className="flex justify-between mb-2">
         <label className="text-sm text-gray-500">Loan Tenure</label>
-        <span className="text-sm text-[#7B5EA7]">{loanTenure} years</span>
+        <span className="text-sm text-[#2563EB]">{loanTenure} years</span>
        </div>
        <input
         type="range"
@@ -357,7 +357,7 @@ function BuyVsRentCalculator({ onInputChange }: { onInputChange?: (inputs: Recor
       <div>
        <div className="flex justify-between mb-2">
         <label className="text-sm text-gray-500">Interest Rate</label>
-        <span className="text-sm text-[#7B5EA7]">{interestRate}%</span>
+        <span className="text-sm text-[#2563EB]">{interestRate}%</span>
        </div>
        <input
         type="range"
@@ -376,7 +376,7 @@ function BuyVsRentCalculator({ onInputChange }: { onInputChange?: (inputs: Recor
       <div>
        <div className="flex justify-between mb-2">
         <label className="text-sm text-gray-500">Registration & Stamp Duty</label>
-        <span className="text-sm text-[#7B5EA7]">{stampDutyPercent}%</span>
+        <span className="text-sm text-[#2563EB]">{stampDutyPercent}%</span>
        </div>
        <input
         type="range"
@@ -539,7 +539,7 @@ function BuyVsRentCalculator({ onInputChange }: { onInputChange?: (inputs: Recor
    <div className="lg:col-span-3 space-y-6">
     {/* Summary Cards */}
     <div className="grid grid-cols-2 gap-4">
-     <div className="bg-gradient-to-br from-[#7B5EA7]/20 to-teal-500/10 rounded-lg p-5 border border-[#7B5EA7]/30">
+     <div className="bg-gradient-to-br from-[#2563EB]/20 to-teal-500/10 rounded-lg p-5 border border-[#2563EB]/30">
       <p className="text-gray-500 text-sm mb-1">Total Cost to Buy</p>
       <p className="text-2xl font-bold text-gray-900">{formatCurrency(calculations.totalBuyCost)}</p>
       <p className="text-xs text-gray-400 mt-2">Over {timeHorizon} years</p>
@@ -582,7 +582,7 @@ function BuyVsRentCalculator({ onInputChange }: { onInputChange?: (inputs: Recor
      <div className="flex items-center justify-between">
       <div>
        <p className="text-gray-500 text-sm">Monthly EMI</p>
-       <p className="text-3xl font-bold text-[#7B5EA7]">₹{formatNumber(calculations.emi)}</p>
+       <p className="text-3xl font-bold text-[#2563EB]">₹{formatNumber(calculations.emi)}</p>
       </div>
       <div className="text-right">
        <p className="text-gray-500 text-sm">vs Monthly Rent</p>
@@ -600,7 +600,7 @@ function BuyVsRentCalculator({ onInputChange }: { onInputChange?: (inputs: Recor
     {/* Total Cost Over Time Chart */}
     <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
      <h3 className="text-gray-900 font-semibold mb-4 flex items-center gap-2">
-      <LineChartIcon className="h-5 w-5 text-[#7B5EA7]" />
+      <LineChartIcon className="h-5 w-5 text-[#2563EB]" />
       Cost & Value Over Time
      </h3>
      <div className="h-[300px]">
@@ -637,7 +637,7 @@ function BuyVsRentCalculator({ onInputChange }: { onInputChange?: (inputs: Recor
     {/* Wealth Comparison Chart */}
     <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
      <h3 className="text-gray-900 font-semibold mb-4 flex items-center gap-2">
-      <BarChart3 className="h-5 w-5 text-[#7B5EA7]" />
+      <BarChart3 className="h-5 w-5 text-[#2563EB]" />
       Wealth After {timeHorizon} Years
      </h3>
      <div className="h-[200px]">
@@ -714,7 +714,7 @@ function BuyVsRentCalculator({ onInputChange }: { onInputChange?: (inputs: Recor
           <td className="py-2 px-2 text-gray-900 font-medium">{data.year}</td>
           <td className="text-right py-2 px-2 text-cyan-400">{formatCurrency(data.rentCumulative)}</td>
           <td className="text-right py-2 px-2 text-amber-400">{formatCurrency(data.buyCostCumulative)}</td>
-          <td className="text-right py-2 px-2 text-[#7B5EA7]">{formatCurrency(data.propertyValue)}</td>
+          <td className="text-right py-2 px-2 text-[#2563EB]">{formatCurrency(data.propertyValue)}</td>
           <td className="text-right py-2 px-2 text-purple-400">{formatCurrency(data.equityBuilt)}</td>
           <td className={`text-right py-2 px-2 font-semibold ${data.netPosition > 0 ? 'text-green-400' : 'text-red-400'}`}>
            {data.netPosition > 0 ? '+' : ''}{formatCurrency(data.netPosition)}
@@ -892,7 +892,7 @@ function EMICalculator({ onInputChange }: { onInputChange?: (inputs: Record<stri
    <div className="lg:col-span-2 space-y-6">
     <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
      <h3 className="text-gray-900 font-semibold mb-4 flex items-center gap-2">
-      <Calculator className="h-5 w-5 text-[#7B5EA7]" />
+      <Calculator className="h-5 w-5 text-[#2563EB]" />
       Loan Details
      </h3>
 
@@ -914,7 +914,7 @@ function EMICalculator({ onInputChange }: { onInputChange?: (inputs: Record<stri
       <div>
        <div className="flex justify-between mb-2">
         <label className="text-sm text-gray-500">Interest Rate</label>
-        <span className="text-sm text-[#7B5EA7]">{interestRate}%</span>
+        <span className="text-sm text-[#2563EB]">{interestRate}%</span>
        </div>
        <input
         type="range"
@@ -930,7 +930,7 @@ function EMICalculator({ onInputChange }: { onInputChange?: (inputs: Record<stri
       <div>
        <div className="flex justify-between mb-2">
         <label className="text-sm text-gray-500">Loan Tenure</label>
-        <span className="text-sm text-[#7B5EA7]">{tenure} years</span>
+        <span className="text-sm text-[#2563EB]">{tenure} years</span>
        </div>
        <input
         type="range"
@@ -951,7 +951,7 @@ function EMICalculator({ onInputChange }: { onInputChange?: (inputs: Record<stri
        type="checkbox"
        checked={enablePrepayment}
        onChange={(e) => setEnablePrepayment(e.target.checked)}
-       className="w-5 h-5 rounded border-slate-600 bg-white text-[#7B5EA7] focus:ring-emerald-500"
+       className="w-5 h-5 rounded border-slate-600 bg-white text-[#2563EB] focus:ring-emerald-500"
       />
       <span className="text-gray-900 font-medium">Add Annual Prepayment</span>
      </label>
@@ -973,9 +973,9 @@ function EMICalculator({ onInputChange }: { onInputChange?: (inputs: Record<stri
     </div>
 
     {/* Large EMI Display */}
-    <div className="bg-gradient-to-br from-[#7B5EA7]/20 to-teal-500/10 rounded-lg p-6 border border-[#7B5EA7]/30">
+    <div className="bg-gradient-to-br from-[#2563EB]/20 to-teal-500/10 rounded-lg p-6 border border-[#2563EB]/30">
      <p className="text-gray-500 text-sm mb-2">Your Monthly EMI</p>
-     <p className="text-5xl font-bold text-[#7B5EA7]">₹{formatNumber(calculations.emi)}</p>
+     <p className="text-5xl font-bold text-[#2563EB]">₹{formatNumber(calculations.emi)}</p>
      <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-200">
       <div>
        <p className="text-gray-400 text-xs">Total Payment</p>
@@ -1013,10 +1013,10 @@ function EMICalculator({ onInputChange }: { onInputChange?: (inputs: Record<stri
     <div className="grid grid-cols-3 gap-4">
      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-center">
       <p className="text-gray-500 text-xs mb-1">Principal Amount</p>
-      <p className="text-xl font-bold text-[#7B5EA7]">{formatCurrency(loanAmount)}</p>
+      <p className="text-xl font-bold text-[#2563EB]">{formatCurrency(loanAmount)}</p>
       <div className="w-full bg-slate-700 rounded-full h-2 mt-2">
        <div
-        className="bg-[#7B5EA7] h-2 rounded-full"
+        className="bg-[#2563EB] h-2 rounded-full"
         style={{ width: `${Math.round(loanAmount / calculations.totalPayment * 100)}%` }}
        />
       </div>
@@ -1065,7 +1065,7 @@ function EMICalculator({ onInputChange }: { onInputChange?: (inputs: Record<stri
       </div>
       <div className="space-y-4">
        <div className="flex items-center gap-3">
-        <div className="w-4 h-4 rounded bg-[#7B5EA7]"></div>
+        <div className="w-4 h-4 rounded bg-[#2563EB]"></div>
         <div>
          <p className="text-gray-900 font-medium">Principal</p>
          <p className="text-gray-500 text-sm">{formatCurrency(loanAmount)}</p>
@@ -1124,11 +1124,11 @@ function EMICalculator({ onInputChange }: { onInputChange?: (inputs: Record<stri
         {calculations.tenureComparison.map((row) => (
          <tr
           key={row.tenure}
-          className={`border-b border-gray-100 ${row.tenure === tenure ? 'bg-[#7B5EA7]/10' : 'hover:bg-gray-50/30'}`}
+          className={`border-b border-gray-100 ${row.tenure === tenure ? 'bg-[#2563EB]/10' : 'hover:bg-gray-50/30'}`}
          >
           <td className="py-2 px-3 text-gray-900 font-medium">
            {row.tenure} years
-           {row.tenure === tenure && <span className="ml-2 text-xs text-[#7B5EA7]">(Selected)</span>}
+           {row.tenure === tenure && <span className="ml-2 text-xs text-[#2563EB]">(Selected)</span>}
           </td>
           <td className="text-right py-2 px-3 text-cyan-400">₹{formatNumber(row.emi)}</td>
           <td className="text-right py-2 px-3 text-amber-400">{formatCurrency(row.totalInterest)}</td>
@@ -1167,7 +1167,7 @@ function EMICalculator({ onInputChange }: { onInputChange?: (inputs: Record<stri
           <tr key={row.month} className="border-b border-gray-200/30 hover:bg-gray-50/20">
            <td className="py-2 px-3 text-gray-900">{row.month}</td>
            <td className="text-right py-2 px-3 text-gray-600">₹{formatNumber(row.emi)}</td>
-           <td className="text-right py-2 px-3 text-[#7B5EA7]">₹{formatNumber(row.principal)}</td>
+           <td className="text-right py-2 px-3 text-[#2563EB]">₹{formatNumber(row.principal)}</td>
            <td className="text-right py-2 px-3 text-amber-400">₹{formatNumber(row.interest)}</td>
            <td className="text-right py-2 px-3 text-cyan-400">{formatCurrency(row.balance)}</td>
           </tr>
@@ -1370,7 +1370,7 @@ function RentalYieldCalculator({ onInputChange }: { onInputChange?: (inputs: Rec
     {/* Property Details */}
     <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
      <h3 className="text-gray-900 font-semibold mb-4 flex items-center gap-2">
-      <Building className="h-5 w-5 text-[#7B5EA7]" />
+      <Building className="h-5 w-5 text-[#2563EB]" />
       Property Details
      </h3>
 
@@ -1404,7 +1404,7 @@ function RentalYieldCalculator({ onInputChange }: { onInputChange?: (inputs: Rec
       <div>
        <div className="flex justify-between mb-2">
         <label className="text-sm text-gray-500">Occupancy Rate</label>
-        <span className="text-sm text-[#7B5EA7]">{occupancyRate}%</span>
+        <span className="text-sm text-[#2563EB]">{occupancyRate}%</span>
        </div>
        <input
         type="range"
@@ -1491,7 +1491,7 @@ function RentalYieldCalculator({ onInputChange }: { onInputChange?: (inputs: Rec
        type="checkbox"
        checked={useFinancing}
        onChange={(e) => setUseFinancing(e.target.checked)}
-       className="w-5 h-5 rounded border-slate-600 bg-white text-[#7B5EA7] focus:ring-emerald-500"
+       className="w-5 h-5 rounded border-slate-600 bg-white text-[#2563EB] focus:ring-emerald-500"
       />
       <span className="text-gray-900 font-medium">Include Financing</span>
      </label>
@@ -1605,9 +1605,9 @@ function RentalYieldCalculator({ onInputChange }: { onInputChange?: (inputs: Rec
    <div className="lg:col-span-3 space-y-6">
     {/* Key Metrics Cards */}
     <div className="grid grid-cols-2 gap-4">
-     <div className="bg-gradient-to-br from-[#7B5EA7]/20 to-teal-500/10 rounded-lg p-5 border border-[#7B5EA7]/30">
+     <div className="bg-gradient-to-br from-[#2563EB]/20 to-teal-500/10 rounded-lg p-5 border border-[#2563EB]/30">
       <p className="text-gray-500 text-sm mb-1">Gross Rental Yield</p>
-      <p className="text-3xl font-bold text-[#7B5EA7]">{calculations.grossYield.toFixed(2)}%</p>
+      <p className="text-3xl font-bold text-[#2563EB]">{calculations.grossYield.toFixed(2)}%</p>
       <p className="text-xs text-gray-400 mt-2">
        {calculations.grossYield >= 4 ? ' Good: >4%' : ' Below 4%'}
       </p>
@@ -1640,7 +1640,7 @@ function RentalYieldCalculator({ onInputChange }: { onInputChange?: (inputs: Rec
 
     {/* Investment Decision */}
     <div className={`rounded-lg p-5 border ${calculations.investmentDecision.color === 'green' ? 'bg-green-500/10 border-green-500/30' :
-     calculations.investmentDecision.color === 'emerald' ? 'bg-[#7B5EA7]/10 border-[#7B5EA7]/30' :
+     calculations.investmentDecision.color === 'emerald' ? 'bg-[#2563EB]/10 border-[#2563EB]/30' :
       calculations.investmentDecision.color === 'amber' ? 'bg-amber-500/10 border-amber-500/30' :
        'bg-red-500/10 border-red-500/30'
      }`}>
@@ -1648,7 +1648,7 @@ function RentalYieldCalculator({ onInputChange }: { onInputChange?: (inputs: Rec
       <span className="text-3xl">{calculations.investmentDecision.icon}</span>
       <div>
        <p className={`font-semibold text-lg ${calculations.investmentDecision.color === 'green' ? 'text-green-400' :
-        calculations.investmentDecision.color === 'emerald' ? 'text-[#7B5EA7]' :
+        calculations.investmentDecision.color === 'emerald' ? 'text-[#2563EB]' :
          calculations.investmentDecision.color === 'amber' ? 'text-amber-400' :
           'text-red-400'
         }`}>
@@ -1663,9 +1663,9 @@ function RentalYieldCalculator({ onInputChange }: { onInputChange?: (inputs: Rec
     <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
      <h3 className="text-gray-900 font-semibold mb-4"> Annual Cash Flow Breakdown</h3>
      <div className="space-y-3">
-      <div className="flex justify-between items-center p-3 bg-[#7B5EA7]/10 rounded-lg">
+      <div className="flex justify-between items-center p-3 bg-[#2563EB]/10 rounded-lg">
        <span className="text-gray-600">+ Rental Income (after vacancy)</span>
-       <span className="text-[#7B5EA7] font-semibold">+{formatCurrency(calculations.effectiveRent)}</span>
+       <span className="text-[#2563EB] font-semibold">+{formatCurrency(calculations.effectiveRent)}</span>
       </div>
       {useFinancing && (
        <div className="flex justify-between items-center p-3 bg-red-500/10 rounded-lg">
@@ -1749,7 +1749,7 @@ function RentalYieldCalculator({ onInputChange }: { onInputChange?: (inputs: Rec
      <div className="grid grid-cols-2 gap-4">
       <div className="p-4 bg-slate-700/30 rounded-lg">
        <p className="text-gray-500 text-sm">Property Value</p>
-       <p className="text-2xl font-bold text-[#7B5EA7]">{formatCurrency(calculations.finalValue)}</p>
+       <p className="text-2xl font-bold text-[#2563EB]">{formatCurrency(calculations.finalValue)}</p>
       </div>
       <div className="p-4 bg-slate-700/30 rounded-lg">
        <p className="text-gray-500 text-sm">Capital Gain</p>
@@ -1757,7 +1757,7 @@ function RentalYieldCalculator({ onInputChange }: { onInputChange?: (inputs: Rec
       </div>
       <div className="p-4 bg-slate-700/30 rounded-lg">
        <p className="text-gray-500 text-sm">Total Cash Flow</p>
-       <p className={`text-2xl font-bold ${calculations.yearlyData[calculations.yearlyData.length - 1]?.cumulativeCashFlow >= 0 ? 'text-[#7B5EA7]' : 'text-red-400'}`}>
+       <p className={`text-2xl font-bold ${calculations.yearlyData[calculations.yearlyData.length - 1]?.cumulativeCashFlow >= 0 ? 'text-[#2563EB]' : 'text-red-400'}`}>
         {formatCurrency(calculations.yearlyData[calculations.yearlyData.length - 1]?.cumulativeCashFlow || 0)}
        </p>
       </div>
@@ -1767,8 +1767,8 @@ function RentalYieldCalculator({ onInputChange }: { onInputChange?: (inputs: Rec
       </div>
      </div>
      {calculations.breakEvenYear && (
-      <div className="mt-4 p-3 bg-[#7B5EA7]/10 rounded-lg text-center">
-       <p className="text-[#7B5EA7] text-sm">
+      <div className="mt-4 p-3 bg-[#2563EB]/10 rounded-lg text-center">
+       <p className="text-[#2563EB] text-sm">
          Break-even in <strong>Year {calculations.breakEvenYear}</strong> (recovers {useFinancing ? 'down payment' : 'investment'})
        </p>
       </div>
@@ -1960,7 +1960,7 @@ function InvestmentProjection({ onInputChange }: { onInputChange?: (inputs: Reco
     {/* Property Details */}
     <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
      <h3 className="text-gray-900 font-semibold mb-4 flex items-center gap-2">
-      <Building className="h-5 w-5 text-[#7B5EA7]" />
+      <Building className="h-5 w-5 text-[#2563EB]" />
       Property Details
      </h3>
 
@@ -2027,7 +2027,7 @@ function InvestmentProjection({ onInputChange }: { onInputChange?: (inputs: Reco
        type="checkbox"
        checked={hasLoan}
        onChange={(e) => setHasLoan(e.target.checked)}
-       className="w-5 h-5 rounded border-slate-600 bg-white text-[#7B5EA7] focus:ring-emerald-500"
+       className="w-5 h-5 rounded border-slate-600 bg-white text-[#2563EB] focus:ring-emerald-500"
       />
       <span className="text-gray-900 font-medium">Include Home Loan</span>
      </label>
@@ -2081,7 +2081,7 @@ function InvestmentProjection({ onInputChange }: { onInputChange?: (inputs: Reco
        {hasLoan && (
         <div className="p-3 bg-slate-700/30 rounded-lg">
          <p className="text-gray-500 text-xs">Monthly EMI</p>
-         <p className="text-xl font-bold text-[#7B5EA7]">₹{formatNumber(calculations.monthlyEMI)}</p>
+         <p className="text-xl font-bold text-[#2563EB]">₹{formatNumber(calculations.monthlyEMI)}</p>
         </div>
        )}
       </div>
@@ -2139,7 +2139,7 @@ function InvestmentProjection({ onInputChange }: { onInputChange?: (inputs: Reco
         onClick={() => setScenario(key as typeof scenario)}
         className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${scenario === key
          ? key === 'conservative' ? 'bg-slate-600 text-gray-900' :
-          key === 'moderate' ? 'bg-[#F0EBFA] text-[#7B5EA7] border border-[#7B5EA7]/50' :
+          key === 'moderate' ? 'bg-[#F0EBFA] text-[#2563EB] border border-[#2563EB]/50' :
            'bg-amber-500/20 text-amber-400 border border-amber-500/50'
          : 'bg-slate-700/50 text-gray-500 hover:text-gray-900'
          }`}
@@ -2156,9 +2156,9 @@ function InvestmentProjection({ onInputChange }: { onInputChange?: (inputs: Reco
    <div className="lg:col-span-3 space-y-6">
     {/* Summary Cards */}
     <div className="grid grid-cols-2 gap-4">
-     <div className="bg-gradient-to-br from-[#7B5EA7]/20 to-teal-500/10 rounded-lg p-5 border border-[#7B5EA7]/30">
+     <div className="bg-gradient-to-br from-[#2563EB]/20 to-teal-500/10 rounded-lg p-5 border border-[#2563EB]/30">
       <p className="text-gray-500 text-sm mb-1"> Total Appreciation</p>
-      <p className="text-3xl font-bold text-[#7B5EA7]">{formatCurrency(calculations.totalAppreciation)}</p>
+      <p className="text-3xl font-bold text-[#2563EB]">{formatCurrency(calculations.totalAppreciation)}</p>
       <p className="text-xs text-gray-400 mt-2">+{calculations.appreciationPercent.toFixed(1)}% growth</p>
      </div>
 
@@ -2245,7 +2245,7 @@ function InvestmentProjection({ onInputChange }: { onInputChange?: (inputs: Reco
         {calculations.mainProjection.map((row) => (
          <tr key={row.year} className="border-b border-gray-100 hover:bg-gray-50/30">
           <td className="py-2 px-2 text-gray-900 font-medium">{row.calendarYear}</td>
-          <td className="text-right py-2 px-2 text-[#7B5EA7]">{formatCurrency(row.propertyValue)}</td>
+          <td className="text-right py-2 px-2 text-[#2563EB]">{formatCurrency(row.propertyValue)}</td>
           <td className="text-right py-2 px-2 text-cyan-400">{formatCurrency(row.equity)}</td>
           <td className="text-right py-2 px-2 text-amber-400">{formatCurrency(row.loanBalance)}</td>
           <td className="text-right py-2 px-2 text-purple-400 font-semibold">{formatCurrency(row.netWorth)}</td>
@@ -2310,9 +2310,9 @@ function InvestmentProjection({ onInputChange }: { onInputChange?: (inputs: Reco
         {formatCurrency(calculations.conservativeProjection[5]?.netWorth || 0)}
        </p>
       </div>
-      <div className="text-center p-2 bg-[#7B5EA7]/10 rounded-lg border border-[#7B5EA7]/30">
+      <div className="text-center p-2 bg-[#2563EB]/10 rounded-lg border border-[#2563EB]/30">
        <p className="text-xs text-gray-500">Moderate</p>
-       <p className="text-lg font-bold text-[#7B5EA7]">
+       <p className="text-lg font-bold text-[#2563EB]">
         {formatCurrency(calculations.moderateProjection[5]?.netWorth || 0)}
        </p>
       </div>
@@ -2465,7 +2465,7 @@ export default function CalculatorsPage() {
       Share
      </button>
      <button
-      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#7B5EA7] hover:bg-emerald-400 text-gray-900 transition-colors"
+      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#2563EB] hover:bg-emerald-400 text-gray-900 transition-colors"
      >
       <Download className="h-4 w-4" />
       Download PDF
@@ -2511,7 +2511,7 @@ export default function CalculatorsPage() {
       <div className="flex items-center justify-between mb-6">
        <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-lg bg-[#F0EBFA] flex items-center justify-center">
-         <Share2 className="h-5 w-5 text-[#7B5EA7]" />
+         <Share2 className="h-5 w-5 text-[#2563EB]" />
         </div>
         <div>
          <h3 className="font-semibold text-gray-900">Share Calculator</h3>
@@ -2584,7 +2584,7 @@ export default function CalculatorsPage() {
         <button
          onClick={handleShare}
          disabled={shareLoading || !agentName}
-         className="w-full flex items-center justify-center gap-2 bg-[#7B5EA7] hover:bg-emerald-400 disabled:bg-slate-700 disabled:text-gray-400 text-gray-900 py-3 rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
+         className="w-full flex items-center justify-center gap-2 bg-[#2563EB] hover:bg-emerald-400 disabled:bg-slate-700 disabled:text-gray-400 text-gray-900 py-3 rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
         >
          {shareLoading ? (
           <>
@@ -2604,7 +2604,7 @@ export default function CalculatorsPage() {
         {/* Success State */}
         <div className="text-center mb-6">
          <div className="w-16 h-16 rounded-lg bg-[#F0EBFA] flex items-center justify-center mx-auto mb-4">
-          <CheckCircle className="h-8 w-8 text-[#7B5EA7]" />
+          <CheckCircle className="h-8 w-8 text-[#2563EB]" />
          </div>
          <h4 className="text-xl font-semibold text-gray-900 mb-2">Link Generated!</h4>
          <p className="text-gray-500 text-sm">Share this link with your client</p>
@@ -2612,7 +2612,7 @@ export default function CalculatorsPage() {
 
         {/* URL Display */}
         <div className="bg-gray-100 rounded-lg p-3 mb-4">
-         <p className="text-[#7B5EA7] text-sm break-all">{shareUrl}</p>
+         <p className="text-[#2563EB] text-sm break-all">{shareUrl}</p>
         </div>
 
         {/* Action Buttons */}
@@ -2620,7 +2620,7 @@ export default function CalculatorsPage() {
          <button
           onClick={handleCopyLink}
           className={`flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${copied
-           ? 'bg-[#7B5EA7] text-gray-900'
+           ? 'bg-[#2563EB] text-gray-900'
            : 'bg-gray-100 hover:bg-gray-50 text-gray-900'
            }`}
          >

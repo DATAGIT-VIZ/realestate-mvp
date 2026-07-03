@@ -1,42 +1,107 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-/* ─── PropIQ Design System — Deep Navy + Amber ─────────────────────────────── */
+@custom-variant dark (&:is(.dark *));
+
+/* ─── RealEdge CRM — Light Design System ───────────────────────────────────── */
 :root {
-  --bg: #080D18;
-  --panel: #0E1623;
-  --border: rgba(255, 255, 255, 0.06);
-  --amber: #F59E0B;
-  --amber-dim: rgba(245, 158, 11, 0.12);
-  --emerald: #10B981;
-  --text: #F1F5F9;
-  --muted: rgba(255, 255, 255, 0.35);
+  /* App-level tokens */
+  --bg:           #F8FAFC;
+  --panel:        #FFFFFF;
+  --border-clr:   #E2E8F0;
+  --text:         #0F172A;
+  --text-muted:   #64748B;
+  --text-label:   #94A3B8;
+  --blue:         #2563EB;
+  --blue-dim:     rgba(37, 99, 235, 0.08);
+  --amber:        #D97706;
+  --amber-dim:    rgba(217, 119, 6, 0.10);
+  --emerald:      #059669;
+  --orange:       #EA580C;
+  --danger:       #EF4444;
+  --status-hot:   #EA580C;
+  --status-warm:  #D97706;
+  --status-cold:  #94A3B8;
 
-  /* Legacy tokens kept for compatibility */
-  --background: #080D18;
-  --foreground: #F1F5F9;
-  --primary: #F59E0B;
-  --primary-light: rgba(245, 158, 11, 0.1);
-  --primary-hover: #D97706;
-  --card-bg: #0E1623;
-  --card-border: rgba(255, 255, 255, 0.06);
-  --text-primary: #F1F5F9;
-  --text-secondary: rgba(255, 255, 255, 0.55);
-  --text-muted: rgba(255, 255, 255, 0.35);
-  --sidebar-bg: #080D18;
-  --sidebar-border: rgba(255, 255, 255, 0.06);
-  --status-hot: #FB923C;
-  --status-warm: #F59E0B;
-  --status-cold: #475569;
-  --success: #10B981;
-  --danger: #EF4444;
+  /* shadcn/ui light-mode tokens */
+  --background:                    oklch(1 0 0);
+  --foreground:                    oklch(0.145 0 0);
+  --card:                          oklch(1 0 0);
+  --card-foreground:               oklch(0.145 0 0);
+  --popover:                       oklch(1 0 0);
+  --popover-foreground:            oklch(0.145 0 0);
+  --primary:                       oklch(0.468 0.199 264);
+  --primary-foreground:            oklch(0.985 0 0);
+  --secondary:                     oklch(0.97 0 0);
+  --secondary-foreground:          oklch(0.205 0 0);
+  --muted:                         oklch(0.97 0 0);
+  --muted-foreground:              oklch(0.556 0 0);
+  --accent:                        oklch(0.97 0 0);
+  --accent-foreground:             oklch(0.205 0 0);
+  --destructive:                   oklch(0.577 0.245 27.325);
+  --border:                        oklch(0.922 0 0);
+  --input:                         oklch(0.922 0 0);
+  --ring:                          oklch(0.708 0 0);
+  --radius:                        0.625rem;
+  --chart-1:                       oklch(0.87 0 0);
+  --chart-2:                       oklch(0.556 0 0);
+  --chart-3:                       oklch(0.439 0 0);
+  --chart-4:                       oklch(0.371 0 0);
+  --chart-5:                       oklch(0.269 0 0);
+  --sidebar:                       oklch(1 0 0);
+  --sidebar-foreground:            oklch(0.145 0 0);
+  --sidebar-primary:               oklch(0.468 0.199 264);
+  --sidebar-primary-foreground:    oklch(0.985 0 0);
+  --sidebar-accent:                oklch(0.97 0 0);
+  --sidebar-accent-foreground:     oklch(0.205 0 0);
+  --sidebar-border:                oklch(0.922 0 0);
+  --sidebar-ring:                  oklch(0.708 0 0);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: 'Inter', var(--font-geist-sans), system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono);
+  --color-background:                var(--background);
+  --color-foreground:                var(--foreground);
+  --font-sans:                       var(--font-sans);
+  --font-mono:                       var(--font-geist-mono);
+  --font-heading:                    var(--font-sans);
+  --color-sidebar-ring:              var(--sidebar-ring);
+  --color-sidebar-border:            var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent:            var(--sidebar-accent);
+  --color-sidebar-primary-foreground:var(--sidebar-primary-foreground);
+  --color-sidebar-primary:           var(--sidebar-primary);
+  --color-sidebar-foreground:        var(--sidebar-foreground);
+  --color-sidebar:                   var(--sidebar);
+  --color-chart-5:                   var(--chart-5);
+  --color-chart-4:                   var(--chart-4);
+  --color-chart-3:                   var(--chart-3);
+  --color-chart-2:                   var(--chart-2);
+  --color-chart-1:                   var(--chart-1);
+  --color-ring:                      var(--ring);
+  --color-input:                     var(--input);
+  --color-border:                    var(--border);
+  --color-destructive:               var(--destructive);
+  --color-accent-foreground:         var(--accent-foreground);
+  --color-accent:                    var(--accent);
+  --color-muted-foreground:          var(--muted-foreground);
+  --color-muted:                     var(--muted);
+  --color-secondary-foreground:      var(--secondary-foreground);
+  --color-secondary:                 var(--secondary);
+  --color-primary-foreground:        var(--primary-foreground);
+  --color-primary:                   var(--primary);
+  --color-popover-foreground:        var(--popover-foreground);
+  --color-popover:                   var(--popover);
+  --color-card-foreground:           var(--card-foreground);
+  --color-card:                      var(--card);
+  --radius-sm:   calc(var(--radius) * 0.6);
+  --radius-md:   calc(var(--radius) * 0.8);
+  --radius-lg:   var(--radius);
+  --radius-xl:   calc(var(--radius) * 1.4);
+  --radius-2xl:  calc(var(--radius) * 1.8);
+  --radius-3xl:  calc(var(--radius) * 2.2);
+  --radius-4xl:  calc(var(--radius) * 2.6);
 }
 
 /* ─── Base ──────────────────────────────────────────────────────────────────── */
@@ -46,266 +111,80 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-/* ─── Dashboard-wide dark overrides ─────────────────────────────────────────
-   These safely restyle Tailwind light classes used in dashboard/page.tsx
-   and calculators/page.tsx without touching their JSX.
-───────────────────────────────────────────────────────────────────────────── */
-
-/* White & light gray card backgrounds → dark panels */
-.bg-white {
-  background-color: #0E1623 !important;
-}
-
-.bg-gray-50 {
-  background-color: #111927 !important;
-}
-
-.bg-gray-100 {
-  background-color: #141E2E !important;
-}
-
-.bg-gray-200 {
-  background-color: #1A2538 !important;
-}
-
-/* Text colors — light → dark palette */
-.text-gray-900 {
-  color: #F1F5F9 !important;
-}
-
-.text-gray-800 {
-  color: #E2E8F0 !important;
-}
-
-.text-gray-700 {
-  color: #CBD5E1 !important;
-}
-
-.text-gray-600 {
-  color: rgba(255, 255, 255, 0.55) !important;
-}
-
-.text-gray-500 {
-  color: rgba(255, 255, 255, 0.40) !important;
-}
-
-.text-gray-400 {
-  color: rgba(255, 255, 255, 0.30) !important;
-}
-
-/* Borders */
-.border-gray-200,
-.border-gray-100 {
-  border-color: rgba(255, 255, 255, 0.07) !important;
-}
-
-.border-gray-300 {
-  border-color: rgba(255, 255, 255, 0.10) !important;
-}
-
-/* Hover backgrounds */
-.hover\:bg-gray-50:hover {
-  background-color: rgba(255, 255, 255, 0.03) !important;
-}
-
-.hover\:bg-gray-100:hover {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-/* Purple primary → amber */
-.bg-\[\#7B5EA7\] {
-  background-color: #F59E0B !important;
-  color: #000 !important;
-}
-
-.hover\:bg-\[\#6A4F91\]:hover {
-  background-color: #D97706 !important;
-}
-
-.text-\[\#7B5EA7\] {
-  color: #F59E0B !important;
-}
-
-.border-\[\#7B5EA7\] {
-  border-color: #F59E0B !important;
-}
-
-.bg-\[\#F0EBFA\] {
-  background-color: rgba(245, 158, 11, 0.10) !important;
-}
-
-.focus\:ring-\[\#7B5EA7\]\/20:focus {
-  --tw-ring-color: rgba(245, 158, 11, 0.2) !important;
-}
-
-.focus\:border-\[\#7B5EA7\]:focus {
-  border-color: #F59E0B !important;
-}
-
-/* Input fields */
-input,
-select,
-textarea {
-  background-color: #111927 !important;
-  color: #F1F5F9 !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.25) !important;
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  border-color: #F59E0B !important;
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.15) !important;
-}
-
-/* Range slider accent */
+/* ─── Range input accent ─────────────────────────────────────────────────────── */
 input[type="range"] {
-  accent-color: #F59E0B !important;
-  background: transparent !important;
-  border: none !important;
-}
-
-/* Tables */
-table {
-  color: #F1F5F9 !important;
-}
-
-thead tr {
-  border-bottom-color: rgba(255, 255, 255, 0.07) !important;
-}
-
-tbody tr {
-  border-bottom-color: rgba(255, 255, 255, 0.04) !important;
-}
-
-td,
-th {
-  color: inherit !important;
-}
-
-/* Smart Action Queue white card */
-[class*="Smart Action"],
-[class*="action-queue"] {
-  background: #0E1623 !important;
-  border-color: rgba(255, 255, 255, 0.07) !important;
-  color: #F1F5F9 !important;
-}
-
-/* Badge overrides — preserve positive/negative semantic colors */
-.bg-red-50 {
-  background-color: rgba(251, 146, 60, 0.12) !important;
-}
-
-.bg-amber-50 {
-  background-color: rgba(245, 158, 11, 0.10) !important;
-}
-
-.border-red-200 {
-  border-color: rgba(251, 146, 60, 0.25) !important;
-}
-
-.border-amber-200 {
-  border-color: rgba(245, 158, 11, 0.25) !important;
-}
-
-/* Gradient backgrounds for hero cards — keep as-is (they're already dark) */
-
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-
-::-webkit-scrollbar-track {
+  accent-color: var(--blue);
   background: transparent;
+  border: none;
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.10);
-  border-radius: 3px;
-}
+/* ─── Light scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: #CBD5E1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+* { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(245, 158, 11, 0.4);
-}
+.custom-scrollbar::-webkit-scrollbar       { width: 5px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+.custom-scrollbar { scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
 
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.10) transparent;
-}
-
-/* ─── Custom scrollbar (dark) ─────────────────────────────────────────────── */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.10);
-  border-radius: 3px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(245, 158, 11, 0.4);
-}
-
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.10) transparent;
-}
-
-/* ─── Animations ─────────────────────────────────────────────────────────── */
+/* ─── Animations ─────────────────────────────────────────────────────────────── */
 @keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+.stagger-6 { animation-delay: 0.6s; }
+
+@keyframes confetti-fall {
+  0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+  100% { transform: translateY(100vh)  rotate(720deg); opacity: 0; }
+}
+.animate-confetti { animation: confetti-fall linear forwards; }
+
+/* ─── Dark mode tokens (shadcn reference — not applied to this app) ─────────── */
+.dark {
+  --background:           oklch(0.145 0 0);
+  --foreground:           oklch(0.985 0 0);
+  --card:                 oklch(0.205 0 0);
+  --card-foreground:      oklch(0.985 0 0);
+  --popover:              oklch(0.205 0 0);
+  --popover-foreground:   oklch(0.985 0 0);
+  --primary:              oklch(0.922 0 0);
+  --primary-foreground:   oklch(0.205 0 0);
+  --secondary:            oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted:                oklch(0.269 0 0);
+  --muted-foreground:     oklch(0.708 0 0);
+  --accent:               oklch(0.269 0 0);
+  --accent-foreground:    oklch(0.985 0 0);
+  --destructive:          oklch(0.704 0.191 22.216);
+  --border:               oklch(1 0 0 / 10%);
+  --input:                oklch(1 0 0 / 15%);
+  --ring:                 oklch(0.556 0 0);
+  --sidebar:              oklch(0.205 0 0);
+  --sidebar-foreground:   oklch(0.985 0 0);
+  --sidebar-primary:      oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent:       oklch(0.269 0 0);
+  --sidebar-accent-foreground:  oklch(0.985 0 0);
+  --sidebar-border:       oklch(1 0 0 / 10%);
+  --sidebar-ring:         oklch(0.556 0 0);
 }
 
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out forwards;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.stagger-1 {
-  animation-delay: 0.1s;
-}
-
-.stagger-2 {
-  animation-delay: 0.2s;
-}
-
-.stagger-3 {
-  animation-delay: 0.3s;
-}
-
-.stagger-4 {
-  animation-delay: 0.4s;
-}
-
-.stagger-5 {
-  animation-delay: 0.5s;
-}
-
-.stagger-6 {
-  animation-delay: 0.6s;
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground; }
+  html { @apply font-sans; }
 }

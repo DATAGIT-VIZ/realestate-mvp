@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE / editor
+.vscode/
+.cursor/
+.idea/
+
+# Claude Code memory
+.claude/
+
+# scratch / test files
+test-features-fixed.ts
+sample_leads.csv

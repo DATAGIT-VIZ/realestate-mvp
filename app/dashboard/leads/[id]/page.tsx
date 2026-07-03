@@ -3,699 +3,561 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
-import { supabase, Lead, LeadActivity } from '@/lib/supabase'
+import { type CRMLead } from '@/lib/twenty'
 import { LogActivityModal } from '@/components/LogActivityModal'
-import { formatDistanceToNow } from 'date-fns'
+import { WhatsAppModal } from '@/components/WhatsAppModal'
 import {
- ArrowLeft,
- User,
- Phone,
- Mail,
- Building,
- DollarSign,
- Clock,
- Tag,
- TrendingUp,
- Calendar,
- Edit,
- Trash2,
- Loader2,
- MapPin,
- Activity,
- AlertCircle,
- Plus,
- MessageCircle,
- Eye,
- Users,
- Bell,
- FileText,
- CheckCircle,
- XCircle,
- MinusCircle,
- HelpCircle,
- Zap,
- CreditCard,
- ThumbsUp,
- ThumbsDown,
- AlertTriangle,
+  ArrowLeft, Phone, Mail, MapPin, Building2, Clock, Tag,
+  TrendingUp, Calendar, Edit2, Trash2, Loader2, Activity,
+  AlertCircle, Plus, MessageCircle, CheckCircle, XCircle,
+  MinusCircle, HelpCircle, ChevronDown, IndianRupee, User,
 } from 'lucide-react'
 
-// Icon mapping for score breakdown
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
- User,
- Zap,
- Clock,
- Activity,
- TrendingUp,
- DollarSign,
- CreditCard,
- MapPin,
- FileText,
- Calendar,
- Eye,
- Building,
- ThumbsUp,
- ThumbsDown,
- Users,
- AlertCircle,
- AlertTriangle,
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const BG      = '#F8FAFC'
+const PANEL   = '#FFFFFF'
+const PANEL2  = '#F8FAFC'
+const BORDER  = '#E2E8F0'
+const AMBER   = '#D97706'
+const BLUE    = '#2563EB'
+const EMERALD = '#059669'
+const RED_HOT = '#F97316'
+const RED     = '#DC2626'
+const TEXT    = '#0F172A'
+const MUTED   = '#64748B'
+const MUTED2  = '#334155'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+type Activity = {
+  id: string
+  type: string
+  createdAt: string
+  notes?: string | null
+  outcome?: string | null
+  duration?: number | null
+  nextActionDate?: string | null
 }
 
-// Icon mapping for activity types
-const ACTIVITY_TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
- 'Call Made': Phone,
- 'Email Sent': Mail,
- 'WhatsApp Sent': MessageCircle,
- 'Property Viewed': Eye,
- 'Site Visit Scheduled': Calendar,
- 'Meeting Held': Users,
- 'Follow-up Required': Bell,
- 'Note Added': FileText,
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const getDisplayName = (l: CRMLead) => `${l.name.firstName} ${l.name.lastName}`.trim() || 'Unnamed Lead'
+const getPhone = (l: CRMLead) => l.phones.primaryPhoneNumber ?? ''
+const getEmail = (l: CRMLead) => l.emails.primaryEmail ?? ''
+const getScore = (l: CRMLead) => l.intentScore ?? 0
+
+function formatBudget(min: number | null, max: number | null): string {
+  const fmt = (n: number) =>
+    n >= 10_000_000 ? `${+(n / 10_000_000).toFixed(1)}Cr` : `${+(n / 100_000).toFixed(1)}L`
+  if (min && max) return `₹${fmt(min)} – ₹${fmt(max)}`
+  if (min) return `₹${fmt(min)}+`
+  if (max) return `Up to ₹${fmt(max)}`
+  return '—'
 }
 
-const OUTCOME_STYLES: Record<string, { color: string; bgColor: string; icon: React.ComponentType<{ className?: string }> }> = {
- 'Positive': { color: 'text-emerald-400', bgColor: 'bg-emerald-500/20', icon: CheckCircle },
- 'Neutral': { color: 'text-slate-400', bgColor: 'bg-slate-500/20', icon: MinusCircle },
- 'Negative': { color: 'text-red-400', bgColor: 'bg-red-500/20', icon: XCircle },
- 'No Response': { color: 'text-amber-400', bgColor: 'bg-amber-500/20', icon: HelpCircle },
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const m = Math.floor(diff / 60_000)
+  const h = Math.floor(m / 60)
+  const d = Math.floor(h / 24)
+  if (d > 0) return `${d}d ago`
+  if (h > 0) return `${h}h ago`
+  if (m > 0) return `${m}m ago`
+  return 'Just now'
 }
 
-function getStatusFromScore(score: number): { label: string; color: string; bgColor: string } {
- if (score >= 70) {
-  return { label: 'Hot', color: 'text-emerald-400', bgColor: 'bg-emerald-500/20 border-emerald-500/30' }
- } else if (score >= 40) {
-  return { label: 'Warm', color: 'text-amber-400', bgColor: 'bg-amber-500/20 border-amber-500/30' }
- }
- return { label: 'Cold', color: 'text-red-400', bgColor: 'bg-red-500/20 border-red-500/30' }
+function formatDate(s: string) {
+  return new Date(s).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-function getScoreColor(score: number): { text: string; bg: string; border: string } {
- if (score >= 70) return { text: 'text-emerald-400', bg: 'bg-emerald-500/20', border: 'border-emerald-500' }
- if (score >= 40) return { text: 'text-amber-400', bg: 'bg-amber-500/20', border: 'border-amber-500' }
- return { text: 'text-red-400', bg: 'bg-red-500/20', border: 'border-red-500' }
+function scoreStyle(score: number) {
+  if (score >= 70) return { label: 'High Intent', color: '#EA580C', ring: '#F97316', bg: '#FFF7ED' }
+  if (score >= 40) return { label: 'Medium',      color: '#B45309', ring: '#D97706', bg: '#FFFBEB' }
+  return               { label: 'Low',          color: '#64748B', ring: '#CBD5E1', bg: '#F1F5F9' }
 }
 
-function formatDate(date: string): string {
- return new Date(date).toLocaleDateString('en-US', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
- })
+function scoreBreakdown(l: CRMLead) {
+  const items: { label: string; value: string; positive: boolean }[] = []
+  const phone = getPhone(l)
+  const email = getEmail(l)
+  items.push({ label: 'Phone number', value: phone ? 'Provided' : 'Missing', positive: !!phone })
+  items.push({ label: 'Email address', value: email ? 'Provided' : 'Missing', positive: !!email })
+  if (l.budgetMin || l.budgetMax) {
+    items.push({ label: 'Budget defined', value: formatBudget(l.budgetMin, l.budgetMax), positive: true })
+  } else {
+    items.push({ label: 'Budget', value: 'Not specified', positive: false })
+  }
+  const t = (l.timeline ?? '').toLowerCase()
+  const urgency = t.includes('immediate') || t.includes('1 month') ? 'Immediate'
+    : t.includes('1–3') || t.includes('3 month') ? 'Within 3 months'
+    : t.includes('6') ? 'Within 6 months'
+    : t ? 'Long-term' : 'Unknown'
+  items.push({ label: 'Timeline urgency', value: urgency, positive: urgency !== 'Unknown' && urgency !== 'Long-term' })
+  const s = (l.sourcePortal ?? '').toLowerCase()
+  const srcQuality = s.includes('website') || s.includes('referral') ? 'Premium'
+    : s.includes('magicbricks') || s.includes('99acres') || s.includes('housing') ? 'Portal'
+    : s.includes('facebook') || s.includes('google') ? 'Paid Ads'
+    : s ? 'Other' : 'Unknown'
+  items.push({ label: 'Lead source quality', value: srcQuality, positive: srcQuality === 'Premium' || srcQuality === 'Portal' })
+  return items
 }
 
-function formatCurrency(amount: number): string {
- return new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
- }).format(amount)
+const OUTCOME_CONFIG: Record<string, { Icon: React.ElementType; color: string; bg: string }> = {
+  'Positive':    { Icon: CheckCircle, color: '#059669', bg: '#ECFDF5' },
+  'Neutral':     { Icon: MinusCircle, color: '#64748B', bg: '#F1F5F9' },
+  'Negative':    { Icon: XCircle,     color: '#DC2626', bg: '#FEF2F2' },
+  'No Response': { Icon: HelpCircle,  color: '#B45309', bg: '#FFFBEB' },
 }
 
-function formatRelativeTime(date: string): string {
- return formatDistanceToNow(new Date(date), { addSuffix: true })
+const ACTIVITY_ICON: Record<string, React.ElementType> = {
+  'Call Made':            Phone,
+  'Call Missed':          Phone,
+  'WhatsApp Sent':        MessageCircle,
+  'WhatsApp Received':    MessageCircle,
+  'Email Sent':           Mail,
+  'Email Received':       Mail,
+  'Site Visit Scheduled': Calendar,
+  'Site Visit Done':      MapPin,
+  'Follow Up Set':        Clock,
+  'Note':                 Tag,
+  'Status Changed':       TrendingUp,
 }
 
+const PIPELINE_STAGES = ['New', 'Contacted', 'Qualified', 'Negotiation', 'Won', 'Lost']
+
+// ─── Section wrapper ──────────────────────────────────────────────────────────
+function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', ...style }}>
+      {children}
+    </div>
+  )
+}
+
+function CardHeader({ title, icon: Icon, action }: { title: string; icon: React.ElementType; action?: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${BORDER}` }}>
+      <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, color: MUTED2, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+        <Icon style={{ width: 13, height: 13 }} />{title}
+      </h3>
+      {action}
+    </div>
+  )
+}
+
+function InfoRow({ label, value, href }: { label: string; value: string | null | undefined; href?: string }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
+      <span style={{ fontSize: 12, color: MUTED, flexShrink: 0 }}>{label}</span>
+      {href
+        ? <a href={href} style={{ fontSize: 13, color: BLUE, textDecoration: 'none', textAlign: 'right' }}>{value || '—'}</a>
+        : <span style={{ fontSize: 13, color: value ? TEXT : MUTED, textAlign: 'right' }}>{value || '—'}</span>
+      }
+    </div>
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function LeadDetailPage() {
- const router = useRouter()
- const params = useParams()
- const leadId = params.id as string
+  const router = useRouter()
+  const { id: leadId } = useParams() as { id: string }
 
- const [lead, setLead] = useState<Lead | null>(null)
- const [activities, setActivities] = useState<LeadActivity[]>([])
- const [loading, setLoading] = useState(true)
- const [activitiesLoading, setActivitiesLoading] = useState(false)
- const [error, setError] = useState<string | null>(null)
- const [deleting, setDeleting] = useState(false)
- const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
- const [showActivityModal, setShowActivityModal] = useState(false)
+  const [lead, setLead]           = useState<CRMLead | null>(null)
+  const [activities, setActivities] = useState<Activity[]>([])
+  const [loading, setLoading]     = useState(true)
+  const [error, setError]         = useState<string | null>(null)
+  const [showActivityModal, setShowActivityModal] = useState(false)
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting]   = useState(false)
+  const [stageChanging, setStageChanging] = useState(false)
+  const [showStageMenu, setShowStageMenu] = useState(false)
 
- const fetchLead = useCallback(async () => {
-  try {
-   setLoading(true)
-   setError(null)
-
-   const { data: { session } } = await supabase.auth.getSession()
-
-   if (!session) {
-    router.push('/login')
-    return
-   }
-
-   const { data, error: fetchError } = await supabase
-    .from('leads')
-    .select('*')
-    .eq('id', leadId)
-    .eq('agent_id', session.user.id)
-    .single()
-
-   if (fetchError) {
-    if (fetchError.code === 'PGRST116') {
-     setError('Lead not found')
-    } else {
-     throw fetchError
+  const fetchLead = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const res = await fetch(`/api/crm/leads/${leadId}`)
+      const json = await res.json()
+      if (json.error) throw new Error(json.error)
+      setLead(json.data.lead)
+      setActivities(json.data.activities ?? [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load lead')
+    } finally {
+      setLoading(false)
     }
-    return
-   }
+  }, [leadId])
 
-   setLead(data)
-  } catch (err) {
-   console.error('Error fetching lead:', err)
-   setError('Failed to load lead details')
-  } finally {
-   setLoading(false)
+  useEffect(() => { fetchLead() }, [fetchLead])
+
+  const handleStageChange = async (stage: string) => {
+    if (!lead) return
+    setShowStageMenu(false)
+    setStageChanging(true)
+    try {
+      await fetch(`/api/crm/leads/${leadId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: stage }),
+      })
+      setLead(prev => prev ? { ...prev, status: stage } : prev)
+    } finally {
+      setStageChanging(false)
+    }
   }
- }, [leadId, router])
 
- const fetchActivities = useCallback(async () => {
-  try {
-   setActivitiesLoading(true)
-
-   const { data: { session } } = await supabase.auth.getSession()
-
-   if (!session) return
-
-   const response = await fetch(`/api/leads/${leadId}/activities`, {
-    headers: {
-     'Authorization': `Bearer ${session.access_token}`,
-    },
-   })
-
-   const data = await response.json()
-
-   if (response.ok) {
-    setActivities(data.activities || [])
-   }
-  } catch (err) {
-   console.error('Error fetching activities:', err)
-  } finally {
-   setActivitiesLoading(false)
+  const handleDelete = async () => {
+    setDeleting(true)
+    try {
+      await fetch(`/api/crm/leads/${leadId}`, { method: 'DELETE' })
+      router.push('/dashboard/leads')
+    } catch {
+      setDeleting(false)
+    }
   }
- }, [leadId])
 
- useEffect(() => {
-  if (leadId) {
-   fetchLead()
-   fetchActivities()
+  // ── Loading / error ──────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+        <Loader2 style={{ width: 22, height: 22, color: AMBER, animation: 'spin 1s linear infinite' }} />
+        <span style={{ fontSize: 14, color: MUTED }}>Loading lead…</span>
+      </div>
+    )
   }
- }, [leadId, fetchLead, fetchActivities])
 
- const handleActivityLogged = () => {
-  fetchLead()
-  fetchActivities()
- }
-
- const handleDelete = async () => {
-  try {
-   setDeleting(true)
-
-   const { data: { session } } = await supabase.auth.getSession()
-
-   if (!session) {
-    router.push('/login')
-    return
-   }
-
-   const { error: deleteError } = await supabase
-    .from('leads')
-    .delete()
-    .eq('id', leadId)
-    .eq('agent_id', session.user.id)
-
-   if (deleteError) throw deleteError
-
-   router.push('/dashboard/leads')
-  } catch (err) {
-   console.error('Error deleting lead:', err)
-   setError('Failed to delete lead')
-   setDeleting(false)
+  if (error || !lead) {
+    return (
+      <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <AlertCircle style={{ width: 40, height: 40, color: RED, margin: '0 auto 16px' }} />
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: TEXT, margin: '0 0 8px' }}>{error || 'Lead not found'}</h2>
+          <p style={{ fontSize: 13, color: MUTED, margin: '0 0 24px' }}>This lead may have been deleted or you don't have access.</p>
+          <Link href="/dashboard/leads" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 10, color: TEXT, fontSize: 13, textDecoration: 'none' }}>
+            <ArrowLeft style={{ width: 14, height: 14 }} /> Back to Leads
+          </Link>
+        </div>
+      </div>
+    )
   }
- }
 
- if (loading) {
+  const score   = getScore(lead)
+  const ss      = scoreStyle(score)
+  const name    = getDisplayName(lead)
+  const phone   = getPhone(lead)
+  const email   = getEmail(lead)
+  const bdown   = scoreBreakdown(lead)
+  const waNum   = phone.replace(/\D/g, '').replace(/^0/, '91')
+
   return (
-   <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
-    <div className="flex flex-col items-center gap-4">
-     <Loader2 className="h-8 w-8 text-emerald-500 animate-spin" />
-     <p className="text-slate-400 text-sm">Loading lead details...</p>
-    </div>
-   </div>
-  )
- }
+    <div style={{ minHeight: '100vh', background: BG }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 80px' }}>
 
- if (error || !lead) {
-  return (
-   <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center px-4">
-    <div className="text-center">
-     <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-red-500/20 mb-4">
-      <AlertCircle className="h-8 w-8 text-red-400" />
-     </div>
-     <h2 className="text-xl font-semibold text-white mb-2">{error || 'Lead not found'}</h2>
-     <p className="text-slate-400 mb-6">The lead you&apos;re looking for doesn&apos;t exist or you don&apos;t have access.</p>
-     <Link
-      href="/dashboard/leads"
-      className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition-colors"
-     >
-      <ArrowLeft className="h-5 w-5" />
-      Back to Leads
-     </Link>
-    </div>
-   </div>
-  )
- }
-
- const status = getStatusFromScore(lead.intent_score)
- const scoreColors = getScoreColor(lead.intent_score)
-
- // Parse score breakdown if it's an array (new format)
- const scoreBreakdown = Array.isArray(lead.score_breakdown) ? lead.score_breakdown : null
-
- return (
-  <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-   {/* Background decoration */}
-   <div className="absolute inset-0 overflow-hidden pointer-events-none">
-    <div className="absolute -top-40 -right-40 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl" />
-    <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl" />
-   </div>
-
-   <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    {/* Back Button */}
-    <Link
-     href="/dashboard/leads"
-     className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors"
-    >
-     <ArrowLeft className="h-5 w-5" />
-     Back to Leads
-    </Link>
-
-    {/* Header */}
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-     <div className="flex items-center gap-4">
-      <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700">
-       <User className="h-7 w-7 text-slate-400" />
-      </div>
-      <div>
-       <h1 className="text-2xl sm:text-3xl font-bold text-white">{lead.name}</h1>
-       <span className={`inline-flex px-3 py-1 mt-1 rounded-full text-xs font-medium border ${status.bgColor} ${status.color}`}>
-        {status.label} Lead
-       </span>
-      </div>
-     </div>
-
-     <div className="flex flex-wrap gap-3">
-      <button
-       onClick={() => setShowActivityModal(true)}
-       className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-medium rounded-xl shadow-lg shadow-emerald-500/25 transition-all"
-      >
-       <Plus className="h-4 w-4" />
-       Log Activity
-      </button>
-      <button
-       onClick={() => router.push(`/dashboard/leads/${lead.id}/edit`)}
-       className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition-colors"
-      >
-       <Edit className="h-4 w-4" />
-       Edit
-      </button>
-      <button
-       onClick={() => setShowDeleteConfirm(true)}
-       className="flex items-center gap-2 px-4 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl transition-colors"
-      >
-       <Trash2 className="h-4 w-4" />
-       Delete
-      </button>
-     </div>
-    </div>
-
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-     {/* Main Info */}
-     <div className="lg:col-span-2 space-y-6">
-      {/* Contact Info Card */}
-      <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl p-6">
-       <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-        <User className="h-5 w-5 text-emerald-500" />
-        Contact Information
-       </h2>
-       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl">
-         <Phone className="h-5 w-5 text-slate-500" />
-         <div>
-          <p className="text-xs text-slate-500">Phone</p>
-          <p className="text-white">{lead.phone}</p>
-         </div>
+        {/* ── Breadcrumb ── */}
+        <div style={{ padding: '20px 0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Link href="/dashboard/leads"
+            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: MUTED, textDecoration: 'none' }}
+            onMouseEnter={e => (e.currentTarget.style.color = TEXT)}
+            onMouseLeave={e => (e.currentTarget.style.color = MUTED)}
+          >
+            <ArrowLeft style={{ width: 14, height: 14 }} /> All Leads
+          </Link>
+          {/* Delete */}
+          <button onClick={() => setShowDeleteConfirm(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 9, color: RED, fontSize: 12, fontWeight: 500, cursor: 'pointer' }}
+          >
+            <Trash2 style={{ width: 13, height: 13 }} /> Delete
+          </button>
         </div>
-        <div className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl">
-         <Mail className="h-5 w-5 text-slate-500" />
-         <div>
-          <p className="text-xs text-slate-500">Email</p>
-          <p className="text-white">{lead.email || '—'}</p>
-         </div>
-        </div>
-       </div>
-      </div>
 
-      {/* Requirements Card */}
-      <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl p-6">
-       <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-        <Building className="h-5 w-5 text-emerald-500" />
-        Requirements
-       </h2>
-       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl">
-         <Building className="h-5 w-5 text-slate-500" />
-         <div>
-          <p className="text-xs text-slate-500">Property Type</p>
-          <p className="text-white">{lead.property_type || '—'}</p>
-         </div>
-        </div>
-        <div className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl">
-         <MapPin className="h-5 w-5 text-slate-500" />
-         <div>
-          <p className="text-xs text-slate-500">Locations</p>
-          <p className="text-white">
-           {lead.locations && lead.locations.length > 0
-            ? lead.locations.join(', ')
-            : '—'}
-          </p>
-         </div>
-        </div>
-        <div className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl">
-         <DollarSign className="h-5 w-5 text-slate-500" />
-         <div>
-          <p className="text-xs text-slate-500">Budget</p>
-          <p className="text-white">
-           {lead.budget_min && lead.budget_max
-            ? `${formatCurrency(lead.budget_min)} - ${formatCurrency(lead.budget_max)}`
-            : lead.budget_min
-            ? `From ${formatCurrency(lead.budget_min)}`
-            : lead.budget_max
-            ? `Up to ${formatCurrency(lead.budget_max)}`
-            : '—'}
-          </p>
-         </div>
-        </div>
-        <div className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-xl">
-         <Clock className="h-5 w-5 text-slate-500" />
-         <div>
-          <p className="text-xs text-slate-500">Timeline</p>
-          <p className="text-white">{lead.timeline || '—'}</p>
-         </div>
-        </div>
-       </div>
-      </div>
-
-      {/* Activity Timeline */}
-      <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl p-6">
-       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-         <Activity className="h-5 w-5 text-emerald-500" />
-         Activity Timeline
-        </h2>
-        <button
-         onClick={() => setShowActivityModal(true)}
-         className="text-sm text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors"
-        >
-         <Plus className="h-4 w-4" />
-         Add
-        </button>
-       </div>
-
-       {activitiesLoading ? (
-        <div className="flex items-center justify-center py-8">
-         <Loader2 className="h-6 w-6 text-emerald-500 animate-spin" />
-        </div>
-       ) : activities.length === 0 ? (
-        <div className="text-center py-8">
-         <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-slate-800 mb-3">
-          <Clock className="h-6 w-6 text-slate-500" />
-         </div>
-         <p className="text-slate-400 text-sm">No activities recorded yet</p>
-         <button
-          onClick={() => setShowActivityModal(true)}
-          className="text-emerald-400 hover:text-emerald-300 text-sm mt-2 transition-colors"
-         >
-          Log your first activity →
-         </button>
-        </div>
-       ) : (
-        <div className="space-y-4">
-         {activities.map((activity, index) => {
-          const ActivityIcon = ACTIVITY_TYPE_ICONS[activity.activity_type] || Activity
-          const outcomeData = activity.activity_data?.outcome
-           ? OUTCOME_STYLES[activity.activity_data.outcome]
-           : null
-          const OutcomeIcon = outcomeData?.icon
-
-          return (
-           <div
-            key={activity.id}
-            className="relative pl-8 pb-4 border-l-2 border-slate-800 last:border-l-transparent last:pb-0"
-           >
-            {/* Timeline dot */}
-            <div className="absolute left-0 top-0 -translate-x-1/2 w-4 h-4 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center">
-             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+        {/* ── Lead header ── */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            {/* Avatar */}
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: `${ss.bg}`, border: `2px solid ${ss.ring}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <User style={{ width: 26, height: 26, color: ss.color }} />
             </div>
-
-            {/* Activity card */}
-            <div className="bg-slate-800/50 rounded-xl p-4 ml-4">
-             <div className="flex items-start justify-between gap-3 mb-2">
-              <div className="flex items-center gap-2">
-               <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-700">
-                <ActivityIcon className="h-4 w-4 text-slate-400" />
-               </div>
-               <div>
-                <p className="text-white font-medium text-sm">
-                 {activity.activity_type}
-                </p>
-                <p className="text-slate-500 text-xs">
-                 {formatRelativeTime(activity.created_at)}
-                </p>
-               </div>
-              </div>
-              {outcomeData && OutcomeIcon && (
-               <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${outcomeData.bgColor} ${outcomeData.color}`}>
-                <OutcomeIcon className="h-3 w-3" />
-                {activity.activity_data.outcome}
-               </span>
-              )}
-             </div>
-
-             {/* Notes */}
-             {activity.activity_data?.notes && (
-              <p className="text-slate-300 text-sm mt-2">
-               {activity.activity_data.notes}
-              </p>
-             )}
-
-             {/* Response time */}
-             {activity.activity_data?.response_time && (
-              <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-500">
-               <Clock className="h-3 w-3" />
-               Response: {activity.activity_data.response_time}
-              </div>
-             )}
-
-             {/* Questions asked */}
-             {activity.activity_data?.questions_asked && activity.activity_data.questions_asked.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
-               {activity.activity_data.questions_asked.map((question: string, qIndex: number) => (
-                <span
-                 key={qIndex}
-                 className="inline-flex px-2 py-0.5 bg-slate-700 text-slate-300 text-xs rounded-full"
-                >
-                 {question}
+            <div>
+              <h1 style={{ fontSize: 24, fontWeight: 800, color: TEXT, margin: '0 0 4px', letterSpacing: '-0.5px' }}>{name}</h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: ss.color, background: ss.bg, padding: '3px 10px', borderRadius: 20 }}>
+                  {ss.label}
                 </span>
-               ))}
+                {lead.sourcePortal && (
+                  <span style={{ fontSize: 11, color: MUTED, background: 'rgba(255,255,255,0.05)', padding: '3px 10px', borderRadius: 20 }}>
+                    via {lead.sourcePortal}
+                  </span>
+                )}
               </div>
-             )}
             </div>
-           </div>
-          )
-         })}
-        </div>
-       )}
-      </div>
-     </div>
+          </div>
 
-     {/* Sidebar */}
-     <div className="space-y-6">
-      {/* Intent Score Card */}
-      <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl p-6">
-       <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-        <TrendingUp className="h-5 w-5 text-emerald-500" />
-        Intent Score
-       </h2>
-       <div className="flex flex-col items-center">
-        <div
-         className={`flex items-center justify-center w-24 h-24 rounded-full border-4 ${scoreColors.border} ${scoreColors.bg}`}
-        >
-         <span className={`text-3xl font-bold ${scoreColors.text}`}>{lead.intent_score}</span>
-        </div>
-        <p className={`mt-3 font-medium ${status.color}`}>{status.label}</p>
-       </div>
-
-       {/* Score Breakdown - New format with icons */}
-       {scoreBreakdown && scoreBreakdown.length > 0 && (
-        <div className="mt-6 pt-4 border-t border-slate-800">
-         <p className="text-sm text-slate-400 mb-3">Score Breakdown</p>
-         <div className="space-y-2 max-h-64 overflow-y-auto">
-          {scoreBreakdown.map((item: { factor: string; points: number; icon: string }, index: number) => {
-           const IconComponent = ICON_MAP[item.icon] || Activity
-           const isPositive = item.points > 0
-           const isNegative = item.points < 0
-           return (
-            <div
-             key={index}
-             className="flex items-center justify-between gap-2 text-sm"
+          {/* Quick actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {phone && (
+              <a href={`tel:${phone}`}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 10, color: EMERALD, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
+              >
+                <Phone style={{ width: 14, height: 14 }} />Call
+              </a>
+            )}
+            {phone && (
+              <button onClick={() => setShowWhatsAppModal(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'rgba(37,211,102,0.08)', border: '1px solid rgba(37,211,102,0.25)', borderRadius: 10, color: '#25D366', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              >
+                <MessageCircle style={{ width: 14, height: 14 }} />WhatsApp
+              </button>
+            )}
+            <button onClick={() => setShowActivityModal(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: BLUE, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
             >
-             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <IconComponent
-               className={`h-4 w-4 flex-shrink-0 ${
-                isPositive ? 'text-emerald-500' : isNegative ? 'text-red-500' : 'text-slate-500'
-               }`}
+              <Plus style={{ width: 14, height: 14 }} />Log Activity
+            </button>
+          </div>
+        </div>
+
+        {/* ── 2-col layout ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20, alignItems: 'start' }} className="lg:grid-cols-[1fr_340px] grid-cols-1">
+
+          {/* ── Left column ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+            {/* Contact info */}
+            <Card>
+              <CardHeader title="Contact Info" icon={User} />
+              <div style={{ padding: '4px 20px 8px' }}>
+                <InfoRow label="Phone" value={phone} href={phone ? `tel:${phone}` : undefined} />
+                <InfoRow label="Email" value={email} href={email ? `mailto:${email}` : undefined} />
+                <InfoRow label="City" value={lead.city} />
+                <InfoRow label="Localities" value={lead.localities?.join(', ') || null} />
+              </div>
+            </Card>
+
+            {/* Requirements */}
+            <Card>
+              <CardHeader title="Requirements" icon={Building2} />
+              <div style={{ padding: '4px 20px 8px' }}>
+                <InfoRow label="Property Type" value={lead.propertyType?.join(', ') || null} />
+                <InfoRow label="Budget" value={formatBudget(lead.budgetMin, lead.budgetMax)} />
+                <InfoRow label="Timeline" value={lead.timeline} />
+                <InfoRow label="Status" value={lead.status} />
+              </div>
+            </Card>
+
+            {/* Activity Timeline */}
+            <Card>
+              <CardHeader
+                title="Activity Timeline"
+                icon={Activity}
+                action={
+                  <button onClick={() => setShowActivityModal(true)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: BLUE, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    <Plus style={{ width: 12, height: 12 }} />Log
+                  </button>
+                }
               />
-              <span className="text-slate-400 truncate">{item.factor}</span>
-             </div>
-             <span
-              className={`font-medium flex-shrink-0 ${
-               isPositive ? 'text-emerald-400' : isNegative ? 'text-red-400' : 'text-slate-400'
-              }`}
-             >
-              {isPositive ? '+' : ''}{item.points}
-             </span>
+
+              {activities.length === 0 ? (
+                <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+                  <Clock style={{ width: 28, height: 28, color: MUTED, margin: '0 auto 10px' }} />
+                  <p style={{ fontSize: 13, color: MUTED, margin: '0 0 8px' }}>No activities yet</p>
+                  <button onClick={() => setShowActivityModal(true)}
+                    style={{ fontSize: 12, color: BLUE, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    Log your first activity →
+                  </button>
+                </div>
+              ) : (
+                <div style={{ padding: '8px 20px 16px' }}>
+                  {activities.map((act, idx) => {
+                    const AIcon = ACTIVITY_ICON[act.type] ?? Activity
+                    const oc = act.outcome ? OUTCOME_CONFIG[act.outcome] : null
+                    const OIcon = oc?.Icon
+                    return (
+                      <div key={act.id} style={{ display: 'flex', gap: 14, paddingBottom: idx < activities.length - 1 ? 20 : 0 }}>
+                        {/* Timeline line + dot */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                          <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <AIcon style={{ width: 14, height: 14, color: BLUE }} />
+                          </div>
+                          {idx < activities.length - 1 && (
+                            <div style={{ width: 1, flex: 1, background: BORDER, marginTop: 6 }} />
+                          )}
+                        </div>
+                        {/* Content */}
+                        <div style={{ flex: 1, paddingTop: 4 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{act.type}</span>
+                            <span style={{ fontSize: 11, color: MUTED }}>{timeAgo(act.createdAt)}</span>
+                          </div>
+                          {oc && OIcon && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: oc.color, background: oc.bg, padding: '2px 8px', borderRadius: 6, marginBottom: 6 }}>
+                              <OIcon style={{ width: 10, height: 10 }} />{act.outcome}
+                            </span>
+                          )}
+                          {act.notes && (
+                            <p style={{ fontSize: 13, color: MUTED2, margin: '0 0 4px', lineHeight: 1.5 }}>{act.notes}</p>
+                          )}
+                          {act.duration && (
+                            <p style={{ fontSize: 11, color: MUTED, margin: 0 }}>
+                              <Clock style={{ width: 10, height: 10, display: 'inline', marginRight: 4 }} />
+                              {Math.floor(act.duration / 60)}m {act.duration % 60}s
+                            </p>
+                          )}
+                          {act.nextActionDate && (
+                            <p style={{ fontSize: 11, color: AMBER, margin: '4px 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <Calendar style={{ width: 10, height: 10 }} />
+                              Follow up: {formatDate(act.nextActionDate)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </Card>
+          </div>
+
+          {/* ── Right sidebar ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+            {/* Score ring */}
+            <Card>
+              <div style={{ padding: '20px', textAlign: 'center' }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 16px' }}>Intent Score</p>
+                {/* Ring SVG */}
+                <div style={{ position: 'relative', width: 100, height: 100, margin: '0 auto 12px' }}>
+                  <svg viewBox="0 0 100 100" style={{ width: 100, height: 100, transform: 'rotate(-90deg)' }}>
+                    <circle cx="50" cy="50" r="42" fill="none" stroke={BORDER} strokeWidth="8" />
+                    <circle
+                      cx="50" cy="50" r="42" fill="none"
+                      stroke={ss.ring} strokeWidth="8"
+                      strokeDasharray={`${2 * Math.PI * 42}`}
+                      strokeDashoffset={`${2 * Math.PI * 42 * (1 - score / 100)}`}
+                      strokeLinecap="round"
+                      style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+                    />
+                  </svg>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: 26, fontWeight: 800, color: ss.color, lineHeight: 1 }}>{score}</span>
+                    <span style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>/ 100</span>
+                  </div>
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 700, color: ss.color }}>{ss.label}</span>
+
+                {/* Score breakdown */}
+                <div style={{ marginTop: 16, textAlign: 'left', borderTop: `1px solid ${BORDER}`, paddingTop: 14 }}>
+                  {bdown.map((item, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: i < bdown.length - 1 ? 8 : 0 }}>
+                      <span style={{ fontSize: 11, color: MUTED }}>{item.label}</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: item.positive ? EMERALD : '#6B7280' }}>
+                        {item.positive ? '✓' : '✗'} {item.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+
+            {/* Pipeline stage */}
+            <Card>
+              <CardHeader title="Pipeline Stage" icon={TrendingUp} />
+              <div style={{ padding: 16 }}>
+                <div style={{ position: 'relative' }}>
+                  <button onClick={() => setShowStageMenu(v => !v)} disabled={stageChanging}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(255,255,255,0.04)', border: `1px solid ${BORDER}`, borderRadius: 10, color: TEXT, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    <span>{stageChanging ? 'Updating…' : (lead.status || 'New')}</span>
+                    <ChevronDown style={{ width: 14, height: 14, color: MUTED }} />
+                  </button>
+                  {showStageMenu && (
+                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, background: PANEL2, border: `1px solid ${BORDER}`, borderRadius: 10, zIndex: 20, overflow: 'hidden', boxShadow: '0 16px 40px rgba(0,0,0,0.5)' }}>
+                      {PIPELINE_STAGES.map(s => (
+                        <button key={s} onClick={() => handleStageChange(s)}
+                          style={{ display: 'block', width: '100%', padding: '9px 14px', background: lead.status === s ? 'rgba(59,130,246,0.1)' : 'transparent', color: lead.status === s ? '#93C5FD' : TEXT, fontSize: 13, border: 'none', cursor: 'pointer', textAlign: 'left', fontWeight: lead.status === s ? 600 : 400 }}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Stage progress dots */}
+                <div style={{ display: 'flex', gap: 4, marginTop: 12 }}>
+                  {PIPELINE_STAGES.slice(0, -1).map((s, i) => {
+                    const currentIdx = PIPELINE_STAGES.indexOf(lead.status ?? 'New')
+                    const isDone = i <= currentIdx
+                    return (
+                      <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: isDone ? BLUE : BORDER }} />
+                    )
+                  })}
+                </div>
+              </div>
+            </Card>
+
+            {/* Lead details */}
+            <Card>
+              <CardHeader title="Lead Details" icon={Tag} />
+              <div style={{ padding: '4px 20px 8px' }}>
+                <InfoRow label="Source portal" value={lead.sourcePortal} />
+                <InfoRow label="Source detail" value={lead.sourceDetail} />
+                <InfoRow label="Portal lead ID" value={lead.leadPortalId} />
+                <InfoRow label="Added" value={formatDate(lead.createdAt)} />
+                <InfoRow label="Last updated" value={formatDate(lead.updatedAt)} />
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Modals ── */}
+      <LogActivityModal
+        leadId={leadId}
+        isOpen={showActivityModal}
+        onClose={() => setShowActivityModal(false)}
+        onActivityLogged={() => { setShowActivityModal(false); fetchLead() }}
+      />
+
+      <WhatsAppModal
+        isOpen={showWhatsAppModal}
+        onClose={() => { setShowWhatsAppModal(false); fetchLead() }}
+        leadId={leadId}
+        leadName={lead ? `${lead.name.firstName} ${lead.name.lastName}`.trim() : ''}
+        leadPhone={lead?.phones.primaryPhoneNumber ?? ''}
+        city={lead?.city ?? ''}
+      />
+
+      {/* Delete confirm */}
+      {showDeleteConfirm && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          onClick={e => e.target === e.currentTarget && setShowDeleteConfirm(false)}
+        >
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 20, padding: 28, maxWidth: 400, width: '100%', textAlign: 'center' }}>
+            <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <Trash2 style={{ width: 20, height: 20, color: RED }} />
             </div>
-           )
-          })}
-         </div>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: TEXT, margin: '0 0 8px' }}>Delete Lead?</h3>
+            <p style={{ fontSize: 13, color: MUTED, margin: '0 0 24px' }}>
+              This will permanently delete <strong style={{ color: TEXT }}>{name}</strong> and all their activity history. This cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setShowDeleteConfirm(false)}
+                style={{ flex: 1, padding: '10px 0', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 10, color: MUTED, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button onClick={handleDelete} disabled={deleting}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 0', background: RED, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: deleting ? 'not-allowed' : 'pointer', opacity: deleting ? 0.7 : 1 }}
+              >
+                {deleting ? <Loader2 style={{ width: 13, height: 13, animation: 'spin 1s linear infinite' }} /> : null}
+                {deleting ? 'Deleting…' : 'Delete Lead'}
+              </button>
+            </div>
+          </div>
         </div>
-       )}
-
-       {/* Legacy score breakdown format */}
-       {!scoreBreakdown && lead.score_breakdown && typeof lead.score_breakdown === 'object' && (
-        <div className="mt-6 pt-4 border-t border-slate-800">
-         <p className="text-sm text-slate-400 mb-3">Score Factors</p>
-         <div className="space-y-2 text-sm">
-          {lead.score_breakdown.timeline && (
-           <div className="flex justify-between">
-            <span className="text-slate-500">Timeline</span>
-            <span className="text-slate-300">{lead.score_breakdown.timeline}</span>
-           </div>
-          )}
-          {lead.score_breakdown.budget_provided && (
-           <div className="flex justify-between">
-            <span className="text-slate-500">Budget</span>
-            <span className="text-emerald-400">Provided </span>
-           </div>
-          )}
-          {lead.score_breakdown.property_type_provided && (
-           <div className="flex justify-between">
-            <span className="text-slate-500">Property Type</span>
-            <span className="text-emerald-400">Specified </span>
-           </div>
-          )}
-          {lead.score_breakdown.source && (
-           <div className="flex justify-between">
-            <span className="text-slate-500">Source</span>
-            <span className="text-slate-300">{lead.score_breakdown.source}</span>
-           </div>
-          )}
-         </div>
-        </div>
-       )}
-      </div>
-
-      {/* Meta Info Card */}
-      <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl p-6">
-       <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-        <Calendar className="h-5 w-5 text-emerald-500" />
-        Details
-       </h2>
-       <div className="space-y-4">
-        <div>
-         <p className="text-xs text-slate-500">Source</p>
-         <div className="flex items-center gap-2 mt-1">
-          <Tag className="h-4 w-4 text-slate-500" />
-          <p className="text-white">{lead.source || '—'}</p>
-         </div>
-         {lead.source_detail && (
-          <p className="text-slate-500 text-sm mt-0.5">{lead.source_detail}</p>
-         )}
-        </div>
-        <div>
-         <p className="text-xs text-slate-500">Status</p>
-         <p className="text-white capitalize mt-1">{lead.status}</p>
-        </div>
-        <div>
-         <p className="text-xs text-slate-500">First Contact</p>
-         <p className="text-white mt-1">{formatDate(lead.first_contact_date)}</p>
-        </div>
-        <div>
-         <p className="text-xs text-slate-500">Last Activity</p>
-         <p className="text-white mt-1">{formatDate(lead.last_activity_date)}</p>
-        </div>
-        <div>
-         <p className="text-xs text-slate-500">Created</p>
-         <p className="text-white mt-1">{formatDate(lead.created_at)}</p>
-        </div>
-       </div>
-      </div>
-     </div>
+      )}
     </div>
-   </div>
-
-   {/* Log Activity Modal */}
-   <LogActivityModal
-    leadId={leadId}
-    isOpen={showActivityModal}
-    onClose={() => setShowActivityModal(false)}
-    onActivityLogged={handleActivityLogged}
-   />
-
-   {/* Delete Confirmation Modal */}
-   {showDeleteConfirm && (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-      onClick={() => setShowDeleteConfirm(false)}
-     />
-     <div className="flex min-h-full items-center justify-center p-4">
-      <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
-       <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-red-500/20 mx-auto mb-4">
-        <Trash2 className="h-6 w-6 text-red-400" />
-       </div>
-       <h3 className="text-xl font-semibold text-white text-center mb-2">Delete Lead</h3>
-       <p className="text-slate-400 text-center mb-6">
-        Are you sure you want to delete <span className="text-white font-medium">{lead.name}</span>? This action cannot be undone.
-       </p>
-       <div className="flex gap-3">
-        <button
-         onClick={() => setShowDeleteConfirm(false)}
-         className="flex-1 py-3 px-4 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-xl transition-colors"
-        >
-         Cancel
-        </button>
-        <button
-         onClick={handleDelete}
-         disabled={deleting}
-         className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-         {deleting ? (
-          <>
-           <Loader2 className="h-5 w-5 animate-spin" />
-           Deleting...
-          </>
-         ) : (
-          <>
-           <Trash2 className="h-5 w-5" />
-           Delete
-          </>
-         )}
-        </button>
-       </div>
-      </div>
-     </div>
-    </div>
-   )}
-  </div>
- )
+  )
 }
