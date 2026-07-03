@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
   LayoutDashboard, Users, HandshakeIcon, Building2,
-  Megaphone, Phone, BarChart3, Calculator, Settings,
+  Megaphone, Phone, BarChart3, BarChart2, Calculator, Settings,
   ChevronLeft, ChevronRight, LogOut, Loader2, Activity,
   MessageCircle, CreditCard, UserCheck, GitBranch,
 } from 'lucide-react'
@@ -40,6 +40,7 @@ const NAV_SECTIONS = [
     items: [
       { name: 'Analytics',   href: '/dashboard/analytics',   icon: BarChart3,  exact: false },
       { name: 'Calculators', href: '/dashboard/calculators', icon: Calculator, exact: false },
+      { name: 'Reports',     href: '/dashboard/reports',     icon: BarChart2,  exact: false },
     ],
   },
   {
