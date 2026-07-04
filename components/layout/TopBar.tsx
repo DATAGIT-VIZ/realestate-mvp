@@ -23,7 +23,8 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/settings/billing': 'Billing & Plan',
   '/dashboard/settings/routing': 'Lead Routing',
   '/dashboard/team': 'Team',
-  '/dashboard/reports': 'Reports',
+  '/dashboard/reports':  'Reports',
+  '/dashboard/advisor':  'AI Advisor',
 }
 
 function getPageTitle(pathname: string): string {

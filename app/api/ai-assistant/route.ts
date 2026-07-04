@@ -1,135 +1,155 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Bytez from 'bytez.js'
+import Anthropic from '@anthropic-ai/sdk'
 
-// Use Node.js runtime (bytez.js is not edge-compatible)
 export const runtime = 'nodejs'
 
 interface Message {
-    role: 'user' | 'assistant' | 'system'
-    content: string
+  role: 'user' | 'assistant'
+  content: string
 }
 
-interface BusinessContext {
-    totalLeads: number
-    hotLeadsCount: number
-    hotPipelineValue: string
-    avgConversionDays: number
-    responseRate: number
-    activityDensity: string
-    totalActivities: number
-    topSource: string
-    topSourceRate: number
-    bestActivity: string
-    bestActivityRate: number
-    hotTrend: number
+export interface LiveLead {
+  name: string
+  phone: string
+  city: string
+  propertyType: string
+  score: number
+  stage: string
+  source: string
+  budget?: string
 }
 
-function buildSystemPrompt(ctx: BusinessContext): string {
-    return `You are an expert real estate business advisor and market analyst, specializing in the Indian real estate market. You are embedded inside a real estate CRM dashboard and have full access to the agent's live business metrics.
+export interface LiveDeal {
+  leadName: string
+  value: string
+  rawValue: number
+  stage: string
+  city: string
+  agent: string
+  expectedClose?: string
+  sourcePortal?: string
+}
 
-## Your Agent's Live Business Data
-- **Total Leads:** ${ctx.totalLeads}
-- **Hot Leads (score ≥ 70):** ${ctx.hotLeadsCount}
-- **Hot Pipeline Value:** ${ctx.hotPipelineValue}
-- **Hot Lead Trend (vs last week):** ${ctx.hotTrend >= 0 ? '+' : ''}${ctx.hotTrend}%
-- **Average Days to Convert (first contact → hot):** ${ctx.avgConversionDays} days
-- **Response Rate (within 24h):** ${ctx.responseRate}%
-- **Activity Density:** ${ctx.activityDensity} activities per lead
-- **Total Activities Logged:** ${ctx.totalActivities}
-- **Best Lead Source:** ${ctx.topSource} (${ctx.topSourceRate}% conversion)
-- **Most Effective Activity:** ${ctx.bestActivity} (${ctx.bestActivityRate}% hot conversion rate)
+export interface AdvisorContext {
+  // Aggregate stats
+  totalLeads: number
+  hotLeadsCount: number
+  avgScore: number
+  responseRate: number
+  topSource: string
+  // Live data
+  hotLeads: LiveLead[]
+  activeDeals: LiveDeal[]
+  pipelineValue: string
+  winRate: number
+  dealsNearClose: LiveDeal[]
+  // Ingestion
+  recentPortalCounts: Record<string, number>
+}
 
-## Indian Real Estate Market Intelligence (March 2026)
-- **Residential market:** Demand remains strong in Tier-1 cities (Mumbai, Bangalore, Delhi NCR, Hyderabad, Pune). Luxury segment (₹2–5Cr) is surging +22% YoY.
-- **Key micro-markets performing well:** Whitefield & Sarjapur (Bangalore), Powai & Thane (Mumbai), Gurgaon Golf Course Road, Hyderabad's Financial District and Gachibowli.
-- **Buyer behavior:** 78% of buyers research online 3–6 months before visiting. WhatsApp is 2x more effective than email for follow-ups in India.
-- **Interest rates:** RBI policy repo rate steady at 6.5%. Most banks offering home loans at 8.6–9.25% for salaried buyers.
-- **NRI demand:** Up 31% YoY, driven by favorable INR exchange rate and upcoming RERA compliance push.
-- **Emerging trend:** Co-living and compact apartments (under ₹60L) seeing strong demand from IT workforce in Bangalore and Hyderabad.
-- **Commercial real estate:** Grade-A office absorption recovering; warehousing/logistics booming with 18% YoY growth driven by e-commerce.
-- **Regulatory:** RERA compliance now mandatory across all states. Developers with RERA-registered projects seeing 40% faster sales cycles.
-- **Seasonal patterns:** Q1 (Jan–Mar) historically strong due to year-end bonuses and tax-saving investments. Q3 (Jul–Sep) tends to be slower due to monsoon.
-- **Payment plan trends:** Flexi-payment and construction-linked plans are most preferred by buyers; 45:45:10 (booking:during:possession) is the most accepted structure.
+function buildSystemPrompt(ctx: AdvisorContext): string {
+  const topLeads = ctx.hotLeads.slice(0, 8).map((l, i) =>
+    `${i + 1}. **${l.name}** | Score ${l.score}/100 | ${l.propertyType} in ${l.city} | Stage: ${l.stage} | Source: ${l.source}${l.budget ? ` | Budget: ${l.budget}` : ''} | Phone: ${l.phone}`
+  ).join('\n')
 
-## How to Answer
-- **Reference the user's actual data** whenever relevant (hot leads count, pipeline, conversion rate, top source, etc.)
-- **Be specific and actionable** — give concrete next steps, not generic advice
-- **Use INR formatting** (₹ symbol, L for lakhs, Cr for crores)
-- **Keep answers concise but complete** — use bullet points for action items
-- **Real estate expertise**: You know buyer psychology, negotiation tactics, objection handling, and market timing deeply
-- **If asked about trends**, always tie them back to what the agent should do differently
+  const nearClose = ctx.dealsNearClose.slice(0, 5).map((d, i) =>
+    `${i + 1}. **${d.leadName}** | ${d.value} | Stage: ${d.stage} | ${d.city}${d.expectedClose ? ` | Close by: ${d.expectedClose}` : ''}`
+  ).join('\n')
 
-Today's date: ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`
+  const portalLines = Object.entries(ctx.recentPortalCounts)
+    .sort(([, a], [, b]) => b - a)
+    .map(([p, n]) => `  - ${p}: ${n} leads`)
+    .join('\n')
+
+  return `You are an elite AI Business Advisor embedded inside RealEdge CRM — a real estate CRM built for Indian brokers and agents. You are the agent's personal strategist, script writer, negotiation coach, and market analyst.
+
+## Live Pipeline Data (as of today)
+- **Total leads:** ${ctx.totalLeads} | **Hot leads (score ≥70):** ${ctx.hotLeadsCount}
+- **Pipeline value:** ${ctx.pipelineValue} across ${ctx.activeDeals.length} active deals
+- **Win rate:** ${ctx.winRate}% | **Avg lead score:** ${ctx.avgScore}/100
+- **Response rate (24h):** ${ctx.responseRate}%
+- **Best lead source:** ${ctx.topSource}
+
+### Top Priority Leads (ranked by AI score):
+${topLeads || 'No leads yet — advise on setup'}
+
+### Deals Close to Closing:
+${nearClose || 'No near-close deals at the moment'}
+
+### Recent Lead Inflow (last 30 days by portal):
+${portalLines || '  No recent ingestion data'}
+
+## Indian Real Estate Market Intelligence (July 2026)
+- **Residential demand:** Strong in Tier-1 cities. Luxury segment (₹2–5Cr) up +22% YoY. Ready-to-move inventory preferred post-COVID.
+- **Hot micro-markets:** Whitefield & Sarjapur (Bangalore), Powai & Worli (Mumbai), Golf Course Road (Gurgaon), Financial District & Gachibowli (Hyderabad), Wakad & Baner (Pune).
+- **Buyer behaviour:** 78% research online 3–6 months before visiting. WhatsApp response rate 2.4× higher than email. Best call windows: 10–11 AM and 6–8 PM.
+- **Interest rates:** Home loans at 8.6–9.25%. EMI on ₹1Cr loan (20yr) ≈ ₹87,500/month. Use this in conversations.
+- **NRI demand:** Up 31% YoY — USD/INR at ~84 makes Indian real estate highly attractive.
+- **Objections:** Most common: "Price too high" (counter: compare per sqft vs comparable), "Will think about it" (counter: create urgency — rising rates, limited inventory), "Loan not approved" (counter: connect with DSA/HFC).
+- **Seasonal:** Monsoon (Jul–Sep) is slower. Smart agents use this to build pipeline and do site visits without competition.
+- **Payment:** 45:45:10 (booking:construction:possession) most accepted. Down-payment 10–20% typical.
+
+## Your Superpowers — What You Do Best
+
+### 1. Script Writing (ALWAYS output ready-to-send text in a formatted block)
+When asked for WhatsApp messages, call scripts, or follow-up texts:
+- Start with the specific lead's name from the live data above
+- Keep WhatsApp messages under 4 lines (Indian buyers stop reading after that)
+- Call scripts: opening line, value hook, close / next step
+- Always end with a clear CTA: "Are you free for a site visit this Sunday?"
+
+### 2. Lead Prioritisation
+Tell the agent exactly which lead to call NOW and why, using the score, stage, and recency from live data.
+
+### 3. Objection Handling
+Give word-for-word responses the agent can say immediately.
+
+### 4. Deal Coaching
+For each near-close deal, give the specific next action that moves it to the next stage.
+
+### 5. Market Intelligence
+Tie every market insight back to the agent's actual portfolio cities and property types.
+
+## Response Rules
+- **Be specific**: use actual lead names, deal values, and cities from the live data — not hypothetical examples
+- **Be actionable**: every response ends with a concrete next step
+- **Scripts**: wrap ready-to-send messages in \`\`\` blocks so they're easy to copy
+- **Formatting**: use bullet points, bold for names/numbers, keep it scannable
+- **Tone**: direct, confident, like a senior broker mentoring a junior — not corporate
+
+Today: ${new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`
 }
 
 export async function POST(req: NextRequest) {
-    try {
-        const { messages, context }: { messages: Message[]; context: BusinessContext } = await req.json()
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: '⚠️ ANTHROPIC_API_KEY not set. Add it to .env.local to activate the AI Advisor.' },
+      { status: 500 }
+    )
+  }
 
-        const apiKey = process.env.BYTEZ_API_KEY
-        if (!apiKey) {
-            return NextResponse.json(
-                { error: 'Bytez API key not configured. Add BYTEZ_API_KEY to .env.local' },
-                { status: 500 }
-            )
-        }
+  try {
+    const { messages, context }: { messages: Message[]; context: AdvisorContext } = await req.json()
 
-        // Build the full message list with the system prompt injected as first message
-        const systemPrompt = buildSystemPrompt(context)
-        const fullMessages: Message[] = [
-            { role: 'system', content: systemPrompt },
-            ...messages,
-        ]
+    const client  = new Anthropic({ apiKey })
+    const sysPrompt = buildSystemPrompt(context)
 
-        // Initialize Bytez SDK and run the model
-        // NOTE: openai/gpt-4o-mini is CLOSED on Bytez free tier
-        // openai/gpt-oss-20b is OPEN on free tier
-        const sdk = new Bytez(apiKey)
-        const model = sdk.model('openai/gpt-oss-20b')
+    const response = await client.messages.create({
+      model:      'claude-sonnet-4-6',
+      max_tokens: 1024,
+      system:     sysPrompt,
+      messages:   messages.map(m => ({ role: m.role, content: m.content })),
+    })
 
-        const { error, output } = await model.run(fullMessages)
+    const replyText = response.content
+      .filter(b => b.type === 'text')
+      .map(b => (b as { type: 'text'; text: string }).text)
+      .join('')
 
-        if (error) {
-            console.error('Bytez API error:', error)
-            return NextResponse.json(
-                { error: `AI model error: ${JSON.stringify(error)}` },
-                { status: 500 }
-            )
-        }
-
-        // Extract the text reply from the output
-        // Bytez returns output as an array or string depending on the model
-        let replyText = ''
-        if (typeof output === 'string') {
-            replyText = output
-        } else if (Array.isArray(output)) {
-            // Chat completion style: output[0].message.content or output[0].generated_text
-            const first = output[0]
-            if (first?.message?.content) {
-                replyText = first.message.content
-            } else if (first?.generated_text) {
-                replyText = first.generated_text
-            } else {
-                replyText = JSON.stringify(first)
-            }
-        } else if (output && typeof output === 'object') {
-            // Sometimes returned as { message: { content: '...' } }
-            const o = output as Record<string, unknown>
-            if (o.message && typeof (o.message as Record<string, unknown>).content === 'string') {
-                replyText = (o.message as Record<string, unknown>).content as string
-            } else if (typeof o.content === 'string') {
-                replyText = o.content as string
-            } else {
-                replyText = JSON.stringify(output)
-            }
-        }
-
-        return NextResponse.json({ content: replyText })
-    } catch (err) {
-        console.error('AI assistant error:', err)
-        return NextResponse.json(
-            { error: `Internal server error: ${err instanceof Error ? err.message : String(err)}` },
-            { status: 500 }
-        )
-    }
+    return NextResponse.json({ content: replyText })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    return NextResponse.json({ error: `AI error: ${msg}` }, { status: 500 })
+  }
 }

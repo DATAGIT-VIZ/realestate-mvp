@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, HandshakeIcon, Building2,
   Megaphone, Phone, BarChart3, BarChart2, Calculator, Settings,
   ChevronLeft, ChevronRight, LogOut, Loader2, Activity,
-  MessageCircle, CreditCard, UserCheck, GitBranch,
+  MessageCircle, CreditCard, UserCheck, GitBranch, Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
@@ -30,6 +30,7 @@ const NAV_SECTIONS = [
   {
     label: 'Engage',
     items: [
+      { name: 'AI Advisor',    href: '/dashboard/advisor',            icon: Sparkles,      exact: false },
       { name: 'Sequences',     href: '/dashboard/outreach/sequences', icon: Megaphone,     exact: false },
       { name: 'Broadcast',     href: '/dashboard/outreach/broadcast', icon: MessageCircle, exact: false },
       { name: 'Power Dialer',  href: '/dashboard/calls',              icon: Phone,         exact: false },
