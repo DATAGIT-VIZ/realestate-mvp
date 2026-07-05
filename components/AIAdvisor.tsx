@@ -568,7 +568,7 @@ export default function AIAdvisor({ context }: { context: AIAdvisorContext }) {
                             </button>
                         </div>
                         <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.18)', textAlign: 'center', margin: '8px 0 0' }}>
-                            AI advisor · Powered by Bytez · Responses grounded in your live business data
+                            AI advisor · Powered by Claude · Responses grounded in your live business data
                         </p>
                     </div>
                 </div>
