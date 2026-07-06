@@ -83,10 +83,13 @@ export function PropertyMatcher({ lead }: { lead: LeadProps }) {
   return (
     <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, overflow: 'hidden' }}>
 
-      {/* Header */}
-      <button
+      {/* Header — div not button to avoid nested-button hydration error */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => { setOpen(v => !v); if (!open && !ran) handleMatch() }}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: 'transparent', border: 'none', cursor: 'pointer' }}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { setOpen(v => !v); if (!open && !ran) handleMatch() } }}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: 'transparent', cursor: 'pointer' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(124,58,237,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -109,7 +112,7 @@ export function PropertyMatcher({ lead }: { lead: LeadProps }) {
           )}
           {open ? <ChevronUp style={{ width: 15, height: 15, color: C.label }} /> : <ChevronDown style={{ width: 15, height: 15, color: C.label }} />}
         </div>
-      </button>
+      </div>
 
       {open && (
         <div style={{ borderTop: `1px solid ${C.border}`, padding: '14px 18px' }}>
