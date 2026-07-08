@@ -9,8 +9,8 @@ import {
   ResponsiveContainer, Cell,
 } from 'recharts'
 import {
-  Flame, DollarSign, Phone, RefreshCw, Loader2,
-  ChevronRight, BarChart3, Sparkles, Activity, TrendingUp, Users,
+  Flame, DollarSign, RefreshCw, Loader2,
+  ChevronRight, BarChart3, Sparkles, TrendingUp,
 } from 'lucide-react'
 import { format, subDays, subMonths, differenceInHours } from 'date-fns'
 
@@ -24,7 +24,6 @@ const C = {
 }
 
 type Timeframe = 'week' | 'month' | 'quarter' | 'year'
-type Tab       = 'leads' | 'team'
 
 const TF_DAYS: Record<Timeframe, number> = { week: 7, month: 30, quarter: 90, year: 365 }
 const TF_LABEL: Record<Timeframe, string> = {
@@ -70,7 +69,6 @@ export default function AnalyticsPage() {
   const [loading, setLoading]       = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [timeframe, setTimeframe]   = useState<Timeframe>('month')
-  const [activeTab, setActiveTab]   = useState<Tab>('leads')
 
   const since = useMemo(() => subDays(new Date(), TF_DAYS[timeframe]).toISOString(), [timeframe])
 
@@ -106,18 +104,6 @@ export default function AnalyticsPage() {
       ? Math.round(leads.reduce((s, l) => s + (l.intentScore ?? 0), 0) / leads.length) : 0
     return { total: leads.length, hotCount: hot.length, hotTrend, hotPipeline, avgScore }
   }, [leads])
-
-  // ── Team KPIs ────────────────────────────────────────────────────────────
-  const teamSummary = useMemo(() => {
-    const callsMade = activities.filter(a => a.type === 'Call Made').length
-    const quickResp = leads.filter(l => {
-      const cutoff = new Date(new Date(l.createdAt).getTime() + 86_400_000).toISOString()
-      return activities.some(a => a.personId === l.id && a.createdAt <= cutoff)
-    })
-    const responseRate = leads.length > 0 ? Math.round((quickResp.length / leads.length) * 100) : 0
-    const actsPerLead  = leads.length > 0 ? (activities.length / leads.length).toFixed(1) : '0'
-    return { totalActivities: activities.length, callsMade, responseRate, actsPerLead }
-  }, [leads, activities])
 
   // ── Daily timeline ───────────────────────────────────────────────────────
   const dailyTimeline = useMemo(() => {
@@ -359,25 +345,6 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          {/* Tab pills */}
-          <div style={{ display: 'flex', gap: 6 }}>
-            {([
-              { key: 'leads', label: 'Lead Analytics', icon: TrendingUp },
-              { key: 'team',  label: 'Team Analytics', icon: Users },
-            ] as { key: Tab; label: string; icon: React.ElementType }[]).map(({ key, label, icon: Icon }) => (
-              <button key={key} onClick={() => setActiveTab(key)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
-                  borderRadius: 20, border: `1.5px solid ${activeTab === key ? C.blue : C.border}`,
-                  background: activeTab === key ? '#EFF6FF' : C.panel,
-                  color: activeTab === key ? C.blue : C.muted,
-                  fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
-                }}>
-                <Icon size={14} />
-                {label}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* ── AI insight strip (both tabs) ── */}
@@ -393,9 +360,9 @@ export default function AnalyticsPage() {
           </button>
         </div>
 
-        {/* ════════════ LEAD ANALYTICS TAB ════════════ */}
-        {activeTab === 'leads' && (
-          <>
+        {/* ── Lead Analytics ── */}
+        <>
+
             {/* KPI cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-[14px] mb-5">
               {[
@@ -661,150 +628,8 @@ export default function AnalyticsPage() {
               </div>
             </div>
           </>
-        )}
 
-        {/* ════════════ TEAM ANALYTICS TAB ════════════ */}
-        {activeTab === 'team' && (
-          <>
-            {/* Team KPI cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-[14px] mb-5">
-              {[
-                { label: 'Total Activities', value: teamSummary.totalActivities, sub: TF_LABEL[timeframe],   icon: <Activity style={{ width: 17, height: 17, color: C.blue }} />,    accent: C.blue   },
-                { label: 'Calls Made',        value: teamSummary.callsMade,       sub: 'logged call activities', icon: <Phone style={{ width: 17, height: 17, color: C.emerald }} />,   accent: C.emerald },
-                { label: 'Response Rate',     value: `${teamSummary.responseRate}%`, sub: 'first touch < 24h',   icon: <Flame style={{ width: 17, height: 17, color: C.orange }} />,    accent: C.orange  },
-                { label: 'Acts / Lead',       value: teamSummary.actsPerLead,     sub: 'avg touches per lead',  icon: <Users style={{ width: 17, height: 17, color: C.purple }} />,    accent: C.purple  },
-              ].map((kpi, i) => (
-                <div key={i} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '18px 20px', position: 'relative', overflow: 'hidden' }}>
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${kpi.accent}70, transparent)` }} />
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{kpi.label}</span>
-                    <div style={{ width: 30, height: 30, borderRadius: 8, background: `${kpi.accent}14`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{kpi.icon}</div>
-                  </div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: C.text, letterSpacing: '-0.5px', lineHeight: 1 }}>{kpi.value}</div>
-                  <div style={{ marginTop: 6 }}>
-                    <span style={{ fontSize: 11, color: C.muted }}>{kpi.sub}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Activity Timeline + Activity Effectiveness */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-[14px] mb-[14px]">
-              <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '20px 20px 14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-                  <div>
-                    <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>Activity Timeline</h2>
-                    <p style={{ fontSize: 12, color: C.muted, margin: '3px 0 0' }}>Daily touches logged by agents</p>
-                  </div>
-                  <span style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 5, color: C.muted }}>
-                    <span style={{ width: 10, height: 2, background: C.emerald, display: 'inline-block', borderRadius: 4 }} />
-                    Activities
-                  </span>
-                </div>
-                <ResponsiveContainer width="100%" height={200}>
-                  <AreaChart data={timeline} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="gGreen" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={C.emerald} stopOpacity={0.2} /><stop offset="95%" stopColor={C.emerald} stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-                    <XAxis dataKey="date" tick={{ fill: C.label, fontSize: 11 }} axisLine={false} tickLine={false} interval={Math.floor(timeline.length / 6)} />
-                    <YAxis tick={{ fill: C.label, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                    <Tooltip content={<Tip />} />
-                    <Area type="monotone" dataKey="activities" stroke={C.emerald} strokeWidth={2} fill="url(#gGreen)" name="Activities" dot={false} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Activity breakdown (staff productivity) */}
-              <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '20px 20px 14px' }}>
-                <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: '0 0 4px' }}>Activity Breakdown</h2>
-                <p style={{ fontSize: 12, color: C.muted, margin: '0 0 14px' }}>Touches by type — count this period</p>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={activityEffectiveness} layout="vertical" margin={{ top: 0, right: 40, left: 0, bottom: 0 }}>
-                    <XAxis type="number" tick={{ fill: C.label, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                    <YAxis type="category" dataKey="type" tick={{ fill: C.text, fontSize: 11 }} axisLine={false} tickLine={false} width={130} />
-                    <Tooltip content={<Tip />} />
-                    <Bar dataKey="count" name="Count" radius={[0, 6, 6, 0]}>
-                      {activityEffectiveness.map((_, i) => {
-                        const colors = [C.blue, C.emerald, C.amber, C.purple, C.orange, C.red]
-                        return <Cell key={i} fill={colors[i % colors.length]} fillOpacity={0.8} />
-                      })}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Response Time + Call Analytics (Activity Effectiveness) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-[14px] mb-[14px]">
-              <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '20px 20px 14px' }}>
-                <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: '0 0 4px' }}>First Response Time</h2>
-                <p style={{ fontSize: 12, color: C.muted, margin: '0 0 18px' }}>How fast leads receive their first touch</p>
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={responseHistogram} margin={{ top: 4, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-                    <XAxis dataKey="label" tick={{ fill: C.label, fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: C.label, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                    <Tooltip content={<Tip />} />
-                    <Bar dataKey="count" name="Leads" radius={[6, 6, 0, 0]}>
-                      {responseHistogram.map((b, i) => {
-                        const fill = b.label === '< 1h' ? C.emerald : b.label === '1–4h' ? '#10B981' : b.label === '4–24h' ? C.amber : b.label === '1–3d' ? C.orange : b.label === 'No resp' ? C.red : '#94A3B8'
-                        return <Cell key={i} fill={fill} />
-                      })}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '20px 20px 14px' }}>
-                <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: '0 0 4px' }}>Call Analytics</h2>
-                <p style={{ fontSize: 12, color: C.muted, margin: '0 0 18px' }}>Hot lead conversion rate per activity type</p>
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={activityEffectiveness} layout="vertical" margin={{ top: 0, right: 50, left: 0, bottom: 0 }}>
-                    <XAxis type="number" tick={{ fill: C.label, fontSize: 11 }} axisLine={false} tickLine={false} domain={[0, 100]} tickFormatter={(v: number) => `${v}%`} />
-                    <YAxis type="category" dataKey="type" tick={{ fill: C.text, fontSize: 11 }} axisLine={false} tickLine={false} width={130} />
-                    <Tooltip content={<Tip />} />
-                    <Bar dataKey="conversionRate" name="Hot conversion %" radius={[0, 6, 6, 0]}>
-                      {activityEffectiveness.map((e, i) => (
-                        <Cell key={i} fill={e.conversionRate >= 40 ? C.emerald : e.conversionRate >= 20 ? C.amber : C.label} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Pipeline stages (team context) */}
-            <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 22, marginBottom: 14 }}>
-              <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: '0 0 4px' }}>Pipeline Stage Distribution</h2>
-              <p style={{ fontSize: 12, color: C.muted, margin: '0 0 18px' }}>Where leads currently sit in the sales process</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-10">
-                {pipelineStages.map((s, i) => {
-                  const pct = leadSummary.total > 0 ? Math.round((s.count / leadSummary.total) * 100) : 0
-                  return (
-                    <div key={i}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
-                          <span style={{ fontSize: 13, color: C.text, fontWeight: 500 }}>{s.stage}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 12, color: C.muted }}>{s.count}</span>
-                          <span style={{ fontSize: 11, fontWeight: 600, color: s.color, background: `${s.color}14`, padding: '1px 7px', borderRadius: 20 }}>{pct}%</span>
-                        </div>
-                      </div>
-                      <div style={{ height: 6, background: '#F1F5F9', borderRadius: 99 }}>
-                        <div style={{ height: '100%', width: `${pct}%`, background: s.color, borderRadius: 99, transition: 'width 0.6s ease', opacity: 0.85 }} />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </>
-        )}
+        {/* Team Analytics is at /dashboard/team/analytics */}
 
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

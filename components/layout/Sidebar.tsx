@@ -40,9 +40,10 @@ const NAV_SECTIONS = [
   {
     label: 'Insights',
     items: [
-      { name: 'Analytics',   href: '/dashboard/analytics',   icon: BarChart3,  exact: false },
-      { name: 'Calculators', href: '/dashboard/calculators', icon: Calculator, exact: false },
-      { name: 'Reports',     href: '/dashboard/reports',     icon: BarChart2,  exact: false },
+      { name: 'Analytics',      href: '/dashboard/analytics',        icon: BarChart3,  exact: false },
+      { name: 'Team Analytics', href: '/dashboard/team/analytics',   icon: Users,      exact: false },
+      { name: 'Calculators',    href: '/dashboard/calculators',      icon: Calculator, exact: false },
+      { name: 'Reports',        href: '/dashboard/reports',          icon: BarChart2,  exact: false },
     ],
   },
   {
