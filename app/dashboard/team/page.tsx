@@ -267,7 +267,7 @@ export default function TeamPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <div className="hidden lg:block">
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: '0 0 4px' }}>Team Dashboard</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: '0 0 4px' }}>Team Analytics</h1>
           <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>Manage agents, track performance, view leaderboard</p>
         </div>
         <button onClick={() => setModal('new')}
