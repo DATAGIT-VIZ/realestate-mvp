@@ -23,7 +23,6 @@ const NAV_SECTIONS = [
       { name: 'Leads',          href: '/dashboard/leads',            icon: Users,         exact: false },
       { name: 'Lifecycle',      href: '/dashboard/lifecycle',        icon: Layers,        exact: false },
       { name: 'Ingestion Log',  href: '/dashboard/leads/ingestion',  icon: Activity,      exact: false },
-      { name: 'Deals',          href: '/dashboard/deals',            icon: HandshakeIcon, exact: false },
       { name: 'Properties',     href: '/dashboard/properties',       icon: Building2,     exact: false },
       { name: 'Team',           href: '/dashboard/team',             icon: UserCheck,     exact: false },
     ],
