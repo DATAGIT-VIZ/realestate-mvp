@@ -22,8 +22,17 @@ type CRMLead = {
   status: string | null
   budgetMin: number | null
   budgetMax: number | null
+  leadPortalId: string | null
   createdAt: string
   updatedAt: string
+}
+
+function getCsId(l: CRMLead): string {
+  if (l.leadPortalId?.startsWith('CS')) return l.leadPortalId
+  const hex = l.id.replace(/-/g, '')
+  let n = 0
+  for (const c of hex) n = (n * 31 + parseInt(c, 16)) % 100000
+  return `CS${String(n).padStart(5, '0')}`
 }
 
 const getName     = (l: CRMLead) => `${l.name.firstName} ${l.name.lastName}`.trim() || 'Unnamed'
@@ -332,8 +341,11 @@ function LeadRow({ lead, tag, init, isLast }: {
           <div style={{ width: 30, height: 30, borderRadius: 8, background: PURPLE10, color: PURPLE, fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{init}</div>
           <div style={{ overflow: 'hidden' }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{getName(lead)}</div>
-            <div style={{ fontSize: 11, color: LABEL, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {lead.phones.primaryPhoneNumber ?? lead.emails.primaryEmail ?? '—'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ fontSize: 9, fontWeight: 700, color: '#64748B', background: '#F1F5F9', border: '1px solid #E2E8F0', padding: '1px 5px', borderRadius: 4, fontFamily: 'monospace', letterSpacing: '0.04em', flexShrink: 0 }}>{getCsId(lead)}</span>
+              <span style={{ fontSize: 11, color: LABEL, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {lead.phones.primaryPhoneNumber ?? lead.emails.primaryEmail ?? '—'}
+              </span>
             </div>
           </div>
         </div>

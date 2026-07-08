@@ -569,6 +569,11 @@ export default function TeamAnalyticsPage() {
                       </span>
                       <span style={{ fontSize: 11, color: C.muted }}>on</span>
                       <span style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{name}</span>
+                      {lead?.leadPortalId && (
+                        <span style={{ fontSize: 9, fontWeight: 700, color: '#64748B', background: '#F1F5F9', border: '1px solid #E2E8F0', padding: '1px 5px', borderRadius: 4, fontFamily: 'monospace', letterSpacing: '0.04em' }}>
+                          {lead.leadPortalId.startsWith('CS') ? lead.leadPortalId : (() => { const hex = (lead.id ?? '').replace(/-/g,''); let n=0; for (const c of hex) n=(n*31+parseInt(c,16))%100000; return `CS${String(n).padStart(5,'0')}` })()}
+                        </span>
+                      )}
                       {a.outcome && (
                         <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 8px', borderRadius: 20, background: `${OUTCOME_COLOR[a.outcome] ?? C.label}14`, color: OUTCOME_COLOR[a.outcome] ?? C.label, marginLeft: 'auto' }}>
                           {a.outcome}

@@ -44,6 +44,15 @@ interface Lead {
   propertyType?: string[] | null
   budgetMin?: number | null
   budgetMax?: number | null
+  leadPortalId?: string | null
+}
+
+function getCsId(l: Lead): string {
+  if (l.leadPortalId?.startsWith('CS')) return l.leadPortalId
+  const hex = l.id.replace(/-/g, '')
+  let n = 0
+  for (const c of hex) n = (n * 31 + parseInt(c, 16)) % 100000
+  return `CS${String(n).padStart(5, '0')}`
 }
 
 interface CallLog {
@@ -230,7 +239,10 @@ export default function PowerDialerPage() {
                     <div style={{ width:32, height:32, borderRadius:10, background:C.blueDim, display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:800, color:C.blue }}>{l.name.firstName.charAt(0)}</div>
                     <div>
                       <div style={{ fontSize:13, fontWeight:600, color:C.text }}>{fname(l)}</div>
-                      <div style={{ fontSize:11, color:C.muted }}>{l.city ?? '—'}{l.propertyType?.[0] ? ` · ${l.propertyType[0]}` : ''}</div>
+                      <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+                        <span style={{ fontSize:9, fontWeight:700, color:'#64748B', background:'#F1F5F9', border:'1px solid #E2E8F0', padding:'1px 5px', borderRadius:4, fontFamily:'monospace', letterSpacing:'0.04em' }}>{getCsId(l)}</span>
+                        <span style={{ fontSize:11, color:C.muted }}>{l.city ?? '—'}{l.propertyType?.[0] ? ` · ${l.propertyType[0]}` : ''}</span>
+                      </div>
                     </div>
                   </div>
                   <ScorePill score={l.intentScore}/>
@@ -602,7 +614,10 @@ export default function PowerDialerPage() {
                     <div style={{ width:28, height:28, borderRadius:8, background:C.blueDim, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:800, color:C.blue, flexShrink:0 }}>{lead.name.firstName.charAt(0)}</div>
                     <div>
                       <div style={{ fontSize:12, fontWeight:600, color:C.text }}>{fname(lead)}</div>
-                      <div style={{ fontSize:10, color:C.label }}>{lead.city ?? '—'}</div>
+                      <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                        <span style={{ fontSize:9, fontWeight:700, color:'#64748B', background:'#F1F5F9', border:'1px solid #E2E8F0', padding:'1px 5px', borderRadius:4, fontFamily:'monospace', letterSpacing:'0.04em' }}>{getCsId(lead)}</span>
+                        <span style={{ fontSize:10, color:C.label }}>{lead.city ?? '—'}</span>
+                      </div>
                     </div>
                   </div>
                   <ScorePill score={lead.intentScore}/>
