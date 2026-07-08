@@ -562,7 +562,7 @@ export default function LeadDetailPage() {
             </Card>
 
             {/* Lifecycle Stage */}
-            <Card>
+            <Card style={{ overflow: 'visible' }}>
               <CardHeader title="Lead Lifecycle" icon={TrendingUp} />
               <div style={{ padding: 16 }}>
                 {/* Current stage pill + dropdown */}

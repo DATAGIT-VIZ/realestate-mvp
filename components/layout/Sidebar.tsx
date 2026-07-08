@@ -72,19 +72,48 @@ function Logo({ collapsed }: { collapsed: boolean }) {
 }
 
 function NavItem({
-  item, collapsed, active, onClick,
+  item, collapsed, active, onClick, locked = false,
 }: {
   item: { name: string; href: string; icon: React.ElementType }
   collapsed: boolean
   active: boolean
   onClick?: () => void
+  locked?: boolean
 }) {
   const Icon = item.icon
+  const tooltip = collapsed ? (locked ? `${item.name} — Teams only` : item.name) : undefined
+
+  if (locked) {
+    return (
+      <div
+        title={tooltip}
+        className={cn(
+          'group relative flex items-center gap-2.5 rounded-lg text-[13px] font-medium cursor-not-allowed opacity-40',
+          collapsed ? 'justify-center w-9 h-9 mx-auto' : 'px-3 py-2',
+          'text-slate-400 border-l-2 border-transparent'
+        )}
+      >
+        <Icon className={cn('shrink-0 w-4 h-4', collapsed && 'w-[18px] h-[18px]')} />
+        {!collapsed && (
+          <span className="flex-1">{item.name}</span>
+        )}
+        {!collapsed && (
+          <span className="text-[8px] font-bold uppercase tracking-wide bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full">Teams</span>
+        )}
+        {collapsed && (
+          <span className="pointer-events-none absolute left-full ml-3 hidden rounded-lg bg-slate-800 px-2.5 py-1.5 text-xs text-white whitespace-nowrap shadow-lg group-hover:block z-50">
+            {item.name} — Teams only
+          </span>
+        )}
+      </div>
+    )
+  }
+
   return (
     <Link
       href={item.href}
       onClick={onClick}
-      title={collapsed ? item.name : undefined}
+      title={tooltip}
       className={cn(
         'group relative flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-all duration-150',
         collapsed ? 'justify-center w-9 h-9 mx-auto' : 'px-3 py-2',
@@ -185,24 +214,25 @@ export function Sidebar({
 
         <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-0.5">
           {NAV_SECTIONS.map((section, si) => {
-            const visibleItems = section.items.filter(item =>
-              canAccess(item.href, plan, role) &&
-              (!('teamsOnly' in item && item.teamsOnly) || plan === 'teams')
-            )
+            const visibleItems = section.items.filter(item => canAccess(item.href, plan, role))
             if (visibleItems.length === 0) return null
             return (
               <div key={si}>
                 {section.label && <SectionLabel label={section.label} collapsed={collapsed} />}
                 <div className="space-y-0.5">
-                  {visibleItems.map((item) => (
-                    <NavItem
-                      key={item.href}
-                      item={item}
-                      collapsed={collapsed}
-                      active={isActive(item.href, item.exact)}
-                      onClick={onMobileClose}
-                    />
-                  ))}
+                  {visibleItems.map((item) => {
+                    const isTeamsLocked = Boolean('teamsOnly' in item && item.teamsOnly && plan !== 'teams')
+                    return (
+                      <NavItem
+                        key={item.href}
+                        item={item}
+                        collapsed={collapsed}
+                        active={isActive(item.href, item.exact)}
+                        onClick={onMobileClose}
+                        locked={isTeamsLocked}
+                      />
+                    )
+                  })}
                 </div>
               </div>
             )
