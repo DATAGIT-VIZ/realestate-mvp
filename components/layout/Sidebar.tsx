@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
   LayoutDashboard, Users, HandshakeIcon, Building2,
-  Megaphone, Phone, BarChart3, BarChart2, Calculator, Settings,
+  Phone, BarChart3, BarChart2, Calculator, Settings,
   ChevronLeft, ChevronRight, LogOut, Loader2, Activity,
   MessageCircle, CreditCard, UserCheck, GitBranch, Sparkles, Plug, Layers,
 } from 'lucide-react'
@@ -24,7 +24,7 @@ const NAV_SECTIONS = [
       { name: 'Leads',          href: '/dashboard/leads',            icon: Users,         exact: false },
       { name: 'Lifecycle',      href: '/dashboard/lifecycle',        icon: Layers,        exact: false },
       { name: 'Ingestion Log',  href: '/dashboard/leads/ingestion',  icon: Activity,      exact: false },
-      { name: 'Properties',     href: '/dashboard/properties',       icon: Building2,     exact: false },
+      { name: 'Inventory',       href: '/dashboard/properties',       icon: Building2,     exact: false, teamsOnly: true },
       { name: 'Team',           href: '/dashboard/team',             icon: UserCheck,     exact: false },
     ],
   },
@@ -32,7 +32,6 @@ const NAV_SECTIONS = [
     label: 'Engage',
     items: [
       { name: 'AI Advisor',    href: '/dashboard/advisor',            icon: Sparkles,      exact: false },
-      { name: 'Sequences',     href: '/dashboard/outreach/sequences', icon: Megaphone,     exact: false },
       { name: 'Broadcast',     href: '/dashboard/outreach/broadcast', icon: MessageCircle, exact: false },
       { name: 'Power Dialer',  href: '/dashboard/calls',              icon: Phone,         exact: false },
     ],
@@ -187,7 +186,10 @@ export function Sidebar({
 
         <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-0.5">
           {NAV_SECTIONS.map((section, si) => {
-            const visibleItems = section.items.filter(item => canAccess(item.href, plan, role))
+            const visibleItems = section.items.filter(item =>
+              canAccess(item.href, plan, role) &&
+              (!('teamsOnly' in item && item.teamsOnly) || plan === 'teams')
+            )
             if (visibleItems.length === 0) return null
             return (
               <div key={si}>
