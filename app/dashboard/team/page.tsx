@@ -240,7 +240,20 @@ export default function TeamPage() {
   const totalPipeline = agentStats.reduce((s, a) => s + a.pipeline, 0)
   const totalWon      = agentStats.reduce((s, a) => s + a.won, 0)
 
-  const rankIcon = (i: number) => i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`
+  const rankBadge = (i: number) => {
+    const medals = [
+      { label: '1', bg: '#FEF3C7', color: '#D97706', border: '#FCD34D' },
+      { label: '2', bg: '#F1F5F9', color: '#64748B', border: '#CBD5E1' },
+      { label: '3', bg: '#FEF3C7', color: '#B45309', border: '#FDE68A' },
+    ]
+    const m = medals[i]
+    if (m) return (
+      <div style={{ width: 28, height: 28, borderRadius: '50%', background: m.bg, border: `1px solid ${m.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: m.color }}>
+        {m.label}
+      </div>
+    )
+    return <span style={{ fontSize: 12, fontWeight: 600, color: C.label }}>#{i + 1}</span>
+  }
 
   const tab = (active: boolean): React.CSSProperties => ({
     padding: '8px 18px', borderRadius: 10, fontSize: 13, fontWeight: 700,
@@ -283,8 +296,12 @@ export default function TeamPage() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, background: '#F1F5F9', borderRadius: 12, padding: 4, width: 'fit-content', marginBottom: 20 }}>
-        <button style={tab(activeTab === 'leaderboard')} onClick={() => setActiveTab('leaderboard')}>🏆 Leaderboard</button>
-        <button style={tab(activeTab === 'agents')} onClick={() => setActiveTab('agents')}>👥 Agents</button>
+        <button style={tab(activeTab === 'leaderboard')} onClick={() => setActiveTab('leaderboard')}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Trophy style={{ width: 13, height: 13 }} />Leaderboard</span>
+        </button>
+        <button style={tab(activeTab === 'agents')} onClick={() => setActiveTab('agents')}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Users style={{ width: 13, height: 13 }} />Agents</span>
+        </button>
       </div>
 
       {loading ? (
@@ -311,7 +328,7 @@ export default function TeamPage() {
               <tbody>
                 {agentStats.map((a, i) => (
                   <tr key={a.name} style={{ borderBottom: `1px solid ${C.border}`, background: i === 0 ? '#FFFBEB' : 'transparent' }}>
-                    <td style={{ padding: '14px 16px', fontSize: 18 }}>{rankIcon(i)}</td>
+                    <td style={{ padding: '14px 16px' }}>{rankBadge(i)}</td>
                     <td style={{ padding: '14px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ width: 36, height: 36, borderRadius: '50%', background: `${ROLE_COLOR[a.member?.role ?? 'agent']}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: ROLE_COLOR[a.member?.role ?? 'agent'] }}>
