@@ -134,17 +134,27 @@ const ACTIVITY_ICON: Record<string, React.ElementType> = {
 }
 
 const LIFECYCLE_STAGES = [
-  { id: 'Fresh',           label: 'Fresh',               color: '#64748B', desc: 'Unworked lead'           },
-  { id: 'Attempting',      label: 'Attempting',           color: '#2563EB', desc: 'Active call attempts'    },
-  { id: 'VM Done',         label: 'VM Done',              color: '#7C3AED', desc: 'Voicemail/message left'  },
-  { id: 'Connected',       label: 'Connected',            color: '#0EA5E9', desc: 'First contact made'      },
-  { id: 'Virtual Meeting', label: 'Virtual Meeting Done', color: '#D97706', desc: 'Video call done'         },
-  { id: 'Site Visit',      label: 'Site Visit Done',      color: '#F97316', desc: 'Physical visit done'     },
-  { id: 'Negotiation',     label: 'Negotiation',          color: '#8B5CF6', desc: 'Terms discussion active' },
-  { id: 'Won',             label: 'Won',                  color: '#059669', desc: 'Deal closed',   terminal: true },
-  { id: 'Lost',            label: 'Lost',                 color: '#DC2626', desc: 'Not proceeding', terminal: true },
-  { id: 'NC',              label: 'NC',                   color: '#94A3B8', desc: 'Non-Contactable — 5 failed attempts', terminal: true },
+  { id: 'Fresh',           label: 'Fresh',               color: '#64748B', desc: 'Unworked — just arrived'        },
+  { id: 'Attempting',      label: 'Attempting',           color: '#2563EB', desc: 'Active call attempts'           },
+  { id: 'VM Done',         label: 'VM Done',              color: '#7C3AED', desc: 'Voicemail / message left'       },
+  { id: 'Connected',       label: 'Connected',            color: '#0EA5E9', desc: 'First contact made'             },
+  { id: 'Virtual Meeting', label: 'Virtual Meeting Done', color: '#D97706', desc: 'Video / virtual call done'      },
+  { id: 'Site Visit',      label: 'Site Visit Done',      color: '#F97316', desc: 'Physical site visit completed'  },
+  { id: 'Negotiation',     label: 'Negotiation',          color: '#8B5CF6', desc: 'Terms & pricing discussion'     },
+  { id: 'Won',             label: 'Closed',               color: '#059669', desc: 'Deal closed successfully', terminal: true },
+  { id: 'Lost',            label: 'Lost',                 color: '#DC2626', desc: 'Lead not proceeding',      terminal: true },
+  { id: 'NC',              label: 'NC',                   color: '#94A3B8', desc: 'Non-contactable (5 failed attempts)', terminal: true },
 ]
+
+// Bucket grouping — mirrors the lifecycle kanban board
+const STAGE_BUCKETS = [
+  { label: 'New Leads',         color: '#64748B', stages: ['Fresh']                                },
+  { label: 'Cold Stage',        color: '#2563EB', stages: ['Attempting', 'VM Done']                },
+  { label: 'Warm Stage',        color: '#D97706', stages: ['Connected', 'Virtual Meeting']         },
+  { label: 'Hot Stage',         color: '#F97316', stages: ['Site Visit', 'Negotiation', 'Won']     },
+  { label: 'Disqualified / NC', color: '#DC2626', stages: ['Lost', 'NC']                           },
+]
+
 const PIPELINE_STAGES = LIFECYCLE_STAGES.map(s => s.id)
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
@@ -571,15 +581,31 @@ export default function LeadDetailPage() {
                       {!stageChanging && <p style={{ fontSize: 11, color: MUTED, margin: '6px 0 0 4px' }}>{cur.desc}</p>}
                       {showStageMenu && (
                         <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 12, zIndex: 20, overflow: 'hidden', boxShadow: '0 16px 40px rgba(0,0,0,0.12)' }}>
-                          {LIFECYCLE_STAGES.map(s => (
-                            <button key={s.id} onClick={() => handleStageChange(s.id)}
-                              style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 14px', background: lead.status === s.id ? `${s.color}0D` : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-                              <span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
-                              <div>
-                                <div style={{ fontSize: 13, fontWeight: lead.status === s.id ? 700 : 500, color: lead.status === s.id ? s.color : TEXT }}>{s.label}</div>
-                                <div style={{ fontSize: 10, color: MUTED }}>{s.desc}</div>
+                          {STAGE_BUCKETS.map(bucket => (
+                            <div key={bucket.label}>
+                              {/* Bucket group header */}
+                              <div style={{ padding: '7px 14px 4px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <div style={{ width: 6, height: 6, borderRadius: '50%', background: bucket.color, flexShrink: 0 }} />
+                                <span style={{ fontSize: 10, fontWeight: 700, color: bucket.color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{bucket.label}</span>
                               </div>
-                            </button>
+                              {/* Stages in this bucket */}
+                              {bucket.stages.map(sid => {
+                                const s = LIFECYCLE_STAGES.find(x => x.id === sid)
+                                if (!s) return null
+                                const isActive = lead.status === s.id
+                                return (
+                                  <button key={s.id} onClick={() => handleStageChange(s.id)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '7px 14px 7px 28px', background: isActive ? `${s.color}0D` : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
+                                    <div>
+                                      <div style={{ fontSize: 12, fontWeight: isActive ? 700 : 500, color: isActive ? s.color : TEXT }}>{s.label}</div>
+                                      <div style={{ fontSize: 10, color: MUTED }}>{s.desc}</div>
+                                    </div>
+                                    {isActive && <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, color: s.color }}>✓</span>}
+                                  </button>
+                                )
+                              })}
+                            </div>
                           ))}
                         </div>
                       )}
@@ -601,8 +627,8 @@ export default function LeadDetailPage() {
                     })}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-                    <span style={{ fontSize: 10, color: MUTED }}>Fresh</span>
-                    <span style={{ fontSize: 10, color: MUTED }}>Negotiation</span>
+                    <span style={{ fontSize: 10, color: MUTED }}>New Leads</span>
+                    <span style={{ fontSize: 10, color: MUTED }}>Hot Stage</span>
                   </div>
                 </div>
 
@@ -610,7 +636,7 @@ export default function LeadDetailPage() {
                 {['Won','Lost','NC'].includes(lead.status ?? '') && (
                   <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: `${LIFECYCLE_STAGES.find(s=>s.id===lead.status)?.color}10`, border: `1px solid ${LIFECYCLE_STAGES.find(s=>s.id===lead.status)?.color}30` }}>
                     <span style={{ fontSize: 12, fontWeight: 700, color: LIFECYCLE_STAGES.find(s=>s.id===lead.status)?.color }}>
-                      {lead.status === 'Won' ? '🏆 Deal Closed' : lead.status === 'Lost' ? '❌ Not Proceeding' : '📵 Non-Contactable'}
+                      {lead.status === 'Won' ? '🏆 Closed — Deal Done' : lead.status === 'Lost' ? '❌ Lost — Not Proceeding' : '📵 NC — Non-Contactable'}
                     </span>
                   </div>
                 )}

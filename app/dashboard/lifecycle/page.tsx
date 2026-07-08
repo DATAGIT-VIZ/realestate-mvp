@@ -18,7 +18,7 @@ const TEXT   = '#0F172A'
 const MUTED  = '#64748B'
 
 type Stage  = { id: string; label: string; color: string }
-type Bucket = { id: string; label: string; color: string; stages: string[]; primaryStage: string; searchable?: boolean }
+type Bucket = { id: string; label: string; color: string; stages: string[]; primaryStage: string }
 
 const STAGES: Stage[] = [
   { id: 'Fresh',           label: 'Fresh',               color: '#64748B' },
@@ -37,11 +37,11 @@ const STAGE_MAP: Record<string, Stage> = Object.fromEntries(STAGES.map(s => [s.i
 const STAGE_IDS = new Set(STAGES.map(s => s.id))
 
 const BUCKETS: Bucket[] = [
-  { id: 'new',  label: 'New Leads',         color: '#64748B', stages: ['Fresh'],                                primaryStage: 'Fresh',      searchable: true  },
-  { id: 'cold', label: 'Cold Stage',        color: '#2563EB', stages: ['Attempting', 'VM Done'],               primaryStage: 'Attempting'                      },
-  { id: 'warm', label: 'Warm Stage',        color: '#D97706', stages: ['Connected', 'Virtual Meeting'],        primaryStage: 'Connected'                       },
-  { id: 'hot',  label: 'Hot Stage',         color: '#F97316', stages: ['Site Visit', 'Negotiation', 'Won'],   primaryStage: 'Site Visit'                      },
-  { id: 'disq', label: 'Disqualified / NC', color: '#DC2626', stages: ['Lost', 'NC'],                          primaryStage: 'Lost'                            },
+  { id: 'new',  label: 'New Leads',         color: '#64748B', stages: ['Fresh'],                              primaryStage: 'Fresh'      },
+  { id: 'cold', label: 'Cold Stage',        color: '#2563EB', stages: ['Attempting', 'VM Done'],             primaryStage: 'Attempting' },
+  { id: 'warm', label: 'Warm Stage',        color: '#D97706', stages: ['Connected', 'Virtual Meeting'],      primaryStage: 'Connected'  },
+  { id: 'hot',  label: 'Hot Stage',         color: '#F97316', stages: ['Site Visit', 'Negotiation', 'Won'], primaryStage: 'Site Visit' },
+  { id: 'disq', label: 'Disqualified / NC', color: '#DC2626', stages: ['Lost', 'NC'],                        primaryStage: 'Lost'       },
 ]
 
 function getBucket(status: string | null | undefined): Bucket {
@@ -214,7 +214,8 @@ function LeadCard({
 
 // ─── Bucket column ────────────────────────────────────────────────────────────
 function BucketColumn({
-  bucket, leads, onStageChange, activeId, csSearch, onCsSearch, highlightId, compact = false,
+  bucket, leads, onStageChange, activeId, csSearch, onCsSearch,
+  isSearchOpen, onOpenSearch, onCloseSearch, highlightId, compact = false,
 }: {
   bucket: Bucket
   leads: CRMLead[]
@@ -222,16 +223,18 @@ function BucketColumn({
   activeId: string | null
   csSearch?: string
   onCsSearch?: (v: string) => void
+  isSearchOpen?: boolean
+  onOpenSearch?: () => void
+  onCloseSearch?: () => void
   highlightId?: string | null
   compact?: boolean
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: bucket.id })
-  const [searchOpen, setSearchOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (searchOpen) inputRef.current?.focus()
-  }, [searchOpen])
+    if (isSearchOpen) inputRef.current?.focus()
+  }, [isSearchOpen])
 
   return (
     <div style={{ width: compact ? '100%' : 250, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
@@ -244,7 +247,7 @@ function BucketColumn({
         borderLeft: `3px solid ${bucket.color}`,
         borderRadius: '10px 10px 0 0',
       }}>
-        {searchOpen && bucket.searchable ? (
+        {isSearchOpen ? (
           <>
             <Search style={{ width: 11, height: 11, color: bucket.color, flexShrink: 0 }} />
             <input
@@ -256,7 +259,7 @@ function BucketColumn({
             />
             <button
               onPointerDown={e => e.stopPropagation()}
-              onClick={() => { onCsSearch?.(''); setSearchOpen(false) }}
+              onClick={() => { onCsSearch?.(''); onCloseSearch?.() }}
               style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 0, color: MUTED, display: 'flex', flexShrink: 0 }}
             >
               <X style={{ width: 12, height: 12 }} />
@@ -267,10 +270,10 @@ function BucketColumn({
             <span style={{ fontSize: compact ? 11 : 12, fontWeight: 700, color: bucket.color, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {bucket.label}
             </span>
-            {bucket.searchable && !compact && (
+            {!compact && (
               <button
                 onPointerDown={e => e.stopPropagation()}
-                onClick={() => setSearchOpen(true)}
+                onClick={onOpenSearch}
                 title="Search by CS ID"
                 style={{ border: 'none', background: 'none', cursor: 'pointer', padding: '2px 3px', color: MUTED, display: 'flex', borderRadius: 4, flexShrink: 0 }}
               >
@@ -332,7 +335,8 @@ export default function LifecyclePage() {
   const [loading,  setLoading]  = useState(true)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
-  const [csSearch, setCsSearch] = useState('')
+  const [csSearch,       setCsSearch]       = useState('')
+  const [searchBucketId, setSearchBucketId] = useState<string | null>(null)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1024)
@@ -457,8 +461,11 @@ export default function LifecyclePage() {
                   leads={grouped[bucket.id] ?? []}
                   onStageChange={handleStageChange}
                   activeId={activeId}
-                  csSearch={bucket.searchable ? csSearch : undefined}
-                  onCsSearch={bucket.searchable ? setCsSearch : undefined}
+                  csSearch={csSearch}
+                  onCsSearch={setCsSearch}
+                  isSearchOpen={searchBucketId === bucket.id}
+                  onOpenSearch={() => setSearchBucketId(bucket.id)}
+                  onCloseSearch={() => { setSearchBucketId(null); setCsSearch('') }}
                   highlightId={highlightId}
                 />
               ))}
