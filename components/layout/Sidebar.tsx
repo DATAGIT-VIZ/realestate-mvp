@@ -142,7 +142,7 @@ export function Sidebar({
     const next = !collapsed
     setCollapsed(next)
     localStorage.setItem('sidebar-collapsed', String(next))
-    window.dispatchEvent(new StorageEvent('storage', { key: 'sidebar-collapsed', newValue: String(next) }))
+    window.dispatchEvent(new CustomEvent('sidebar-collapsed-change', { detail: next }))
   }
 
   const isActive = (href: string, exact: boolean) =>

@@ -21,11 +21,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (stored !== null) setSidebarCollapsed(stored === 'true')
 
     // Listen for storage changes from sidebar toggle
-    const handler = () => {
-      const v = localStorage.getItem('sidebar-collapsed')
-      setSidebarCollapsed(v === 'true')
-    }
-    window.addEventListener('storage-sidebar', handler)
+    const handler = (e: Event) => setSidebarCollapsed((e as CustomEvent<boolean>).detail)
+    window.addEventListener('sidebar-collapsed-change', handler)
 
     // Auth check — disabled in dev, enable in prod
     // const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -34,7 +31,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     // })
     setLoading(false)
 
-    return () => window.removeEventListener('storage-sidebar', handler)
+    return () => window.removeEventListener('sidebar-collapsed-change', handler)
   }, [router])
 
   if (loading) {
