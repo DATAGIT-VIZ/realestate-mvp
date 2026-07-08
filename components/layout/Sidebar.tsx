@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, HandshakeIcon, Building2,
   Phone, BarChart3, BarChart2, Calculator, Settings,
   ChevronLeft, ChevronRight, LogOut, Loader2, Activity,
-  MessageCircle, CreditCard, UserCheck, GitBranch, Sparkles, Plug, Layers,
+  MessageCircle, CreditCard, UserCheck, GitBranch, Sparkles, Plug, Layers, HelpCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
@@ -47,10 +47,11 @@ const NAV_SECTIONS = [
   {
     label: 'Settings',
     items: [
-      { name: 'Lead Routing',  href: '/dashboard/settings/routing',  icon: GitBranch, exact: false },
-      { name: 'Billing',       href: '/dashboard/settings/billing',  icon: CreditCard, exact: false },
-      { name: 'Integrations',  href: '/dashboard/integrations',      icon: Plug,       exact: false },
-      { name: 'Settings',      href: '/dashboard/settings',          icon: Settings,   exact: true  },
+      { name: 'Lead Routing',   href: '/dashboard/settings/routing',  icon: GitBranch,  exact: false },
+      { name: 'Billing',        href: '/dashboard/settings/billing',  icon: CreditCard, exact: false },
+      { name: 'Integrations',   href: '/dashboard/integrations',      icon: Plug,       exact: false },
+      { name: 'Help & Support', href: '/dashboard/help',              icon: HelpCircle, exact: false },
+      { name: 'Settings',       href: '/dashboard/settings',          icon: Settings,   exact: true  },
     ],
   },
 ]

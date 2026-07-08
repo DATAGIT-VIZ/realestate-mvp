@@ -91,8 +91,13 @@ export function AddLeadModal({ onClose, onSuccess }: Props) {
   const validate = (): boolean => {
     const errs: Partial<Form & { general: string }> = {}
     if (!form.firstName.trim()) errs.firstName = 'First name is required'
-    if (!form.phone.trim()) errs.phone = 'Phone number is required'
-    else if (!/^[+\d\s\-()]{7,15}$/.test(form.phone.trim())) errs.phone = 'Enter a valid phone number'
+    if (!form.phone.trim()) {
+      errs.phone = 'Phone number is required'
+    } else {
+      const digits = form.phone.trim().replace(/[\s\-().+]/g, '')
+      const ten = digits.startsWith('91') && digits.length === 12 ? digits.slice(2) : digits
+      if (!/^[6-9]\d{9}$/.test(ten)) errs.phone = 'Enter a valid Indian mobile number (10 digits, starting with 6–9)'
+    }
     if (form.email && !/\S+@\S+\.\S+/.test(form.email)) errs.email = 'Enter a valid email'
     if (form.budgetMin && form.budgetMax && Number(form.budgetMin) > Number(form.budgetMax)) {
       errs.budgetMax = 'Max must be greater than min'

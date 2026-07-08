@@ -79,6 +79,14 @@ const MOCK_LEADS: CRMLead[] = [
 
 function fname(l: CRMLead) { return `${l.name.firstName} ${l.name.lastName ?? ''}`.trim() }
 
+function getCsId(l: CRMLead): string {
+  if (l.leadPortalId?.startsWith('CS')) return l.leadPortalId
+  const hex = l.id.replace(/-/g, '')
+  let n = 0
+  for (const c of hex) n = (n * 31 + parseInt(c, 16)) % 100000
+  return `CS${String(n).padStart(5, '0')}`
+}
+
 function timeAgo(ts: string) {
   const d = (Date.now() - new Date(ts).getTime()) / 1000
   if (d < 3600)  return `${Math.floor(d / 60)}m ago`
@@ -152,9 +160,9 @@ function LeadCard({
         <div style={{ fontSize: compact ? 12 : 13, fontWeight: 700, color: TEXT, marginBottom: 1, paddingRight: sla ? 12 : 0 }}>
           {fname(lead)}
         </div>
-        {!compact && lead.leadPortalId && (
+        {!compact && (
           <div style={{ fontSize: 10, color: MUTED, fontFamily: 'monospace', letterSpacing: '0.02em' }}>
-            {lead.leadPortalId}
+            {getCsId(lead)}
           </div>
         )}
         {!compact && <div style={{ fontSize: 11, color: MUTED }}>{lead.city ?? '—'}</div>}
@@ -389,7 +397,7 @@ export default function LifecyclePage() {
   // CS ID search — filters all columns
   const searchNorm = csSearch.trim()
   const filteredLeads = searchNorm
-    ? leads.filter(l => (l.leadPortalId ?? '').toUpperCase().includes(searchNorm.toUpperCase()))
+    ? leads.filter(l => getCsId(l).toUpperCase().includes(searchNorm.toUpperCase()))
     : leads
   const highlightId = searchNorm && filteredLeads.length === 1 ? filteredLeads[0].id : null
 

@@ -130,6 +130,8 @@ export default function BroadcastPage() {
   const [result,      setResult]      = useState<{ sent: number; failed: number } | null>(null)
   const [error,       setError]       = useState<string | null>(null)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [routeTo,     setRouteTo]     = useState('all')
+  const [routeAgent,  setRouteAgent]  = useState('')
 
   const buildQuery = (f: Filters) => {
     const p = new URLSearchParams()
@@ -337,6 +339,33 @@ export default function BroadcastPage() {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Follow-up routing */}
+            <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 14, padding: '14px 16px' }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px' }}>Route follow-up leads to</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {[
+                  { id: 'all',    label: 'All agents (round-robin)',   desc: 'Distribute evenly across team' },
+                  { id: 'top',    label: 'Top performer',              desc: 'Agent with highest activity score' },
+                  { id: 'agent',  label: 'Specific agent',             desc: 'Assign to one agent by name' },
+                ].map(opt => (
+                  <button key={opt.id} onClick={() => setRouteTo(opt.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 10, border: `1.5px solid ${routeTo === opt.id ? C.violet : C.border}`, background: routeTo === opt.id ? 'rgba(124,58,237,0.05)' : 'transparent', cursor: 'pointer', textAlign: 'left' }}>
+                    <div style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${routeTo === opt.id ? C.violet : C.border}`, background: routeTo === opt.id ? C.violet : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {routeTo === opt.id && <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#fff' }} />}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: routeTo === opt.id ? C.violet : C.text }}>{opt.label}</div>
+                      <div style={{ fontSize: 10, color: C.label }}>{opt.desc}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              {routeTo === 'agent' && (
+                <input value={routeAgent} onChange={e => setRouteAgent(e.target.value)} placeholder="Agent name or email…"
+                  style={{ marginTop: 8, width: '100%', padding: '8px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, color: C.text, outline: 'none', boxSizing: 'border-box' }} />
+              )}
             </div>
 
             {/* Phone preview */}

@@ -6,7 +6,23 @@ import {
   CheckCircle, MapPin, Home, Loader2, RotateCcw,
   MessageCircle, Star, ChevronRight, Trophy, Copy, Check,
   Flame, Thermometer, Snowflake, Clock, Phone, List,
+  Building2, Globe, ClipboardList, ChevronDown,
 } from 'lucide-react'
+
+type CallMode = 'corporate' | 'internet' | 'manual'
+
+const CALL_MODES: { id: CallMode; label: string; sub: string; icon: React.ElementType; color: string }[] = [
+  { id: 'corporate', label: 'Corporate Number', sub: 'Dial from your work SIM / company phone', icon: Building2, color: '#2563EB' },
+  { id: 'internet',  label: 'Internet Calling',  sub: 'Browser call via Exotel / Twilio',        icon: Globe,      color: '#7C3AED' },
+  { id: 'manual',    label: 'Manual Log',        sub: 'Already called? Just log the outcome',   icon: ClipboardList, color: '#059669' },
+]
+
+function formatIndianPhone(raw: string) {
+  const d = raw.replace(/\D/g, '')
+  const n = d.startsWith('91') && d.length === 12 ? d.slice(2) : d
+  if (n.length === 10) return `+91 ${n.slice(0,5)} ${n.slice(5)}`
+  return raw
+}
 
 const C = {
   bg:         '#F8FAFC',
@@ -118,6 +134,10 @@ export default function PowerDialerPage() {
   const [copied,    setCopied]    = useState(false)
   const [sessionOn, setSessionOn] = useState(false)
   const [showLog,   setShowLog]   = useState(false)
+  const [callMode,  setCallMode]  = useState<CallMode>(() => {
+    if (typeof window !== 'undefined') return (localStorage.getItem('dialer-mode') as CallMode) ?? 'corporate'
+    return 'corporate'
+  })
   const timerRef = useRef<ReturnType<typeof setInterval>|null>(null)
 
   const loadLeads = useCallback(async () => {
@@ -147,14 +167,17 @@ export default function PowerDialerPage() {
   const budget   = current ? fmtBudget(current.budgetMin, current.budgetMax) : null
   const outMeta  = OUTCOMES.find(o => o.id === outcome)
 
+  const changeMode = (m: CallMode) => {
+    setCallMode(m)
+    localStorage.setItem('dialer-mode', m)
+  }
+
   const startCall = () => {
-    setStep(2)
-    setElapsed(0)
-    if (phone) {
-      const a = document.createElement('a')
-      a.href = `tel:${phone}`
-      a.click()
+    if (callMode === 'manual' || callMode === 'internet') {
+      setStep(3); return
     }
+    setStep(2); setElapsed(0)
+    if (phone) { const a = document.createElement('a'); a.href = `tel:${phone}`; a.click() }
   }
 
   const logAndNext = () => {
@@ -196,36 +219,41 @@ export default function PowerDialerPage() {
             </p>
           </div>
 
-          {/* Activation banner */}
-          <div style={{ background:'linear-gradient(135deg,rgba(124,58,237,0.06),rgba(37,99,235,0.04))', border:'1px solid rgba(124,58,237,0.2)', borderRadius:14, padding:'14px 18px', marginBottom:16, display:'flex', gap:12, alignItems:'flex-start' }}>
-            <div style={{ width:34, height:34, borderRadius:10, background:'linear-gradient(135deg,#7C3AED,#2563EB)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <Phone size={15} color="#fff"/>
-            </div>
-            <div>
-              <p style={{ fontSize:13, fontWeight:700, color:'#7C3AED', margin:'0 0 3px' }}>Full Browser Calling — Available on Demand</p>
-              <p style={{ fontSize:12, color:C.muted, margin:0, lineHeight:1.6 }}>
-                We can activate <strong style={{ color:C.text }}>WebRTC + Exotel</strong> for you — one-click dialling directly from the browser, auto call recording, live whisper coaching, and no SIM needed. <span style={{ color:'#7C3AED', fontWeight:600 }}>Reach out to enable for your team.</span>
-              </p>
+          {/* Calling mode selector */}
+          <div style={{ marginBottom:16 }}>
+            <p style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em', margin:'0 0 10px 2px' }}>Select calling mode</p>
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+              {CALL_MODES.map(m => {
+                const Icon = m.icon
+                const sel  = callMode === m.id
+                return (
+                  <button key={m.id} onClick={() => changeMode(m.id)}
+                    style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 16px', borderRadius:14, border:`2px solid ${sel ? m.color : C.border}`, background: sel ? `${m.color}08` : C.panel, cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}>
+                    <div style={{ width:38, height:38, borderRadius:11, background: sel ? `${m.color}18` : C.bg, border:`1px solid ${sel ? m.color+'40' : C.border}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                      <Icon size={17} color={sel ? m.color : C.muted}/>
+                    </div>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:13, fontWeight:700, color: sel ? m.color : C.text }}>{m.label}</div>
+                      <div style={{ fontSize:11, color:C.muted, marginTop:1 }}>{m.sub}</div>
+                    </div>
+                    <div style={{ width:18, height:18, borderRadius:'50%', border:`2px solid ${sel ? m.color : C.border}`, background: sel ? m.color : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                      {sel && <div style={{ width:7, height:7, borderRadius:'50%', background:'#fff' }}/>}
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
-          <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:20, padding: isMobile?'18px 16px':'22px 24px', marginBottom:16 }}>
-            {[
-              { n:'1', title:'Tap "Call"',         desc:'Your phone dialler opens with the number already filled in — just tap the green call button.', color:C.blue    },
-              { n:'2', title:'Talk from your SIM', desc:'Use your own phone, no extra cost, no setup needed. Works anywhere with signal.', color:C.emerald },
-              { n:'3', title:'Log in 3 taps',      desc:'Mark outcome, add a note, tap Log & Next. The next lead loads automatically.', color:C.violet  },
-            ].map(s => (
-              <div key={s.n} style={{ display:'flex', gap:14, marginBottom:14, alignItems:'flex-start' }}>
-                <div style={{ width:32, height:32, borderRadius:10, background:`${s.color}15`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                  <span style={{ fontSize:14, fontWeight:800, color:s.color }}>{s.n}</span>
-                </div>
-                <div>
-                  <div style={{ fontSize:13, fontWeight:700, color:C.text }}>{s.title}</div>
-                  <div style={{ fontSize:12, color:C.muted, marginTop:2 }}>{s.desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* Internet calling info banner */}
+          {callMode === 'internet' && (
+            <div style={{ background:'rgba(124,58,237,0.06)', border:'1px solid rgba(124,58,237,0.2)', borderRadius:12, padding:'12px 16px', marginBottom:16, display:'flex', gap:10, alignItems:'flex-start' }}>
+              <Globe size={15} color="#7C3AED" style={{ flexShrink:0, marginTop:1 }}/>
+              <p style={{ fontSize:12, color:C.muted, margin:0, lineHeight:1.6 }}>
+                <strong style={{ color:'#7C3AED' }}>Exotel / Twilio not connected.</strong> Browser calling needs a telephony provider. Connect one in <strong style={{ color:C.text }}>Settings → Integrations</strong>. Until then, you can still log call outcomes manually.
+              </p>
+            </div>
+          )}
 
           {!loading && leads.length > 0 && (
             <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:18, overflow:'hidden', marginBottom:20 }}>
@@ -377,23 +405,53 @@ export default function PowerDialerPage() {
           {/* Step 1 — call actions */}
           {step === 1 && (
             <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-              <a href={phone ? `tel:${phone}` : undefined}
-                onClick={e => { if (!phone) e.preventDefault(); else startCall() }}
-                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:12, padding:'20px 0', background: phone ? 'linear-gradient(135deg,#059669,#047857)' : '#E2E8F0', borderRadius:18, color: phone ? '#fff' : C.label, fontSize:18, fontWeight:800, textDecoration:'none', boxShadow: phone ? '0 6px 20px rgba(5,150,105,0.35)' : 'none', cursor: phone ? 'pointer' : 'not-allowed' }}>
-                <PhoneCall size={22}/> Call {name.split(' ')[0]}
-              </a>
-              {phone && (
+              {/* Mode pill */}
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 12px', background:C.bg, border:`1px solid ${C.border}`, borderRadius:10 }}>
+                <span style={{ fontSize:11, color:C.muted }}>Mode: <strong style={{ color:C.text }}>{CALL_MODES.find(m=>m.id===callMode)?.label}</strong></span>
+                <button onClick={() => { setSessionOn(false); setStep(1) }} style={{ fontSize:11, color:C.blue, border:'none', background:'none', cursor:'pointer', fontWeight:600 }}>Change</button>
+              </div>
+
+              {callMode === 'corporate' && (
+                <>
+                  <div style={{ background:'#F0FDF4', border:'1px solid #86EFAC', borderRadius:14, padding:'14px 16px', textAlign:'center' }}>
+                    <p style={{ fontSize:11, color:'#15803D', fontWeight:600, margin:'0 0 4px', textTransform:'uppercase', letterSpacing:'0.06em' }}>Dial this number from your work phone</p>
+                    <p style={{ fontSize:24, fontWeight:800, color:C.text, margin:'0 0 8px', letterSpacing:'0.04em' }}>{formatIndianPhone(phone) || '—'}</p>
+                    <button onClick={copyPhone} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 14px', border:`1px solid #86EFAC`, borderRadius:8, background:'#fff', color:'#15803D', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                      {copied ? <><Check size={11}/>Copied!</> : <><Copy size={11}/>Copy number</>}
+                    </button>
+                  </div>
+                  <button onClick={startCall} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'18px 0', background: phone ? 'linear-gradient(135deg,#059669,#047857)' : '#E2E8F0', borderRadius:16, color: phone ? '#fff' : C.label, fontSize:17, fontWeight:800, border:'none', cursor: phone ? 'pointer' : 'not-allowed', boxShadow: phone ? '0 6px 20px rgba(5,150,105,0.3)' : 'none' }}>
+                    <PhoneCall size={20}/> I&apos;m calling now — start timer
+                  </button>
+                </>
+              )}
+
+              {callMode === 'internet' && (
+                <div style={{ background:'rgba(124,58,237,0.06)', border:'1px solid rgba(124,58,237,0.2)', borderRadius:14, padding:'20px', textAlign:'center' }}>
+                  <Globe size={28} color="#7C3AED" style={{ marginBottom:8 }}/>
+                  <p style={{ fontSize:13, fontWeight:700, color:'#7C3AED', margin:'0 0 4px' }}>Telephony provider not connected</p>
+                  <p style={{ fontSize:12, color:C.muted, margin:'0 0 14px' }}>Connect Exotel or Twilio in Settings → Integrations to enable browser calling.</p>
+                  <button onClick={startCall} style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'10px 20px', background:'#7C3AED', border:'none', borderRadius:10, color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>
+                    <ClipboardList size={14}/> Log manually instead
+                  </button>
+                </div>
+              )}
+
+              {callMode === 'manual' && (
+                <button onClick={startCall} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'20px 0', background:'linear-gradient(135deg,#059669,#047857)', borderRadius:16, color:'#fff', fontSize:17, fontWeight:800, border:'none', cursor:'pointer', boxShadow:'0 6px 20px rgba(5,150,105,0.3)' }}>
+                  <ClipboardList size={20}/> Log call outcome
+                </button>
+              )}
+
+              {phone && callMode !== 'internet' && (
                 <a href={waLink(phone)} target="_blank" rel="noreferrer"
-                  style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'16px 0', background:'#DCFCE7', border:`1.5px solid #86EFAC`, borderRadius:16, color:'#15803D', fontSize:16, fontWeight:700, textDecoration:'none' }}>
-                  <MessageCircle size={18}/> Message on WhatsApp
+                  style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'14px 0', background:'#DCFCE7', border:`1.5px solid #86EFAC`, borderRadius:14, color:'#15803D', fontSize:15, fontWeight:700, textDecoration:'none' }}>
+                  <MessageCircle size={17}/> WhatsApp
                 </a>
               )}
-              <button onClick={skip} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'13px 0', background:'transparent', border:`1px solid ${C.border}`, borderRadius:14, color:C.label, fontSize:14, fontWeight:600, cursor:'pointer' }}>
+              <button onClick={skip} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'12px 0', background:'transparent', border:`1px solid ${C.border}`, borderRadius:14, color:C.label, fontSize:14, fontWeight:600, cursor:'pointer' }}>
                 <SkipForward size={14}/> Skip this lead
               </button>
-              <p style={{ fontSize:11, color:C.label, textAlign:'center', margin:'4px 0 0', lineHeight:1.6 }}>
-                Tap <strong style={{ color:C.text }}>Call</strong> — your phone dialler opens with the number already filled in.
-              </p>
             </div>
           )}
 
@@ -515,25 +573,52 @@ export default function PowerDialerPage() {
           {/* Step 1 */}
           {step === 1 && (
             <div style={{ padding:'22px 28px' }}>
-              <div style={{ display:'flex', gap:10, marginBottom:12 }}>
-                <a href={phone ? `tel:${phone}` : undefined}
-                  onClick={e => { if (!phone) e.preventDefault(); else startCall() }}
-                  style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'14px 0', background: phone ? 'linear-gradient(135deg,#059669,#047857)' : '#E2E8F0', borderRadius:14, color: phone ? '#fff' : C.label, fontSize:16, fontWeight:800, textDecoration:'none', boxShadow: phone ? '0 4px 16px rgba(5,150,105,0.3)' : 'none', cursor: phone ? 'pointer' : 'not-allowed' }}>
-                  <PhoneCall size={18}/> Call {name.split(' ')[0]}
-                </a>
-                {phone && (
-                  <a href={waLink(phone)} target="_blank" rel="noreferrer"
-                    style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'14px 18px', background:'#DCFCE7', border:`1px solid #86EFAC`, borderRadius:14, color:'#15803D', fontSize:14, fontWeight:700, textDecoration:'none' }}>
-                    <MessageCircle size={16}/> WhatsApp
-                  </a>
-                )}
+              {/* Mode row */}
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 12px', background:C.bg, border:`1px solid ${C.border}`, borderRadius:10, marginBottom:16 }}>
+                <span style={{ fontSize:11, color:C.muted }}>Calling via: <strong style={{ color:C.text }}>{CALL_MODES.find(m=>m.id===callMode)?.label}</strong></span>
+                <button onClick={() => { setSessionOn(false); setStep(1) }} style={{ fontSize:11, color:C.blue, border:'none', background:'none', cursor:'pointer', fontWeight:600 }}>Change mode</button>
               </div>
-              <button onClick={skip} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'10px 0', background:'transparent', border:'none', color:C.label, fontSize:13, fontWeight:600, cursor:'pointer', width:'100%' }}>
+
+              {callMode === 'corporate' && (
+                <>
+                  <div style={{ background:'#F0FDF4', border:'1px solid #86EFAC', borderRadius:12, padding:'12px 16px', marginBottom:12, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                    <div>
+                      <p style={{ fontSize:10, fontWeight:700, color:'#15803D', margin:'0 0 2px', textTransform:'uppercase', letterSpacing:'0.06em' }}>Dial from work phone</p>
+                      <p style={{ fontSize:20, fontWeight:800, color:C.text, margin:0 }}>{formatIndianPhone(phone) || '—'}</p>
+                    </div>
+                    <button onClick={copyPhone} style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 13px', border:`1px solid #86EFAC`, borderRadius:9, background:'#fff', color:'#15803D', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                      {copied ? <><Check size={10}/>Copied</> : <><Copy size={10}/>Copy</>}
+                    </button>
+                  </div>
+                  <div style={{ display:'flex', gap:10, marginBottom:10 }}>
+                    <button onClick={startCall} style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'13px 0', background:'linear-gradient(135deg,#059669,#047857)', borderRadius:13, color:'#fff', fontSize:15, fontWeight:800, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(5,150,105,0.3)' }}>
+                      <PhoneCall size={16}/> I&apos;m calling — start timer
+                    </button>
+                    {phone && <a href={waLink(phone)} target="_blank" rel="noreferrer" style={{ display:'flex', alignItems:'center', gap:8, padding:'13px 16px', background:'#DCFCE7', border:`1px solid #86EFAC`, borderRadius:13, color:'#15803D', fontSize:14, fontWeight:700, textDecoration:'none' }}><MessageCircle size={15}/> WhatsApp</a>}
+                  </div>
+                </>
+              )}
+
+              {callMode === 'internet' && (
+                <div style={{ background:'rgba(124,58,237,0.06)', border:'1px solid rgba(124,58,237,0.2)', borderRadius:14, padding:'20px', textAlign:'center', marginBottom:12 }}>
+                  <Globe size={24} color="#7C3AED" style={{ marginBottom:8 }}/>
+                  <p style={{ fontSize:13, fontWeight:700, color:'#7C3AED', margin:'0 0 4px' }}>Telephony provider not connected</p>
+                  <p style={{ fontSize:12, color:C.muted, margin:'0 0 12px' }}>Connect Exotel or Twilio in Settings → Integrations.</p>
+                  <button onClick={startCall} style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'9px 18px', background:'#7C3AED', border:'none', borderRadius:10, color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>
+                    <ClipboardList size={13}/> Log manually instead
+                  </button>
+                </div>
+              )}
+
+              {callMode === 'manual' && (
+                <button onClick={startCall} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'14px 0', background:'linear-gradient(135deg,#059669,#047857)', borderRadius:13, color:'#fff', fontSize:15, fontWeight:800, border:'none', cursor:'pointer', boxShadow:'0 4px 14px rgba(5,150,105,0.3)', marginBottom:12, width:'100%' }}>
+                  <ClipboardList size={16}/> Log this call outcome
+                </button>
+              )}
+
+              <button onClick={skip} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'9px 0', background:'transparent', border:'none', color:C.label, fontSize:13, fontWeight:600, cursor:'pointer', width:'100%' }}>
                 <SkipForward size={13}/> Skip this lead
               </button>
-              <p style={{ fontSize:11, color:C.label, textAlign:'center', margin:'8px 0 0' }}>
-                Click <strong style={{ color:C.text }}>Call</strong> to open your phone dialler with the number pre-filled · or use <strong style={{ color:C.text }}>Copy</strong> to dial manually
-              </p>
             </div>
           )}
 
