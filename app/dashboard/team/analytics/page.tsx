@@ -9,7 +9,9 @@ import {
 import {
   ArrowLeft, Phone, MessageCircle, MapPin, Mail, FileText,
   Trophy, TrendingUp, Users, Activity, Loader2, Star,
+  Calendar, Eye, Bell, Tag, Filter,
 } from 'lucide-react'
+import type { CRMLead } from '@/lib/twenty'
 
 const C = {
   bg: '#F8FAFC', panel: '#FFFFFF', border: '#E2E8F0',
@@ -102,13 +104,37 @@ const Tip = ({ active, payload, label }: any) => {
   )
 }
 
+const ACTIVITY_ICON: Record<string, React.ElementType> = {
+  'Call Made': Phone, 'Call Missed': Phone,
+  'WhatsApp Sent': MessageCircle, 'WhatsApp Received': MessageCircle,
+  'Email Sent': Mail, 'Email Received': Mail,
+  'Site Visit Scheduled': Calendar, 'Site Visit Done': Eye,
+  'Follow Up Set': Bell, 'Note': Tag, 'Status Changed': Activity,
+}
+
+const ACTIVITY_COLOR: Record<string, string> = {
+  'Call Made': C.blue, 'Call Missed': C.red,
+  'WhatsApp Sent': C.emerald, 'WhatsApp Received': C.emerald,
+  'Email Sent': C.violet, 'Email Received': C.violet,
+  'Site Visit Scheduled': C.amber, 'Site Visit Done': C.orange,
+  'Follow Up Set': C.blue, 'Note': C.label, 'Status Changed': C.muted,
+}
+
+const OUTCOME_COLOR: Record<string, string> = {
+  'Positive': C.emerald, 'Neutral': C.label, 'Negative': C.red, 'No Response': C.amber,
+}
+
+const FEED_TYPES = ['All', 'Call Made', 'WhatsApp Sent', 'Site Visit Done', 'Email Sent', 'Note', 'Follow Up Set']
+
 export default function TeamAnalyticsPage() {
   const router = useRouter()
   const [members,    setMembers]    = useState<TeamMember[]>([])
   const [activities, setActivities] = useState<ActivityRow[]>([])
+  const [leads,      setLeads]      = useState<CRMLead[]>([])
   const [loading,    setLoading]    = useState(true)
   const [timeframe,  setTimeframe]  = useState<Timeframe>('month')
   const [selected,   setSelected]   = useState<string | null>(null) // member id
+  const [typeFilter, setTypeFilter] = useState('All')
 
   useEffect(() => {
     const days = TF_DAYS[timeframe]
@@ -116,9 +142,11 @@ export default function TeamAnalyticsPage() {
     Promise.all([
       fetch('/api/team').then(r => r.json()),
       fetch(`/api/crm/activities?since=${encodeURIComponent(since)}&limit=500`).then(r => r.json()),
-    ]).then(([tm, ac]) => {
+      fetch('/api/crm/leads?limit=200').then(r => r.json()),
+    ]).then(([tm, ac, ld]) => {
       setMembers((tm.members ?? []).filter((m: TeamMember) => m.is_active))
       setActivities(ac.data?.activities ?? [])
+      setLeads(ld.data?.leads ?? [])
     }).catch(console.error).finally(() => setLoading(false))
   }, [timeframe])
 
@@ -143,6 +171,27 @@ export default function TeamAnalyticsPage() {
     if (!selected) return null
     return agentStats.find(a => a.member.id === selected) ?? null
   }, [selected, agentStats])
+
+  // ── Lead name lookup ─────────────────────────────────────────────────────
+  const leadById = useMemo(() => {
+    const map: Record<string, CRMLead> = {}
+    for (const l of leads) map[l.id] = l
+    return map
+  }, [leads])
+
+  const leadName = (personId: string | null) => {
+    if (!personId) return 'Unknown lead'
+    const l = leadById[personId]
+    if (!l) return 'Unknown lead'
+    return `${l.name.firstName} ${l.name.lastName}`.trim() || 'Unnamed'
+  }
+
+  // ── Filtered activity feed ────────────────────────────────────────────────
+  const activityFeed = useMemo(() => {
+    return activities
+      .filter(a => typeFilter === 'All' || a.type === typeFilter)
+      .slice(0, 60)
+  }, [activities, typeFilter])
 
   // ── Daily sparkline for selected agent (simulated proportional share) ────
   const selectedTimeline = useMemo(() => {
@@ -454,40 +503,90 @@ export default function TeamAnalyticsPage() {
               </div>
             </div>
 
-            {/* Recent activity log (team-level for now) */}
-            <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 20 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                <h3 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: 0 }}>Recent Activity Log</h3>
-                <span style={{ fontSize: 11, color: C.muted, background: '#F1F5F9', padding: '3px 9px', borderRadius: 20 }}>
-                  Per-agent log live after Supabase activity_logs
-                </span>
-              </div>
-              {activities.length === 0 ? (
-                <p style={{ fontSize: 13, color: C.label, margin: 0 }}>No activities logged in this period.</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                  {activities.slice(0, 12).map((a, i) => (
-                    <div key={a.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 0', borderBottom: i < 11 ? `1px solid ${C.border}` : 'none' }}>
-                      <div style={{ width: 28, height: 28, borderRadius: 8, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-                        {a.type === 'Call Made' ? <Phone size={12} color={C.blue} />
-                          : a.type === 'WhatsApp Sent' ? <MessageCircle size={12} color={C.emerald} />
-                          : a.type === 'Site Visit Done' ? <MapPin size={12} color={C.amber} />
-                          : a.type === 'Email Sent' ? <Mail size={12} color={C.violet} />
-                          : <FileText size={12} color={C.label} />}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 12, fontWeight: 600, color: C.text, margin: '0 0 2px' }}>{a.type}</p>
-                        {a.notes && <p style={{ fontSize: 11, color: C.muted, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.notes}</p>}
-                      </div>
-                      <span style={{ fontSize: 11, color: C.label, flexShrink: 0 }}>
-                        {new Date(a.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+          </div>
+        )}
+      </div>
 
+      {/* ── Full Activity Feed ── (admin view — always visible) */}
+      <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, overflow: 'hidden', marginTop: 14 }}>
+        {/* Feed header with type filters */}
+        <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+            <Filter size={14} color={C.muted} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Team Activity Feed</span>
+            <span style={{ fontSize: 11, color: C.label, marginLeft: 4 }}>{activities.length} entries · {TF_LABEL[timeframe].toLowerCase()}</span>
+          </div>
+          {/* Type filter chips */}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {FEED_TYPES.map(t => (
+              <button key={t} onClick={() => setTypeFilter(t)}
+                style={{
+                  padding: '4px 12px', borderRadius: 20, border: `1.5px solid ${typeFilter === t ? (ACTIVITY_COLOR[t] ?? C.blue) : C.border}`,
+                  background: typeFilter === t ? `${ACTIVITY_COLOR[t] ?? C.blue}14` : 'transparent',
+                  color: typeFilter === t ? (ACTIVITY_COLOR[t] ?? C.blue) : C.muted,
+                  fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.12s',
+                }}>
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Feed rows */}
+        {activityFeed.length === 0 ? (
+          <div style={{ padding: '32px 20px', textAlign: 'center' }}>
+            <Activity size={28} color={C.label} style={{ margin: '0 auto 10px' }} />
+            <p style={{ fontSize: 13, color: C.label, margin: 0 }}>No activities in this period. Agents log activities from each lead's detail page.</p>
+          </div>
+        ) : (
+          <div>
+            {activityFeed.map((a, i) => {
+              const Icon  = ACTIVITY_ICON[a.type] ?? FileText
+              const color = ACTIVITY_COLOR[a.type] ?? C.label
+              const lead  = a.personId ? leadById[a.personId] : null
+              const name  = lead ? `${lead.name.firstName} ${lead.name.lastName}`.trim() || 'Unnamed' : 'Unknown lead'
+              return (
+                <div key={a.id}
+                  onClick={() => a.personId && router.push(`/dashboard/leads/${a.personId}`)}
+                  style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 14, padding: '13px 20px',
+                    borderBottom: i < activityFeed.length - 1 ? `1px solid ${C.border}` : 'none',
+                    cursor: a.personId ? 'pointer' : 'default', transition: 'background 0.12s',
+                  }}
+                  onMouseEnter={e => a.personId && (e.currentTarget.style.background = C.bg)}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                >
+                  {/* Icon tile */}
+                  <div style={{ width: 32, height: 32, borderRadius: 9, background: `${color}14`, border: `1px solid ${color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Icon size={14} color={color} />
+                  </div>
+
+                  {/* Content */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color }}>
+                        {a.type}
+                      </span>
+                      <span style={{ fontSize: 11, color: C.muted }}>on</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{name}</span>
+                      {a.outcome && (
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 8px', borderRadius: 20, background: `${OUTCOME_COLOR[a.outcome] ?? C.label}14`, color: OUTCOME_COLOR[a.outcome] ?? C.label, marginLeft: 'auto' }}>
+                          {a.outcome}
+                        </span>
+                      )}
+                    </div>
+                    {a.notes && (
+                      <p style={{ fontSize: 11, color: C.muted, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.notes}</p>
+                    )}
+                  </div>
+
+                  {/* Time */}
+                  <span style={{ fontSize: 11, color: C.label, flexShrink: 0, paddingTop: 1 }}>
+                    {new Date(a.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                  </span>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

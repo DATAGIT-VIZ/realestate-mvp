@@ -7,9 +7,11 @@ import { AddLeadModal } from '@/components/AddLeadModal'
 import { KanbanBoard } from '@/components/crm/KanbanBoard'
 import { CsvUploadModal } from '@/components/crm/CsvUploadModal'
 import { EmailParserModal } from '@/components/crm/EmailParserModal'
+import { LogActivityModal } from '@/components/LogActivityModal'
 import {
   Search, Plus, Filter, Eye, Loader2, UserPlus, Clock,
   ChevronDown, LayoutGrid, List, UploadCloud, MailPlus, Phone, Mail, Zap, Copy,
+  Activity,
 } from 'lucide-react'
 import { EnrollSequenceModal } from '@/components/EnrollSequenceModal'
 
@@ -82,6 +84,7 @@ export default function LeadsPage() {
   const [showCsvModal, setShowCsvModal] = useState(false)
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [enrollTarget, setEnrollTarget] = useState<{ leadId: string; leadName: string; leadPhone: string } | null>(null)
+  const [quickLogLeadId, setQuickLogLeadId] = useState<string | null>(null)
   const [showDupsOnly, setShowDupsOnly] = useState(false)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
@@ -400,9 +403,19 @@ export default function LeadsPage() {
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
                           <button
-                            onClick={() => setEnrollTarget({ leadId: lead.id, leadName: getDisplayName(lead), leadPhone: getPhone(lead) })}
-                            title="Enroll in sequence"
+                            onClick={e => { e.stopPropagation(); e.preventDefault(); setQuickLogLeadId(lead.id) }}
+                            title="Log activity"
                             className="hidden sm:inline-flex"
+                            style={{ alignItems: 'center', gap: 5, padding: '6px 10px', background: 'rgba(5,150,105,0.06)', border: '1px solid rgba(5,150,105,0.2)', borderRadius: 8, color: '#059669', fontSize: 12, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s' }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(5,150,105,0.12)' }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(5,150,105,0.06)' }}
+                          >
+                            <Activity style={{ width: 11, height: 11 }} />Log
+                          </button>
+                          <button
+                            onClick={e => { e.stopPropagation(); e.preventDefault(); setEnrollTarget({ leadId: lead.id, leadName: getDisplayName(lead), leadPhone: getPhone(lead) }) }}
+                            title="Enroll in sequence"
+                            className="hidden lg:inline-flex"
                             style={{ alignItems: 'center', gap: 5, padding: '6px 10px', background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.2)', borderRadius: 8, color: '#7C3AED', fontSize: 12, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s' }}
                             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(124,58,237,0.12)' }}
                             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(124,58,237,0.06)' }}
@@ -410,6 +423,7 @@ export default function LeadsPage() {
                             <Zap style={{ width: 11, height: 11 }} />Sequence
                           </button>
                           <Link href={`/dashboard/leads/${lead.id}`}
+                            onClick={e => e.stopPropagation()}
                             style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 8, color: MUTED, fontSize: 12, fontWeight: 500, textDecoration: 'none', transition: 'all 0.15s' }}
                             onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = AMBER; (e.currentTarget as HTMLAnchorElement).style.color = AMBER }}
                             onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = BORDER; (e.currentTarget as HTMLAnchorElement).style.color = MUTED }}
@@ -457,6 +471,14 @@ export default function LeadsPage() {
           leadName={enrollTarget.leadName}
           leadPhone={enrollTarget.leadPhone}
           onEnrolled={() => setEnrollTarget(null)}
+        />
+      )}
+      {quickLogLeadId && (
+        <LogActivityModal
+          leadId={quickLogLeadId}
+          isOpen={true}
+          onClose={() => setQuickLogLeadId(null)}
+          onActivityLogged={() => { setQuickLogLeadId(null); fetchLeads(search, scoreFilter) }}
         />
       )}
     </div>
