@@ -438,9 +438,9 @@ export default function PowerDialerPage() {
 
   // ── DESKTOP active session ─────────────────────────────────────────────
   return (
-    <div style={{ padding:'24px 28px 60px', minHeight:'100vh', background:C.bg }}>
+    <div className="px-4 py-5 pb-24 lg:px-7 min-h-screen" style={{ background:C.bg }}>
 
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20, flexWrap:'wrap', gap:10 }}>
         <div>
           <h1 style={{ fontSize:20, fontWeight:800, color:C.text, margin:'0 0 2px' }}>Power Dialer</h1>
           <p style={{ fontSize:12, color:C.muted, margin:0 }}>Lead {queueIdx+1} of {leads.length} · {leads.length-queueIdx-1} remaining</p>
@@ -455,7 +455,7 @@ export default function PowerDialerPage() {
         </div>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:22 }}>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-[10px] mb-[22px]">
         {[
           { label:'Remaining', value:leads.length-queueIdx, color:C.blue    },
           { label:'Dialed',    value:stats.total,           color:C.text    },
@@ -469,7 +469,7 @@ export default function PowerDialerPage() {
         ))}
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:18, alignItems:'start' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-[18px] items-start">
 
         {/* Dialer card */}
         <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:22, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>

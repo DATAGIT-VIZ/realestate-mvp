@@ -248,23 +248,18 @@ Message: Looking for a ready-to-move flat for end use.`
       {/* Header — always visible */}
       <button
         onClick={() => setOpen(v => !v)}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'linear-gradient(135deg,#EFF6FF,#F5F3FF)', border: 'none', cursor: 'pointer' }}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: C.panel, border: 'none', borderBottom: `1px solid ${C.border}`, cursor: 'pointer' }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 11, background: 'linear-gradient(135deg,#2563EB,#7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Mail size={16} color="#fff" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 30, height: 30, borderRadius: 8, background: C.blueDim, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Mail size={14} color={C.blue} />
           </div>
           <div style={{ textAlign: 'left' }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>Quick Import — Paste Portal Email</div>
-            <div style={{ fontSize: 12, color: C.muted }}>Paste any lead email from MagicBricks, 99acres, Housing.com, NoBroker… AI extracts the lead instantly</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.text, lineHeight: 1.3 }}>Quick Import</div>
+            <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.3 }}>Paste a portal email · AI extracts the lead</div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, background: C.emeraldDim, color: C.emerald, borderRadius: 20, padding: '3px 10px', border: `1px solid #A7F3D0` }}>
-            No setup needed
-          </span>
-          {open ? <ChevronUp size={16} color={C.label} /> : <ChevronDown size={16} color={C.label} />}
-        </div>
+        {open ? <ChevronUp size={15} color={C.label} /> : <ChevronDown size={15} color={C.label} />}
       </button>
 
       {/* Body */}
@@ -289,7 +284,7 @@ Message: Looking for a ready-to-move flat for end use.`
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {/* Left — inputs */}
             <div>
               <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: C.label, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
@@ -373,9 +368,9 @@ Message: Looking for a ready-to-move flat for end use.`
 
           {/* Bottom hint */}
           <div style={{ marginTop: 16, padding: '10px 14px', background: C.blueDim, border: `1px solid ${C.blueBorder}`, borderRadius: 10, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-            <span style={{ fontSize: 18, lineHeight: 1 }}>💡</span>
+            <Sparkles size={13} color={C.blue} style={{ flexShrink: 0, marginTop: 1 }} />
             <span style={{ fontSize: 12, color: C.blue, lineHeight: 1.5 }}>
-              <strong>Pro tip:</strong> Set up a Gmail filter to auto-forward lead emails from portals to a dedicated inbox, then paste them here in bulk. Once your app is deployed, webhooks will do this automatically — zero manual work.
+              <strong>Pro tip:</strong> Set up a Gmail filter to auto-forward lead emails from portals to a dedicated inbox, then paste them here in bulk. Once deployed, webhooks handle this automatically — zero manual work.
             </span>
           </div>
         </div>
@@ -388,7 +383,7 @@ Message: Looking for a ready-to-move flat for end use.`
 function PayloadModal({ row, onClose }: { row: PortalLeadRow; onClose: () => void }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 20, width: '100%', maxWidth: 640, maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 80px rgba(0,0,0,0.12)' }}>
+      <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 20, width: 'min(640px, calc(100vw - 32px))', maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 80px rgba(0,0,0,0.12)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px 14px', borderBottom: `1px solid ${C.border}` }}>
           <div>
             <p style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0 }}>Raw Payload</p>
@@ -462,15 +457,15 @@ export default function IngestionLogPage() {
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1
 
   return (
-    <div style={{ padding: '28px 28px 48px', background: C.bg, minHeight: '100vh' }}>
+    <div className="px-4 py-5 pb-24 lg:px-7 lg:py-7 min-h-screen" style={{ background: C.bg }}>
       {viewing && <PayloadModal row={viewing} onClose={() => setViewing(null)} />}
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0 }}>Ingestion Log</h1>
-          <p style={{ fontSize: 13, color: C.muted, margin: '4px 0 0' }}>
-            Portal leads flowing in — {total.toLocaleString()} total events
+          <h1 className="hidden lg:block" style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0 }}>Ingestion Log</h1>
+          <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>
+            Portal leads — {total.toLocaleString()} total events
           </p>
         </div>
         <button onClick={load} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, color: C.muted, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
@@ -482,40 +477,48 @@ export default function IngestionLogPage() {
       {/* Quick import panel */}
       <QuickImportPanel onImported={load} />
 
-      {/* Filter bar */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: 3, gap: 2 }}>
-          {STATUSES.map(s => (
-            <button key={s} onClick={() => setStatus(s)}
-              style={{ padding: '5px 12px', borderRadius: 7, border: 'none', background: status === s ? C.blue : 'transparent', color: status === s ? '#fff' : C.muted, fontSize: 12, fontWeight: 500, cursor: 'pointer', textTransform: 'capitalize' }}>
-              {s === 'all' ? 'All' : s}
-            </button>
-          ))}
+      {/* Filter bar — scrollable on mobile */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+        {/* Status filter */}
+        <div style={{ overflowX: 'auto', paddingBottom: 2 }}>
+          <div style={{ display: 'flex', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: 3, gap: 2, width: 'max-content' }}>
+            {STATUSES.map(s => (
+              <button key={s} onClick={() => setStatus(s)}
+                style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: status === s ? C.blue : 'transparent', color: status === s ? '#fff' : C.muted, fontSize: 12, fontWeight: 500, cursor: 'pointer', textTransform: 'capitalize', whiteSpace: 'nowrap' }}>
+                {s === 'all' ? 'All Status' : s}
+              </button>
+            ))}
+          </div>
         </div>
-        <div style={{ display: 'flex', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: 3, gap: 2 }}>
-          {SOURCES.map(s => (
-            <button key={s} onClick={() => setSource(s)}
-              style={{ padding: '5px 12px', borderRadius: 7, border: 'none', background: source === s ? C.blue : 'transparent', color: source === s ? '#fff' : C.muted, fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
-              {s === 'all' ? 'All Sources' : s}
-            </button>
-          ))}
+        {/* Source filter */}
+        <div style={{ overflowX: 'auto', paddingBottom: 2 }}>
+          <div style={{ display: 'flex', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: 3, gap: 2, width: 'max-content' }}>
+            {SOURCES.map(s => (
+              <button key={s} onClick={() => setSource(s)}
+                style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: source === s ? C.blue : 'transparent', color: source === s ? '#fff' : C.muted, fontSize: 12, fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                {s === 'all' ? 'All Sources' : s}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Error */}
       {error && (
-        <div style={{ background: C.redDim, border: `1px solid #FCA5A5`, borderRadius: 12, padding: '12px 16px', marginBottom: 20 }}>
+        <div style={{ background: C.redDim, border: `1px solid #FCA5A5`, borderRadius: 12, padding: '12px 16px', marginBottom: 16 }}>
           <p style={{ color: C.red, fontSize: 13, margin: 0 }}>
             {error.includes('SERVICE_ROLE_KEY')
-              ? 'Add SUPABASE_SERVICE_ROLE_KEY to .env.local and run scripts/create-portal-leads.sql to enable ingestion logging.'
+              ? 'Add SUPABASE_SERVICE_ROLE_KEY to .env.local to enable ingestion logging.'
               : error}
           </p>
         </div>
       )}
 
-      {/* Table */}
+      {/* Log list */}
       <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr 110px 130px 90px 70px', padding: '10px 20px', borderBottom: `1px solid ${C.border}`, background: C.bg }}>
+
+        {/* Desktop header — hidden on mobile */}
+        <div className="hidden lg:grid" style={{ gridTemplateColumns: '150px 1fr 110px 130px 90px 70px', padding: '10px 20px', borderBottom: `1px solid ${C.border}`, background: C.bg }}>
           {['Source', 'Lead', 'Status', 'Contact ID', 'Time', ''].map((h, i) => (
             <span key={i} style={{ fontSize: 11, fontWeight: 600, color: C.label, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</span>
           ))}
@@ -527,38 +530,73 @@ export default function IngestionLogPage() {
             <p style={{ color: C.muted, fontSize: 13, margin: 0 }}>Loading…</p>
           </div>
         ) : rows.length === 0 ? (
-          <div style={{ padding: '56px 20px', textAlign: 'center' }}>
-            <Mail size={32} color={C.label} style={{ display: 'block', margin: '0 auto 12px' }} />
+          <div style={{ padding: '48px 20px', textAlign: 'center' }}>
+            <Mail size={28} color={C.label} style={{ display: 'block', margin: '0 auto 12px' }} />
             <p style={{ fontSize: 15, fontWeight: 600, color: C.text, margin: '0 0 6px' }}>No events yet</p>
-            <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>Use Quick Import above to add your first lead, or configure portal webhooks once deployed.</p>
+            <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>Use Quick Import above to add your first lead.</p>
           </div>
         ) : (
           rows.map((row, idx) => {
             const sm   = STATUS_META[row.ingestion_status]
             const srcm = SOURCE_META[row.source_portal] ?? { bg: C.blueDim, color: C.blue }
+            const isLast = idx === rows.length - 1
             return (
-              <div key={row.id} style={{ display: 'grid', gridTemplateColumns: '150px 1fr 110px 130px 90px 70px', padding: '13px 20px', borderBottom: idx < rows.length - 1 ? `1px solid ${C.borderDim}` : 'none', alignItems: 'center' }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', width: 'fit-content', padding: '3px 9px', borderRadius: 6, background: srcm.bg, color: srcm.color, fontSize: 12, fontWeight: 600 }}>
-                  {row.source_portal}
-                </span>
-                <div>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: C.text, margin: 0 }}>{row.contact_name || '—'}</p>
-                  <p style={{ fontSize: 12, color: C.muted, margin: '1px 0 0' }}>{row.contact_phone || row.error_message?.slice(0, 50) || '—'}</p>
+              <div key={row.id} style={{ borderBottom: isLast ? 'none' : `1px solid ${C.borderDim}` }}>
+
+                {/* Desktop row */}
+                <div className="hidden lg:grid" style={{ gridTemplateColumns: '150px 1fr 110px 130px 90px 70px', padding: '13px 20px', alignItems: 'center' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', width: 'fit-content', padding: '3px 9px', borderRadius: 6, background: srcm.bg, color: srcm.color, fontSize: 12, fontWeight: 600 }}>
+                    {row.source_portal}
+                  </span>
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: C.text, margin: 0 }}>{row.contact_name || '—'}</p>
+                    <p style={{ fontSize: 12, color: C.muted, margin: '1px 0 0' }}>{row.contact_phone || row.error_message?.slice(0, 50) || '—'}</p>
+                  </div>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', width: 'fit-content', padding: '3px 9px', borderRadius: 6, background: sm?.bg, color: sm?.color, fontSize: 12, fontWeight: 600, textTransform: 'capitalize' }}>
+                    {row.ingestion_status}
+                  </span>
+                  {row.contact_id ? (
+                    <a href={`/dashboard/leads/${row.contact_id}`} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: C.blue, fontFamily: 'monospace', textDecoration: 'none' }}>
+                      {row.contact_id.slice(0, 8)}… <ExternalLink size={10} />
+                    </a>
+                  ) : (
+                    <span style={{ fontSize: 12, color: C.label }}>—</span>
+                  )}
+                  <span style={{ fontSize: 12, color: C.muted }}>{fmtTime(row.created_at)}</span>
+                  <button onClick={() => setViewing(row)} style={{ padding: '5px 10px', background: 'transparent', border: `1px solid ${C.border}`, borderRadius: 7, color: C.muted, fontSize: 11, fontWeight: 500, cursor: 'pointer' }}>
+                    View
+                  </button>
                 </div>
-                <span style={{ display: 'inline-flex', alignItems: 'center', width: 'fit-content', padding: '3px 9px', borderRadius: 6, background: sm?.bg, color: sm?.color, fontSize: 12, fontWeight: 600, textTransform: 'capitalize' }}>
-                  {row.ingestion_status}
-                </span>
-                {row.contact_id ? (
-                  <a href={`/dashboard/leads/${row.contact_id}`} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: C.blue, fontFamily: 'monospace', textDecoration: 'none' }}>
-                    {row.contact_id.slice(0, 8)}… <ExternalLink size={10} />
-                  </a>
-                ) : (
-                  <span style={{ fontSize: 12, color: C.label }}>—</span>
-                )}
-                <span style={{ fontSize: 12, color: C.muted }}>{fmtTime(row.created_at)}</span>
-                <button onClick={() => setViewing(row)} style={{ padding: '5px 10px', background: 'transparent', border: `1px solid ${C.border}`, borderRadius: 7, color: C.muted, fontSize: 11, fontWeight: 500, cursor: 'pointer' }}>
-                  View
-                </button>
+
+                {/* Mobile card */}
+                <div className="lg:hidden" style={{ padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  {/* Status dot */}
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: sm?.color ?? C.label, flexShrink: 0, marginTop: 5 }} />
+
+                  {/* Content */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{row.contact_name || '—'}</span>
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20, background: srcm.bg, color: srcm.color }}>{row.source_portal}</span>
+                      <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: sm?.bg, color: sm?.color, textTransform: 'capitalize' }}>{row.ingestion_status}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: C.muted }}>{row.contact_phone || row.error_message?.slice(0, 60) || '—'}</div>
+                    {row.contact_id && (
+                      <a href={`/dashboard/leads/${row.contact_id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: C.blue, textDecoration: 'none', marginTop: 4 }}>
+                        View lead <ExternalLink size={9} />
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Time + view */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
+                    <span style={{ fontSize: 11, color: C.label }}>{fmtTime(row.created_at)}</span>
+                    <button onClick={() => setViewing(row)} style={{ padding: '4px 10px', background: 'transparent', border: `1px solid ${C.border}`, borderRadius: 7, color: C.muted, fontSize: 11, fontWeight: 500, cursor: 'pointer' }}>
+                      Raw
+                    </button>
+                  </div>
+                </div>
+
               </div>
             )
           })
@@ -566,8 +604,8 @@ export default function IngestionLogPage() {
       </div>
 
       {total > PAGE_SIZE && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
-          <span style={{ fontSize: 13, color: C.muted }}>Showing {offset + 1}–{Math.min(offset + PAGE_SIZE, total)} of {total.toLocaleString()}</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, flexWrap: 'wrap', gap: 8 }}>
+          <span style={{ fontSize: 12, color: C.muted }}>Showing {offset + 1}–{Math.min(offset + PAGE_SIZE, total)} of {total.toLocaleString()}</span>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))} disabled={offset === 0}
               style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 12px', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 9, color: offset === 0 ? C.label : C.text, fontSize: 13, cursor: offset === 0 ? 'default' : 'pointer', opacity: offset === 0 ? 0.5 : 1 }}>

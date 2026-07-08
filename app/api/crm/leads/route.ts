@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
       phones: { primaryPhoneNumber: body.phone.startsWith('+') ? body.phone : `+91${body.phone.replace(/^0/,'')}`, primaryPhoneCountryCode: 'IN' },
       city: body.city ?? null,
       intentScore,
-      status: body.status ?? 'New',
+      status: body.status ?? 'Fresh',
     }
 
     if (body.email) data.emails = { primaryEmail: body.email }

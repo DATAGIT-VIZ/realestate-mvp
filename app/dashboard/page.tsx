@@ -174,12 +174,12 @@ export default function DashboardPage() {
 
   return (
     <div style={{ background: BG, minHeight: '100vh' }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 28px 60px' }}>
+      <div className="max-w-[1200px] mx-auto px-4 pt-6 pb-24 lg:px-7 lg:pt-8 lg:pb-16">
 
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, color: TEXT, margin: 0, letterSpacing: '-0.03em' }}>{greeting}</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: TEXT, margin: 0, letterSpacing: '-0.03em' }}>{greeting}</h1>
             <p style={{ fontSize: 13, color: MUTED, margin: '4px 0 0' }}>{dateStr}</p>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -196,7 +196,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Main two-column layout */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20 }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5">
 
           {/* LEFT — KPIs + Recent Leads */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -226,9 +226,14 @@ export default function DashboardPage() {
                 <div style={{ textAlign: 'center', padding: '32px 0', color: MUTED, fontSize: 13 }}>No leads yet</div>
               ) : (
                 <div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 100px 70px', gap: 10, paddingBottom: 8, borderBottom: `1px solid ${BORDER}`, marginBottom: 4 }}>
-                    {['Lead', 'Score', 'Source', 'Added'].map(h => (
-                      <span key={h} style={{ fontSize: 10, fontWeight: 700, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</span>
+                  <div className="grid grid-cols-[1fr_70px] sm:grid-cols-[1fr_60px_100px_70px] gap-[10px] pb-2 mb-1" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                    {[
+                      { label: 'Lead',   hide: false },
+                      { label: 'Score',  hide: true  },
+                      { label: 'Source', hide: true  },
+                      { label: 'Added',  hide: false },
+                    ].map(({ label, hide }) => (
+                      <span key={label} className={hide ? 'hidden sm:block' : ''} style={{ fontSize: 10, fontWeight: 700, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</span>
                     ))}
                   </div>
                   {recent.map((lead, i) => (
@@ -319,7 +324,8 @@ function LeadRow({ lead, tag, init, isLast }: {
 }) {
   return (
     <Link href={`/dashboard/leads/${lead.id}`} style={{ textDecoration: 'none' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 100px 70px', gap: 10, padding: '9px 4px', borderBottom: isLast ? 'none' : `1px solid ${BORDER}`, cursor: 'pointer', borderRadius: 6, transition: 'background 0.1s' }}
+      <div className="grid grid-cols-[1fr_70px] sm:grid-cols-[1fr_60px_100px_70px] gap-[10px]"
+        style={{ padding: '9px 4px', borderBottom: isLast ? 'none' : `1px solid ${BORDER}`, cursor: 'pointer', borderRadius: 6, transition: 'background 0.1s' }}
         onMouseEnter={e => (e.currentTarget.style.background = '#F8FAFC')}
         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, overflow: 'hidden' }}>
@@ -331,11 +337,11 @@ function LeadRow({ lead, tag, init, isLast }: {
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div className="hidden sm:flex items-center">
           {tag ? <span style={{ padding: '2px 8px', borderRadius: 6, background: tag.bg, color: tag.color, fontSize: 10, fontWeight: 600 }}>{tag.label}</span>
             : <span style={{ fontSize: 12, color: LABEL }}>—</span>}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+        <div className="hidden sm:flex items-center overflow-hidden">
           <span style={{ fontSize: 11, color: MUTED, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lead.sourcePortal ?? '—'}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center' }}>

@@ -233,14 +233,26 @@ export function Sidebar({
           )}
         </div>
 
+        {/* Collapse strip at bottom */}
         <button
           onClick={toggleCollapsed}
-          className="hidden lg:flex items-center justify-center h-8 border-t border-slate-100 text-slate-300 hover:text-slate-500 hover:bg-slate-50 transition-colors"
+          className="hidden lg:flex items-center justify-center h-8 border-t border-slate-100 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
       </aside>
+
+      {/* Floating expand pill — only visible when sidebar is collapsed */}
+      {collapsed && (
+        <button
+          onClick={toggleCollapsed}
+          title="Expand sidebar"
+          className="hidden lg:flex fixed top-1/2 left-[60px] -translate-y-1/2 z-50 items-center justify-center w-5 h-10 bg-white border border-slate-200 rounded-r-lg shadow-md text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all"
+        >
+          <ChevronRight className="w-3 h-3" />
+        </button>
+      )}
     </>
   )
 }

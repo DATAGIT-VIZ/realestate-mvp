@@ -313,10 +313,10 @@ export default function LeadDetailPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: BG }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 80px' }}>
+      <div className="max-w-[1200px] mx-auto px-4 pb-24 lg:px-6">
 
         {/* ── Breadcrumb ── */}
-        <div style={{ padding: '20px 0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ padding: '16px 0 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
           <Link href="/dashboard/leads"
             style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: MUTED, textDecoration: 'none' }}
             onMouseEnter={e => (e.currentTarget.style.color = TEXT)}
@@ -355,7 +355,7 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Quick actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             {phone && (
               <button onClick={() => setShowCallModal(true)}
                 style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 10, color: EMERALD, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
@@ -384,7 +384,7 @@ export default function LeadDetailPage() {
         </div>
 
         {/* ── 2-col layout ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20, alignItems: 'start' }} className="lg:grid-cols-[1fr_340px] grid-cols-1">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5 items-start">
 
           {/* ── Left column ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

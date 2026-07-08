@@ -117,7 +117,7 @@ export function AddLeadModal({ onClose, onSuccess }: Props) {
           propertyType: form.propertyType ? [form.propertyType] : undefined,
           timeline: form.timeline || undefined,
           localities: form.localities ? form.localities.split(',').map(s => s.trim()).filter(Boolean) : undefined,
-          status: 'New',
+          status: 'Fresh',
         }),
       })
       const json = await res.json()
@@ -139,9 +139,9 @@ export function AddLeadModal({ onClose, onSuccess }: Props) {
     <div style={{ position: 'fixed', inset: 0, background: BG_OVERLAY, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
-      <div style={{ background: BG_MODAL, border: `1px solid ${BORDER}`, borderRadius: 20, width: '100%', maxWidth: 560, maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }}>
+      <div style={{ background: BG_MODAL, border: `1px solid ${BORDER}`, borderRadius: 20, width: 'min(560px, calc(100vw - 24px))', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(0,0,0,0.12)' }}>
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 16px', borderBottom: `1px solid ${BORDER}` }}>
+        <div className="px-4 sm:px-6" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: `1px solid ${BORDER}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <UserPlus style={{ width: 16, height: 16, color: AMBER }} />
@@ -157,7 +157,7 @@ export function AddLeadModal({ onClose, onSuccess }: Props) {
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} style={{ padding: '20px 24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <form onSubmit={handleSubmit} className="px-4 py-4 sm:px-6 sm:py-5" style={{ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
 
           {/* Duplicate warning */}
           {duplicate && (
@@ -180,7 +180,7 @@ export function AddLeadModal({ onClose, onSuccess }: Props) {
           )}
 
           {/* Name row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="First Name *" icon={User}>
               <input value={form.firstName} onChange={set('firstName')} placeholder="Rajesh" style={{ ...inputStyle, borderColor: errors.firstName ? 'rgba(239,68,68,0.5)' : BORDER }} />
               {errors.firstName && <p style={{ fontSize: 11, color: '#EF4444', margin: '4px 0 0' }}>{errors.firstName}</p>}
@@ -191,7 +191,7 @@ export function AddLeadModal({ onClose, onSuccess }: Props) {
           </div>
 
           {/* Contact row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Phone *" icon={Phone}>
               <input value={form.phone} onChange={set('phone')} placeholder="+91 98765 43210" style={{ ...inputStyle, borderColor: errors.phone ? 'rgba(239,68,68,0.5)' : BORDER }} />
               {errors.phone && <p style={{ fontSize: 11, color: '#EF4444', margin: '4px 0 0' }}>{errors.phone}</p>}
@@ -203,7 +203,7 @@ export function AddLeadModal({ onClose, onSuccess }: Props) {
           </div>
 
           {/* Budget row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="grid grid-cols-2 gap-3">
             <Field label="Budget Min (₹)" icon={IndianRupee}>
               <input value={form.budgetMin} onChange={set('budgetMin')} type="number" placeholder="5000000" style={inputStyle} />
             </Field>
@@ -214,7 +214,7 @@ export function AddLeadModal({ onClose, onSuccess }: Props) {
           </div>
 
           {/* Source + Property type */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Source Portal" icon={Tag}>
               <select value={form.sourcePortal} onChange={set('sourcePortal')} style={selectStyle}>
                 <option value="">Select source</option>
@@ -230,7 +230,7 @@ export function AddLeadModal({ onClose, onSuccess }: Props) {
           </div>
 
           {/* Timeline + City */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Timeline" icon={Clock}>
               <select value={form.timeline} onChange={set('timeline')} style={selectStyle}>
                 <option value="">Select timeline</option>
@@ -238,7 +238,7 @@ export function AddLeadModal({ onClose, onSuccess }: Props) {
               </select>
             </Field>
             <Field label="City" icon={MapPin}>
-              <input value={form.city} onChange={set('city')} placeholder="Mumbai, Pune, Bangalore…" style={inputStyle} />
+              <input value={form.city} onChange={set('city')} placeholder="Mumbai, Pune…" style={inputStyle} />
             </Field>
           </div>
 
@@ -249,7 +249,7 @@ export function AddLeadModal({ onClose, onSuccess }: Props) {
         </form>
 
         {/* Footer */}
-        <div style={{ padding: '16px 24px', borderTop: `1px solid ${BORDER}`, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+        <div style={{ padding: '14px 16px', borderTop: `1px solid ${BORDER}`, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           <button type="button" onClick={onClose}
             style={{ padding: '9px 20px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 10, color: MUTED, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
           >

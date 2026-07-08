@@ -2,15 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, HandshakeIcon, BarChart3, MoreHorizontal } from 'lucide-react'
+import { LayoutDashboard, Users, Layers, BarChart3, MoreHorizontal } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const TABS = [
-  { name: 'Home',      href: '/dashboard',          icon: LayoutDashboard, exact: true  },
-  { name: 'Leads',     href: '/dashboard/leads',    icon: Users,           exact: false },
-  { name: 'Deals',     href: '/dashboard/deals',    icon: HandshakeIcon,   exact: false },
-  { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3,      exact: false },
-  { name: 'More',      href: '/dashboard/settings', icon: MoreHorizontal,  exact: false },
+  { name: 'Home',      href: '/dashboard',            icon: LayoutDashboard, exact: true  },
+  { name: 'Leads',     href: '/dashboard/leads',      icon: Users,           exact: false },
+  { name: 'Lifecycle', href: '/dashboard/lifecycle',  icon: Layers,          exact: false },
+  { name: 'Analytics', href: '/dashboard/analytics',  icon: BarChart3,       exact: false },
+  { name: 'More',      href: '/dashboard/settings',   icon: MoreHorizontal,  exact: false },
 ]
 
 export function MobileTabBar() {

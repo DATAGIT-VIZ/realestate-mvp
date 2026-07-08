@@ -89,12 +89,13 @@ function nextStageId(id: string): string | null {
 
 // ─── Draggable lead card ──────────────────────────────────────────────────────
 function LeadCard({
-  lead, stage, onAdvance, overlay = false,
+  lead, stage, onAdvance, overlay = false, compact = false,
 }: {
   lead: CRMLead
   stage: typeof LIFECYCLE_STAGES[0]
   onAdvance?: (leadId: string, newStage: string) => void
   overlay?: boolean
+  compact?: boolean
 }) {
   const router = useRouter()
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: lead.id })
@@ -104,8 +105,8 @@ function LeadCard({
   const style: React.CSSProperties = {
     background: PANEL,
     border: `1px solid ${isDragging ? stage.color : BORDER}`,
-    borderRadius: 12,
-    padding: '12px 12px 10px',
+    borderRadius: compact ? 9 : 12,
+    padding: compact ? '8px 9px 7px' : '12px 12px 10px',
     cursor: overlay ? 'grabbing' : 'grab',
     position: 'relative',
     opacity: isDragging ? 0.35 : 1,
@@ -118,26 +119,26 @@ function LeadCard({
   return (
     <div ref={setNodeRef} style={style} {...(overlay ? {} : { ...attributes, ...listeners })}>
       {sla && (
-        <div title="SLA: >48h in this stage" style={{ position: 'absolute', top: 10, right: 10, width: 7, height: 7, borderRadius: '50%', background: '#EF4444' }} />
+        <div title="SLA: >48h in this stage" style={{ position: 'absolute', top: compact ? 7 : 10, right: compact ? 7 : 10, width: 6, height: 6, borderRadius: '50%', background: '#EF4444' }} />
       )}
 
-      {/* Name + city — click to navigate (only when not overlay) */}
+      {/* Name + city */}
       <div
-        style={{ marginBottom: 8 }}
+        style={{ marginBottom: compact ? 5 : 8 }}
         onClick={overlay ? undefined : (e) => { e.stopPropagation(); router.push(`/dashboard/leads/${lead.id}`) }}
       >
-        <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, marginBottom: 2 }}>{fname(lead)}</div>
-        <div style={{ fontSize: 11, color: MUTED }}>{lead.city ?? '—'}</div>
+        <div style={{ fontSize: compact ? 12 : 13, fontWeight: 700, color: TEXT, marginBottom: 1, paddingRight: sla ? 12 : 0 }}>{fname(lead)}</div>
+        {!compact && <div style={{ fontSize: 11, color: MUTED }}>{lead.city ?? '—'}</div>}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: scoreColor(lead.intentScore), background: scoreBg(lead.intentScore), padding: '2px 7px', borderRadius: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: compact ? 5 : 8 }}>
+        <span style={{ fontSize: compact ? 10 : 11, fontWeight: 700, color: scoreColor(lead.intentScore), background: scoreBg(lead.intentScore), padding: compact ? '1px 5px' : '2px 7px', borderRadius: 20 }}>
           {lead.intentScore ?? '—'}
         </span>
-        <span style={{ fontSize: 10, color: MUTED }}>{timeAgo(lead.createdAt)}</span>
+        <span style={{ fontSize: 10, color: MUTED }}>{compact ? lead.city ?? '—' : timeAgo(lead.createdAt)}</span>
       </div>
 
-      {lead.sourcePortal && (
+      {!compact && lead.sourcePortal && (
         <div style={{ marginBottom: 8 }}>
           <span style={{ fontSize: 10, color: MUTED, background: '#F1F5F9', padding: '2px 6px', borderRadius: 6 }}>{lead.sourcePortal}</span>
         </div>
@@ -147,10 +148,12 @@ function LeadCard({
         <button
           onPointerDown={e => e.stopPropagation()}
           onClick={e => { e.stopPropagation(); onAdvance(lead.id, nextId) }}
-          style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 600, color: stage.color, background: `${stage.color}10`, border: `1px solid ${stage.color}30`, borderRadius: 7, padding: '4px 8px', cursor: 'pointer', width: '100%', justifyContent: 'center' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: compact ? 10 : 11, fontWeight: 600, color: stage.color, background: `${stage.color}10`, border: `1px solid ${stage.color}30`, borderRadius: 6, padding: compact ? '3px 6px' : '4px 8px', cursor: 'pointer', width: '100%', justifyContent: 'center' }}
         >
-          {LIFECYCLE_STAGES.find(s => s.id === nextId)?.label ?? nextId}
-          <ChevronRight style={{ width: 11, height: 11 }} />
+          {compact
+            ? <ChevronRight style={{ width: 11, height: 11 }} />
+            : <>{LIFECYCLE_STAGES.find(s => s.id === nextId)?.label ?? nextId}<ChevronRight style={{ width: 11, height: 11 }} /></>
+          }
         </button>
       )}
     </div>
@@ -159,21 +162,22 @@ function LeadCard({
 
 // ─── Droppable column ─────────────────────────────────────────────────────────
 function StageColumn({
-  stage, leads, onAdvance, activeId,
+  stage, leads, onAdvance, activeId, compact = false,
 }: {
   stage: typeof LIFECYCLE_STAGES[0]
   leads: CRMLead[]
   onAdvance: (leadId: string, newStage: string) => void
   activeId: string | null
+  compact?: boolean
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id })
 
   return (
-    <div style={{ width: 240, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ width: compact ? '100%' : 240, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
       {/* Column header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: PANEL, border: `1px solid ${BORDER}`, borderLeft: `3px solid ${stage.color}`, borderRadius: '10px 10px 0 0' }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: stage.color }}>{stage.label}</span>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', background: stage.color, borderRadius: 20, padding: '1px 8px' }}>{leads.length}</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: compact ? '7px 10px' : '10px 14px', background: PANEL, border: `1px solid ${BORDER}`, borderLeft: `3px solid ${stage.color}`, borderRadius: '10px 10px 0 0' }}>
+        <span style={{ fontSize: compact ? 11 : 12, fontWeight: 700, color: stage.color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: compact ? 80 : 'unset' }}>{stage.label}</span>
+        <span style={{ fontSize: 10, fontWeight: 700, color: '#fff', background: stage.color, borderRadius: 20, padding: '1px 7px', flexShrink: 0 }}>{leads.length}</span>
       </div>
 
       {/* Drop zone */}
@@ -184,25 +188,25 @@ function StageColumn({
           border: `1px solid ${isOver ? stage.color : BORDER}`,
           borderTop: 'none',
           borderRadius: '0 0 10px 10px',
-          padding: 8,
+          padding: compact ? 6 : 8,
           display: 'flex',
           flexDirection: 'column',
-          gap: 8,
-          minHeight: 200,
+          gap: compact ? 5 : 8,
+          minHeight: compact ? 80 : 200,
           transition: 'background 0.15s, border-color 0.15s',
         }}
       >
         {leads.length === 0 && !isOver ? (
-          <div style={{ textAlign: 'center', padding: '24px 8px', color: MUTED, fontSize: 12, pointerEvents: 'none' }}>
-            {activeId ? 'Drop here' : 'No leads'}
+          <div style={{ textAlign: 'center', padding: compact ? '12px 4px' : '24px 8px', color: MUTED, fontSize: compact ? 11 : 12, pointerEvents: 'none' }}>
+            {activeId ? 'Drop' : '—'}
           </div>
         ) : (
           leads.map(lead => (
-            <LeadCard key={lead.id} lead={lead} stage={stage} onAdvance={onAdvance} />
+            <LeadCard key={lead.id} lead={lead} stage={stage} onAdvance={onAdvance} compact={compact} />
           ))
         )}
         {isOver && (
-          <div style={{ height: 4, borderRadius: 2, background: stage.color, opacity: 0.4 }} />
+          <div style={{ height: 3, borderRadius: 2, background: stage.color, opacity: 0.4 }} />
         )}
       </div>
     </div>
@@ -214,6 +218,14 @@ export default function LifecyclePage() {
   const [leads,    setLeads]    = useState<CRMLead[]>([])
   const [loading,  setLoading]  = useState(true)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -281,12 +293,12 @@ export default function LifecyclePage() {
       <div style={{ minHeight: '100vh', background: BG }}>
 
         {/* Header */}
-        <div style={{ padding: '24px 28px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${BORDER}` }}>
+        <div className="px-4 lg:px-7 py-4 lg:py-5 flex items-start justify-between gap-3 flex-wrap" style={{ borderBottom: `1px solid ${BORDER}` }}>
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: TEXT, margin: '0 0 4px' }}>Lead Lifecycle</h1>
-            <p style={{ fontSize: 13, color: MUTED, margin: 0 }}>{leads.length} leads · drag cards to move between stages</p>
+            <h1 className="hidden lg:block" style={{ fontSize: 22, fontWeight: 800, color: TEXT, margin: '0 0 4px' }}>Lead Lifecycle</h1>
+            <p style={{ fontSize: 13, color: MUTED, margin: 0 }}>{leads.length} leads · drag to move between stages</p>
           </div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <div className="hidden lg:flex gap-[10px] flex-wrap justify-end">
             {LIFECYCLE_STAGES.map(s => (
               <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: s.color }} />
@@ -296,9 +308,9 @@ export default function LifecyclePage() {
           </div>
         </div>
 
-        {/* Board */}
-        <div style={{ overflowX: 'auto', paddingBottom: 40 }}>
-          <div style={{ display: 'flex', gap: 12, padding: '20px 28px', width: 'max-content' }}>
+        {/* Board — 2-col grid on mobile, horizontal scroll on desktop */}
+        {isMobile ? (
+          <div style={{ padding: '12px 12px 100px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {LIFECYCLE_STAGES.map(stage => (
               <StageColumn
                 key={stage.id}
@@ -306,10 +318,25 @@ export default function LifecyclePage() {
                 leads={grouped[stage.id] ?? []}
                 onAdvance={handleAdvance}
                 activeId={activeId}
+                compact
               />
             ))}
           </div>
-        </div>
+        ) : (
+          <div style={{ overflowX: 'auto', paddingBottom: 60 }}>
+            <div style={{ display: 'flex', gap: 12, padding: '20px 28px 0', width: 'max-content' }}>
+              {LIFECYCLE_STAGES.map(stage => (
+                <StageColumn
+                  key={stage.id}
+                  stage={stage}
+                  leads={grouped[stage.id] ?? []}
+                  onAdvance={handleAdvance}
+                  activeId={activeId}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Drag overlay — floating card that follows cursor */}
         <DragOverlay dropAnimation={null}>

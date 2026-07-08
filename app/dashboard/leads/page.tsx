@@ -159,7 +159,7 @@ export default function LeadsPage() {
           sourcePortal: row.source || 'CSV Import',
           propertyType: row.property_type ? [row.property_type] : undefined,
           timeline: row.timeline || undefined,
-          status: 'New',
+          status: 'Fresh',
         }),
       })
     }
@@ -177,17 +177,17 @@ export default function LeadsPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: BG }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px 80px' }}>
+      <div className="max-w-[1280px] mx-auto px-4 pb-24 lg:px-6">
 
         {/* ── Header ── */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '28px 0 24px', borderBottom: `1px solid ${BORDER}`, marginBottom: 24 }}>
-          <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 0 18px', borderBottom: `1px solid ${BORDER}`, marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+          <div className="hidden lg:block">
             <h1 style={{ fontSize: 22, fontWeight: 700, color: TEXT, margin: 0, letterSpacing: '-0.3px' }}>Leads</h1>
             <p style={{ fontSize: 13, color: MUTED, margin: '4px 0 0' }}>
               {loading ? 'Refreshing…' : `${totalCount} total · sorted by intent score`}
             </p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <button onClick={() => setShowEmailModal(true)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 10, color: TEXT, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
             >
@@ -209,7 +209,7 @@ export default function LeadsPage() {
         </div>
 
         {/* ── Toolbar ── */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, position: 'relative' }}>
             <Search style={{ width: 14, height: 14, color: MUTED, position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
             {loading && search && (
@@ -308,11 +308,13 @@ export default function LeadsPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
-                  {['Name', 'Phone', 'Score', 'Budget', 'Source', 'Updated', ''].map((h, i) => (
-                    <th key={i} style={{ padding: '12px 16px', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: i === 2 ? 'center' : i >= 5 ? 'right' : 'left' }}>
-                      {h}
-                    </th>
-                  ))}
+                  <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left' }}>Name</th>
+                  <th className="hidden sm:table-cell" style={{ padding: '12px 16px', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left' }}>Phone</th>
+                  <th className="hidden md:table-cell" style={{ padding: '12px 16px', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'center' }}>Score</th>
+                  <th className="hidden lg:table-cell" style={{ padding: '12px 16px', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left' }}>Budget</th>
+                  <th className="hidden lg:table-cell" style={{ padding: '12px 16px', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left' }}>Source</th>
+                  <th className="hidden lg:table-cell" style={{ padding: '12px 16px', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'right' }}>Updated</th>
+                  <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'right' }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -326,7 +328,7 @@ export default function LeadsPage() {
                       onMouseEnter={e => (e.currentTarget.style.background = isDup ? 'rgba(234,179,8,0.07)' : '#F8FAFC')}
                       onMouseLeave={e => (e.currentTarget.style.background = isDup ? 'rgba(234,179,8,0.03)' : 'transparent')}
                     >
-                      <td style={{ padding: '13px 16px' }}>
+                      <td style={{ padding: '12px 16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <div style={{ width: 8, height: 8, borderRadius: '50%', background: dot, flexShrink: 0 }} />
                           <div>
@@ -334,20 +336,23 @@ export default function LeadsPage() {
                               <p style={{ fontSize: 13, fontWeight: 600, color: TEXT, margin: 0 }}>{getDisplayName(lead)}</p>
                               {isDup && <span style={{ fontSize: 9, fontWeight: 700, background: 'rgba(180,83,9,0.1)', color: '#B45309', padding: '1px 6px', borderRadius: 6 }}>DUP</span>}
                             </div>
+                            <p className="sm:hidden" style={{ fontSize: 11, color: MUTED, margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: 3 }}>
+                              <Phone style={{ width: 10, height: 10 }} />{getPhone(lead) || '—'}
+                            </p>
                             {getEmail(lead) && (
-                              <p style={{ fontSize: 11, color: MUTED, margin: 0, display: 'flex', alignItems: 'center', gap: 3 }}>
+                              <p className="hidden sm:flex" style={{ fontSize: 11, color: MUTED, margin: 0, alignItems: 'center', gap: 3 }}>
                                 <Mail style={{ width: 10, height: 10 }} />{getEmail(lead)}
                               </p>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '13px 16px' }}>
+                      <td className="hidden sm:table-cell" style={{ padding: '12px 16px' }}>
                         <span style={{ fontSize: 13, color: MUTED, display: 'flex', alignItems: 'center', gap: 5 }}>
                           <Phone style={{ width: 12, height: 12 }} />{getPhone(lead) || '—'}
                         </span>
                       </td>
-                      <td style={{ padding: '13px 16px', textAlign: 'center' }}>
+                      <td className="hidden md:table-cell" style={{ padding: '12px 16px', textAlign: 'center' }}>
                         {score > 0 ? (
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                             <div style={{ width: 34, height: 34, borderRadius: '50%', border: `2px solid ${dot}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -359,23 +364,24 @@ export default function LeadsPage() {
                           <span style={{ fontSize: 13, color: '#CBD5E1', fontWeight: 500 }}>—</span>
                         )}
                       </td>
-                      <td style={{ padding: '13px 16px' }}>
+                      <td className="hidden lg:table-cell" style={{ padding: '12px 16px' }}>
                         <span style={{ fontSize: 12, color: MUTED }}>{formatBudget(lead.budgetMin, lead.budgetMax)}</span>
                       </td>
-                      <td style={{ padding: '13px 16px' }}>
+                      <td className="hidden lg:table-cell" style={{ padding: '12px 16px' }}>
                         <span style={{ fontSize: 13, color: MUTED }}>{lead.sourcePortal || '—'}</span>
                       </td>
-                      <td style={{ padding: '13px 16px', textAlign: 'right' }}>
+                      <td className="hidden lg:table-cell" style={{ padding: '12px 16px', textAlign: 'right' }}>
                         <span style={{ fontSize: 12, color: MUTED, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
                           <Clock style={{ width: 11, height: 11 }} />{timeAgo(lead.updatedAt)}
                         </span>
                       </td>
-                      <td style={{ padding: '13px 16px', textAlign: 'right' }}>
+                      <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
                           <button
                             onClick={() => setEnrollTarget({ leadId: lead.id, leadName: getDisplayName(lead), leadPhone: getPhone(lead) })}
                             title="Enroll in sequence"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 10px', background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.2)', borderRadius: 8, color: '#7C3AED', fontSize: 12, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s' }}
+                            className="hidden sm:inline-flex"
+                            style={{ alignItems: 'center', gap: 5, padding: '6px 10px', background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.2)', borderRadius: 8, color: '#7C3AED', fontSize: 12, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s' }}
                             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(124,58,237,0.12)' }}
                             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(124,58,237,0.06)' }}
                           >

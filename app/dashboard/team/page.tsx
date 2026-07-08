@@ -96,7 +96,7 @@ function AgentModal({ member, onClose, onSave }: {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
-      <div style={{ background: C.panel, borderRadius: 20, padding: 28, width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+      <div style={{ background: C.panel, borderRadius: 20, padding: 20, width: 'min(520px, calc(100vw - 32px))', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h2 style={{ fontSize: 17, fontWeight: 700, color: C.text, margin: 0 }}>{member ? 'Edit Agent' : 'Add Agent'}</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted }}><X style={{ width: 20, height: 20 }} /></button>
@@ -263,10 +263,10 @@ export default function TeamPage() {
   })
 
   return (
-    <div style={{ padding: '28px 28px 60px', minHeight: '100vh', background: C.bg }}>
+    <div className="px-4 py-5 pb-24 lg:px-7 lg:py-7 min-h-screen" style={{ background: C.bg }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
-        <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
+        <div className="hidden lg:block">
           <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: '0 0 4px' }}>Team Dashboard</h1>
           <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>Manage agents, track performance, view leaderboard</p>
         </div>
@@ -277,7 +277,7 @@ export default function TeamPage() {
       </div>
 
       {/* Top stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-[14px] mb-6">
         {[
           { label: 'Team Size',       value: `${members.filter(m => m.is_active).length} active`, icon: <Users style={{ width: 16, height: 16 }} />,    color: C.blue },
           { label: 'Total Pipeline',  value: fmt(totalPipeline),                                  icon: <TrendingUp style={{ width: 16, height: 16 }} />, color: C.violet },
@@ -320,35 +320,39 @@ export default function TeamPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                  {['Rank', 'Agent', 'Active Deals', 'Pipeline Value', 'Won', 'Win Rate', 'vs Target'].map(h => (
-                    <th key={h} style={{ padding: '14px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: C.label, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
-                  ))}
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: C.label, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Rank</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: C.label, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Agent</th>
+                  <th className="hidden sm:table-cell" style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: C.label, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active</th>
+                  <th className="hidden lg:table-cell" style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: C.label, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pipeline</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: C.label, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Won</th>
+                  <th className="hidden md:table-cell" style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: C.label, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Win Rate</th>
+                  <th className="hidden lg:table-cell" style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: C.label, textTransform: 'uppercase', letterSpacing: '0.05em' }}>vs Target</th>
                 </tr>
               </thead>
               <tbody>
                 {agentStats.map((a, i) => (
                   <tr key={a.name} style={{ borderBottom: `1px solid ${C.border}`, background: i === 0 ? '#FFFBEB' : 'transparent' }}>
-                    <td style={{ padding: '14px 16px' }}>{rankBadge(i)}</td>
-                    <td style={{ padding: '14px 16px' }}>
+                    <td style={{ padding: '12px 16px' }}>{rankBadge(i)}</td>
+                    <td style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: `${ROLE_COLOR[a.member?.role ?? 'agent']}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: ROLE_COLOR[a.member?.role ?? 'agent'] }}>
+                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: `${ROLE_COLOR[a.member?.role ?? 'agent']}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: ROLE_COLOR[a.member?.role ?? 'agent'] }}>
                           {a.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{a.name}</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{a.name}</div>
                           <div style={{ fontSize: 11, color: C.muted }}>{ROLE_LABEL[a.member?.role ?? 'agent']}</div>
                         </div>
                       </div>
                     </td>
-                    <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 600, color: C.text }}>{a.active}</td>
-                    <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 700, color: C.violet }}>{fmt(a.pipeline)}</td>
-                    <td style={{ padding: '14px 16px' }}>
+                    <td className="hidden sm:table-cell" style={{ padding: '12px 16px', fontSize: 14, fontWeight: 600, color: C.text }}>{a.active}</td>
+                    <td className="hidden lg:table-cell" style={{ padding: '12px 16px', fontSize: 14, fontWeight: 700, color: C.violet }}>{fmt(a.pipeline)}</td>
+                    <td style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Trophy style={{ width: 14, height: 14, color: C.emerald }} />
+                        <Trophy style={{ width: 13, height: 13, color: C.emerald }} />
                         <span style={{ fontSize: 14, fontWeight: 700, color: C.emerald }}>{a.won}</span>
                       </div>
                     </td>
-                    <td style={{ padding: '14px 16px' }}>
+                    <td className="hidden md:table-cell" style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <div style={{ flex: 1, height: 6, background: '#F1F5F9', borderRadius: 3, maxWidth: 80 }}>
                           <div style={{ height: '100%', borderRadius: 3, background: a.winRate >= 50 ? C.emerald : a.winRate >= 25 ? C.amber : C.red, width: `${Math.min(a.winRate, 100)}%` }} />
@@ -356,7 +360,7 @@ export default function TeamPage() {
                         <span style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{a.winRate}%</span>
                       </div>
                     </td>
-                    <td style={{ padding: '14px 16px' }}>
+                    <td className="hidden lg:table-cell" style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         {a.won >= a.target
                           ? <CheckCircle style={{ width: 14, height: 14, color: C.emerald }} />

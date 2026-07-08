@@ -354,11 +354,11 @@ export default function ReportsPage() {
   })
 
   return (
-    <div style={{ padding: '28px 28px 60px', minHeight: '100vh', background: C.bg }}>
+    <div className="px-4 py-5 pb-24 lg:px-7 lg:py-7 min-h-screen" style={{ background: C.bg }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: '0 0 4px' }}>Custom Reports</h1>
+          <h1 className="hidden lg:block" style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: '0 0 4px' }}>Custom Reports</h1>
           <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>Analyse your pipeline, leads, and agent performance</p>
         </div>
       </div>
@@ -405,7 +405,7 @@ export default function ReportsPage() {
 
       {/* ── Builder ────────────────────────────────────────────────────────── */}
       {activeTab === 'builder' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: 20, alignItems: 'start' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-5 items-start">
           {/* Config panel */}
           <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 20, padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
             <h2 style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0 }}>Report Configuration</h2>

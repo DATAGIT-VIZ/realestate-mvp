@@ -68,7 +68,7 @@ function PropertyFormModal({
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(4px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: C.panel, borderRadius: 20, border: `1px solid ${C.border}`, width: 560, maxHeight: '90vh', overflow: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
+      <div style={{ background: C.panel, borderRadius: 20, border: `1px solid ${C.border}`, width: 'min(560px, calc(100vw - 32px))', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: `1px solid ${C.border}` }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: 0 }}>{initial.title ? 'Edit Property' : 'Add Property'}</h2>
           <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -219,13 +219,13 @@ export default function PropertiesPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px 64px' }}>
+      <div className="max-w-[1200px] mx-auto px-4 pb-20 lg:px-6">
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '28px 0 24px', borderBottom: `1px solid ${C.border}`, marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 0 18px', borderBottom: `1px solid ${C.border}`, marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: 0 }}>Properties</h1>
-            <p style={{ fontSize: 13, color: C.muted, margin: '4px 0 0' }}>
+            <h1 className="hidden lg:block" style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: 0 }}>Properties</h1>
+            <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>
               {counts.available} available · {counts.underOffer} under offer · {counts.sold} sold
             </p>
           </div>

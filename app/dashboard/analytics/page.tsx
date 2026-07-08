@@ -368,13 +368,13 @@ export default function AnalyticsPage() {
   // ─── Main render ──────────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: '100vh', background: C.bg }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px 64px' }}>
+      <div className="max-w-[1280px] mx-auto px-4 pb-16 lg:px-6">
 
         {/* ── Header ── */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '28px 0 24px', borderBottom: `1px solid ${C.border}`, marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 0 18px', borderBottom: `1px solid ${C.border}`, marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: 0, letterSpacing: '-0.3px' }}>Insights</h1>
-            <p style={{ fontSize: 13, color: C.muted, margin: '4px 0 0' }}>
+            <h1 className="hidden lg:block" style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: 0, letterSpacing: '-0.3px' }}>Insights</h1>
+            <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>
               {summary.total} leads · {summary.totalActivities} activities
             </p>
           </div>
@@ -398,7 +398,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* ── AI insight strip ── */}
-        <div style={{ background: 'linear-gradient(135deg, rgba(217,119,6,0.07) 0%, rgba(217,119,6,0.02) 100%)', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 14, padding: '14px 20px', marginBottom: 28, display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ background: 'linear-gradient(135deg, rgba(217,119,6,0.07) 0%, rgba(217,119,6,0.02) 100%)', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 14, padding: '14px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.amberDim, border: '1px solid rgba(217,119,6,0.3)', borderRadius: 20, padding: '4px 12px', whiteSpace: 'nowrap', flexShrink: 0 }}>
             <Sparkles style={{ width: 12, height: 12, color: C.amber }} />
             <span style={{ fontSize: 11, fontWeight: 700, color: C.amber, letterSpacing: '0.05em', textTransform: 'uppercase' }}>AI Insight</span>
@@ -412,7 +412,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* ── KPI cards ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }}>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-[14px] mb-5">
           {[
             { label: 'Total Leads',    value: summary.total,                  sub: `${dateRange} window`,         icon: <BarChart3 style={{ width: 17, height: 17, color: C.blue }} />,    accent: C.blue  },
             { label: 'Hot Leads',      value: summary.hotCount,               sub: 'score ≥ 70',                  icon: <Flame style={{ width: 17, height: 17, color: C.orange }} />,       accent: C.orange, trend: summary.hotTrend },
@@ -441,7 +441,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* ── Row 1: Lead volume + Portal breakdown ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 14, marginBottom: 14 }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-[14px] mb-[14px]">
 
           {/* Lead volume area chart */}
           <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '22px 22px 16px' }}>
@@ -509,7 +509,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* ── Row 2: Funnel + Response-time histogram ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 14, marginBottom: 14 }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-[14px] mb-[14px]">
 
           {/* Funnel */}
           <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 22 }}>
@@ -560,7 +560,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* ── Row 3: Source performance + Activity effectiveness ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-[14px] mb-[14px]">
 
           {/* Source performance */}
           <div id="sources" style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '22px' }}>
@@ -653,9 +653,14 @@ export default function AnalyticsPage() {
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 2fr', gap: 12, padding: '8px 12px', borderBottom: `1px solid ${C.border}`, marginBottom: 4 }}>
-            {['Lead', 'Score', 'Portal', 'Next Action'].map(h => (
-              <span key={h} style={{ fontSize: 11, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</span>
+          <div className="grid grid-cols-[1fr_50px] sm:grid-cols-[2fr_1fr_1fr_2fr] gap-3 px-3 pb-2 mb-1" style={{ borderBottom: `1px solid ${C.border}` }}>
+            {[
+              { h: 'Lead',        hide: false },
+              { h: 'Score',       hide: false },
+              { h: 'Portal',      hide: true  },
+              { h: 'Next Action', hide: true  },
+            ].map(({ h, hide }) => (
+              <span key={h} className={hide ? 'hidden sm:block' : ''} style={{ fontSize: 11, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</span>
             ))}
           </div>
 
@@ -664,7 +669,8 @@ export default function AnalyticsPage() {
             return (
               <div key={lead.id}
                 onClick={() => router.push(`/dashboard/leads/${lead.id}`)}
-                style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 2fr', gap: 12, padding: '11px 12px', borderRadius: 10, cursor: 'pointer', transition: 'background 0.12s' }}
+                className="grid grid-cols-[1fr_50px] sm:grid-cols-[2fr_1fr_1fr_2fr] gap-3 px-3 rounded-[10px]"
+                style={{ padding: '11px 12px', cursor: 'pointer', transition: 'background 0.12s' }}
                 onMouseEnter={e => (e.currentTarget.style.background = '#F8FAFC')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
@@ -679,10 +685,10 @@ export default function AnalyticsPage() {
                   <span style={{ fontSize: 14, fontWeight: 700, color: dotColor }}>{score}</span>
                   <span style={{ fontSize: 11, color: C.label, marginLeft: 3 }}>/100</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div className="hidden sm:flex items-center">
                   <span style={{ fontSize: 12, color: C.muted }}>{lead.sourcePortal ?? '—'}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div className="hidden sm:flex items-center">
                   <span style={{ fontSize: 12, color: C.muted, lineHeight: 1.4 }}>{nextAction}</span>
                 </div>
               </div>
@@ -691,7 +697,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* ── Row 4: City breakdown + Pipeline stages ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 14, marginBottom: 14 }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-[14px] mb-[14px]">
 
           {/* City breakdown */}
           <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '22px 22px 16px' }}>
