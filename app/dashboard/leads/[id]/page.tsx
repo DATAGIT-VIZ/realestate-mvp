@@ -14,7 +14,7 @@ import {
   ArrowLeft, Phone, Mail, MapPin, Building2, Clock, Tag,
   TrendingUp, Calendar, Edit2, Trash2, Loader2, Activity,
   AlertCircle, Plus, MessageCircle, CheckCircle, XCircle, X,
-  MinusCircle, HelpCircle, ChevronDown, IndianRupee, User, Zap, PhoneOff,
+  MinusCircle, HelpCircle, ChevronDown, IndianRupee, User, Zap, PhoneOff, Copy,
 } from 'lucide-react'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -43,6 +43,14 @@ type Activity = {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+function getCsId(lead: CRMLead): string {
+  if (lead.leadPortalId?.startsWith('CS')) return lead.leadPortalId
+  const hex = lead.id.replace(/-/g, '')
+  let n = 0
+  for (const c of hex) n = (n * 31 + parseInt(c, 16)) % 100000
+  return `CS${String(n).padStart(5, '0')}`
+}
+
 const getDisplayName = (l: CRMLead) => `${l.name.firstName} ${l.name.lastName}`.trim() || 'Unnamed Lead'
 const getPhone = (l: CRMLead) => l.phones.primaryPhoneNumber ?? ''
 const getEmail = (l: CRMLead) => l.emails.primaryEmail ?? ''
@@ -340,11 +348,26 @@ export default function LeadDetailPage() {
               <User style={{ width: 26, height: 26, color: ss.color }} />
             </div>
             <div>
-              <h1 style={{ fontSize: 24, fontWeight: 800, color: TEXT, margin: '0 0 4px', letterSpacing: '-0.5px' }}>{name}</h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                <h1 style={{ fontSize: 24, fontWeight: 800, color: TEXT, margin: 0, letterSpacing: '-0.5px' }}>{name}</h1>
+                <button
+                  title="Copy lead ID"
+                  onClick={() => navigator.clipboard.writeText(getCsId(lead))}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: '#475569', background: '#F1F5F9', border: '1px solid #E2E8F0', padding: '3px 10px', borderRadius: 7, fontFamily: 'monospace', letterSpacing: '0.06em', cursor: 'pointer' }}
+                >
+                  {getCsId(lead)}<Copy style={{ width: 11, height: 11, opacity: 0.5 }} />
+                </button>
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: ss.color, background: ss.bg, padding: '3px 10px', borderRadius: 20 }}>
                   {ss.label}
                 </span>
+                {/* Client type badge */}
+                {lead.sourceDetail?.startsWith('[') && (
+                  <span style={{ fontSize: 11, fontWeight: 600, color: '#7C3AED', background: '#F5F3FF', border: '1px solid #DDD6FE', padding: '3px 10px', borderRadius: 20 }}>
+                    {lead.sourceDetail.match(/^\[([^\]]+)\]/)?.[1]}
+                  </span>
+                )}
                 {lead.sourcePortal && (
                   <span style={{ fontSize: 11, color: MUTED, background: 'rgba(255,255,255,0.05)', padding: '3px 10px', borderRadius: 20 }}>
                     via {lead.sourcePortal}
@@ -713,9 +736,14 @@ export default function LeadDetailPage() {
             <Card>
               <CardHeader title="Lead Details" icon={Tag} />
               <div style={{ padding: '4px 20px 8px' }}>
+                <InfoRow label="Lead ID" value={lead.leadPortalId ?? undefined} />
                 <InfoRow label="Source portal" value={lead.sourcePortal} />
-                <InfoRow label="Source detail" value={lead.sourceDetail} />
-                <InfoRow label="Portal lead ID" value={lead.leadPortalId} />
+                {lead.sourceDetail && !lead.sourceDetail.startsWith('[') && (
+                  <InfoRow label="Source detail" value={lead.sourceDetail} />
+                )}
+                {lead.sourceDetail?.startsWith('[') && lead.sourceDetail.includes(']') && lead.sourceDetail.split(']')[1]?.trim() && (
+                  <InfoRow label="Source detail" value={lead.sourceDetail.split(']').slice(1).join(']').trim()} />
+                )}
                 <InfoRow label="Added" value={formatDate(lead.createdAt)} />
                 <InfoRow label="Last updated" value={formatDate(lead.updatedAt)} />
               </div>

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
+import { getPlan, getRole, canAccess, type Plan, type Role } from '@/lib/plan'
 
 const NAV_SECTIONS = [
   {
@@ -130,10 +131,19 @@ export function Sidebar({
   const [collapsed, setCollapsed] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [plan, setPlanState] = useState<Plan>('solo')
+  const [role, setRoleState] = useState<Role>('admin')
 
   useEffect(() => {
     const stored = localStorage.getItem('sidebar-collapsed')
     if (stored !== null) setCollapsed(stored === 'true')
+  }, [])
+
+  useEffect(() => {
+    const sync = () => { setPlanState(getPlan()); setRoleState(getRole()) }
+    sync()
+    window.addEventListener('plan-changed', sync)
+    return () => window.removeEventListener('plan-changed', sync)
   }, [])
 
   useEffect(() => { setUserEmail('demo@realedge.in') }, [])
@@ -175,22 +185,26 @@ export function Sidebar({
         <Logo collapsed={collapsed} />
 
         <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-0.5">
-          {NAV_SECTIONS.map((section, si) => (
-            <div key={si}>
-              {section.label && <SectionLabel label={section.label} collapsed={collapsed} />}
-              <div className="space-y-0.5">
-                {section.items.map((item) => (
-                  <NavItem
-                    key={item.href}
-                    item={item}
-                    collapsed={collapsed}
-                    active={isActive(item.href, item.exact)}
-                    onClick={onMobileClose}
-                  />
-                ))}
+          {NAV_SECTIONS.map((section, si) => {
+            const visibleItems = section.items.filter(item => canAccess(item.href, plan, role))
+            if (visibleItems.length === 0) return null
+            return (
+              <div key={si}>
+                {section.label && <SectionLabel label={section.label} collapsed={collapsed} />}
+                <div className="space-y-0.5">
+                  {visibleItems.map((item) => (
+                    <NavItem
+                      key={item.href}
+                      item={item}
+                      collapsed={collapsed}
+                      active={isActive(item.href, item.exact)}
+                      onClick={onMobileClose}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </nav>
 
         <div className="px-2 pb-2 border-t border-slate-100 pt-2">
@@ -205,18 +219,41 @@ export function Sidebar({
         <div className={cn('px-2 pb-3 border-t border-slate-100 pt-3', collapsed && 'px-1.5')}>
           {collapsed ? (
             <div className="flex justify-center">
-              <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center">
-                <span className="text-[11px] font-bold text-blue-600">{initial}</span>
+              <div className={cn(
+                'w-8 h-8 rounded-full border flex items-center justify-center',
+                role === 'admin' ? 'bg-violet-50 border-violet-100' : 'bg-blue-50 border-blue-100'
+              )}>
+                <span className={cn('text-[11px] font-bold', role === 'admin' ? 'text-violet-600' : 'text-blue-600')}>{initial}</span>
               </div>
             </div>
           ) : (
             <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-slate-50 transition-colors group">
-              <div className="w-7 h-7 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
-                <span className="text-[11px] font-bold text-blue-600">{initial}</span>
+              <div className={cn(
+                'w-7 h-7 rounded-full border flex items-center justify-center shrink-0',
+                role === 'admin' ? 'bg-violet-50 border-violet-100' : 'bg-blue-50 border-blue-100'
+              )}>
+                <span className={cn('text-[11px] font-bold', role === 'admin' ? 'text-violet-600' : 'text-blue-600')}>{initial}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[12px] font-semibold text-slate-700 truncate">{userEmail}</p>
-                <p className="text-[10px] text-slate-400">Agent</p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  {plan === 'teams' && (
+                    <span className={cn(
+                      'text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide',
+                      role === 'admin'
+                        ? 'bg-violet-100 text-violet-600'
+                        : 'bg-blue-100 text-blue-600'
+                    )}>
+                      {role === 'admin' ? 'Admin' : 'Agent'}
+                    </span>
+                  )}
+                  <span className={cn(
+                    'text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide',
+                    plan === 'teams' ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'
+                  )}>
+                    {plan === 'teams' ? 'Teams' : 'Solo'}
+                  </span>
+                </div>
               </div>
               <button
                 onClick={handleLogout}

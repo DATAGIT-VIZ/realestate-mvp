@@ -73,6 +73,7 @@ export type CRMLeadInput = {
   budgetMax?: number
   sourcePortal?: string
   sourceDetail?: string
+  clientType?: string
   leadPortalId?: string
   propertyType?: string[]
   timeline?: string

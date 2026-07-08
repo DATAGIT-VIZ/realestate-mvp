@@ -752,7 +752,8 @@ POST /api/crm/leads/[id]/activities — log activity
 
 ### Phase 0 — Foundation (Current → Week 2)
 - [ ] Sign up for Twenty Cloud (30-day trial)
-- [ ] Define all custom objects in Twenty (Contact, Deal, Activity, Property, Site Visit)
+- [ ] Define all custom objects in Twenty 
+(Contact, Deal, Activity, Property, Site Visit)
 - [ ] Migrate existing Supabase lead data to Twenty
 - [ ] New design system: tokens, layout, navigation shell
 - [ ] Rebuild leads list page with new UI consuming Twenty API

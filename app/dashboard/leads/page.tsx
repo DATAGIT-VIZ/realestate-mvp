@@ -39,6 +39,15 @@ function getScoreStyle(score: number) {
   return               { label: 'Low',          color: '#475569', bg: '#F1F5F9', dot: '#94A3B8' }
 }
 
+// Stable CS ID: real one if assigned, else derived from UUID so legacy leads always show one
+function getCsId(lead: CRMLead): string {
+  if (lead.leadPortalId?.startsWith('CS')) return lead.leadPortalId
+  const hex = lead.id.replace(/-/g, '')
+  let n = 0
+  for (const c of hex) n = (n * 31 + parseInt(c, 16)) % 100000
+  return `CS${String(n).padStart(5, '0')}`
+}
+
 function formatBudget(min: number | null, max: number | null): string {
   const fmt = (n: number) =>
     n >= 10_000_000 ? `${+(n / 10_000_000).toFixed(1)}Cr` : `${+(n / 100_000).toFixed(1)}L`
@@ -332,10 +341,23 @@ export default function LeadsPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <div style={{ width: 8, height: 8, borderRadius: '50%', background: dot, flexShrink: 0 }} />
                           <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                               <p style={{ fontSize: 13, fontWeight: 600, color: TEXT, margin: 0 }}>{getDisplayName(lead)}</p>
                               {isDup && <span style={{ fontSize: 9, fontWeight: 700, background: 'rgba(180,83,9,0.1)', color: '#B45309', padding: '1px 6px', borderRadius: 6 }}>DUP</span>}
+                              <button
+                                title="Copy lead ID"
+                                onClick={e => { e.stopPropagation(); e.preventDefault(); navigator.clipboard.writeText(getCsId(lead)) }}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9, fontWeight: 700, color: '#64748B', background: '#F1F5F9', border: '1px solid #E2E8F0', padding: '1px 6px', borderRadius: 5, fontFamily: 'monospace', letterSpacing: '0.04em', cursor: 'pointer' }}
+                              >
+                                {getCsId(lead)}<Copy style={{ width: 8, height: 8, opacity: 0.5 }} />
+                              </button>
                             </div>
+                            {/* Client type badge */}
+                            {lead.sourceDetail?.startsWith('[') && (
+                              <p style={{ fontSize: 10, color: '#7C3AED', background: '#F5F3FF', display: 'inline-block', padding: '0px 5px', borderRadius: 5, margin: '2px 0 0', fontWeight: 600 }}>
+                                {lead.sourceDetail.match(/^\[([^\]]+)\]/)?.[1]}
+                              </p>
+                            )}
                             <p className="sm:hidden" style={{ fontSize: 11, color: MUTED, margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: 3 }}>
                               <Phone style={{ width: 10, height: 10 }} />{getPhone(lead) || '—'}
                             </p>

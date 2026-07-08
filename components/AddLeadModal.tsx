@@ -14,10 +14,13 @@ type Form = {
   budgetMin: string
   budgetMax: string
   sourcePortal: string
+  clientType: string
   propertyType: string
   timeline: string
   localities: string
 }
+
+const CLIENT_TYPES = ['Individual', 'Channel Partner', 'Agent', 'Interior Designer']
 
 const SOURCE_OPTIONS = [
   'MagicBricks', '99acres', 'Housing.com', 'NoBroker',
@@ -42,7 +45,7 @@ const TIMELINE_OPTIONS = [
 const EMPTY: Form = {
   firstName: '', lastName: '', phone: '', email: '',
   city: '', budgetMin: '', budgetMax: '',
-  sourcePortal: '', propertyType: '', timeline: '', localities: '',
+  sourcePortal: '', clientType: '', propertyType: '', timeline: '', localities: '',
 }
 
 // Design tokens
@@ -77,6 +80,7 @@ export function AddLeadModal({ onClose, onSuccess }: Props) {
   const [errors, setErrors] = useState<Partial<Form & { general: string }>>({})
   const [loading, setLoading] = useState(false)
   const [duplicate, setDuplicate] = useState<{ id: string; name: string } | null>(null)
+  const [createdId, setCreatedId] = useState<string | null>(null)
 
   const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [k]: e.target.value }))
@@ -114,6 +118,7 @@ export function AddLeadModal({ onClose, onSuccess }: Props) {
           budgetMin: form.budgetMin ? Number(form.budgetMin) : undefined,
           budgetMax: form.budgetMax ? Number(form.budgetMax) : undefined,
           sourcePortal: form.sourcePortal || undefined,
+          clientType: form.clientType || undefined,
           propertyType: form.propertyType ? [form.propertyType] : undefined,
           timeline: form.timeline || undefined,
           localities: form.localities ? form.localities.split(',').map(s => s.trim()).filter(Boolean) : undefined,
@@ -127,6 +132,8 @@ export function AddLeadModal({ onClose, onSuccess }: Props) {
         return
       }
       if (json.error) throw new Error(json.error)
+      const assignedId = json.data?.leadPortalId ?? null
+      setCreatedId(assignedId)
       onSuccess()
     } catch (err) {
       setErrors({ general: err instanceof Error ? err.message : 'Something went wrong' })
@@ -213,21 +220,29 @@ export function AddLeadModal({ onClose, onSuccess }: Props) {
             </Field>
           </div>
 
-          {/* Source + Property type */}
+          {/* Client Type + Source Portal */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Client Type *" icon={Tag}>
+              <select value={form.clientType} onChange={set('clientType')} style={selectStyle}>
+                <option value="">Select type</option>
+                {CLIENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </Field>
             <Field label="Source Portal" icon={Tag}>
               <select value={form.sourcePortal} onChange={set('sourcePortal')} style={selectStyle}>
                 <option value="">Select source</option>
                 {SOURCE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </Field>
-            <Field label="Property Type" icon={Tag}>
-              <select value={form.propertyType} onChange={set('propertyType')} style={selectStyle}>
-                <option value="">Select type</option>
-                {PROPERTY_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </Field>
           </div>
+
+          {/* Property Type */}
+          <Field label="Property Type" icon={Tag}>
+            <select value={form.propertyType} onChange={set('propertyType')} style={selectStyle}>
+              <option value="">Select type</option>
+              {PROPERTY_TYPES.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </Field>
 
           {/* Timeline + City */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
