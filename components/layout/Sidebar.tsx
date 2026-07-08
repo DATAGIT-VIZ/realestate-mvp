@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, HandshakeIcon, Building2,
   Megaphone, Phone, BarChart3, BarChart2, Calculator, Settings,
   ChevronLeft, ChevronRight, LogOut, Loader2, Activity,
-  MessageCircle, CreditCard, UserCheck, GitBranch, Sparkles, Plug,
+  MessageCircle, CreditCard, UserCheck, GitBranch, Sparkles, Plug, Layers,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
@@ -21,6 +21,7 @@ const NAV_SECTIONS = [
     label: 'Workspace',
     items: [
       { name: 'Leads',          href: '/dashboard/leads',            icon: Users,         exact: false },
+      { name: 'Lifecycle',      href: '/dashboard/lifecycle',        icon: Layers,        exact: false },
       { name: 'Ingestion Log',  href: '/dashboard/leads/ingestion',  icon: Activity,      exact: false },
       { name: 'Deals',          href: '/dashboard/deals',            icon: HandshakeIcon, exact: false },
       { name: 'Properties',     href: '/dashboard/properties',       icon: Building2,     exact: false },

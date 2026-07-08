@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import { type CRMLead } from '@/lib/twenty'
 import { AddLeadModal } from '@/components/AddLeadModal'
@@ -9,7 +9,7 @@ import { CsvUploadModal } from '@/components/crm/CsvUploadModal'
 import { EmailParserModal } from '@/components/crm/EmailParserModal'
 import {
   Search, Plus, Filter, Eye, Loader2, UserPlus, Clock,
-  ChevronDown, LayoutGrid, List, UploadCloud, MailPlus, Phone, Mail, Zap,
+  ChevronDown, LayoutGrid, List, UploadCloud, MailPlus, Phone, Mail, Zap, Copy,
 } from 'lucide-react'
 import { EnrollSequenceModal } from '@/components/EnrollSequenceModal'
 
@@ -73,7 +73,28 @@ export default function LeadsPage() {
   const [showCsvModal, setShowCsvModal] = useState(false)
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [enrollTarget, setEnrollTarget] = useState<{ leadId: string; leadName: string; leadPhone: string } | null>(null)
+  const [showDupsOnly, setShowDupsOnly] = useState(false)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  // De-dup detection — group leads by normalised phone number
+  const dupPhones = useMemo(() => {
+    const phoneMap: Record<string, string[]> = {}
+    for (const l of leads) {
+      const ph = (l.phones.primaryPhoneNumber ?? '').replace(/\D/g, '')
+      if (!ph || ph.length < 8) continue
+      const key = ph.replace(/^(91|0)/, '')
+      if (!phoneMap[key]) phoneMap[key] = []
+      phoneMap[key].push(l.id)
+    }
+    return Object.values(phoneMap).filter(ids => ids.length > 1)
+  }, [leads])
+
+  const dupLeadIds = useMemo(() => new Set(dupPhones.flat()), [dupPhones])
+
+  const displayLeads = useMemo(
+    () => showDupsOnly ? leads.filter(l => dupLeadIds.has(l.id)) : leads,
+    [leads, showDupsOnly, dupLeadIds]
+  )
 
   const fetchLeads = useCallback(async (q?: string, score?: ScoreFilter) => {
     try {
@@ -231,6 +252,24 @@ export default function LeadsPage() {
           </div>
         </div>
 
+        {/* ── De-dup banner ── */}
+        {dupPhones.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 14px', background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.25)', borderRadius: 10, marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Copy style={{ width: 13, height: 13, color: '#B45309', flexShrink: 0 }} />
+              <span style={{ fontSize: 13, color: '#92400E', fontWeight: 600 }}>
+                {dupPhones.length} duplicate phone number{dupPhones.length > 1 ? 's' : ''} detected
+              </span>
+              <span style={{ fontSize: 12, color: '#B45309' }}>— {dupLeadIds.size} leads share the same number</span>
+            </div>
+            <button
+              onClick={() => setShowDupsOnly(v => !v)}
+              style={{ fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 8, border: `1px solid ${showDupsOnly ? '#B45309' : 'rgba(180,83,9,0.3)'}`, background: showDupsOnly ? '#B45309' : 'transparent', color: showDupsOnly ? '#fff' : '#B45309', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              {showDupsOnly ? 'Show All' : 'Show Duplicates'}
+            </button>
+          </div>
+        )}
+
         {/* ── Error ── */}
         {error && (
           <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
@@ -242,7 +281,7 @@ export default function LeadsPage() {
         {viewMode === 'board' && <KanbanBoard leads={leads} onLeadUpdate={handleLeadUpdate} />}
 
         {/* ── Empty state ── */}
-        {viewMode === 'list' && !loading && leads.length === 0 && (
+        {viewMode === 'list' && !loading && displayLeads.length === 0 && (
           <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, padding: '64px 24px', textAlign: 'center' }}>
             <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
               <UserPlus style={{ width: 24, height: 24, color: AMBER }} />
@@ -264,7 +303,7 @@ export default function LeadsPage() {
         )}
 
         {/* ── Table ── */}
-        {viewMode === 'list' && leads.length > 0 && (
+        {viewMode === 'list' && displayLeads.length > 0 && (
           <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
@@ -277,20 +316,24 @@ export default function LeadsPage() {
                 </tr>
               </thead>
               <tbody>
-                {leads.map((lead, idx) => {
+                {displayLeads.map((lead, idx) => {
                   const score = getScore(lead)
                   const { label, color, bg, dot } = getScoreStyle(score)
+                  const isDup = dupLeadIds.has(lead.id)
                   return (
                     <tr key={lead.id}
-                      style={{ borderBottom: idx < leads.length - 1 ? `1px solid ${BORDER}` : 'none', transition: 'background 0.15s' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#F8FAFC')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                      style={{ borderBottom: idx < displayLeads.length - 1 ? `1px solid ${BORDER}` : 'none', transition: 'background 0.15s', background: isDup ? 'rgba(234,179,8,0.03)' : 'transparent' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = isDup ? 'rgba(234,179,8,0.07)' : '#F8FAFC')}
+                      onMouseLeave={e => (e.currentTarget.style.background = isDup ? 'rgba(234,179,8,0.03)' : 'transparent')}
                     >
                       <td style={{ padding: '13px 16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <div style={{ width: 8, height: 8, borderRadius: '50%', background: dot, flexShrink: 0 }} />
                           <div>
-                            <p style={{ fontSize: 13, fontWeight: 600, color: TEXT, margin: 0 }}>{getDisplayName(lead)}</p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <p style={{ fontSize: 13, fontWeight: 600, color: TEXT, margin: 0 }}>{getDisplayName(lead)}</p>
+                              {isDup && <span style={{ fontSize: 9, fontWeight: 700, background: 'rgba(180,83,9,0.1)', color: '#B45309', padding: '1px 6px', borderRadius: 6 }}>DUP</span>}
+                            </div>
                             {getEmail(lead) && (
                               <p style={{ fontSize: 11, color: MUTED, margin: 0, display: 'flex', alignItems: 'center', gap: 3 }}>
                                 <Mail style={{ width: 10, height: 10 }} />{getEmail(lead)}

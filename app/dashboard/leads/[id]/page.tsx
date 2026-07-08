@@ -14,7 +14,7 @@ import {
   ArrowLeft, Phone, Mail, MapPin, Building2, Clock, Tag,
   TrendingUp, Calendar, Edit2, Trash2, Loader2, Activity,
   AlertCircle, Plus, MessageCircle, CheckCircle, XCircle, X,
-  MinusCircle, HelpCircle, ChevronDown, IndianRupee, User, Zap,
+  MinusCircle, HelpCircle, ChevronDown, IndianRupee, User, Zap, PhoneOff,
 } from 'lucide-react'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -125,7 +125,19 @@ const ACTIVITY_ICON: Record<string, React.ElementType> = {
   'Status Changed':       TrendingUp,
 }
 
-const PIPELINE_STAGES = ['New', 'Contacted', 'Qualified', 'Negotiation', 'Won', 'Lost']
+const LIFECYCLE_STAGES = [
+  { id: 'Fresh',           label: 'Fresh',               color: '#64748B', desc: 'Unworked lead'           },
+  { id: 'Attempting',      label: 'Attempting',           color: '#2563EB', desc: 'Active call attempts'    },
+  { id: 'VM Done',         label: 'VM Done',              color: '#7C3AED', desc: 'Voicemail/message left'  },
+  { id: 'Connected',       label: 'Connected',            color: '#0EA5E9', desc: 'First contact made'      },
+  { id: 'Virtual Meeting', label: 'Virtual Meeting Done', color: '#D97706', desc: 'Video call done'         },
+  { id: 'Site Visit',      label: 'Site Visit Done',      color: '#F97316', desc: 'Physical visit done'     },
+  { id: 'Negotiation',     label: 'Negotiation',          color: '#8B5CF6', desc: 'Terms discussion active' },
+  { id: 'Won',             label: 'Won',                  color: '#059669', desc: 'Deal closed',   terminal: true },
+  { id: 'Lost',            label: 'Lost',                 color: '#DC2626', desc: 'Not proceeding', terminal: true },
+  { id: 'NC',              label: 'NC',                   color: '#94A3B8', desc: 'Non-Contactable — 5 failed attempts', terminal: true },
+]
+const PIPELINE_STAGES = LIFECYCLE_STAGES.map(s => s.id)
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
@@ -181,6 +193,8 @@ export default function LeadDetailPage() {
   const [deleting, setDeleting]   = useState(false)
   const [stageChanging, setStageChanging] = useState(false)
   const [showStageMenu, setShowStageMenu] = useState(false)
+  const [callAttempts, setCallAttempts] = useState<string[]>([])
+  const [showNCSuggest, setShowNCSuggest] = useState(false)
 
   const fetchLead = useCallback(async () => {
     try {
@@ -241,6 +255,27 @@ export default function LeadDetailPage() {
     } catch {
       setDeleting(false)
     }
+  }
+
+  // Call attempt tracker — persisted in localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(`call_attempts_${leadId}`)
+      if (stored) setCallAttempts(JSON.parse(stored))
+    } catch {}
+  }, [leadId])
+
+  const logCallAttempt = () => {
+    const updated = [...callAttempts, new Date().toISOString()]
+    setCallAttempts(updated)
+    try { localStorage.setItem(`call_attempts_${leadId}`, JSON.stringify(updated)) } catch {}
+    if (updated.length >= 5) setShowNCSuggest(true)
+  }
+
+  const clearCallAttempts = () => {
+    setCallAttempts([])
+    setShowNCSuggest(false)
+    try { localStorage.removeItem(`call_attempts_${leadId}`) } catch {}
   }
 
   // ── Loading / error ──────────────────────────────────────────────────────────
@@ -493,39 +528,122 @@ export default function LeadDetailPage() {
               </div>
             </Card>
 
-            {/* Pipeline stage */}
+            {/* Lifecycle Stage */}
             <Card>
-              <CardHeader title="Pipeline Stage" icon={TrendingUp} />
+              <CardHeader title="Lead Lifecycle" icon={TrendingUp} />
               <div style={{ padding: 16 }}>
-                <div style={{ position: 'relative' }}>
-                  <button onClick={() => setShowStageMenu(v => !v)} disabled={stageChanging}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(255,255,255,0.04)', border: `1px solid ${BORDER}`, borderRadius: 10, color: TEXT, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-                  >
-                    <span>{stageChanging ? 'Updating…' : (lead.status || 'New')}</span>
-                    <ChevronDown style={{ width: 14, height: 14, color: MUTED }} />
-                  </button>
-                  {showStageMenu && (
-                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, background: PANEL2, border: `1px solid ${BORDER}`, borderRadius: 10, zIndex: 20, overflow: 'hidden', boxShadow: '0 16px 40px rgba(0,0,0,0.5)' }}>
-                      {PIPELINE_STAGES.map(s => (
-                        <button key={s} onClick={() => handleStageChange(s)}
-                          style={{ display: 'block', width: '100%', padding: '9px 14px', background: lead.status === s ? 'rgba(59,130,246,0.1)' : 'transparent', color: lead.status === s ? '#93C5FD' : TEXT, fontSize: 13, border: 'none', cursor: 'pointer', textAlign: 'left', fontWeight: lead.status === s ? 600 : 400 }}
-                        >
-                          {s}
-                        </button>
-                      ))}
+                {/* Current stage pill + dropdown */}
+                {(() => {
+                  const cur = LIFECYCLE_STAGES.find(s => s.id === (lead.status || 'Fresh')) ?? LIFECYCLE_STAGES[0]
+                  return (
+                    <div style={{ position: 'relative' }}>
+                      <button onClick={() => setShowStageMenu(v => !v)} disabled={stageChanging}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: `${cur.color}10`, border: `1px solid ${cur.color}40`, borderRadius: 10, color: cur.color, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: cur.color, display: 'inline-block', flexShrink: 0 }} />
+                          {stageChanging ? 'Updating…' : cur.label}
+                        </span>
+                        <ChevronDown style={{ width: 14, height: 14 }} />
+                      </button>
+                      {!stageChanging && <p style={{ fontSize: 11, color: MUTED, margin: '6px 0 0 4px' }}>{cur.desc}</p>}
+                      {showStageMenu && (
+                        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 12, zIndex: 20, overflow: 'hidden', boxShadow: '0 16px 40px rgba(0,0,0,0.12)' }}>
+                          {LIFECYCLE_STAGES.map(s => (
+                            <button key={s.id} onClick={() => handleStageChange(s.id)}
+                              style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 14px', background: lead.status === s.id ? `${s.color}0D` : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                              <span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
+                              <div>
+                                <div style={{ fontSize: 13, fontWeight: lead.status === s.id ? 700 : 500, color: lead.status === s.id ? s.color : TEXT }}>{s.label}</div>
+                                <div style={{ fontSize: 10, color: MUTED }}>{s.desc}</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
+                  )
+                })()}
+
+                {/* Journey progress bar — non-terminal stages only */}
+                <div style={{ marginTop: 14 }}>
+                  <div style={{ display: 'flex', gap: 3 }}>
+                    {LIFECYCLE_STAGES.filter(s => !s.terminal).map((s) => {
+                      const stages   = LIFECYCLE_STAGES.filter(x => !x.terminal)
+                      const curIdx   = stages.findIndex(x => x.id === (lead.status || 'Fresh'))
+                      const thisIdx  = stages.indexOf(s)
+                      const isDone   = thisIdx <= curIdx
+                      return (
+                        <div key={s.id} title={s.label} style={{ flex: 1, height: 4, borderRadius: 2, background: isDone ? s.color : BORDER, transition: 'background 0.3s' }} />
+                      )
+                    })}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
+                    <span style={{ fontSize: 10, color: MUTED }}>Fresh</span>
+                    <span style={{ fontSize: 10, color: MUTED }}>Negotiation</span>
+                  </div>
                 </div>
 
-                {/* Stage progress dots */}
-                <div style={{ display: 'flex', gap: 4, marginTop: 12 }}>
-                  {PIPELINE_STAGES.slice(0, -1).map((s, i) => {
-                    const currentIdx = PIPELINE_STAGES.indexOf(lead.status ?? 'New')
-                    const isDone = i <= currentIdx
-                    return (
-                      <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: isDone ? BLUE : BORDER }} />
-                    )
-                  })}
+                {/* Terminal state badges */}
+                {['Won','Lost','NC'].includes(lead.status ?? '') && (
+                  <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: `${LIFECYCLE_STAGES.find(s=>s.id===lead.status)?.color}10`, border: `1px solid ${LIFECYCLE_STAGES.find(s=>s.id===lead.status)?.color}30` }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: LIFECYCLE_STAGES.find(s=>s.id===lead.status)?.color }}>
+                      {lead.status === 'Won' ? '🏆 Deal Closed' : lead.status === 'Lost' ? '❌ Not Proceeding' : '📵 Non-Contactable'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {/* Call Attempt Tracker */}
+            <Card>
+              <CardHeader title="Call Attempts" icon={PhoneOff}
+                action={
+                  <span style={{ fontSize: 11, fontWeight: 700, color: callAttempts.length >= 5 ? '#DC2626' : callAttempts.length >= 3 ? '#D97706' : MUTED, background: callAttempts.length >= 5 ? '#FEF2F2' : callAttempts.length >= 3 ? '#FFFBEB' : '#F1F5F9', padding: '2px 8px', borderRadius: 10 }}>
+                    {callAttempts.length}/5
+                  </span>
+                }
+              />
+              <div style={{ padding: 16 }}>
+                {/* Attempt dots */}
+                <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+                  {[1,2,3,4,5].map(n => (
+                    <div key={n} style={{ flex: 1, height: 6, borderRadius: 3, background: n <= callAttempts.length ? (n >= 5 ? '#DC2626' : n >= 3 ? '#D97706' : '#2563EB') : BORDER }} />
+                  ))}
+                </div>
+
+                {callAttempts.length > 0 && (
+                  <div style={{ marginBottom: 10 }}>
+                    {callAttempts.slice(-3).map((ts, i) => (
+                      <div key={i} style={{ fontSize: 11, color: MUTED, marginBottom: 3 }}>
+                        Attempt {callAttempts.length - (Math.min(3, callAttempts.length) - 1 - i)} — {new Date(ts).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* NC suggestion */}
+                {showNCSuggest && (
+                  <div style={{ padding: '10px 12px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 9, marginBottom: 10 }}>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: '#DC2626', margin: '0 0 6px' }}>📵 5 failed attempts</p>
+                    <p style={{ fontSize: 11, color: '#991B1B', margin: '0 0 8px' }}>Move this lead to NC — a re-engagement sequence will auto-trigger in 7 days.</p>
+                    <button onClick={() => { handleStageChange('NC'); setShowNCSuggest(false) }}
+                      style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#DC2626', border: 'none', borderRadius: 7, padding: '6px 12px', cursor: 'pointer' }}>
+                      Move to NC
+                    </button>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={logCallAttempt} disabled={callAttempts.length >= 5}
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 0', background: callAttempts.length >= 5 ? '#F1F5F9' : 'rgba(239,68,68,0.06)', border: `1px solid ${callAttempts.length >= 5 ? BORDER : 'rgba(239,68,68,0.2)'}`, borderRadius: 9, fontSize: 12, fontWeight: 700, color: callAttempts.length >= 5 ? MUTED : '#DC2626', cursor: callAttempts.length >= 5 ? 'not-allowed' : 'pointer' }}>
+                    <PhoneOff style={{ width: 12, height: 12 }} /> Log No-Answer
+                  </button>
+                  {callAttempts.length > 0 && (
+                    <button onClick={clearCallAttempts}
+                      style={{ padding: '9px 12px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 9, fontSize: 12, color: MUTED, cursor: 'pointer' }}>
+                      Reset
+                    </button>
+                  )}
                 </div>
               </div>
             </Card>
