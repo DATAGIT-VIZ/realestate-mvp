@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { type CRMLead } from '@/lib/twenty'
 import {
@@ -9,7 +9,7 @@ import {
 } from '@dnd-kit/core'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
-import { ChevronRight, Loader2 } from 'lucide-react'
+import { Loader2, Search, X } from 'lucide-react'
 
 const BG     = '#F8FAFC'
 const PANEL  = '#FFFFFF'
@@ -17,21 +17,44 @@ const BORDER = '#E2E8F0'
 const TEXT   = '#0F172A'
 const MUTED  = '#64748B'
 
-const LIFECYCLE_STAGES = [
-  { id: 'Fresh',           label: 'Fresh',               color: '#64748B', terminal: false },
-  { id: 'Attempting',      label: 'Attempting',           color: '#2563EB', terminal: false },
-  { id: 'VM Done',         label: 'VM Done',              color: '#7C3AED', terminal: false },
-  { id: 'Connected',       label: 'Connected',            color: '#0EA5E9', terminal: false },
-  { id: 'Virtual Meeting', label: 'Virtual Meeting Done', color: '#D97706', terminal: false },
-  { id: 'Site Visit',      label: 'Site Visit Done',      color: '#F97316', terminal: false },
-  { id: 'Negotiation',     label: 'Negotiation',          color: '#8B5CF6', terminal: false },
-  { id: 'Won',             label: 'Won',                  color: '#059669', terminal: true  },
-  { id: 'Lost',            label: 'Lost',                 color: '#DC2626', terminal: true  },
-  { id: 'NC',              label: 'NC',                   color: '#94A3B8', terminal: true  },
+type Stage  = { id: string; label: string; color: string }
+type Bucket = { id: string; label: string; color: string; stages: string[]; primaryStage: string; searchable?: boolean }
+
+const STAGES: Stage[] = [
+  { id: 'Fresh',           label: 'Fresh',               color: '#64748B' },
+  { id: 'Attempting',      label: 'Attempting',           color: '#2563EB' },
+  { id: 'VM Done',         label: 'VM Done',              color: '#7C3AED' },
+  { id: 'Connected',       label: 'Connected',            color: '#0EA5E9' },
+  { id: 'Virtual Meeting', label: 'Virtual Meeting Done', color: '#D97706' },
+  { id: 'Site Visit',      label: 'Site Visit Done',      color: '#F97316' },
+  { id: 'Negotiation',     label: 'Negotiation',          color: '#8B5CF6' },
+  { id: 'Won',             label: 'Closed',               color: '#059669' },
+  { id: 'Lost',            label: 'Lost',                 color: '#DC2626' },
+  { id: 'NC',              label: 'NC',                   color: '#94A3B8' },
 ]
 
-const STAGE_IDS = LIFECYCLE_STAGES.map(s => s.id)
+const STAGE_MAP: Record<string, Stage> = Object.fromEntries(STAGES.map(s => [s.id, s]))
+const STAGE_IDS = new Set(STAGES.map(s => s.id))
 
+const BUCKETS: Bucket[] = [
+  { id: 'new',  label: 'New Leads',         color: '#64748B', stages: ['Fresh'],                                primaryStage: 'Fresh',      searchable: true  },
+  { id: 'cold', label: 'Cold Stage',        color: '#2563EB', stages: ['Attempting', 'VM Done'],               primaryStage: 'Attempting'                      },
+  { id: 'warm', label: 'Warm Stage',        color: '#D97706', stages: ['Connected', 'Virtual Meeting'],        primaryStage: 'Connected'                       },
+  { id: 'hot',  label: 'Hot Stage',         color: '#F97316', stages: ['Site Visit', 'Negotiation', 'Won'],   primaryStage: 'Site Visit'                      },
+  { id: 'disq', label: 'Disqualified / NC', color: '#DC2626', stages: ['Lost', 'NC'],                          primaryStage: 'Lost'                            },
+]
+
+function getBucket(status: string | null | undefined): Bucket {
+  const s = status ?? 'Fresh'
+  return BUCKETS.find(b => b.stages.includes(s)) ?? BUCKETS[0]
+}
+
+function resolveStage(status: string | null | undefined): string {
+  if (status && STAGE_IDS.has(status)) return status
+  return 'Fresh'
+}
+
+// ─── Mock data ────────────────────────────────────────────────────────────────
 const P = (n: string) => ({ primaryPhoneNumber: n, primaryPhoneCountryCode: 'IN' as const })
 const E = (e: string) => ({ primaryEmail: e })
 const NF = { budgetMin: null, budgetMax: null, sourceDetail: null, leadPortalId: null, propertyType: null, timeline: null, localities: null, updatedAt: new Date().toISOString() }
@@ -58,9 +81,9 @@ function fname(l: CRMLead) { return `${l.name.firstName} ${l.name.lastName ?? ''
 
 function timeAgo(ts: string) {
   const d = (Date.now() - new Date(ts).getTime()) / 1000
-  if (d < 3600)  return `${Math.floor(d/60)}m ago`
-  if (d < 86400) return `${Math.floor(d/3600)}h ago`
-  return `${Math.floor(d/86400)}d ago`
+  if (d < 3600)  return `${Math.floor(d / 60)}m ago`
+  if (d < 86400) return `${Math.floor(d / 3600)}h ago`
+  return `${Math.floor(d / 86400)}d ago`
 }
 
 function scoreColor(s: number | null | undefined) {
@@ -76,116 +99,197 @@ function scoreBg(s: number | null | undefined) {
   return '#F1F5F9'
 }
 
-function resolveStage(status: string | null | undefined): string {
-  if (status && STAGE_IDS.includes(status)) return status
-  return 'Fresh'
-}
-
-function nextStageId(id: string): string | null {
-  const idx = LIFECYCLE_STAGES.findIndex(s => s.id === id)
-  if (idx < 0 || idx >= LIFECYCLE_STAGES.length - 1) return null
-  return LIFECYCLE_STAGES[idx + 1]?.id ?? null
-}
-
-// ─── Draggable lead card ──────────────────────────────────────────────────────
+// ─── Lead card ────────────────────────────────────────────────────────────────
 function LeadCard({
-  lead, stage, onAdvance, overlay = false, compact = false,
+  lead, bucket, currentStage, onStageChange, overlay = false, compact = false, highlighted = false,
 }: {
   lead: CRMLead
-  stage: typeof LIFECYCLE_STAGES[0]
-  onAdvance?: (leadId: string, newStage: string) => void
+  bucket: Bucket
+  currentStage: Stage
+  onStageChange?: (leadId: string, newStageId: string) => void
   overlay?: boolean
   compact?: boolean
+  highlighted?: boolean
 }) {
   const router = useRouter()
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: lead.id })
-  const nextId = nextStageId(stage.id)
-  const sla = !stage.terminal && (Date.now() - new Date(lead.createdAt).getTime()) > 48 * 3_600_000
-
-  const style: React.CSSProperties = {
-    background: PANEL,
-    border: `1px solid ${isDragging ? stage.color : BORDER}`,
-    borderRadius: compact ? 9 : 12,
-    padding: compact ? '8px 9px 7px' : '12px 12px 10px',
-    cursor: overlay ? 'grabbing' : 'grab',
-    position: 'relative',
-    opacity: isDragging ? 0.35 : 1,
-    boxShadow: overlay ? '0 12px 32px rgba(0,0,0,0.18)' : undefined,
-    transform: overlay ? undefined : CSS.Translate.toString(transform),
-    userSelect: 'none',
-    touchAction: 'none',
-  }
+  const isTerminal = ['Won', 'Lost', 'NC'].includes(currentStage.id)
+  const sla = !isTerminal && (Date.now() - new Date(lead.createdAt).getTime()) > 48 * 3_600_000
 
   return (
-    <div ref={setNodeRef} style={style} {...(overlay ? {} : { ...attributes, ...listeners })}>
+    <div
+      ref={setNodeRef}
+      style={{
+        background: PANEL,
+        border: `1px solid ${isDragging ? bucket.color : highlighted ? bucket.color : BORDER}`,
+        borderRadius: compact ? 9 : 12,
+        padding: compact ? '8px 9px 7px' : '12px 12px 10px',
+        cursor: overlay ? 'grabbing' : 'grab',
+        position: 'relative',
+        opacity: isDragging ? 0.35 : 1,
+        boxShadow: overlay
+          ? '0 12px 32px rgba(0,0,0,0.18)'
+          : highlighted ? `0 0 0 2px ${bucket.color}50` : undefined,
+        transform: overlay ? undefined : CSS.Translate.toString(transform),
+        userSelect: 'none',
+        touchAction: 'none',
+      }}
+      {...(overlay ? {} : { ...attributes, ...listeners })}
+    >
+      {/* SLA dot */}
       {sla && (
-        <div title="SLA: >48h in this stage" style={{ position: 'absolute', top: compact ? 7 : 10, right: compact ? 7 : 10, width: 6, height: 6, borderRadius: '50%', background: '#EF4444' }} />
+        <div
+          title="SLA: >48h in this stage"
+          style={{ position: 'absolute', top: compact ? 7 : 10, right: compact ? 7 : 10, width: 6, height: 6, borderRadius: '50%', background: '#EF4444' }}
+        />
       )}
 
-      {/* Name + city */}
+      {/* Name + CS ID + city */}
       <div
-        style={{ marginBottom: compact ? 5 : 8 }}
-        onClick={overlay ? undefined : (e) => { e.stopPropagation(); router.push(`/dashboard/leads/${lead.id}`) }}
+        style={{ marginBottom: compact ? 4 : 6 }}
+        onClick={overlay ? undefined : e => { e.stopPropagation(); router.push(`/dashboard/leads/${lead.id}`) }}
       >
-        <div style={{ fontSize: compact ? 12 : 13, fontWeight: 700, color: TEXT, marginBottom: 1, paddingRight: sla ? 12 : 0 }}>{fname(lead)}</div>
+        <div style={{ fontSize: compact ? 12 : 13, fontWeight: 700, color: TEXT, marginBottom: 1, paddingRight: sla ? 12 : 0 }}>
+          {fname(lead)}
+        </div>
+        {!compact && lead.leadPortalId && (
+          <div style={{ fontSize: 10, color: MUTED, fontFamily: 'monospace', letterSpacing: '0.02em' }}>
+            {lead.leadPortalId}
+          </div>
+        )}
         {!compact && <div style={{ fontSize: 11, color: MUTED }}>{lead.city ?? '—'}</div>}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: compact ? 5 : 8 }}>
+      {/* Score + time */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: compact ? 4 : 6 }}>
         <span style={{ fontSize: compact ? 10 : 11, fontWeight: 700, color: scoreColor(lead.intentScore), background: scoreBg(lead.intentScore), padding: compact ? '1px 5px' : '2px 7px', borderRadius: 20 }}>
           {lead.intentScore ?? '—'}
         </span>
-        <span style={{ fontSize: 10, color: MUTED }}>{compact ? lead.city ?? '—' : timeAgo(lead.createdAt)}</span>
+        <span style={{ fontSize: 10, color: MUTED }}>{compact ? (lead.city ?? '—') : timeAgo(lead.createdAt)}</span>
       </div>
 
+      {/* Source portal */}
       {!compact && lead.sourcePortal && (
-        <div style={{ marginBottom: 8 }}>
-          <span style={{ fontSize: 10, color: MUTED, background: '#F1F5F9', padding: '2px 6px', borderRadius: 6 }}>{lead.sourcePortal}</span>
+        <div style={{ marginBottom: 6 }}>
+          <span style={{ fontSize: 10, color: MUTED, background: '#F1F5F9', padding: '2px 6px', borderRadius: 6 }}>
+            {lead.sourcePortal}
+          </span>
         </div>
       )}
 
-      {!overlay && nextId && !stage.terminal && onAdvance && (
-        <button
-          onPointerDown={e => e.stopPropagation()}
-          onClick={e => { e.stopPropagation(); onAdvance(lead.id, nextId) }}
-          style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: compact ? 10 : 11, fontWeight: 600, color: stage.color, background: `${stage.color}10`, border: `1px solid ${stage.color}30`, borderRadius: 6, padding: compact ? '3px 6px' : '4px 8px', cursor: 'pointer', width: '100%', justifyContent: 'center' }}
-        >
-          {compact
-            ? <ChevronRight style={{ width: 11, height: 11 }} />
-            : <>{LIFECYCLE_STAGES.find(s => s.id === nextId)?.label ?? nextId}<ChevronRight style={{ width: 11, height: 11 }} /></>
-          }
-        </button>
+      {/* Sub-stage selector — pill buttons for each stage in this bucket */}
+      {!overlay && !compact && bucket.stages.length > 1 && onStageChange && (
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 6, paddingTop: 6, borderTop: `1px solid ${BORDER}` }}>
+          {bucket.stages.map(sid => {
+            const s = STAGE_MAP[sid]
+            if (!s) return null
+            const active = currentStage.id === sid
+            return (
+              <button
+                key={sid}
+                onPointerDown={e => e.stopPropagation()}
+                onClick={e => { e.stopPropagation(); if (!active) onStageChange(lead.id, sid) }}
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  padding: '3px 8px',
+                  borderRadius: 20,
+                  border: `1px solid ${active ? s.color : BORDER}`,
+                  background: active ? `${s.color}18` : 'transparent',
+                  color: active ? s.color : MUTED,
+                  cursor: active ? 'default' : 'pointer',
+                  transition: 'all 0.15s',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {s.label}
+              </button>
+            )
+          })}
+        </div>
       )}
     </div>
   )
 }
 
-// ─── Droppable column ─────────────────────────────────────────────────────────
-function StageColumn({
-  stage, leads, onAdvance, activeId, compact = false,
+// ─── Bucket column ────────────────────────────────────────────────────────────
+function BucketColumn({
+  bucket, leads, onStageChange, activeId, csSearch, onCsSearch, highlightId, compact = false,
 }: {
-  stage: typeof LIFECYCLE_STAGES[0]
+  bucket: Bucket
   leads: CRMLead[]
-  onAdvance: (leadId: string, newStage: string) => void
+  onStageChange: (leadId: string, newStageId: string) => void
   activeId: string | null
+  csSearch?: string
+  onCsSearch?: (v: string) => void
+  highlightId?: string | null
   compact?: boolean
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: stage.id })
+  const { setNodeRef, isOver } = useDroppable({ id: bucket.id })
+  const [searchOpen, setSearchOpen] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (searchOpen) inputRef.current?.focus()
+  }, [searchOpen])
 
   return (
-    <div style={{ width: compact ? '100%' : 240, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
-      {/* Column header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: compact ? '7px 10px' : '10px 14px', background: PANEL, border: `1px solid ${BORDER}`, borderLeft: `3px solid ${stage.color}`, borderRadius: '10px 10px 0 0' }}>
-        <span style={{ fontSize: compact ? 11 : 12, fontWeight: 700, color: stage.color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: compact ? 80 : 'unset' }}>{stage.label}</span>
-        <span style={{ fontSize: 10, fontWeight: 700, color: '#fff', background: stage.color, borderRadius: 20, padding: '1px 7px', flexShrink: 0 }}>{leads.length}</span>
+    <div style={{ width: compact ? '100%' : 250, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        padding: compact ? '7px 10px' : '10px 14px',
+        background: PANEL,
+        border: `1px solid ${BORDER}`,
+        borderLeft: `3px solid ${bucket.color}`,
+        borderRadius: '10px 10px 0 0',
+      }}>
+        {searchOpen && bucket.searchable ? (
+          <>
+            <Search style={{ width: 11, height: 11, color: bucket.color, flexShrink: 0 }} />
+            <input
+              ref={inputRef}
+              value={csSearch ?? ''}
+              onChange={e => onCsSearch?.(e.target.value.toUpperCase())}
+              placeholder="CS00001"
+              style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', border: 'none', outline: 'none', background: 'transparent', color: TEXT, minWidth: 0 }}
+            />
+            <button
+              onPointerDown={e => e.stopPropagation()}
+              onClick={() => { onCsSearch?.(''); setSearchOpen(false) }}
+              style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 0, color: MUTED, display: 'flex', flexShrink: 0 }}
+            >
+              <X style={{ width: 12, height: 12 }} />
+            </button>
+          </>
+        ) : (
+          <>
+            <span style={{ fontSize: compact ? 11 : 12, fontWeight: 700, color: bucket.color, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {bucket.label}
+            </span>
+            {bucket.searchable && !compact && (
+              <button
+                onPointerDown={e => e.stopPropagation()}
+                onClick={() => setSearchOpen(true)}
+                title="Search by CS ID"
+                style={{ border: 'none', background: 'none', cursor: 'pointer', padding: '2px 3px', color: MUTED, display: 'flex', borderRadius: 4, flexShrink: 0 }}
+              >
+                <Search style={{ width: 12, height: 12 }} />
+              </button>
+            )}
+          </>
+        )}
+        <span style={{ fontSize: 10, fontWeight: 700, color: '#fff', background: bucket.color, borderRadius: 20, padding: '1px 7px', flexShrink: 0 }}>
+          {leads.length}
+        </span>
       </div>
 
       {/* Drop zone */}
       <div
         ref={setNodeRef}
         style={{
-          background: isOver ? `${stage.color}12` : `${stage.color}06`,
-          border: `1px solid ${isOver ? stage.color : BORDER}`,
+          background: isOver ? `${bucket.color}12` : `${bucket.color}06`,
+          border: `1px solid ${isOver ? bucket.color : BORDER}`,
           borderTop: 'none',
           borderRadius: '0 0 10px 10px',
           padding: compact ? 6 : 8,
@@ -198,16 +302,25 @@ function StageColumn({
       >
         {leads.length === 0 && !isOver ? (
           <div style={{ textAlign: 'center', padding: compact ? '12px 4px' : '24px 8px', color: MUTED, fontSize: compact ? 11 : 12, pointerEvents: 'none' }}>
-            {activeId ? 'Drop' : '—'}
+            {activeId ? 'Drop here' : '—'}
           </div>
         ) : (
-          leads.map(lead => (
-            <LeadCard key={lead.id} lead={lead} stage={stage} onAdvance={onAdvance} compact={compact} />
-          ))
+          leads.map(lead => {
+            const stage = STAGE_MAP[resolveStage(lead.status)] ?? STAGES[0]
+            return (
+              <LeadCard
+                key={lead.id}
+                lead={lead}
+                bucket={bucket}
+                currentStage={stage}
+                onStageChange={onStageChange}
+                compact={compact}
+                highlighted={lead.id === highlightId}
+              />
+            )
+          })
         )}
-        {isOver && (
-          <div style={{ height: 3, borderRadius: 2, background: stage.color, opacity: 0.4 }} />
-        )}
+        {isOver && <div style={{ height: 3, borderRadius: 2, background: bucket.color, opacity: 0.4 }} />}
       </div>
     </div>
   )
@@ -219,6 +332,7 @@ export default function LifecyclePage() {
   const [loading,  setLoading]  = useState(true)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
+  const [csSearch, setCsSearch] = useState('')
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1024)
@@ -227,9 +341,7 @@ export default function LifecyclePage() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
-  )
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
   const fetchLeads = useCallback(async () => {
     try {
@@ -247,7 +359,7 @@ export default function LifecyclePage() {
 
   useEffect(() => { fetchLeads() }, [fetchLeads])
 
-  const handleAdvance = async (leadId: string, newStageId: string) => {
+  const handleStageChange = async (leadId: string, newStageId: string) => {
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStageId } : l))
     try {
       await fetch(`/api/crm/leads/${leadId}`, {
@@ -255,28 +367,36 @@ export default function LifecyclePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStageId }),
       })
-    } catch { /* optimistic — ignore */ }
+    } catch { /* optimistic */ }
   }
 
-  const handleDragStart = ({ active }: DragStartEvent) => {
-    setActiveId(active.id as string)
-  }
+  const handleDragStart = ({ active }: DragStartEvent) => setActiveId(active.id as string)
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     setActiveId(null)
-    if (!over || active.id === over.id) return
-    const newStage = over.id as string
-    if (!STAGE_IDS.includes(newStage)) return
-    handleAdvance(active.id as string, newStage)
+    if (!over) return
+    const targetBucket = BUCKETS.find(b => b.id === over.id)
+    if (!targetBucket) return
+    const currentBucket = getBucket(resolveStage(leads.find(l => l.id === active.id)?.status))
+    if (currentBucket.id === targetBucket.id) return
+    handleStageChange(active.id as string, targetBucket.primaryStage)
   }
 
-  const grouped = LIFECYCLE_STAGES.reduce<Record<string, CRMLead[]>>((acc, s) => {
-    acc[s.id] = leads.filter(l => resolveStage(l.status) === s.id)
+  // CS ID search — filters all columns
+  const searchNorm = csSearch.trim()
+  const filteredLeads = searchNorm
+    ? leads.filter(l => (l.leadPortalId ?? '').toUpperCase().includes(searchNorm.toUpperCase()))
+    : leads
+  const highlightId = searchNorm && filteredLeads.length === 1 ? filteredLeads[0].id : null
+
+  const grouped = BUCKETS.reduce<Record<string, CRMLead[]>>((acc, b) => {
+    acc[b.id] = filteredLeads.filter(l => getBucket(resolveStage(l.status)).id === b.id)
     return acc
   }, {})
 
-  const activeLead = activeId ? leads.find(l => l.id === activeId) : null
-  const activeLeadStage = activeLead ? LIFECYCLE_STAGES.find(s => s.id === resolveStage(activeLead.status)) ?? LIFECYCLE_STAGES[0] : LIFECYCLE_STAGES[0]
+  const activeLead  = activeId ? leads.find(l => l.id === activeId) : null
+  const activeBucket = activeLead ? getBucket(resolveStage(activeLead.status)) : BUCKETS[0]
+  const activeStage  = activeLead ? (STAGE_MAP[resolveStage(activeLead.status)] ?? STAGES[0]) : STAGES[0]
 
   if (loading) {
     return (
@@ -292,32 +412,37 @@ export default function LifecyclePage() {
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div style={{ minHeight: '100vh', background: BG }}>
 
-        {/* Header */}
+        {/* Page header */}
         <div className="px-4 lg:px-7 py-4 lg:py-5 flex items-start justify-between gap-3 flex-wrap" style={{ borderBottom: `1px solid ${BORDER}` }}>
           <div>
             <h1 className="hidden lg:block" style={{ fontSize: 22, fontWeight: 800, color: TEXT, margin: '0 0 4px' }}>Lead Lifecycle</h1>
-            <p style={{ fontSize: 13, color: MUTED, margin: 0 }}>{leads.length} leads · drag to move between stages</p>
+            <p style={{ fontSize: 13, color: MUTED, margin: 0 }}>
+              {leads.length} leads · drag to move between stages
+              {searchNorm && <span style={{ marginLeft: 8, color: '#2563EB', fontWeight: 600 }}>· filtering by CS ID: {searchNorm}</span>}
+            </p>
           </div>
+          {/* Bucket legend */}
           <div className="hidden lg:flex gap-[10px] flex-wrap justify-end">
-            {LIFECYCLE_STAGES.map(s => (
-              <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: s.color }} />
-                <span style={{ fontSize: 10, color: MUTED }}>{s.label}</span>
+            {BUCKETS.map(b => (
+              <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: b.color }} />
+                <span style={{ fontSize: 10, color: MUTED }}>{b.label}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Board — 2-col grid on mobile, horizontal scroll on desktop */}
+        {/* Board */}
         {isMobile ? (
           <div style={{ padding: '12px 12px 100px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {LIFECYCLE_STAGES.map(stage => (
-              <StageColumn
-                key={stage.id}
-                stage={stage}
-                leads={grouped[stage.id] ?? []}
-                onAdvance={handleAdvance}
+            {BUCKETS.map(bucket => (
+              <BucketColumn
+                key={bucket.id}
+                bucket={bucket}
+                leads={grouped[bucket.id] ?? []}
+                onStageChange={handleStageChange}
                 activeId={activeId}
+                highlightId={highlightId}
                 compact
               />
             ))}
@@ -325,23 +450,26 @@ export default function LifecyclePage() {
         ) : (
           <div style={{ overflowX: 'auto', paddingBottom: 60 }}>
             <div style={{ display: 'flex', gap: 12, padding: '20px 28px 0', width: 'max-content' }}>
-              {LIFECYCLE_STAGES.map(stage => (
-                <StageColumn
-                  key={stage.id}
-                  stage={stage}
-                  leads={grouped[stage.id] ?? []}
-                  onAdvance={handleAdvance}
+              {BUCKETS.map(bucket => (
+                <BucketColumn
+                  key={bucket.id}
+                  bucket={bucket}
+                  leads={grouped[bucket.id] ?? []}
+                  onStageChange={handleStageChange}
                   activeId={activeId}
+                  csSearch={bucket.searchable ? csSearch : undefined}
+                  onCsSearch={bucket.searchable ? setCsSearch : undefined}
+                  highlightId={highlightId}
                 />
               ))}
             </div>
           </div>
         )}
 
-        {/* Drag overlay — floating card that follows cursor */}
+        {/* Drag overlay */}
         <DragOverlay dropAnimation={null}>
           {activeLead ? (
-            <LeadCard lead={activeLead} stage={activeLeadStage} overlay />
+            <LeadCard lead={activeLead} bucket={activeBucket} currentStage={activeStage} overlay />
           ) : null}
         </DragOverlay>
 
