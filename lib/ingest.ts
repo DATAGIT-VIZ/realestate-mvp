@@ -112,14 +112,29 @@ export async function ingestLead(payload: IngestPayload): Promise<IngestResult> 
     return { status: 'duplicate', lead: existing, existingId: existing.id }
   }
 
+  // Generate CS ID — all leads regardless of source get a CS ID
+  const csCountQ = /* GraphQL */ `
+    query CountCsLeads { people(filter: { leadPortalId: { like: "CS%" } }) { totalCount } }
+  `
+  const csCountRes = await gql<{ people: { totalCount: number } }>(csCountQ)
+  const nextNum = (csCountRes.data?.people.totalCount ?? 0) + 1
+  const csId = `CS${String(nextNum).padStart(5, '0')}`
+
   // Create new lead
   const score = payload.intentScore ?? calcLeadScore({ ...payload, phone: normPhone })
+
+  // Preserve portal's own ID in sourceDetail as metadata when provided
+  const sourceDetailWithPortalId = payload.leadPortalId
+    ? (payload.sourceDetail ? `${payload.sourceDetail} [pid:${payload.leadPortalId}]` : `[pid:${payload.leadPortalId}]`)
+    : payload.sourceDetail
 
   const data: Record<string, unknown> = {
     name: { firstName: payload.firstName, lastName: payload.lastName ?? '' },
     phones: { primaryPhoneNumber: normPhone.startsWith('+') ? normPhone : `+91${normPhone.replace(/^0/,'')}`, primaryPhoneCountryCode: 'IN' },
     intentScore: score,
-    status: toTwentyStatus(payload.status),
+    // Always use 'Fresh' as the initial lifecycle stage — matches UI lifecycle stages
+    status: payload.status ?? 'Fresh',
+    leadPortalId: csId,
   }
 
   if (payload.email)               data.emails       = { primaryEmail: payload.email }
@@ -127,8 +142,7 @@ export async function ingestLead(payload: IngestPayload): Promise<IngestResult> 
   if (payload.budgetMin != null)   data.budgetMin    = payload.budgetMin
   if (payload.budgetMax != null)   data.budgetMax    = payload.budgetMax
   if (payload.sourcePortal)        data.sourcePortal = toTwentyPortal(payload.sourcePortal)
-  if (payload.sourceDetail)        data.sourceDetail = payload.sourceDetail
-  if (payload.leadPortalId)        data.leadPortalId = payload.leadPortalId
+  if (sourceDetailWithPortalId)    data.sourceDetail = sourceDetailWithPortalId
   const mappedPropTypes = toTwentyPropertyTypes(payload.propertyType)
   if (mappedPropTypes?.length)    data.propertyType = mappedPropTypes
   const mappedTimeline = toTwentyTimeline(payload.timeline)
