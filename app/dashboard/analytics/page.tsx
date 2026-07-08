@@ -12,8 +12,7 @@ import {
   Flame, Clock, DollarSign, Phone, RefreshCw, Loader2,
   ChevronRight, BarChart3, Sparkles,
 } from 'lucide-react'
-import { format, subDays, differenceInDays, differenceInHours } from 'date-fns'
-import AIAdvisor from '@/components/AIAdvisor'
+import { format, subDays, differenceInHours } from 'date-fns'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -279,6 +278,35 @@ export default function AnalyticsPage() {
         return { lead: l, score, nextAction, hoursSinceAct }
       })
   }, [leads, activities])
+
+  // ── City breakdown ────────────────────────────────────────────────────────────
+  const cityBreakdown = useMemo(() => {
+    const map: Record<string, { count: number; hot: number }> = {}
+    for (const l of leads) {
+      const city = l.city || 'Unknown'
+      if (!map[city]) map[city] = { count: 0, hot: 0 }
+      map[city].count++
+      if ((l.intentScore ?? 0) >= 70) map[city].hot++
+    }
+    return Object.entries(map)
+      .map(([city, d]) => ({ city, count: d.count, hot: d.hot }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8)
+  }, [leads])
+
+  // ── Pipeline stage distribution ───────────────────────────────────────────────
+  const pipelineStages = useMemo(() => {
+    const stages = ['New', 'Contacted', 'Qualified', 'Negotiation', 'Won', 'Lost']
+    const stageColors: Record<string, string> = {
+      New: C.label, Contacted: C.blue, Qualified: C.purple,
+      Negotiation: C.amber, Won: C.emerald, Lost: C.red,
+    }
+    return stages.map(stage => ({
+      stage,
+      count: leads.filter(l => l.status === stage).length,
+      color: stageColors[stage],
+    }))
+  }, [leads])
 
   // ── Insight strip ─────────────────────────────────────────────────────────────
   const insight = useMemo(() => {
@@ -662,21 +690,59 @@ export default function AnalyticsPage() {
           })}
         </div>
 
-        {/* ── AI Advisor ── */}
-        <AIAdvisor context={{
-          totalLeads:        summary.total,
-          hotLeadsCount:     summary.hotCount,
-          hotPipelineValue:  formatINR(summary.hotPipeline),
-          avgConversionDays: 0,
-          responseRate:      summary.responseRate,
-          activityDensity:   summary.total > 0 ? (summary.totalActivities / summary.total).toFixed(1) : '0',
-          totalActivities:   summary.totalActivities,
-          topSource:         sourcePerformance[0]?.source ?? 'N/A',
-          topSourceRate:     sourcePerformance[0]?.conversionRate ?? 0,
-          bestActivity:      activityEffectiveness[0]?.type ?? 'N/A',
-          bestActivityRate:  activityEffectiveness[0]?.conversionRate ?? 0,
-          hotTrend:          summary.hotTrend,
-        }} />
+        {/* ── Row 4: City breakdown + Pipeline stages ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 14, marginBottom: 14 }}>
+
+          {/* City breakdown */}
+          <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '22px 22px 16px' }}>
+            <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: '0 0 4px' }}>Leads by City</h2>
+            <p style={{ fontSize: 12, color: C.muted, margin: '0 0 16px' }}>Volume and hot lead count per location</p>
+            {cityBreakdown.length === 0 ? (
+              <p style={{ fontSize: 13, color: C.label, padding: '20px 0' }}>No city data yet — fill in the city field when adding leads.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={210}>
+                <BarChart data={cityBreakdown} margin={{ top: 4, right: 10, left: -20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+                  <XAxis dataKey="city" tick={{ fill: C.label, fontSize: 10 }} axisLine={false} tickLine={false} angle={-15} textAnchor="end" height={40} />
+                  <YAxis tick={{ fill: C.label, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <Tooltip content={<Tip />} />
+                  <Bar dataKey="count" name="Total leads" radius={[6, 6, 0, 0]} fill={C.blue} fillOpacity={0.7} />
+                  <Bar dataKey="hot"   name="Hot leads"   radius={[6, 6, 0, 0]} fill={C.orange} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          {/* Pipeline stage distribution */}
+          <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 22 }}>
+            <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: '0 0 4px' }}>Pipeline Stages</h2>
+            <p style={{ fontSize: 12, color: C.muted, margin: '0 0 20px' }}>How leads are distributed across stages</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {pipelineStages.map((s, i) => {
+                const pct = summary.total > 0 ? Math.round((s.count / summary.total) * 100) : 0
+                return (
+                  <div key={i}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
+                        <span style={{ fontSize: 12, color: C.text, fontWeight: 500 }}>{s.stage}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 12, color: C.muted }}>{s.count}</span>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: s.color, background: `${s.color}14`, padding: '1px 7px', borderRadius: 20, minWidth: 40, textAlign: 'center' }}>
+                          {pct}%
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ height: 5, background: '#F1F5F9', borderRadius: 99 }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: s.color, borderRadius: 99, transition: 'width 0.6s ease', opacity: 0.85 }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
 
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

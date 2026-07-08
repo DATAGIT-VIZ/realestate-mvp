@@ -13,7 +13,7 @@ import { EnrollSequenceModal } from '@/components/EnrollSequenceModal'
 import {
   ArrowLeft, Phone, Mail, MapPin, Building2, Clock, Tag,
   TrendingUp, Calendar, Edit2, Trash2, Loader2, Activity,
-  AlertCircle, Plus, MessageCircle, CheckCircle, XCircle,
+  AlertCircle, Plus, MessageCircle, CheckCircle, XCircle, X,
   MinusCircle, HelpCircle, ChevronDown, IndianRupee, User, Zap,
 } from 'lucide-react'
 
@@ -173,6 +173,11 @@ export default function LeadDetailPage() {
   const [showCallModal, setShowCallModal]         = useState(false)
   const [showSequenceModal, setShowSequenceModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [enrollments, setEnrollments] = useState<Array<{
+    id: string; status: string; current_step: number; next_fire_at: string | null; created_at: string;
+    sequences: { id: string; name: string; description: string | null; sequence_steps: Array<{ step_order: number; channel: string }> } | null
+  }>>([])
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [deleting, setDeleting]   = useState(false)
   const [stageChanging, setStageChanging] = useState(false)
   const [showStageMenu, setShowStageMenu] = useState(false)
@@ -194,6 +199,23 @@ export default function LeadDetailPage() {
   }, [leadId])
 
   useEffect(() => { fetchLead() }, [fetchLead])
+
+  const fetchEnrollments = useCallback(async () => {
+    try {
+      const res  = await fetch(`/api/outreach/enrollments?leadId=${leadId}`)
+      const json = await res.json()
+      setEnrollments(json.data?.enrollments ?? [])
+    } catch { /* enrollments are non-critical */ }
+  }, [leadId])
+
+  useEffect(() => { fetchEnrollments() }, [fetchEnrollments])
+
+  const handleCancelEnrollment = async (enrollmentId: string) => {
+    setCancellingId(enrollmentId)
+    await fetch(`/api/outreach/enrollments?id=${enrollmentId}`, { method: 'DELETE' })
+    setCancellingId(null)
+    fetchEnrollments()
+  }
 
   const handleStageChange = async (stage: string) => {
     if (!lead) return
@@ -508,6 +530,67 @@ export default function LeadDetailPage() {
               </div>
             </Card>
 
+            {/* Active Sequences */}
+            <Card>
+              <CardHeader
+                title="Sequences"
+                icon={Zap}
+                action={
+                  <button onClick={() => setShowSequenceModal(true)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#7C3AED', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)', borderRadius: 7, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 }}>
+                    <Plus style={{ width: 11, height: 11 }} /> Enroll
+                  </button>
+                }
+              />
+              <div style={{ padding: '8px 0' }}>
+                {enrollments.length === 0 && (
+                  <p style={{ fontSize: 12, color: MUTED, padding: '10px 20px', margin: 0 }}>Not enrolled in any sequence.</p>
+                )}
+                {enrollments.map(en => {
+                  const seq  = en.sequences
+                  const total = seq?.sequence_steps?.length ?? 0
+                  const step  = Math.min(en.current_step + 1, total)
+                  const active = en.status === 'active'
+                  const statusColor = active ? '#059669' : en.status === 'completed' ? '#2563EB' : '#64748B'
+                  return (
+                    <div key={en.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 20px', borderBottom: `1px solid ${BORDER}` }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 8, background: active ? 'rgba(5,150,105,0.08)' : 'rgba(100,116,139,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                        <Zap style={{ width: 13, height: 13, color: statusColor }} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: TEXT, margin: '0 0 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{seq?.name ?? 'Unknown'}</p>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 20, background: active ? 'rgba(5,150,105,0.1)' : 'rgba(100,116,139,0.08)', color: statusColor }}>
+                            {en.status}
+                          </span>
+                          {total > 0 && (
+                            <span style={{ fontSize: 10, color: MUTED }}>Step {step}/{total}</span>
+                          )}
+                        </div>
+                        {/* Mini step progress */}
+                        {total > 0 && (
+                          <div style={{ display: 'flex', gap: 2, marginTop: 5 }}>
+                            {Array.from({ length: total }).map((_, i) => (
+                              <div key={i} style={{ flex: 1, height: 2.5, borderRadius: 2, background: i < step ? '#7C3AED' : BORDER }} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {(active || en.status === 'paused') && (
+                        <button
+                          onClick={() => handleCancelEnrollment(en.id)}
+                          disabled={cancellingId === en.id}
+                          title="Cancel enrollment"
+                          style={{ width: 24, height: 24, borderRadius: 6, border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)', color: '#EF4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <X style={{ width: 10, height: 10 }} />
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+
             {/* Lead details */}
             <Card>
               <CardHeader title="Lead Details" icon={Tag} />
@@ -572,7 +655,7 @@ export default function LeadDetailPage() {
         leadId={leadId}
         leadName={name}
         leadPhone={phone}
-        onEnrolled={() => setShowSequenceModal(false)}
+        onEnrolled={() => { setShowSequenceModal(false); fetchEnrollments() }}
       />
 
       <CallModal

@@ -187,6 +187,19 @@ export default function PowerDialerPage() {
             </p>
           </div>
 
+          {/* Activation banner */}
+          <div style={{ background:'linear-gradient(135deg,rgba(124,58,237,0.06),rgba(37,99,235,0.04))', border:'1px solid rgba(124,58,237,0.2)', borderRadius:14, padding:'14px 18px', marginBottom:16, display:'flex', gap:12, alignItems:'flex-start' }}>
+            <div style={{ width:34, height:34, borderRadius:10, background:'linear-gradient(135deg,#7C3AED,#2563EB)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              <Phone size={15} color="#fff"/>
+            </div>
+            <div>
+              <p style={{ fontSize:13, fontWeight:700, color:'#7C3AED', margin:'0 0 3px' }}>Full Browser Calling — Available on Demand</p>
+              <p style={{ fontSize:12, color:C.muted, margin:0, lineHeight:1.6 }}>
+                We can activate <strong style={{ color:C.text }}>WebRTC + Exotel</strong> for you — one-click dialling directly from the browser, auto call recording, live whisper coaching, and no SIM needed. <span style={{ color:'#7C3AED', fontWeight:600 }}>Reach out to enable for your team.</span>
+              </p>
+            </div>
+          </div>
+
           <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:20, padding: isMobile?'18px 16px':'22px 24px', marginBottom:16 }}>
             {[
               { n:'1', title:'Tap "Call"',         desc:'Your phone dialler opens with the number already filled in — just tap the green call button.', color:C.blue    },

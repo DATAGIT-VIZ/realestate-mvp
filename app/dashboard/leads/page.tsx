@@ -9,8 +9,9 @@ import { CsvUploadModal } from '@/components/crm/CsvUploadModal'
 import { EmailParserModal } from '@/components/crm/EmailParserModal'
 import {
   Search, Plus, Filter, Eye, Loader2, UserPlus, Clock,
-  ChevronDown, LayoutGrid, List, UploadCloud, MailPlus, Phone, Mail,
+  ChevronDown, LayoutGrid, List, UploadCloud, MailPlus, Phone, Mail, Zap,
 } from 'lucide-react'
+import { EnrollSequenceModal } from '@/components/EnrollSequenceModal'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const BG      = '#F8FAFC'
@@ -71,6 +72,7 @@ export default function LeadsPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showCsvModal, setShowCsvModal] = useState(false)
   const [showEmailModal, setShowEmailModal] = useState(false)
+  const [enrollTarget, setEnrollTarget] = useState<{ leadId: string; leadName: string; leadPhone: string } | null>(null)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const fetchLeads = useCallback(async (q?: string, score?: ScoreFilter) => {
@@ -326,13 +328,24 @@ export default function LeadsPage() {
                         </span>
                       </td>
                       <td style={{ padding: '13px 16px', textAlign: 'right' }}>
-                        <Link href={`/dashboard/leads/${lead.id}`}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 8, color: MUTED, fontSize: 12, fontWeight: 500, textDecoration: 'none', transition: 'all 0.15s' }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = AMBER; (e.currentTarget as HTMLAnchorElement).style.color = AMBER }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = BORDER; (e.currentTarget as HTMLAnchorElement).style.color = MUTED }}
-                        >
-                          <Eye style={{ width: 12, height: 12 }} />View
-                        </Link>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
+                          <button
+                            onClick={() => setEnrollTarget({ leadId: lead.id, leadName: getDisplayName(lead), leadPhone: getPhone(lead) })}
+                            title="Enroll in sequence"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 10px', background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.2)', borderRadius: 8, color: '#7C3AED', fontSize: 12, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s' }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(124,58,237,0.12)' }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(124,58,237,0.06)' }}
+                          >
+                            <Zap style={{ width: 11, height: 11 }} />Sequence
+                          </button>
+                          <Link href={`/dashboard/leads/${lead.id}`}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 8, color: MUTED, fontSize: 12, fontWeight: 500, textDecoration: 'none', transition: 'all 0.15s' }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = AMBER; (e.currentTarget as HTMLAnchorElement).style.color = AMBER }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = BORDER; (e.currentTarget as HTMLAnchorElement).style.color = MUTED }}
+                          >
+                            <Eye style={{ width: 12, height: 12 }} />View
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -364,6 +377,16 @@ export default function LeadsPage() {
       {showEmailModal && (
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         <EmailParserModal onClose={() => setShowEmailModal(false)} onSuccess={(p: any) => handleCsvImport([p])} />
+      )}
+      {enrollTarget && (
+        <EnrollSequenceModal
+          isOpen={true}
+          onClose={() => setEnrollTarget(null)}
+          leadId={enrollTarget.leadId}
+          leadName={enrollTarget.leadName}
+          leadPhone={enrollTarget.leadPhone}
+          onEnrolled={() => setEnrollTarget(null)}
+        />
       )}
     </div>
   )
