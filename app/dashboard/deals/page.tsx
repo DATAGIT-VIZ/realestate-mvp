@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import {
-  Plus, X, ChevronRight, ChevronLeft, Trash2,
-  IndianRupee, MapPin, Home, Phone, Calendar,
-  TrendingUp, Handshake, Trophy, XCircle, Loader2, User
+  Plus, X, Trash2, IndianRupee, Home, Phone,
+  Calendar, TrendingUp, Handshake, Trophy, XCircle,
+  Loader2, User, Users, MapPin, MessageSquare,
+  CreditCard, CheckCircle2, GripVertical,
 } from 'lucide-react'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -24,12 +25,12 @@ const C = {
 
 // ─── Stage config ──────────────────────────────────────────────────────────
 const STAGES = [
-  { id: 'new',         label: 'New Lead',      color: C.label,   bg: '#F8FAFC', icon: '🔵' },
-  { id: 'site_visit',  label: 'Site Visit',    color: C.blue,    bg: '#EFF6FF', icon: '🏠' },
-  { id: 'negotiation', label: 'Negotiation',   color: C.amber,   bg: '#FFFBEB', icon: '💬' },
-  { id: 'token_paid',  label: 'Token Paid',    color: C.violet,  bg: '#F5F3FF', icon: '🏷' },
-  { id: 'won',         label: 'Closed Won',    color: C.emerald, bg: '#F0FDF4', icon: '🏆' },
-  { id: 'lost',        label: 'Closed Lost',   color: C.red,     bg: '#FFF1F2', icon: '❌' },
+  { id: 'new',         label: 'New Lead',    color: '#7C3AED', bg: '#F5F3FF', gradient: 'linear-gradient(135deg,#7C3AED,#5B21B6)' },
+  { id: 'site_visit',  label: 'Site Visit',  color: '#2563EB', bg: '#EFF6FF', gradient: 'linear-gradient(135deg,#2563EB,#1D4ED8)' },
+  { id: 'negotiation', label: 'Negotiation', color: '#D97706', bg: '#FFFBEB', gradient: 'linear-gradient(135deg,#D97706,#B45309)' },
+  { id: 'token_paid',  label: 'Token Paid',  color: '#6366F1', bg: '#EEF2FF', gradient: 'linear-gradient(135deg,#6366F1,#4F46E5)' },
+  { id: 'won',         label: 'Closed Won',  color: '#059669', bg: '#F0FDF4', gradient: 'linear-gradient(135deg,#059669,#047857)' },
+  { id: 'lost',        label: 'Closed Lost', color: '#EF4444', bg: '#FFF1F2', gradient: 'linear-gradient(135deg,#EF4444,#DC2626)' },
 ] as const
 
 type StageId = typeof STAGES[number]['id']
@@ -82,100 +83,66 @@ const BLANK_FORM: DealForm = {
 
 // ─── Deal Card ────────────────────────────────────────────────────────────────
 function DealCard({
-  deal,
-  onMove,
-  onEdit,
-  onDelete,
+  deal, onEdit, onDelete, isDragging, onDragStart, onDragEnd,
 }: {
-  deal: Deal
-  onMove: (id: string, dir: 'prev' | 'next') => void
-  onEdit: (deal: Deal) => void
-  onDelete: (id: string) => void
+  deal: Deal; onEdit: (deal: Deal) => void; onDelete: (id: string) => void
+  isDragging?: boolean; onDragStart?: () => void; onDragEnd?: () => void
 }) {
-  const stageIdx = STAGE_ORDER.indexOf(deal.stage)
-  const canPrev  = stageIdx > 0
-  const canNext  = stageIdx < STAGE_ORDER.length - 1
-  const stage    = stageOf(deal.stage)
+  const stage = stageOf(deal.stage)
 
   return (
     <div
+      draggable
+      onDragStart={e => { e.dataTransfer.setData('dealId', deal.id); e.dataTransfer.effectAllowed = 'move'; onDragStart?.() }}
+      onDragEnd={() => onDragEnd?.()}
       onClick={() => onEdit(deal)}
       style={{
-        background: C.panel, border: `1px solid ${C.border}`,
-        borderRadius: 12, padding: '14px 14px 12px',
-        cursor: 'pointer', marginBottom: 8,
-        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-        transition: 'box-shadow 0.15s',
+        background: C.panel, border: `1px solid ${isDragging ? stage.color + '60' : C.border}`,
+        borderRadius: 12, padding: '13px 13px 11px',
+        cursor: 'grab', marginBottom: 8,
+        boxShadow: isDragging ? `0 8px 24px ${stage.color}30` : '0 1px 3px rgba(0,0,0,0.06)',
+        opacity: isDragging ? 0.5 : 1,
+        transition: 'box-shadow 0.15s, opacity 0.1s',
+        userSelect: 'none',
       }}
-      onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)')}
-      onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)')}
+      onMouseEnter={e => { if (!isDragging) (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 14px rgba(0,0,0,0.1)' }}
+      onMouseLeave={e => { if (!isDragging) (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)' }}
     >
-      {/* Lead name + value */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-        <span style={{ fontSize: 14, fontWeight: 700, color: C.text, flex: 1, lineHeight: 1.3 }}>{deal.lead_name}</span>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, flex: 1 }}>
+          <GripVertical style={{ width: 13, height: 13, color: C.label, flexShrink: 0, marginTop: 2 }} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: C.text, lineHeight: 1.3 }}>{deal.lead_name}</span>
+        </div>
         {deal.deal_value ? (
-          <span style={{ fontSize: 13, fontWeight: 700, color: stage.color, marginLeft: 8, whiteSpace: 'nowrap' }}>{fmt(deal.deal_value)}</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: stage.color, marginLeft: 6, whiteSpace: 'nowrap' }}>{fmt(deal.deal_value)}</span>
         ) : null}
       </div>
 
-      {/* Property */}
       {(deal.property_type || deal.locality) && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 5 }}>
-          <Home style={{ width: 11, height: 11, color: C.label }} />
-          <span style={{ fontSize: 12, color: C.muted }}>
-            {[deal.property_type, deal.locality, deal.city].filter(Boolean).join(' · ')}
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+          <Home style={{ width: 10, height: 10, color: C.label }} />
+          <span style={{ fontSize: 11, color: C.muted }}>{[deal.property_type, deal.locality].filter(Boolean).join(' · ')}</span>
         </div>
       )}
-
-      {/* Phone */}
       {deal.lead_phone && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 5 }}>
-          <Phone style={{ width: 11, height: 11, color: C.label }} />
-          <span style={{ fontSize: 12, color: C.muted }}>{deal.lead_phone}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+          <Phone style={{ width: 10, height: 10, color: C.label }} />
+          <span style={{ fontSize: 11, color: C.muted }}>{deal.lead_phone}</span>
         </div>
       )}
-
-      {/* Expected close */}
       {deal.expected_close && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 5 }}>
-          <Calendar style={{ width: 11, height: 11, color: C.label }} />
-          <span style={{ fontSize: 12, color: C.muted }}>
-            {new Date(deal.expected_close).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })}
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+          <Calendar style={{ width: 10, height: 10, color: C.label }} />
+          <span style={{ fontSize: 11, color: C.muted }}>{new Date(deal.expected_close).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })}</span>
         </div>
       )}
-
-      {/* Source */}
       {deal.source_portal && (
-        <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, background: '#EFF6FF', color: C.blue, borderRadius: 6, padding: '2px 7px', marginTop: 4 }}>
-          {deal.source_portal}
-        </span>
+        <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, background: '#EFF6FF', color: C.blue, borderRadius: 6, padding: '2px 7px', marginTop: 2 }}>{deal.source_portal}</span>
       )}
 
-      {/* Actions */}
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 10, borderTop: `1px solid ${C.border}`, paddingTop: 8 }}
-      >
-        <button
-          disabled={!canPrev}
-          onClick={() => onMove(deal.id, 'prev')}
-          style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '4px 8px', fontSize: 11, fontWeight: 600, borderRadius: 7, border: `1px solid ${C.border}`, background: canPrev ? '#F8FAFC' : '#F1F5F9', color: canPrev ? C.muted : C.label, cursor: canPrev ? 'pointer' : 'not-allowed' }}
-        >
-          <ChevronLeft style={{ width: 11, height: 11 }} /> Back
-        </button>
-        <button
-          disabled={!canNext}
-          onClick={() => onMove(deal.id, 'next')}
-          style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '4px 8px', fontSize: 11, fontWeight: 600, borderRadius: 7, border: `1px solid ${C.blue}`, background: canNext ? '#EFF6FF' : '#F1F5F9', color: canNext ? C.blue : C.label, cursor: canNext ? 'pointer' : 'not-allowed', flex: 1, justifyContent: 'center' }}
-        >
-          Move forward <ChevronRight style={{ width: 11, height: 11 }} />
-        </button>
-        <button
-          onClick={() => onDelete(deal.id)}
-          style={{ display: 'flex', padding: '4px 6px', borderRadius: 7, border: `1px solid ${C.border}`, background: '#FFF1F2', color: C.red, cursor: 'pointer' }}
-        >
+      <div onClick={e => e.stopPropagation()} style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8, borderTop: `1px solid ${C.border}`, paddingTop: 7 }}>
+        <button onClick={() => onDelete(deal.id)}
+          style={{ display: 'flex', padding: '4px 6px', borderRadius: 7, border: `1px solid ${C.border}`, background: '#FFF1F2', color: C.red, cursor: 'pointer' }}>
           <Trash2 style={{ width: 11, height: 11 }} />
         </button>
       </div>
@@ -293,7 +260,7 @@ function DealModal({
             <div>
               <label style={lbl}>Stage</label>
               <select style={{ ...inp, cursor: 'pointer' }} value={form.stage} onChange={e => set('stage', e.target.value as StageId)}>
-                {STAGES.map(s => <option key={s.id} value={s.id}>{s.icon} {s.label}</option>)}
+                {STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
               </select>
             </div>
             <div>
@@ -354,6 +321,8 @@ export default function DealsPage() {
   const [loading,     setLoading]     = useState(true)
   const [modalDeal,   setModalDeal]   = useState<Deal | 'new' | null>(null)
   const [deleteConf,  setDeleteConf]  = useState<string | null>(null)
+  const [dragId,      setDragId]      = useState<string | null>(null)
+  const [dragOver,    setDragOver]    = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -383,17 +352,15 @@ export default function DealsPage() {
     await load()
   }
 
-  const handleMove = async (id: string, dir: 'prev' | 'next') => {
-    const deal = deals.find(d => d.id === id)
-    if (!deal) return
-    const idx    = STAGE_ORDER.indexOf(deal.stage)
-    const newIdx = dir === 'next' ? idx + 1 : idx - 1
-    if (newIdx < 0 || newIdx >= STAGE_ORDER.length) return
-
-    setDeals(ds => ds.map(d => d.id === id ? { ...d, stage: STAGE_ORDER[newIdx] } : d))
-    await fetch(`/api/deals/${id}`, {
+  const handleDrop = async (targetStage: StageId) => {
+    if (!dragId) return
+    const deal = deals.find(d => d.id === dragId)
+    if (!deal || deal.stage === targetStage) { setDragId(null); setDragOver(null); return }
+    setDeals(ds => ds.map(d => d.id === dragId ? { ...d, stage: targetStage } : d))
+    setDragId(null); setDragOver(null)
+    await fetch(`/api/deals/${dragId}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stage: STAGE_ORDER[newIdx] }),
+      body: JSON.stringify({ stage: targetStage }),
     })
   }
 
@@ -457,53 +424,60 @@ export default function DealsPage() {
           <Loader2 style={{ width: 20, height: 20, animation: 'spin 1s linear infinite' }} /> Loading deals…
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 14, overflowX: 'auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(210px, 1fr))', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
           {STAGES.map(stage => {
             const stageDeals = deals.filter(d => d.stage === stage.id)
             const stageVal   = stageDeals.reduce((s, d) => s + (d.deal_value ?? 0), 0)
+            const isOver     = dragOver === stage.id
 
             return (
-              <div key={stage.id} style={{ minWidth: 220 }}>
+              <div key={stage.id}
+                onDragOver={e => { e.preventDefault(); setDragOver(stage.id) }}
+                onDragLeave={() => setDragOver(null)}
+                onDrop={() => handleDrop(stage.id)}
+                style={{ minWidth: 210 }}>
+
                 {/* Column header */}
-                <div style={{ background: stage.bg, border: `1px solid ${stage.color}30`, borderRadius: 14, padding: '12px 14px', marginBottom: 10 }}>
+                <div style={{ background: stage.gradient, borderRadius: 12, padding: '11px 14px', marginBottom: 10 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 14 }}>{stage.icon}</span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: stage.color }}>{stage.label}</span>
-                    </div>
-                    <span style={{ fontSize: 11, fontWeight: 700, background: `${stage.color}20`, color: stage.color, borderRadius: 20, padding: '2px 8px' }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', letterSpacing: '0.01em' }}>{stage.label}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, background: 'rgba(255,255,255,0.25)', color: '#fff', borderRadius: 20, padding: '2px 8px' }}>
                       {stageDeals.length}
                     </span>
                   </div>
                   {stageVal > 0 && (
-                    <div style={{ fontSize: 12, fontWeight: 600, color: stage.color, marginTop: 4 }}>{fmt(stageVal)}</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.85)', marginTop: 3 }}>{fmt(stageVal)}</div>
                   )}
                 </div>
 
-                {/* Cards */}
-                <div style={{ minHeight: 100 }}>
-                  {stageDeals.length === 0 ? (
-                    <div style={{ border: `2px dashed ${C.border}`, borderRadius: 12, padding: '20px 14px', textAlign: 'center' }}>
-                      <span style={{ fontSize: 12, color: C.label }}>No deals</span>
+                {/* Drop zone */}
+                <div style={{
+                  minHeight: 120, borderRadius: 12, transition: 'background 0.15s',
+                  background: isOver ? `${stage.color}10` : 'transparent',
+                  border: isOver ? `2px dashed ${stage.color}60` : '2px solid transparent',
+                  padding: isOver ? 4 : 0,
+                }}>
+                  {stageDeals.length === 0 && !isOver ? (
+                    <div style={{ border: `1.5px dashed ${C.border}`, borderRadius: 10, padding: '18px 12px', textAlign: 'center' }}>
+                      <span style={{ fontSize: 11, color: C.label }}>Drag deals here</span>
                     </div>
                   ) : (
                     stageDeals.map(deal => (
                       <DealCard
                         key={deal.id}
                         deal={deal}
-                        onMove={handleMove}
+                        isDragging={dragId === deal.id}
+                        onDragStart={() => setDragId(deal.id)}
+                        onDragEnd={() => { setDragId(null); setDragOver(null) }}
                         onEdit={setModalDeal}
                         onDelete={id => setDeleteConf(id)}
                       />
                     ))
                   )}
 
-                  {/* Quick add button */}
-                  <button
-                    onClick={() => setModalDeal('new')}
-                    style={{ width: '100%', padding: '8px 0', border: `1px dashed ${C.border}`, borderRadius: 10, background: 'transparent', color: C.label, fontSize: 12, cursor: 'pointer', marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
-                  >
-                    <Plus style={{ width: 12, height: 12 }} /> Add deal
+                  <button onClick={() => setModalDeal('new')}
+                    style={{ width: '100%', padding: '7px 0', border: `1px dashed ${C.border}`, borderRadius: 9, background: 'transparent', color: C.label, fontSize: 11, cursor: 'pointer', marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                    <Plus style={{ width: 11, height: 11 }} /> Add deal
                   </button>
                 </div>
               </div>

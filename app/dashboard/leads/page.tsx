@@ -261,9 +261,9 @@ export default function LeadsPage() {
           </div>
         )}
 
-        {/* ── Desktop table ── */}
+        {/* ── Table ── */}
         {viewMode === 'list' && leads.length > 0 && (
-          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }} className="hidden md:block">
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
@@ -342,53 +342,6 @@ export default function LeadsPage() {
           </div>
         )}
 
-        {/* ── Mobile cards ── */}
-        {viewMode === 'list' && leads.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }} className="md:hidden">
-            {leads.map(lead => {
-              const score = getScore(lead)
-              const { label, color, bg, dot } = getScoreStyle(score)
-              return (
-                <div key={lead.id} style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 16 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: dot, boxShadow: `0 0 6px ${dot}`, marginTop: 3 }} />
-                      <div>
-                        <h3 style={{ fontSize: 14, fontWeight: 600, color: TEXT, margin: 0 }}>{getDisplayName(lead)}</h3>
-                        {getEmail(lead) && <p style={{ fontSize: 11, color: MUTED, margin: '2px 0 0' }}>{getEmail(lead)}</p>}
-                      </div>
-                    </div>
-                    {score > 0 ? (
-                      <div style={{ width: 34, height: 34, borderRadius: '50%', border: `2px solid ${dot}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: dot }}>{score}</span>
-                      </div>
-                    ) : (
-                      <span style={{ fontSize: 18, color: '#CBD5E1', fontWeight: 400 }}>—</span>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-                    {score > 0 && <span style={{ fontSize: 10, fontWeight: 600, color, background: bg, padding: '2px 8px', borderRadius: 8 }}>{label}</span>}
-                    {lead.sourcePortal && <span style={{ fontSize: 10, color: MUTED, background: '#F1F5F9', padding: '2px 8px', borderRadius: 8 }}>{lead.sourcePortal}</span>}
-                    <span style={{ fontSize: 10, color: MUTED, background: '#F1F5F9', padding: '2px 8px', borderRadius: 8 }}>{formatBudget(lead.budgetMin, lead.budgetMax)}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, color: MUTED, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Phone style={{ width: 11, height: 11 }} />{getPhone(lead) || '—'}
-                    </span>
-                    <span style={{ fontSize: 12, color: MUTED, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Clock style={{ width: 11, height: 11 }} />{timeAgo(lead.updatedAt)}
-                    </span>
-                  </div>
-                  <Link href={`/dashboard/leads/${lead.id}`}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12, padding: '8px 0', background: 'rgba(255,255,255,0.04)', border: `1px solid ${BORDER}`, borderRadius: 8, color: MUTED, fontSize: 12, textDecoration: 'none' }}
-                  >
-                    <Eye style={{ width: 12, height: 12 }} />View Details
-                  </Link>
-                </div>
-              )
-            })}
-          </div>
-        )}
 
         {leads.length > 0 && (
           <p style={{ fontSize: 12, color: MUTED, textAlign: 'center', marginTop: 16 }}>

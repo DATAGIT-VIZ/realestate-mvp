@@ -10,26 +10,27 @@ import {
 import type { AdvisorContext, LiveLead, LiveDeal } from '@/app/api/ai-assistant/route'
 import type { CRMLead } from '@/lib/twenty'
 
-// ─── Design tokens — light theme matching CRM ──────────────────────────────
+// ─── Design tokens ───────────────────────────────────────────────────────────
 const C = {
-  bg:        '#F8FAFC',
-  panel:     '#FFFFFF',
-  border:    '#E2E8F0',
-  borderDim: '#F1F5F9',
-  text:      '#0F172A',
-  muted:     '#64748B',
-  label:     '#94A3B8',
-  blue:      '#2563EB',
-  blueDim:   '#EFF6FF',
-  blueBorder:'#BFDBFE',
-  amber:     '#D97706',
-  amberDim:  '#FFFBEB',
-  amberBorder:'#FDE68A',
-  emerald:   '#059669',
-  emeraldDim:'#ECFDF5',
-  violet:    '#7C3AED',
-  violetDim: '#F5F3FF',
-  red:       '#EF4444',
+  bg:           '#F8FAFC',
+  panel:        '#FFFFFF',
+  border:       '#E2E8F0',
+  borderDim:    '#F1F5F9',
+  text:         '#0F172A',
+  muted:        '#64748B',
+  label:        '#94A3B8',
+  blue:         '#2563EB',
+  blueDim:      '#EFF6FF',
+  blueBorder:   '#BFDBFE',
+  amber:        '#D97706',
+  amberDim:     '#FFFBEB',
+  amberBorder:  '#FDE68A',
+  emerald:      '#059669',
+  emeraldDim:   '#ECFDF5',
+  violet:       '#7C3AED',
+  violetDim:    '#F5F3FF',
+  violetBorder: '#DDD6FE',
+  red:          '#EF4444',
 }
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -91,8 +92,8 @@ const CATEGORIES = [
   },
 ]
 
-// ─── Markdown renderer (light theme) ────────────────────────────────────────
-function MsgContent({ content }: { content: string }) {
+// ─── Markdown renderer ────────────────────────────────────────────────────────
+function MsgContent({ content, showCursor }: { content: string; showCursor?: boolean }) {
   const [copied, setCopied] = useState<number | null>(null)
   let codeIdx = 0
 
@@ -148,7 +149,8 @@ function MsgContent({ content }: { content: string }) {
                   <span>{renderInline(line.replace(/^\d+\.\s/, ''))}</span>
                 </div>
               if (line.trim() === '') return <div key={li} style={{ height: 5 }} />
-              return <p key={li} style={{ margin: '2px 0' }}>{renderInline(line)}</p>
+              const isLast = pi === parts.length - 1 && li === lines.length - 1
+              return <p key={li} style={{ margin: '2px 0' }}>{renderInline(line)}{isLast && showCursor && <StreamingCursor />}</p>
             })}
           </div>
         )
@@ -164,13 +166,17 @@ function renderInline(text: string) {
 
 function ThinkingDots() {
   return (
-    <div style={{ display: 'flex', gap: 5, padding: '6px 2px', alignItems: 'center' }}>
-      <span style={{ fontSize: 12, color: C.muted, marginRight: 4 }}>Thinking</span>
+    <div style={{ display: 'flex', gap: 5, padding: '4px 2px', alignItems: 'center' }}>
+      <span style={{ fontSize: 12, color: C.muted, marginRight: 2 }}>Thinking</span>
       {[0, 1, 2].map(i => (
-        <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: C.amber, animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite` }} />
+        <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: C.violet, animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite` }} />
       ))}
     </div>
   )
+}
+
+function StreamingCursor() {
+  return <span style={{ display: 'inline-block', width: 2, height: '1.1em', background: C.violet, marginLeft: 2, verticalAlign: 'text-bottom', animation: 'blink 0.9s step-end infinite', borderRadius: 1 }} />
 }
 
 // ─── Sidebar: live context panel ─────────────────────────────────────────────
@@ -306,6 +312,8 @@ export default function AdvisorPage() {
   const [activeId,   setActiveId]   = useState<string | null>(null)
   const [input,      setInput]      = useState('')
   const [loading,    setLoading]    = useState(false)
+  const [streaming,  setStreaming]   = useState(false)
+  const [streamingId, setStreamingId] = useState<string | null>(null)
   const [ctx,        setCtx]        = useState<AdvisorContext | null>(null)
   const [ctxLoading, setCtxLoading] = useState(true)
   const [activeCat,  setActiveCat]  = useState(0)
@@ -410,25 +418,66 @@ export default function AdvisorPage() {
       cid = c.id
     }
 
-    setConvos(p => p.map(c => c.id !== cid ? c : { ...c, title: c.messages.length === 0 ? shortTitle(text.trim()) : c.title, messages: [...c.messages, userMsg, { role: 'assistant', content: '' }] }))
+    setConvos(p => p.map(c => c.id !== cid ? c : {
+      ...c,
+      title: c.messages.length === 0 ? shortTitle(text.trim()) : c.title,
+      messages: [...c.messages, userMsg, { role: 'assistant', content: '' }],
+    }))
     setInput('')
     setLoading(true)
+    setStreamingId(cid)
 
     const prev = convos.find(c => c.id === cid)?.messages ?? []
     try {
-      const res  = await fetch('/api/ai-assistant', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: [...prev, userMsg], context: ctx }) })
-      const data = await res.json()
-      const reply  = data.content || data.error || 'No response.'
-      const rTokens = estimateTokens(reply)
+      const res = await fetch('/api/ai-assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [...prev, userMsg], context: ctx }),
+      })
+
+      if (!res.ok || !res.body) {
+        const errJson = await res.json().catch(() => ({ error: 'Request failed' }))
+        throw new Error(errJson.error ?? 'Request failed')
+      }
+
+      setStreaming(true)
+      const reader  = res.body.getReader()
+      const decoder = new TextDecoder()
+      let accumulated = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        accumulated += decoder.decode(value, { stream: true })
+        setConvos(p => p.map(c => {
+          if (c.id !== cid) return c
+          const msgs = [...c.messages]
+          msgs[msgs.length - 1] = { role: 'assistant', content: accumulated }
+          return { ...c, messages: msgs }
+        }))
+        endRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }
+
+      const rTokens = estimateTokens(accumulated)
       setConvos(p => p.map(c => {
         if (c.id !== cid) return c
         const msgs = [...c.messages]
-        msgs[msgs.length - 1] = { role: 'assistant', content: reply, tokens: rTokens }
+        msgs[msgs.length - 1] = { role: 'assistant', content: accumulated, tokens: rTokens }
         return { ...c, messages: msgs, totalTokens: (c.totalTokens ?? 0) + (userMsg.tokens ?? 0) + rTokens }
       }))
-    } catch {
-      setConvos(p => p.map(c => { if (c.id !== cid) return c; const msgs = [...c.messages]; msgs[msgs.length - 1] = { role: 'assistant', content: '⚠️ Connection failed. Please try again.' }; return { ...c, messages: msgs } }))
-    } finally { setLoading(false) }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : 'Connection failed. Please try again.'
+      setConvos(p => p.map(c => {
+        if (c.id !== cid) return c
+        const msgs = [...c.messages]
+        msgs[msgs.length - 1] = { role: 'assistant', content: `Connection failed — ${errMsg}` }
+        return { ...c, messages: msgs }
+      }))
+    } finally {
+      setLoading(false)
+      setStreaming(false)
+      setStreamingId(null)
+    }
   }, [loading, activeId, convos, ctx])
 
   const onKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -453,7 +502,7 @@ export default function AdvisorPage() {
               <div style={{ fontSize: 13.5, fontWeight: 800, color: C.text }}>AI Business Advisor</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.emerald }} />
-                <span style={{ fontSize: 10.5, color: C.emerald, fontWeight: 600 }}>Powered by Claude</span>
+                <span style={{ fontSize: 10.5, color: C.emerald, fontWeight: 600 }}>RealEdge AI</span>
               </div>
             </div>
           </div>
@@ -490,7 +539,7 @@ export default function AdvisorPage() {
 
         {/* New chat */}
         <div style={{ padding: '10px 12px 14px', borderTop: `1px solid ${C.border}` }}>
-          <button onClick={newConvo} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '9px 0', borderRadius: 10, background: C.blue, border: 'none', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(37,99,235,0.25)' }}>
+          <button onClick={newConvo} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '9px 0', borderRadius: 10, background: 'linear-gradient(135deg,#7C3AED,#5B21B6)', border: 'none', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 10px rgba(124,58,237,0.3)' }}>
             <Plus size={14} /> New Chat
           </button>
         </div>
@@ -586,62 +635,81 @@ export default function AdvisorPage() {
           )}
 
           {/* Message thread */}
-          {active?.messages.map((msg, i) => (
-            <div key={i} style={{ display: 'flex', flexDirection: msg.role === 'user' ? 'row-reverse' : 'row', gap: 12, alignItems: 'flex-start', maxWidth: 820, width: '100%', alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
-              {/* Avatar */}
-              <div style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: msg.role === 'user' ? C.blueDim : 'linear-gradient(135deg, #2563EB, #7C3AED)',
-                border: msg.role === 'user' ? `1px solid ${C.blueBorder}` : 'none',
-                boxShadow: msg.role === 'assistant' ? '0 2px 8px rgba(37,99,235,0.2)' : 'none',
-              }}>
-                {msg.role === 'user' ? <User size={14} color={C.blue} /> : <Bot size={14} color="#fff" />}
-              </div>
+          {active?.messages.map((msg, i) => {
+            const isUser      = msg.role === 'user'
+            const isStreaming  = !isUser && streaming && streamingId === activeId && i === (active.messages.length - 1)
+            const isThinking   = !isUser && msg.content === '' && loading
 
-              {/* Bubble */}
-              <div style={{
-                maxWidth: '80%',
-                background: msg.role === 'user' ? C.blueDim : C.panel,
-                border: `1px solid ${msg.role === 'user' ? C.blueBorder : C.border}`,
-                borderRadius: msg.role === 'user' ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
-                padding: '12px 16px',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-              }}>
-                {msg.content === '' && msg.role === 'assistant' ? <ThinkingDots /> : <MsgContent content={msg.content} />}
-                {msg.tokens && msg.tokens > 0 && msg.role === 'assistant' && (
-                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${C.borderDim}`, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Coins size={10} color={C.label} />
-                    <span style={{ fontSize: 10, color: C.label }}>~{msg.tokens} tokens · ₹{(estimateCostUSD(msg.tokens) * 84).toFixed(3)}</span>
+            return (
+              <div key={i} style={{ display: 'flex', flexDirection: isUser ? 'row-reverse' : 'row', gap: 10, alignItems: 'flex-start', maxWidth: 860, width: '100%', alignSelf: isUser ? 'flex-end' : 'flex-start', animation: 'fadeUp 0.2s ease-out' }}>
+
+                {/* AI avatar only */}
+                {!isUser && (
+                  <div style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #7C3AED, #5B21B6)', boxShadow: '0 2px 8px rgba(124,58,237,0.25)', marginTop: 2 }}>
+                    <Bot size={14} color="#fff" />
+                  </div>
+                )}
+
+                {/* Message content */}
+                {isUser ? (
+                  <div style={{
+                    maxWidth: '72%', background: 'linear-gradient(135deg, #1E1B4B, #312E81)',
+                    borderRadius: '18px 4px 18px 18px', padding: '11px 17px',
+                    boxShadow: '0 2px 8px rgba(30,27,75,0.2)',
+                  }}>
+                    <p style={{ margin: 0, fontSize: 13.5, color: '#fff', lineHeight: 1.6 }}>{msg.content}</p>
+                  </div>
+                ) : (
+                  <div style={{
+                    flex: 1, background: C.panel,
+                    borderLeft: `3px solid ${C.violet}`,
+                    borderRadius: '0 14px 14px 14px',
+                    padding: '14px 18px',
+                    boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
+                  }}>
+                    {isThinking
+                      ? <ThinkingDots />
+                      : <MsgContent content={msg.content} showCursor={isStreaming} />
+                    }
+                    {msg.tokens && msg.tokens > 0 && !isStreaming && (
+                      <div style={{ marginTop: 8, paddingTop: 7, borderTop: `1px solid ${C.borderDim}`, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Coins size={10} color={C.label} />
+                        <span style={{ fontSize: 10, color: C.label }}>~{msg.tokens} tokens · ₹{(estimateCostUSD(msg.tokens) * 84).toFixed(3)}</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            </div>
-          ))}
+            )
+          })}
           <div ref={endRef} />
         </div>
 
         {/* Input bar */}
         <div style={{ padding: '12px 24px 16px', background: C.panel, borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, background: C.bg, border: `1.5px solid ${C.border}`, borderRadius: 16, padding: '10px 14px', maxWidth: 820, margin: '0 auto', transition: 'border-color 0.15s' }}
-            onFocusCapture={e => (e.currentTarget.style.borderColor = C.blue)}
-            onBlurCapture={e  => (e.currentTarget.style.borderColor = C.border)}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, background: '#FAFAFF', border: `1.5px solid ${C.violetBorder}`, borderRadius: 18, padding: '10px 10px 10px 16px', maxWidth: 820, margin: '0 auto', transition: 'border-color 0.15s, box-shadow 0.15s' }}
+            onFocusCapture={e => { e.currentTarget.style.borderColor = C.violet; e.currentTarget.style.boxShadow = `0 0 0 3px rgba(124,58,237,0.1)` }}
+            onBlurCapture={e  => { e.currentTarget.style.borderColor = C.violetBorder; e.currentTarget.style.boxShadow = 'none' }}>
             <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={onKey}
               placeholder={ctx?.hotLeads[0] ? `Ask about ${ctx.hotLeads[0].name}, write a script, get market intel…` : 'Ask anything about your pipeline, clients, or market…'}
               rows={1} disabled={loading}
-              style={{ flex: 1, background: 'transparent', border: 'none', color: C.text, fontSize: 13.5, resize: 'none', outline: 'none', fontFamily: 'Inter, system-ui, sans-serif', lineHeight: 1.55, maxHeight: 120, overflow: 'auto' }} />
+              style={{ flex: 1, background: 'transparent', border: 'none', color: C.text, fontSize: 13.5, resize: 'none', outline: 'none', fontFamily: 'Inter, system-ui, sans-serif', lineHeight: 1.6, maxHeight: 120, overflow: 'auto' }} />
             <button onClick={() => send(input)} disabled={!input.trim() || loading}
-              style={{ width: 38, height: 38, borderRadius: 11, border: 'none', flexShrink: 0, background: input.trim() && !loading ? C.blue : C.borderDim, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: input.trim() && !loading ? 'pointer' : 'not-allowed', transition: 'all 0.15s', boxShadow: input.trim() && !loading ? '0 2px 8px rgba(37,99,235,0.3)' : 'none' }}>
+              style={{ width: 38, height: 38, borderRadius: 12, border: 'none', flexShrink: 0, background: input.trim() && !loading ? 'linear-gradient(135deg,#7C3AED,#5B21B6)' : C.borderDim, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: input.trim() && !loading ? 'pointer' : 'not-allowed', transition: 'all 0.15s', boxShadow: input.trim() && !loading ? '0 2px 10px rgba(124,58,237,0.35)' : 'none' }}>
               {loading ? <Loader2 size={15} color={C.muted} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={15} color={input.trim() ? '#fff' : C.label} />}
             </button>
           </div>
           <p style={{ fontSize: 11, color: C.label, textAlign: 'center', margin: '8px 0 0' }}>
-            Powered by Claude · Grounded in your live RealEdge pipeline · ↵ to send, ⇧↵ for newline
+            RealEdge AI · Live pipeline context · ↵ to send, ⇧↵ for newline
           </p>
         </div>
       </div>
 
       <style>{`
-        @keyframes bounce { 0%,100%{transform:translateY(0);opacity:.5} 50%{transform:translateY(-4px);opacity:1} }
-        @keyframes spin { to { transform: rotate(360deg) } }
+        @keyframes bounce  { 0%,100%{transform:translateY(0);opacity:.5} 50%{transform:translateY(-4px);opacity:1} }
+        @keyframes spin    { to { transform: rotate(360deg) } }
+        @keyframes blink   { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes fadeUp  { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
       `}</style>
     </div>
   )

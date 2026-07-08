@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Building2, Plus, Search, Loader2, Edit2, Trash2, X, Check, IndianRupee, MapPin, RefreshCw } from 'lucide-react'
+import { Building2, Plus, Search, Loader2, Edit2, Trash2, X, Check, MapPin, RefreshCw, Sparkles } from 'lucide-react'
 import type { Property } from '@/app/api/crm/properties/route'
 
 const C = {
@@ -150,6 +150,7 @@ export default function PropertiesPage() {
   const [editProp, setEditProp]     = useState<Property | null>(null)
   const [saving, setSaving]         = useState(false)
   const [deleteId, setDeleteId]     = useState<string | null>(null)
+  const [seeding, setSeeding]       = useState(false)
 
   const fetchData = useCallback(async () => {
     try {
@@ -175,6 +176,16 @@ export default function PropertiesPage() {
       fetchData()
     } catch (e) { console.error(e) }
     finally { setSaving(false) }
+  }
+
+  const handleSeedDemo = async () => {
+    setSeeding(true)
+    try {
+      const res = await fetch('/api/seed/properties', { method: 'POST' })
+      if (!res.ok) throw new Error('Seed failed')
+      await fetchData()
+    } catch (e) { console.error(e) }
+    finally { setSeeding(false) }
   }
 
   const handleDelete = async (id: string) => {
@@ -249,19 +260,30 @@ export default function PropertiesPage() {
 
         {/* Empty state */}
         {filtered.length === 0 && (
-          <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '48px 24px', textAlign: 'center' }}>
-            <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(37,99,235,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              <Building2 style={{ width: 26, height: 26, color: C.blue }} />
+          <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '56px 24px', textAlign: 'center' }}>
+            <div style={{ width: 60, height: 60, borderRadius: 18, background: 'linear-gradient(135deg,#7C3AED15,#5B21B615)', border: '1px solid #7C3AED20', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
+              <Building2 style={{ width: 28, height: 28, color: '#7C3AED' }} />
             </div>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: '0 0 8px' }}>{properties.length === 0 ? 'No properties yet' : 'No results'}</h3>
-            <p style={{ fontSize: 13, color: C.muted, margin: '0 0 24px' }}>
-              {properties.length === 0 ? 'Add your property inventory to enable AI Property Matching for leads.' : 'Try adjusting your search or filters.'}
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: '#0F172A', margin: '0 0 8px' }}>
+              {properties.length === 0 ? 'No properties yet' : 'No results found'}
+            </h3>
+            <p style={{ fontSize: 13, color: C.muted, margin: '0 0 28px', maxWidth: 380, marginLeft: 'auto', marginRight: 'auto' }}>
+              {properties.length === 0
+                ? 'Add your property inventory so agents can match leads to the right listings instantly.'
+                : 'Try adjusting your search or filters.'}
             </p>
             {properties.length === 0 && (
-              <button onClick={() => setShowForm(true)}
-                style={{ padding: '10px 24px', background: C.blue, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                Add First Property
-              </button>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button onClick={handleSeedDemo} disabled={seeding}
+                  style={{ padding: '11px 22px', background: 'linear-gradient(135deg,#7C3AED,#5B21B6)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 13, fontWeight: 700, cursor: seeding ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7, opacity: seeding ? 0.7 : 1, boxShadow: '0 2px 12px rgba(124,58,237,0.3)' }}>
+                  {seeding ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Sparkles style={{ width: 14, height: 14 }} />}
+                  {seeding ? 'Loading Demo Data…' : 'Load Demo Properties'}
+                </button>
+                <button onClick={() => setShowForm(true)}
+                  style={{ padding: '11px 22px', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 11, color: '#0F172A', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <Plus style={{ width: 14, height: 14 }} /> Add Manually
+                </button>
+              </div>
             )}
           </div>
         )}

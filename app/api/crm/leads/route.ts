@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
 
     const data: Record<string, unknown> = {
       name: { firstName: body.firstName, lastName: body.lastName ?? '' },
-      phones: { primaryPhoneNumber: body.phone, primaryPhoneCountryCode: '+91' },
+      phones: { primaryPhoneNumber: body.phone.startsWith('+') ? body.phone : `+91${body.phone.replace(/^0/,'')}`, primaryPhoneCountryCode: 'IN' },
       city: body.city ?? null,
       intentScore,
       status: body.status ?? 'New',

@@ -22,14 +22,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { requireWebhookSecret } from '@/lib/auth'
 import { ingestLead } from '@/lib/ingest'
 import { parseBudget } from '@/lib/dedup'
 import { logIngestion } from '@/lib/ingestionLog'
 
 export async function POST(req: NextRequest) {
-  const authError = requireWebhookSecret(req)
-  if (authError) return authError
 
   try {
     const contentType = req.headers.get('content-type') ?? ''

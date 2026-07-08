@@ -132,22 +132,36 @@ export async function POST(req: NextRequest) {
   try {
     const { messages, context }: { messages: Message[]; context: AdvisorContext } = await req.json()
 
-    const client  = new Anthropic({ apiKey })
+    const client    = new Anthropic({ apiKey })
     const sysPrompt = buildSystemPrompt(context)
 
-    const response = await client.messages.create({
-      model:      'claude-sonnet-4-6',
+    const stream = client.messages.stream({
+      model:     'claude-sonnet-4-6',
       max_tokens: 1024,
-      system:     sysPrompt,
-      messages:   messages.map(m => ({ role: m.role, content: m.content })),
+      system:    sysPrompt,
+      messages:  messages.map(m => ({ role: m.role, content: m.content })),
     })
 
-    const replyText = response.content
-      .filter(b => b.type === 'text')
-      .map(b => (b as { type: 'text'; text: string }).text)
-      .join('')
+    const encoder = new TextEncoder()
+    const readable = new ReadableStream({
+      async start(controller) {
+        for await (const event of stream) {
+          if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+            controller.enqueue(encoder.encode(event.delta.text))
+          }
+        }
+        controller.close()
+      },
+      cancel() { stream.abort() },
+    })
 
-    return NextResponse.json({ content: replyText })
+    return new Response(readable, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'X-Content-Type-Options': 'nosniff',
+        'Cache-Control': 'no-cache',
+      },
+    })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     return NextResponse.json({ error: `AI error: ${msg}` }, { status: 500 })
