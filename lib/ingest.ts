@@ -80,15 +80,14 @@ export async function ingestLead(payload: IngestPayload): Promise<IngestResult> 
   // Preserve the portal's own lead ID in portal_lead_id column
   const portalLeadId = payload.leadPortalId ?? null
 
-  const { data: created, error: insertErr } = await sb.from('leads').insert({
+  const ingestRow: Record<string, unknown> = {
     agent_id:       agentId,
     name:           fullName,
     phone:          e164Phone,
     email:          payload.email         ?? null,
-    city:           payload.city          ?? null,
     source:         payload.sourcePortal  ?? null,
     client_type:    payload.clientType    ?? null,
-    portal_lead_id: portalLeadId,          // original portal ID (MB-2024-00123 etc.)
+    portal_lead_id: portalLeadId,
     property_type:  payload.propertyType?.[0] ?? null,
     locations:      payload.localities    ?? [],
     budget_min:     payload.budgetMin     ?? null,
@@ -97,7 +96,10 @@ export async function ingestLead(payload: IngestPayload): Promise<IngestResult> 
     intent_score:   score,
     status:         payload.status        ?? 'Fresh',
     // cs_id is auto-assigned by Supabase trigger (cs_id_seq) — atomic, no race condition
-  }).select().single()
+  }
+  if (payload.city) ingestRow.city = payload.city
+
+  const { data: created, error: insertErr } = await sb.from('leads').insert(ingestRow).select().single()
 
   if (insertErr || !created) {
     return { status: 'error', message: insertErr?.message ?? 'Insert failed' }

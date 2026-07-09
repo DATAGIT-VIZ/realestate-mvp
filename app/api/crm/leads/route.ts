@@ -116,12 +116,11 @@ export async function POST(req: NextRequest) {
     const fullName    = `${body.firstName} ${body.lastName ?? ''}`.trim()
 
     // CS ID is auto-assigned by Supabase trigger (cs_id_seq) — no manual generation needed
-    const { data: created, error: insertErr } = await sb.from('leads').insert({
+    const insertRow: Record<string, unknown> = {
       agent_id:       userId,
       name:           fullName,
       phone,
       email:          body.email          ?? null,
-      city:           body.city           ?? null,
       source:         body.sourcePortal   ?? null,
       client_type:    body.clientType     ?? null,
       portal_lead_id: null,                           // manual adds have no portal ID
@@ -132,7 +131,10 @@ export async function POST(req: NextRequest) {
       timeline:       body.timeline                   ?? null,
       intent_score:   intentScore,
       status:         body.status                     ?? 'Fresh',
-    }).select().single()
+    }
+    if (body.city) insertRow.city = body.city
+
+    const { data: created, error: insertErr } = await sb.from('leads').insert(insertRow).select().single()
 
     if (insertErr) return NextResponse.json({ data: null, error: insertErr.message }, { status: 400 })
 

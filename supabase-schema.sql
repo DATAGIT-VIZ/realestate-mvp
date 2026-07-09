@@ -99,6 +99,7 @@ CREATE TABLE IF NOT EXISTS leads (
   name               TEXT NOT NULL,
   email              TEXT,
   phone              TEXT,
+  city               TEXT,
 
   -- Qualification
   source             TEXT,                  -- MagicBricks | 99acres | Referral | …
