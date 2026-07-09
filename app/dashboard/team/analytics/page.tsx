@@ -3,14 +3,15 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell, AreaChart, Area,
+  AreaChart, Area, BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
 import {
-  ArrowLeft, Phone, MessageCircle, MapPin, Mail, FileText,
-  Trophy, TrendingUp, Users, Activity, Loader2, Star,
-  Calendar, Eye, Bell, Tag, Filter,
+  ArrowLeft, Phone, MessageCircle, Mail, Eye, Bell, Tag,
+  Activity, Loader2, Users, TrendingUp, Flame, Trophy,
+  CheckCircle2, XCircle, PlusCircle, Calendar, Filter,
 } from 'lucide-react'
+import { format, subDays } from 'date-fns'
 import type { CRMLead } from '@/lib/twenty'
 
 const C = {
@@ -24,24 +25,11 @@ const C = {
   orange: '#EA580C',
 }
 
-type Timeframe = 'week' | 'month' | 'quarter' | 'year'
-const TF_DAYS: Record<Timeframe, number> = { week: 7, month: 30, quarter: 90, year: 365 }
-const TF_LABEL: Record<Timeframe, string> = { week: 'Weekly', month: 'Monthly', quarter: 'Quarterly', year: 'Yearly' }
+type Timeframe = 'week' | 'month' | 'quarter'
+const TF_DAYS:  Record<Timeframe, number> = { week: 7, month: 30, quarter: 90 }
+const TF_LABEL: Record<Timeframe, string> = { week: 'This week', month: 'This month', quarter: 'This quarter' }
 
-interface TeamMember {
-  id: string
-  name: string
-  email?: string
-  phone?: string
-  role: string
-  specialty_cities: string[]
-  specialty_types: string[]
-  monthly_target: number
-  is_active: boolean
-  created_at: string
-}
-
-interface ActivityRow {
+type ActivityRow = {
   id: string
   personId: string | null
   type: string
@@ -50,47 +38,27 @@ interface ActivityRow {
   createdAt: string
 }
 
-const ROLE_LABEL: Record<string, string> = { agent: 'Agent', senior_agent: 'Sr. Agent', manager: 'Manager' }
-const ROLE_COLOR: Record<string, string> = { agent: C.blue, senior_agent: C.violet, manager: C.emerald }
-
-// Deterministic score seed from member ID — stable across sessions
-function idHash(id: string, salt = 0): number {
-  let h = salt
-  for (const c of id) h = (h * 31 + c.charCodeAt(0)) % 10000
-  return h
+const ACTIVITY_ICON: Record<string, React.ElementType> = {
+  'Call Made': Phone, 'Call Missed': Phone,
+  'WhatsApp Sent': MessageCircle, 'WhatsApp Received': MessageCircle,
+  'Email Sent': Mail, 'Email Received': Mail,
+  'Site Visit Scheduled': Calendar, 'Site Visit Done': Eye,
+  'Follow Up Set': Bell, 'Note': Tag,
+  'Status Changed': Activity, 'Lead Created': PlusCircle,
+}
+const ACTIVITY_COLOR: Record<string, string> = {
+  'Call Made': C.blue, 'Call Missed': C.red,
+  'WhatsApp Sent': C.emerald, 'WhatsApp Received': C.emerald,
+  'Email Sent': C.violet, 'Email Received': C.violet,
+  'Site Visit Scheduled': C.amber, 'Site Visit Done': C.orange,
+  'Follow Up Set': C.blue, 'Note': C.label,
+  'Status Changed': C.muted, 'Lead Created': C.emerald,
+}
+const OUTCOME_COLOR: Record<string, string> = {
+  Positive: C.emerald, Neutral: C.label, Negative: C.red, 'No Response': C.amber,
 }
 
-// Generate consistent per-agent simulated stats
-function simulateAgentStats(member: TeamMember, totalActivities: number, agentCount: number) {
-  const h = idHash(member.id)
-  // Each agent gets a share of total activities, weighted by hash
-  const weight = 0.5 + (h % 100) / 100  // 0.5–1.5 weight
-  const share = Math.round((totalActivities / Math.max(1, agentCount)) * weight)
-  const calls      = Math.round(share * (0.30 + (h % 10) / 100))
-  const whatsapp   = Math.round(share * (0.28 + (h % 7)  / 100))
-  const siteVisits = Math.round(share * (0.10 + (h % 5)  / 100))
-  const emails     = Math.round(share * (0.12 + (h % 6)  / 100))
-  const notes      = Math.max(0, share - calls - whatsapp - siteVisits - emails)
-  // Activity score: weighted sum normalised to 0–100
-  const raw = calls * 3 + whatsapp * 2.5 + siteVisits * 5 + emails * 1.5 + notes * 1
-  const score = Math.min(100, Math.max(10, Math.round(raw / Math.max(1, agentCount) * 2)))
-  const responseRate = 40 + (h % 55)  // 40–95%
-  const trend = ((h % 40) - 15)       // -15 to +25
-  return { calls, whatsapp, siteVisits, emails, notes, total: share, score, responseRate, trend }
-}
-
-function scoreColor(s: number) {
-  if (s >= 70) return { fg: C.emerald, bg: C.emeraldDim }
-  if (s >= 40) return { fg: C.amber,   bg: C.amberDim   }
-  return             { fg: C.red,      bg: C.redDim      }
-}
-
-function rankMedal(i: number) {
-  if (i === 0) return { icon: '🥇', color: '#F59E0B' }
-  if (i === 1) return { icon: '🥈', color: '#94A3B8' }
-  if (i === 2) return { icon: '🥉', color: '#B45309' }
-  return { icon: `${i + 1}`, color: C.label }
-}
+const FEED_FILTERS = ['All', 'Call Made', 'WhatsApp Sent', 'Site Visit Done', 'Email Sent', 'Note', 'Follow Up Set']
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Tip = ({ active, payload, label }: any) => {
@@ -104,144 +72,106 @@ const Tip = ({ active, payload, label }: any) => {
   )
 }
 
-const ACTIVITY_ICON: Record<string, React.ElementType> = {
-  'Call Made': Phone, 'Call Missed': Phone,
-  'WhatsApp Sent': MessageCircle, 'WhatsApp Received': MessageCircle,
-  'Email Sent': Mail, 'Email Received': Mail,
-  'Site Visit Scheduled': Calendar, 'Site Visit Done': Eye,
-  'Follow Up Set': Bell, 'Note': Tag, 'Status Changed': Activity,
-}
-
-const ACTIVITY_COLOR: Record<string, string> = {
-  'Call Made': C.blue, 'Call Missed': C.red,
-  'WhatsApp Sent': C.emerald, 'WhatsApp Received': C.emerald,
-  'Email Sent': C.violet, 'Email Received': C.violet,
-  'Site Visit Scheduled': C.amber, 'Site Visit Done': C.orange,
-  'Follow Up Set': C.blue, 'Note': C.label, 'Status Changed': C.muted,
-}
-
-const OUTCOME_COLOR: Record<string, string> = {
-  'Positive': C.emerald, 'Neutral': C.label, 'Negative': C.red, 'No Response': C.amber,
-}
-
-const FEED_TYPES = ['All', 'Call Made', 'WhatsApp Sent', 'Site Visit Done', 'Email Sent', 'Note', 'Follow Up Set']
-
 export default function TeamAnalyticsPage() {
   const router = useRouter()
-  const [members,    setMembers]    = useState<TeamMember[]>([])
   const [activities, setActivities] = useState<ActivityRow[]>([])
   const [leads,      setLeads]      = useState<CRMLead[]>([])
   const [loading,    setLoading]    = useState(true)
   const [timeframe,  setTimeframe]  = useState<Timeframe>('month')
-  const [selected,   setSelected]   = useState<string | null>(null) // member id
   const [typeFilter, setTypeFilter] = useState('All')
 
   useEffect(() => {
-    const days = TF_DAYS[timeframe]
-    const since = new Date(Date.now() - days * 86_400_000).toISOString()
+    const since = subDays(new Date(), TF_DAYS[timeframe]).toISOString()
     Promise.all([
-      fetch('/api/team').then(r => r.json()),
       fetch(`/api/crm/activities?since=${encodeURIComponent(since)}&limit=500`).then(r => r.json()),
-      fetch('/api/crm/leads?limit=200').then(r => r.json()),
-    ]).then(([tm, ac, ld]) => {
-      setMembers((tm.members ?? []).filter((m: TeamMember) => m.is_active))
+      fetch('/api/crm/leads?limit=500').then(r => r.json()),
+    ]).then(([ac, ld]) => {
       setActivities(ac.data?.activities ?? [])
       setLeads(ld.data?.leads ?? [])
     }).catch(console.error).finally(() => setLoading(false))
   }, [timeframe])
 
-  // ── Per-agent stats ──────────────────────────────────────────────────────
-  const agentStats = useMemo(() => {
-    return members
-      .map(m => ({ member: m, ...simulateAgentStats(m, activities.length, members.length) }))
-      .sort((a, b) => b.score - a.score)
-  }, [members, activities])
+  // ── Derived KPIs ──────────────────────────────────────────────────────────
+  const since = useMemo(() => subDays(new Date(), TF_DAYS[timeframe]), [timeframe])
 
-  // ── Team summary ─────────────────────────────────────────────────────────
-  const teamSummary = useMemo(() => {
-    if (agentStats.length === 0) return { avgScore: 0, best: null, total: 0, calls: 0 }
-    const avgScore = Math.round(agentStats.reduce((s, a) => s + a.score, 0) / agentStats.length)
-    const best     = agentStats[0]
-    const calls    = agentStats.reduce((s, a) => s + a.calls, 0)
-    return { avgScore, best, total: activities.length, calls }
-  }, [agentStats, activities])
+  const kpis = useMemo(() => {
+    const newLeads   = leads.filter(l => new Date(l.createdAt) >= since)
+    const wonLeads   = leads.filter(l => l.status === 'Won')
+    const hotLeads   = leads.filter(l => (l.intentScore ?? 0) >= 70)
+    const contacted  = leads.filter(l => activities.some(a => a.personId === l.id))
+    const responseRate = leads.length > 0 ? Math.round((contacted.length / leads.length) * 100) : 0
+    return {
+      totalLeads:    leads.length,
+      newLeads:      newLeads.length,
+      wonLeads:      wonLeads.length,
+      hotLeads:      hotLeads.length,
+      totalActivities: activities.length,
+      responseRate,
+    }
+  }, [leads, activities, since])
 
-  // ── Activity type bars for an agent ──────────────────────────────────────
-  const selectedStats = useMemo(() => {
-    if (!selected) return null
-    return agentStats.find(a => a.member.id === selected) ?? null
-  }, [selected, agentStats])
+  // ── Daily activity timeline ──────────────────────────────────────────────
+  const timeline = useMemo(() => {
+    const days = Math.min(TF_DAYS[timeframe], 30)
+    return Array.from({ length: days }, (_, i) => {
+      const d      = subDays(new Date(), days - 1 - i)
+      const dStr   = format(d, 'yyyy-MM-dd')
+      const label  = format(d, days <= 7 ? 'EEE' : 'MMM d')
+      const acts   = activities.filter(a => a.createdAt.startsWith(dStr)).length
+      const newL   = leads.filter(l => l.createdAt.startsWith(dStr)).length
+      return { date: label, activities: acts, newLeads: newL }
+    })
+  }, [activities, leads, timeframe])
 
-  // ── Lead name lookup ─────────────────────────────────────────────────────
+  // ── Activity type breakdown ──────────────────────────────────────────────
+  const typeBreakdown = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const a of activities) map[a.type] = (map[a.type] ?? 0) + 1
+    return Object.entries(map)
+      .map(([type, count]) => ({ type, count, color: ACTIVITY_COLOR[type] ?? C.label }))
+      .sort((a, b) => b.count - a.count)
+  }, [activities])
+
+  // ── Lead lookup ──────────────────────────────────────────────────────────
   const leadById = useMemo(() => {
-    const map: Record<string, CRMLead> = {}
-    for (const l of leads) map[l.id] = l
-    return map
+    const m: Record<string, CRMLead> = {}
+    for (const l of leads) m[l.id] = l
+    return m
   }, [leads])
-
   const leadName = (personId: string | null) => {
     if (!personId) return 'Unknown lead'
     const l = leadById[personId]
-    if (!l) return 'Unknown lead'
-    return `${l.name.firstName} ${l.name.lastName}`.trim() || 'Unnamed'
+    return l ? `${l.name.firstName} ${l.name.lastName}`.trim() || 'Unnamed' : 'Unknown lead'
   }
 
-  // ── Filtered activity feed ────────────────────────────────────────────────
-  const activityFeed = useMemo(() => {
-    return activities
-      .filter(a => typeFilter === 'All' || a.type === typeFilter)
-      .slice(0, 60)
-  }, [activities, typeFilter])
+  // ── New leads log ────────────────────────────────────────────────────────
+  const newLeadsLog = useMemo(() =>
+    [...leads]
+      .filter(l => new Date(l.createdAt) >= since)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 20)
+  , [leads, since])
 
-  // ── Daily sparkline for selected agent (simulated proportional share) ────
-  const selectedTimeline = useMemo(() => {
-    if (!selectedStats) return []
-    const days  = Math.min(TF_DAYS[timeframe], 30)
-    const total = selectedStats.total
-    const h     = idHash(selectedStats.member.id, 99)
-    return Array.from({ length: days }, (_, i) => ({
-      d: i + 1,
-      count: Math.max(0, Math.round((total / days) * (0.3 + ((h + i * 17) % 100) / 60))),
-    }))
-  }, [selectedStats, timeframe])
+  // ── Won deals log ────────────────────────────────────────────────────────
+  const wonDeals = useMemo(() =>
+    leads.filter(l => l.status === 'Won').sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+  , [leads])
 
-  const activityTypeBreakdown = useMemo(() => {
-    if (!selectedStats) return []
-    return [
-      { type: 'Calls',       count: selectedStats.calls,      color: C.blue   },
-      { type: 'WhatsApp',    count: selectedStats.whatsapp,   color: C.emerald },
-      { type: 'Site Visits', count: selectedStats.siteVisits, color: C.amber  },
-      { type: 'Emails',      count: selectedStats.emails,     color: C.violet  },
-      { type: 'Notes',       count: selectedStats.notes,      color: C.label   },
-    ]
-  }, [selectedStats])
+  // ── Lost deals ───────────────────────────────────────────────────────────
+  const lostDeals = useMemo(() =>
+    leads.filter(l => l.status === 'Lost')
+  , [leads])
 
+  // ── Activity feed ────────────────────────────────────────────────────────
+  const activityFeed = useMemo(() =>
+    activities.filter(a => typeFilter === 'All' || a.type === typeFilter).slice(0, 80)
+  , [activities, typeFilter])
+
+  // ─────────────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <Loader2 style={{ width: 28, height: 28, color: C.blue, margin: '0 auto 10px', animation: 'spin 1s linear infinite' }} />
-          <p style={{ color: C.muted, fontSize: 13 }}>Loading team analytics…</p>
-        </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    )
-  }
-
-  if (members.length === 0) {
-    return (
-      <div className="px-4 py-5 pb-24 lg:px-7 lg:py-7 min-h-screen" style={{ background: C.bg }}>
-        <button onClick={() => router.push('/dashboard/team')} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: C.muted, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 20 }}>
-          <ArrowLeft size={14} /> Back to Team
-        </button>
-        <div style={{ textAlign: 'center', paddingTop: 60 }}>
-          <Users size={40} color={C.label} style={{ margin: '0 auto 16px' }} />
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, margin: '0 0 8px' }}>No agents yet</h2>
-          <p style={{ fontSize: 13, color: C.muted, marginBottom: 24 }}>Add agents on the Team page to start tracking performance.</p>
-          <button onClick={() => router.push('/dashboard/team')} style={{ padding: '10px 22px', background: C.blue, color: '#fff', fontWeight: 600, borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 13 }}>
-            Go to Team
-          </button>
-        </div>
+        <Loader2 style={{ width: 28, height: 28, color: C.blue, animation: 'spin 1s linear infinite' }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     )
@@ -254,340 +184,242 @@ export default function TeamAnalyticsPage() {
       {/* ── Header ── */}
       <div style={{ marginBottom: 20 }}>
         <button onClick={() => router.push('/dashboard/team')} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.muted, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 10 }}>
-          <ArrowLeft size={13} /> Team management
+          <ArrowLeft size={13} /> Team
         </button>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
           <div>
             <h1 className="hidden lg:block" style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: '0 0 3px' }}>Team Analytics</h1>
-            <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>{members.length} active agents · {TF_LABEL[timeframe].toLowerCase()} view</p>
+            <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>Full activity log · {TF_LABEL[timeframe].toLowerCase()}</p>
           </div>
-          {/* Timeframe */}
           <div style={{ display: 'flex', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: 3, gap: 2 }}>
-            {(['week', 'month', 'quarter', 'year'] as Timeframe[]).map(tf => (
+            {(['week', 'month', 'quarter'] as Timeframe[]).map(tf => (
               <button key={tf} onClick={() => setTimeframe(tf)}
                 style={{ padding: '5px 11px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500, background: timeframe === tf ? C.blue : 'transparent', color: timeframe === tf ? '#fff' : C.muted, transition: 'all 0.15s' }}>
-                {TF_LABEL[tf]}
+                {tf.charAt(0).toUpperCase() + tf.slice(1)}
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* ── Team KPI cards ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-[14px] mb-5">
+      {/* ── KPI cards ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-[14px] mb-5">
         {[
-          { label: 'Active Agents',  value: members.length,           sub: 'in workspace',            icon: <Users size={16} color={C.blue} />,     accent: C.blue   },
-          { label: 'Total Touches',  value: activities.length,        sub: TF_LABEL[timeframe],       icon: <Activity size={16} color={C.violet} />, accent: C.violet },
-          { label: 'Calls Logged',   value: teamSummary.calls,        sub: 'across all agents',       icon: <Phone size={16} color={C.emerald} />,   accent: C.emerald },
-          { label: 'Avg Activity Score', value: `${teamSummary.avgScore}`, sub: '0–100 scale',        icon: <TrendingUp size={16} color={C.amber} />, accent: C.amber  },
-        ].map((kpi, i) => (
+          { label: 'New Leads',       value: kpis.newLeads,       sub: TF_LABEL[timeframe], icon: <PlusCircle size={17} color={C.blue}    />, accent: C.blue,    dim: C.blueDim    },
+          { label: 'Deals Won',        value: kpis.wonLeads,       sub: 'all time',          icon: <Trophy     size={17} color={C.emerald} />, accent: C.emerald, dim: C.emeraldDim },
+          { label: 'Hot Leads',        value: kpis.hotLeads,       sub: 'score ≥ 70',        icon: <Flame      size={17} color={C.orange}  />, accent: C.orange,  dim: '#FFF7ED'    },
+          { label: 'Total Activities', value: kpis.totalActivities, sub: TF_LABEL[timeframe], icon: <Activity   size={17} color={C.violet}  />, accent: C.violet,  dim: C.violetDim  },
+          { label: 'Response Rate',    value: `${kpis.responseRate}%`, sub: 'leads contacted',icon: <TrendingUp size={17} color={C.amber}   />, accent: C.amber,   dim: C.amberDim   },
+          { label: 'Total Leads',      value: kpis.totalLeads,     sub: 'in system',         icon: <Users      size={17} color={C.label}   />, accent: C.label,   dim: '#F8FAFC'    },
+        ].map((k, i) => (
           <div key={i} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '18px 20px', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${kpi.accent}70, transparent)` }} />
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${k.accent}80, transparent)` }} />
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <span style={{ fontSize: 10, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{kpi.label}</span>
-              <div style={{ width: 30, height: 30, borderRadius: 8, background: `${kpi.accent}14`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{kpi.icon}</div>
+              <span style={{ fontSize: 10, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{k.label}</span>
+              <div style={{ width: 30, height: 30, borderRadius: 8, background: k.dim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{k.icon}</div>
             </div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: C.text, letterSpacing: '-0.5px', lineHeight: 1 }}>{kpi.value}</div>
-            <div style={{ marginTop: 6 }}><span style={{ fontSize: 11, color: C.muted }}>{kpi.sub}</span></div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: C.text, letterSpacing: '-0.5px', lineHeight: 1 }}>{k.value}</div>
+            <p style={{ fontSize: 11, color: C.muted, margin: '6px 0 0' }}>{k.sub}</p>
           </div>
         ))}
       </div>
 
-      {/* ── Best performer banner ── */}
-      {teamSummary.best && (
-        <div style={{ background: 'linear-gradient(135deg, rgba(217,119,6,0.07), rgba(217,119,6,0.02))', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 14, padding: '12px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <Trophy size={18} color={C.amber} style={{ flexShrink: 0 }} />
-          <p style={{ fontSize: 13, color: C.text, margin: 0, flex: 1 }}>
-            <strong>{teamSummary.best.member.name}</strong> is leading this period with an activity score of{' '}
-            <strong style={{ color: C.emerald }}>{teamSummary.best.score}</strong> — {teamSummary.best.calls} calls, {teamSummary.best.siteVisits} site visits.
-          </p>
-          <button onClick={() => setSelected(teamSummary.best!.member.id)}
-            style={{ fontSize: 12, color: C.amber, background: 'none', border: `1px solid rgba(217,119,6,0.3)`, padding: '5px 12px', borderRadius: 8, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-            View profile →
-          </button>
+      {/* ── Activity Timeline + Type Breakdown ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-[14px] mb-[14px]">
+        <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '20px 20px 14px' }}>
+          <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: '0 0 4px' }}>Activity Timeline</h2>
+          <p style={{ fontSize: 12, color: C.muted, margin: '0 0 16px' }}>Activities logged + new leads per day</p>
+          <ResponsiveContainer width="100%" height={180}>
+            <AreaChart data={timeline} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="gBlue2"    x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor={C.blue}    stopOpacity={0.18} /><stop offset="95%" stopColor={C.blue}    stopOpacity={0} /></linearGradient>
+                <linearGradient id="gEmerald2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%"  stopColor={C.emerald} stopOpacity={0.18} /><stop offset="95%" stopColor={C.emerald} stopOpacity={0} /></linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+              <XAxis dataKey="date" tick={{ fill: C.label, fontSize: 11 }} axisLine={false} tickLine={false} interval={Math.floor(timeline.length / 6)} />
+              <YAxis tick={{ fill: C.label, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <Tooltip content={<Tip />} />
+              <Area type="monotone" dataKey="activities" stroke={C.blue}    strokeWidth={2} fill="url(#gBlue2)"    name="Activities" dot={false} />
+              <Area type="monotone" dataKey="newLeads"   stroke={C.emerald} strokeWidth={2} fill="url(#gEmerald2)" name="New leads"  dot={false} />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
-      )}
 
-      {/* ── Main layout: leaderboard + detail ── */}
-      <div className={`grid gap-[14px] ${selected ? 'grid-cols-1 lg:grid-cols-[340px_1fr]' : 'grid-cols-1'}`}>
+        <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 20 }}>
+          <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: '0 0 4px' }}>Activity Breakdown</h2>
+          <p style={{ fontSize: 12, color: C.muted, margin: '0 0 16px' }}>By type · {TF_LABEL[timeframe].toLowerCase()}</p>
+          {typeBreakdown.length === 0 ? (
+            <p style={{ fontSize: 13, color: C.label, padding: '20px 0', textAlign: 'center' }}>No activities logged yet.</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={typeBreakdown.slice(0, 6)} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
+                <XAxis type="number" tick={{ fill: C.label, fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <YAxis type="category" dataKey="type" tick={{ fill: C.muted, fontSize: 10 }} axisLine={false} tickLine={false} width={95} />
+                <Tooltip content={<Tip />} />
+                <Bar dataKey="count" name="Count" radius={[0, 6, 6, 0]}>
+                  {typeBreakdown.slice(0, 6).map((b, i) => <Cell key={i} fill={b.color} fillOpacity={0.8} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
 
-        {/* Leaderboard */}
-        <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Star size={14} color={C.muted} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Agent Leaderboard</span>
-            <span style={{ marginLeft: 'auto', fontSize: 11, color: C.label }}>sorted by activity score</span>
+      {/* ── New Leads Log + Won / Lost ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-[14px] mb-[14px]">
+
+        {/* New leads added */}
+        <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 22 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <PlusCircle size={16} color={C.blue} />
+            <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>New Leads Added</h2>
+            <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 600, color: C.blue, background: C.blueDim, padding: '2px 8px', borderRadius: 20 }}>{newLeadsLog.length}</span>
           </div>
-
-          {agentStats.map((ag, i) => {
-            const sc = scoreColor(ag.score)
-            const { icon, color } = rankMedal(i)
-            const isActive = selected === ag.member.id
-            return (
-              <button key={ag.member.id}
-                onClick={() => setSelected(isActive ? null : ag.member.id)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '14px 20px',
-                  borderBottom: `1px solid ${C.border}`, background: isActive ? C.blueDim : 'transparent',
-                  border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'background 0.12s',
-                  borderLeft: isActive ? `3px solid ${C.blue}` : '3px solid transparent',
-                }}>
-                {/* Rank */}
-                <span style={{ fontSize: i < 3 ? 18 : 13, fontWeight: 700, color, width: 24, flexShrink: 0, textAlign: 'center' }}>{icon}</span>
-
-                {/* Avatar */}
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: `${ROLE_COLOR[ag.member.role]}18`, border: `1.5px solid ${ROLE_COLOR[ag.member.role]}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: ROLE_COLOR[ag.member.role] }}>{ag.member.name[0]}</span>
-                </div>
-
-                {/* Name + role */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: C.text, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ag.member.name}</p>
-                  <p style={{ fontSize: 11, color: C.muted, margin: 0 }}>{ROLE_LABEL[ag.member.role]}</p>
-                </div>
-
-                {/* Score badge */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                  <div style={{ padding: '3px 10px', borderRadius: 20, background: sc.bg, border: `1px solid ${sc.fg}30` }}>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: sc.fg }}>{ag.score}</span>
-                    <span style={{ fontSize: 10, color: sc.fg, opacity: 0.7 }}>/100</span>
-                  </div>
-                  <span style={{ fontSize: 10, color: ag.trend >= 0 ? C.emerald : C.red, fontWeight: 600 }}>
-                    {ag.trend >= 0 ? '▲' : '▼'} {Math.abs(ag.trend)}%
-                  </span>
-                </div>
-              </button>
-            )
-          })}
-        </div>
-
-        {/* ── Agent Detail Panel ── */}
-        {selected && selectedStats && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-            {/* Agent header card */}
-            <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 22 }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
-                <div style={{ width: 52, height: 52, borderRadius: 14, background: `${ROLE_COLOR[selectedStats.member.role]}18`, border: `2px solid ${ROLE_COLOR[selectedStats.member.role]}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{ fontSize: 20, fontWeight: 800, color: ROLE_COLOR[selectedStats.member.role] }}>{selectedStats.member.name[0]}</span>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
-                    <h2 style={{ fontSize: 17, fontWeight: 800, color: C.text, margin: 0 }}>{selectedStats.member.name}</h2>
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 20, background: `${ROLE_COLOR[selectedStats.member.role]}14`, color: ROLE_COLOR[selectedStats.member.role] }}>
-                      {ROLE_LABEL[selectedStats.member.role]}
-                    </span>
-                    {/* Activity Score */}
-                    <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 10px', borderRadius: 20, background: scoreColor(selectedStats.score).bg, color: scoreColor(selectedStats.score).fg, marginLeft: 'auto' }}>
-                      Activity Score: {selectedStats.score}/100
+          {newLeadsLog.length === 0 ? (
+            <p style={{ fontSize: 13, color: C.label, textAlign: 'center', padding: '20px 0' }}>No new leads {TF_LABEL[timeframe].toLowerCase()}.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {newLeadsLog.map(l => (
+                <div key={l.id} onClick={() => router.push(`/dashboard/leads/${l.id}`)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 10px', borderRadius: 10, cursor: 'pointer', transition: 'background 0.12s' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = C.bg)}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                  <div style={{ width: 32, height: 32, borderRadius: 10, background: C.blueDim, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: C.blue }}>
+                      {l.name.firstName.charAt(0)}{l.name.lastName?.charAt(0) ?? ''}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                    {selectedStats.member.email && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: C.muted }}>
-                        <Mail size={12} /> {selectedStats.member.email}
-                      </span>
-                    )}
-                    {selectedStats.member.phone && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: C.muted }}>
-                        <Phone size={12} /> {selectedStats.member.phone}
-                      </span>
-                    )}
-                    {selectedStats.member.specialty_cities?.length > 0 && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: C.muted }}>
-                        <MapPin size={12} /> {selectedStats.member.specialty_cities.join(', ')}
-                      </span>
-                    )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: C.text, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {l.name.firstName} {l.name.lastName}
+                    </p>
+                    <p style={{ fontSize: 11, color: C.muted, margin: 0 }}>{l.sourcePortal ?? 'Manual'} · {l.city ?? '—'}</p>
                   </div>
-                </div>
-              </div>
-
-              {/* Activity score bar */}
-              <div style={{ marginTop: 18 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Activity Score</span>
-                  <span style={{ fontSize: 11, color: scoreColor(selectedStats.score).fg, fontWeight: 700 }}>
-                    {selectedStats.score < 40 ? 'Needs attention' : selectedStats.score < 70 ? 'On track' : 'Excellent'}
-                  </span>
-                </div>
-                <div style={{ height: 8, background: '#F1F5F9', borderRadius: 99 }}>
-                  <div style={{ height: '100%', width: `${selectedStats.score}%`, background: scoreColor(selectedStats.score).fg, borderRadius: 99, transition: 'width 0.6s ease' }} />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                  <span style={{ fontSize: 10, color: C.label }}>0</span>
-                  <span style={{ fontSize: 10, color: C.label }}>50</span>
-                  <span style={{ fontSize: 10, color: C.label }}>100</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              {[
-                { label: 'Calls',        value: selectedStats.calls,      icon: <Phone size={13} color={C.blue} />,          color: C.blue    },
-                { label: 'WhatsApp',     value: selectedStats.whatsapp,   icon: <MessageCircle size={13} color={C.emerald} />, color: C.emerald },
-                { label: 'Site Visits',  value: selectedStats.siteVisits, icon: <MapPin size={13} color={C.amber} />,          color: C.amber   },
-                { label: 'Emails',       value: selectedStats.emails,     icon: <Mail size={13} color={C.violet} />,           color: C.violet  },
-                { label: 'Notes',        value: selectedStats.notes,      icon: <FileText size={13} color={C.label} />,        color: C.label   },
-              ].map((s, i) => (
-                <div key={i} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px 16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>{s.icon}<span style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>{s.label}</span></div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: C.blue, fontFamily: 'monospace' }}>{l.leadPortalId}</span>
+                    <p style={{ fontSize: 10, color: C.label, margin: '2px 0 0' }}>{format(new Date(l.createdAt), 'MMM d, HH:mm')}</p>
+                  </div>
                 </div>
               ))}
             </div>
+          )}
+        </div>
 
-            {/* Activity timeline + breakdown */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-[14px]">
-              {/* Daily activity chart */}
-              <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '20px 20px 14px' }}>
-                <h3 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: '0 0 4px' }}>Daily Activity</h3>
-                <p style={{ fontSize: 11, color: C.muted, margin: '0 0 16px' }}>Total touches per day — {TF_LABEL[timeframe].toLowerCase()}</p>
-                <ResponsiveContainer width="100%" height={150}>
-                  <AreaChart data={selectedTimeline} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="gAct" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={C.blue} stopOpacity={0.2} />
-                        <stop offset="95%" stopColor={C.blue} stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-                    <XAxis dataKey="d" tick={{ fill: C.label, fontSize: 10 }} axisLine={false} tickLine={false} interval={Math.floor(selectedTimeline.length / 5)} />
-                    <YAxis tick={{ fill: C.label, fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                    <Tooltip content={<Tip />} />
-                    <Area type="monotone" dataKey="count" stroke={C.blue} strokeWidth={2} fill="url(#gAct)" name="Activities" dot={false} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Activity type breakdown */}
-              <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '20px 20px 14px' }}>
-                <h3 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: '0 0 4px' }}>By Type</h3>
-                <p style={{ fontSize: 11, color: C.muted, margin: '0 0 14px' }}>Activity mix</p>
-                <ResponsiveContainer width="100%" height={150}>
-                  <BarChart data={activityTypeBreakdown} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
-                    <XAxis type="number" tick={{ fill: C.label, fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                    <YAxis type="category" dataKey="type" tick={{ fill: C.text, fontSize: 10 }} axisLine={false} tickLine={false} width={75} />
-                    <Tooltip content={<Tip />} />
-                    <Bar dataKey="count" name="Count" radius={[0, 5, 5, 0]}>
-                      {activityTypeBreakdown.map((d, i) => <Cell key={i} fill={d.color} fillOpacity={0.85} />)}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+        {/* Won + Lost summary */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Won */}
+          <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 20, flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <CheckCircle2 size={16} color={C.emerald} />
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>Deals Won</h2>
+              <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: C.emerald, background: C.emeraldDim, padding: '2px 8px', borderRadius: 20 }}>{wonDeals.length}</span>
             </div>
-
-            {/* Score explanation */}
-            <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 20 }}>
-              <h3 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: '0 0 14px' }}>How the Activity Score is calculated</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-8">
-                {[
-                  { label: 'Calls Made',    points: 3,   count: selectedStats.calls,      note: 'High-effort touch' },
-                  { label: 'WhatsApp',      points: 2.5, count: selectedStats.whatsapp,   note: 'Async engagement' },
-                  { label: 'Site Visits',   points: 5,   count: selectedStats.siteVisits, note: 'Highest conversion signal' },
-                  { label: 'Emails',        points: 1.5, count: selectedStats.emails,     note: 'Passive outreach' },
-                  { label: 'Notes logged',  points: 1,   count: selectedStats.notes,      note: 'Documentation habit' },
-                  { label: 'Response Rate', points: '+',  count: `${selectedStats.responseRate}%`, note: 'Speed of first contact' },
-                ].map((row, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 8, borderBottom: `1px solid ${C.border}` }}>
-                    <div>
-                      <p style={{ fontSize: 12, fontWeight: 600, color: C.text, margin: '0 0 1px' }}>{row.label}</p>
-                      <p style={{ fontSize: 11, color: C.muted, margin: 0 }}>{row.note}</p>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <p style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: '0 0 1px' }}>{row.count}</p>
-                      <p style={{ fontSize: 10, color: C.label, margin: 0 }}>{row.points} pts each</p>
+            {wonDeals.length === 0 ? (
+              <p style={{ fontSize: 12, color: C.label, textAlign: 'center', padding: '8px 0' }}>No closed deals yet.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {wonDeals.slice(0, 5).map(l => (
+                  <div key={l.id} onClick={() => router.push(`/dashboard/leads/${l.id}`)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '4px 6px', borderRadius: 8 }}
+                    onMouseEnter={e => (e.currentTarget.style.background = C.bg)}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                    <Trophy size={13} color={C.emerald} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 12, fontWeight: 600, color: C.text, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.name.firstName} {l.name.lastName}</p>
+                      {l.budgetMax && <p style={{ fontSize: 11, color: C.emerald, margin: 0, fontWeight: 600 }}>₹{(l.budgetMax / 100000).toFixed(0)}L</p>}
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-
+            )}
           </div>
-        )}
+
+          {/* Lost */}
+          <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 20, flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <XCircle size={16} color={C.red} />
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>Deals Lost</h2>
+              <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: C.red, background: C.redDim, padding: '2px 8px', borderRadius: 20 }}>{lostDeals.length}</span>
+            </div>
+            {lostDeals.length === 0 ? (
+              <p style={{ fontSize: 12, color: C.label, textAlign: 'center', padding: '8px 0' }}>No lost deals yet.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {lostDeals.slice(0, 5).map(l => (
+                  <div key={l.id} onClick={() => router.push(`/dashboard/leads/${l.id}`)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '4px 6px', borderRadius: 8 }}
+                    onMouseEnter={e => (e.currentTarget.style.background = C.bg)}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                    <XCircle size={13} color={C.red} />
+                    <p style={{ fontSize: 12, fontWeight: 500, color: C.text, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.name.firstName} {l.name.lastName}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* ── Full Activity Feed ── (admin view — always visible) */}
-      <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, overflow: 'hidden', marginTop: 14 }}>
-        {/* Feed header with type filters */}
-        <div style={{ padding: '16px 20px', borderBottom: `1px solid ${C.border}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
-            <Filter size={14} color={C.muted} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Team Activity Feed</span>
-            <span style={{ fontSize: 11, color: C.label, marginLeft: 4 }}>{activities.length} entries · {TF_LABEL[timeframe].toLowerCase()}</span>
+      {/* ── Full Activity Feed (boss audit log) ── */}
+      <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 22 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+          <div>
+            <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: '0 0 3px' }}>Full Activity Log</h2>
+            <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Every action logged · {TF_LABEL[timeframe].toLowerCase()} · {activityFeed.length} entries</p>
           </div>
-          {/* Type filter chips */}
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {FEED_TYPES.map(t => (
-              <button key={t} onClick={() => setTypeFilter(t)}
-                style={{
-                  padding: '4px 12px', borderRadius: 20, border: `1.5px solid ${typeFilter === t ? (ACTIVITY_COLOR[t] ?? C.blue) : C.border}`,
-                  background: typeFilter === t ? `${ACTIVITY_COLOR[t] ?? C.blue}14` : 'transparent',
-                  color: typeFilter === t ? (ACTIVITY_COLOR[t] ?? C.blue) : C.muted,
-                  fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.12s',
-                }}>
-                {t}
-              </button>
-            ))}
+          {/* Type filter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <Filter size={12} color={C.label} />
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {FEED_FILTERS.map(f => (
+                <button key={f} onClick={() => setTypeFilter(f)}
+                  style={{ padding: '3px 10px', borderRadius: 20, border: `1px solid ${typeFilter === f ? C.blue : C.border}`, background: typeFilter === f ? C.blueDim : 'transparent', color: typeFilter === f ? C.blue : C.muted, fontSize: 11, fontWeight: typeFilter === f ? 600 : 400, cursor: 'pointer', transition: 'all 0.12s' }}>
+                  {f}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Feed rows */}
         {activityFeed.length === 0 ? (
-          <div style={{ padding: '32px 20px', textAlign: 'center' }}>
-            <Activity size={28} color={C.label} style={{ margin: '0 auto 10px' }} />
-            <p style={{ fontSize: 13, color: C.label, margin: 0 }}>No activities in this period. Agents log activities from each lead's detail page.</p>
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <Activity size={32} color={C.label} style={{ margin: '0 auto 12px' }} />
+            <p style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: '0 0 6px' }}>No activities logged yet</p>
+            <p style={{ fontSize: 13, color: C.muted }}>Activities appear here when calls are logged, notes are added, and statuses change.</p>
           </div>
         ) : (
-          <div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             {activityFeed.map((a, i) => {
-              const Icon  = ACTIVITY_ICON[a.type] ?? FileText
+              const Icon  = ACTIVITY_ICON[a.type] ?? Activity
               const color = ACTIVITY_COLOR[a.type] ?? C.label
-              const lead  = a.personId ? leadById[a.personId] : null
-              const name  = lead ? `${lead.name.firstName} ${lead.name.lastName}`.trim() || 'Unnamed' : 'Unknown lead'
+              const name  = leadName(a.personId)
+              const notes = a.notes ? (a.notes.length > 80 ? a.notes.slice(0, 80) + '…' : a.notes) : null
+              const outcomeColor = a.outcome ? (OUTCOME_COLOR[a.outcome] ?? C.label) : null
               return (
                 <div key={a.id}
+                  style={{ display: 'flex', gap: 12, padding: '11px 8px', borderBottom: i < activityFeed.length - 1 ? `1px solid ${C.border}` : 'none', cursor: a.personId ? 'pointer' : 'default', transition: 'background 0.1s', borderRadius: 8 }}
                   onClick={() => a.personId && router.push(`/dashboard/leads/${a.personId}`)}
-                  style={{
-                    display: 'flex', alignItems: 'flex-start', gap: 14, padding: '13px 20px',
-                    borderBottom: i < activityFeed.length - 1 ? `1px solid ${C.border}` : 'none',
-                    cursor: a.personId ? 'pointer' : 'default', transition: 'background 0.12s',
-                  }}
-                  onMouseEnter={e => a.personId && (e.currentTarget.style.background = C.bg)}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                >
-                  {/* Icon tile */}
-                  <div style={{ width: 32, height: 32, borderRadius: 9, background: `${color}14`, border: `1px solid ${color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  onMouseEnter={e => { if (a.personId) e.currentTarget.style.background = C.bg }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
+                  {/* Icon bubble */}
+                  <div style={{ width: 32, height: 32, borderRadius: 10, background: `${color}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
                     <Icon size={14} color={color} />
                   </div>
-
                   {/* Content */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color }}>
-                        {a.type}
-                      </span>
-                      <span style={{ fontSize: 11, color: C.muted }}>on</span>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{name}</span>
-                      {lead?.leadPortalId && (
-                        <span style={{ fontSize: 9, fontWeight: 700, color: '#64748B', background: '#F1F5F9', border: '1px solid #E2E8F0', padding: '1px 5px', borderRadius: 4, fontFamily: 'monospace', letterSpacing: '0.04em' }}>
-                          {lead.leadPortalId.startsWith('CS') ? lead.leadPortalId : (() => { const hex = (lead.id ?? '').replace(/-/g,''); let n=0; for (const c of hex) n=(n*31+parseInt(c,16))%100000; return `CS${String(n).padStart(5,'0')}` })()}
-                        </span>
-                      )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{a.type}</span>
+                      <span style={{ fontSize: 12, color: C.muted }}>on</span>
+                      <span style={{ fontSize: 13, color: C.blue, fontWeight: 500 }}>{name}</span>
                       {a.outcome && (
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 8px', borderRadius: 20, background: `${OUTCOME_COLOR[a.outcome] ?? C.label}14`, color: OUTCOME_COLOR[a.outcome] ?? C.label, marginLeft: 'auto' }}>
-                          {a.outcome}
-                        </span>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: outcomeColor ?? C.label, background: `${outcomeColor}18`, padding: '1px 8px', borderRadius: 20 }}>{a.outcome}</span>
                       )}
                     </div>
-                    {a.notes && (
-                      <p style={{ fontSize: 11, color: C.muted, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.notes}</p>
-                    )}
+                    {notes && <p style={{ fontSize: 12, color: C.muted, margin: '3px 0 0', lineHeight: 1.4 }}>{notes}</p>}
                   </div>
-
-                  {/* Time */}
-                  <span style={{ fontSize: 11, color: C.label, flexShrink: 0, paddingTop: 1 }}>
-                    {new Date(a.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                  {/* Timestamp */}
+                  <span style={{ fontSize: 11, color: C.label, flexShrink: 0, paddingTop: 2 }}>
+                    {format(new Date(a.createdAt), 'MMM d, HH:mm')}
                   </span>
                 </div>
               )
