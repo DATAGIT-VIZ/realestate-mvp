@@ -23,8 +23,8 @@ const NAV_SECTIONS = [
     items: [
       { name: 'Leads',          href: '/dashboard/leads',            icon: Users,         exact: false },
       { name: 'Lifecycle',      href: '/dashboard/lifecycle',        icon: Layers,        exact: false },
-      { name: 'Inventory',       href: '/dashboard/properties',       icon: Building2,     exact: false, teamsOnly: true },
-      { name: 'Team',           href: '/dashboard/team',             icon: UserCheck,     exact: false },
+      { name: 'Inventory',      href: '/dashboard/properties',       icon: Building2,     exact: false, teamsOnly: true },
+      { name: 'Team',           href: '/dashboard/team',             icon: UserCheck,     exact: false, teamsOnly: true },
     ],
   },
   {
@@ -39,7 +39,7 @@ const NAV_SECTIONS = [
     label: 'Insights',
     items: [
       { name: 'Analytics',      href: '/dashboard/analytics',        icon: BarChart3,  exact: false },
-      { name: 'Team Analytics', href: '/dashboard/team/analytics',   icon: Users,      exact: false },
+      { name: 'Team Analytics', href: '/dashboard/team/analytics',   icon: Users,      exact: false, teamsOnly: true },
       { name: 'Calculators',    href: '/dashboard/calculators',      icon: Calculator, exact: false },
       { name: 'Reports',        href: '/dashboard/reports',          icon: BarChart2,  exact: false },
     ],
@@ -47,7 +47,7 @@ const NAV_SECTIONS = [
   {
     label: 'Settings',
     items: [
-      { name: 'Lead Routing',   href: '/dashboard/settings/routing',  icon: GitBranch,  exact: false },
+      { name: 'Lead Routing',   href: '/dashboard/settings/routing',  icon: GitBranch,  exact: false, teamsOnly: true },
       { name: 'Billing',        href: '/dashboard/settings/billing',  icon: CreditCard, exact: false },
       { name: 'Integrations',   href: '/dashboard/integrations',      icon: Plug,       exact: false },
       { name: 'Help & Support', href: '/dashboard/help',              icon: HelpCircle, exact: false },
