@@ -132,6 +132,7 @@ export default function PowerDialerPage() {
   const [log,       setLog]       = useState<CallLog[]>([])
   const [stats,     setStats]     = useState({ total:0, connected:0, skipped:0 })
   const [copied,    setCopied]    = useState(false)
+  const [csidCopied, setCsidCopied] = useState(false)
   const [sessionOn, setSessionOn] = useState(false)
   const [showLog,   setShowLog]   = useState(false)
   const [callMode,  setCallMode]  = useState<CallMode>(() => {
@@ -166,6 +167,14 @@ export default function PowerDialerPage() {
   const name     = current ? fname(current) : ''
   const budget   = current ? fmtBudget(current.budgetMin, current.budgetMax) : null
   const outMeta  = OUTCOMES.find(o => o.id === outcome)
+  const csId     = current ? getCsId(current) : ''
+
+  const copyCsId = () => {
+    if (!csId) return
+    navigator.clipboard.writeText(csId)
+    setCsidCopied(true)
+    setTimeout(() => setCsidCopied(false), 2000)
+  }
 
   const changeMode = (m: CallMode) => {
     setCallMode(m)
@@ -393,12 +402,23 @@ export default function PowerDialerPage() {
                 {current.sourcePortal && <span style={{ fontSize:11, fontWeight:700, background:C.blueDim, color:C.blue, borderRadius:20, padding:'3px 10px' }}>{current.sourcePortal}</span>}
               </div>
             </div>
-            {/* Phone number */}
-            <div style={{ padding:'14px 20px', borderTop:`1px solid ${C.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-              <span style={{ fontSize:20, fontWeight:800, color:C.text, letterSpacing:'0.02em' }}>{phone || '—'}</span>
-              <button onClick={copyPhone} style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 13px', border:`1px solid ${C.border}`, borderRadius:9, background:copied ? C.emeraldDim : C.bg, color:copied ? C.emerald : C.muted, fontSize:12, fontWeight:600, cursor:'pointer' }}>
-                {copied ? <><Check size={12}/>Copied!</> : <><Copy size={12}/>Copy</>}
-              </button>
+            {/* Phone number + CS ID */}
+            <div style={{ padding:'14px 20px', borderTop:`1px solid ${C.border}` }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: csId ? 8 : 0 }}>
+                <span style={{ fontSize:20, fontWeight:800, color:C.text, letterSpacing:'0.02em' }}>{phone || '—'}</span>
+                <button onClick={copyPhone} style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 13px', border:`1px solid ${C.border}`, borderRadius:9, background:copied ? C.emeraldDim : C.bg, color:copied ? C.emerald : C.muted, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                  {copied ? <><Check size={12}/>Copied!</> : <><Copy size={12}/>Copy</>}
+                </button>
+              </div>
+              {csId && (
+                <button onClick={copyCsId} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'4px 10px', border:`1px solid ${csidCopied ? '#A7F3D0' : C.border}`, borderRadius:7, background: csidCopied ? C.emeraldDim : '#F8FAFC', cursor:'pointer', transition:'all 0.15s' }}>
+                  <span style={{ fontSize:12, fontWeight:700, color: csidCopied ? C.emerald : '#475569', fontFamily:'monospace', letterSpacing:'0.06em' }}>{csId}</span>
+                  {csidCopied
+                    ? <Check size={11} color={C.emerald} />
+                    : <Copy size={11} color="#94A3B8" />}
+                  <span style={{ fontSize:10, color: csidCopied ? C.emerald : '#94A3B8', fontWeight:500 }}>{csidCopied ? 'Copied!' : 'Copy ID'}</span>
+                </button>
+              )}
             </div>
           </div>
 
