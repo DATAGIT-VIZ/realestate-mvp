@@ -204,10 +204,14 @@ export default function TeamPage() {
   useEffect(() => { load() }, [load])
 
   const handleSave = async (data: Partial<TeamMember>) => {
-    if (modal && modal !== 'new') {
-      await fetch(`/api/team/${(modal as TeamMember).id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
-    } else {
-      await fetch('/api/team', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+    const isEdit = modal && modal !== 'new'
+    const res = isEdit
+      ? await fetch(`/api/team/${(modal as TeamMember).id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+      : await fetch('/api/team', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}))
+      throw new Error(json.error ?? `Server error ${res.status}`)
     }
     await load()
   }

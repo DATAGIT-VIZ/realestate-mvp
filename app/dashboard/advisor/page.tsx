@@ -52,6 +52,14 @@ function estimateTokens(text: string) { return Math.ceil(text.length / 4) }
 // Cost: Sonnet input $3/M, output $15/M tokens. Assume 70% input / 30% output split.
 function estimateCostUSD(tokens: number) { return ((tokens * 0.7 * 3 + tokens * 0.3 * 15) / 1_000_000) }
 
+function getCsId(lead: CRMLead): string {
+  if (lead.leadPortalId?.startsWith('CS')) return lead.leadPortalId
+  const hex = lead.id.replace(/-/g, '')
+  let n = 0
+  for (const c of hex) n = (n * 31 + parseInt(c, 16)) % 100000
+  return `CS${String(n).padStart(5, '0')}`
+}
+
 // ─── Quick prompt categories ────────────────────────────────────────────────
 const CATEGORIES = [
   {
@@ -333,14 +341,17 @@ export default function AdvisorPage() {
     try {
       type DealRow = { stage: string; deal_value: number; lead_name: string; city: string; assigned_to: string; expected_close?: string; source_portal?: string }
       const [lr, dr] = await Promise.all([
-        fetch('/api/crm/leads?limit=50').then(r => r.json()),
+        fetch('/api/crm/leads?limit=200').then(r => r.json()),
         fetch('/api/deals').then(r => r.json()),
       ])
       const leads: CRMLead[] = lr.data?.leads ?? lr.data ?? []
       const deals: DealRow[] = dr.data ?? []
 
-      const hot     = leads.filter(l => (l.intentScore ?? 0) >= 50).sort((a, b) => (b.intentScore ?? 0) - (a.intentScore ?? 0))
-      const hotLeads: LiveLead[] = hot.map(l => ({
+      // Sort ALL leads by score — AI needs to look up any CS ID, not just hot ones
+      const allSorted = [...leads].sort((a, b) => (b.intentScore ?? 0) - (a.intentScore ?? 0))
+      const hot = allSorted.filter(l => (l.intentScore ?? 0) >= 50)
+      const hotLeads: LiveLead[] = allSorted.map(l => ({
+        csId: getCsId(l),
         name: `${l.name?.firstName ?? ''} ${l.name?.lastName ?? ''}`.trim() || 'Unknown',
         phone: l.phones?.primaryPhoneNumber ?? '',
         city: l.city ?? '',
@@ -348,6 +359,9 @@ export default function AdvisorPage() {
         score: l.intentScore ?? 0,
         stage: l.status ?? '',
         source: l.sourcePortal ?? '',
+        budget: l.budgetMin || l.budgetMax
+          ? [l.budgetMin && `₹${l.budgetMin >= 10_000_000 ? (l.budgetMin/10_000_000).toFixed(1)+'Cr' : (l.budgetMin/100_000).toFixed(0)+'L'}`, l.budgetMax && `₹${l.budgetMax >= 10_000_000 ? (l.budgetMax/10_000_000).toFixed(1)+'Cr' : (l.budgetMax/100_000).toFixed(0)+'L'}`].filter(Boolean).join('–')
+          : undefined,
       }))
 
       const active = deals.filter(d => !['won', 'lost'].includes(d.stage))

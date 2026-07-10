@@ -9,6 +9,7 @@ interface Message {
 }
 
 export interface LiveLead {
+  csId: string
   name: string
   phone: string
   city: string
@@ -48,8 +49,8 @@ export interface AdvisorContext {
 }
 
 function buildSystemPrompt(ctx: AdvisorContext): string {
-  const topLeads = ctx.hotLeads.slice(0, 8).map((l, i) =>
-    `${i + 1}. **${l.name}** | Score ${l.score}/100 | ${l.propertyType} in ${l.city} | Stage: ${l.stage} | Source: ${l.source}${l.budget ? ` | Budget: ${l.budget}` : ''} | Phone: ${l.phone}`
+  const topLeads = ctx.hotLeads.slice(0, 50).map((l, i) =>
+    `${i + 1}. **${l.csId}** · ${l.name} | Score ${l.score}/100 | ${l.propertyType || 'Property'} in ${l.city || 'Unknown'} | Stage: ${l.stage} | Source: ${l.source}${l.budget ? ` | Budget: ${l.budget}` : ''} | Phone: ${l.phone}`
   ).join('\n')
 
   const nearClose = ctx.dealsNearClose.slice(0, 5).map((d, i) =>
@@ -70,8 +71,10 @@ function buildSystemPrompt(ctx: AdvisorContext): string {
 - **Response rate (24h):** ${ctx.responseRate}%
 - **Best lead source:** ${ctx.topSource}
 
-### Top Priority Leads (ranked by AI score):
+### All Leads in Pipeline (ranked by AI score — reference by CS ID):
 ${topLeads || 'No leads yet — advise on setup'}
+
+**CS ID lookup:** Every lead has a unique CS ID (e.g. CS00009). When a user mentions a CS ID, find that exact lead in the list above and use their specific name, phone, city, budget, and stage in your response. Never say a lead is "not found" — search the list above first.
 
 ### Deals Close to Closing:
 ${nearClose || 'No near-close deals at the moment'}
