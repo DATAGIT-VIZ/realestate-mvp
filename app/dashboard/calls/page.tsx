@@ -6,6 +6,7 @@ import {
   CheckCircle, MapPin, Home, Loader2, RotateCcw,
   MessageCircle, Star, ChevronRight, Trophy, Copy, Check,
   Flame, Thermometer, Snowflake, Clock, Phone, List,
+  TrendingUp, Zap,
 } from 'lucide-react'
 
 function formatIndianPhone(raw: string) {
@@ -16,7 +17,7 @@ function formatIndianPhone(raw: string) {
 }
 
 const C = {
-  bg:         '#F8FAFC',
+  bg:         '#F1F5F9',
   panel:      '#FFFFFF',
   border:     '#E2E8F0',
   borderDim:  '#F1F5F9',
@@ -32,13 +33,18 @@ const C = {
   red:        '#EF4444',
   redDim:     '#FFF1F2',
   violet:     '#7C3AED',
+  dark:       '#0F172A',
+  darkCard:   '#1E293B',
+  darkBorder: '#334155',
+  darkText:   '#F8FAFC',
+  darkMuted:  '#94A3B8',
 }
 
 const OUTCOMES = [
-  { id: 'connected',      label: 'Connected',     icon: CheckCircle,  color: C.emerald, dim: C.emeraldDim, emoji: '✅' },
-  { id: 'no_answer',      label: 'No Answer',     icon: PhoneMissed,  color: C.amber,   dim: C.amberDim,   emoji: '📵' },
-  { id: 'callback',       label: 'Call Back',     icon: Clock,        color: C.blue,    dim: C.blueDim,    emoji: '🔁' },
-  { id: 'not_interested', label: 'Not Interested',icon: PhoneOff,     color: C.red,     dim: C.redDim,     emoji: '❌' },
+  { id: 'connected',      label: 'Connected',      icon: CheckCircle,  color: C.emerald, dim: C.emeraldDim, emoji: '✅' },
+  { id: 'no_answer',      label: 'No Answer',      icon: PhoneMissed,  color: C.amber,   dim: C.amberDim,   emoji: '📵' },
+  { id: 'callback',       label: 'Call Back',      icon: Clock,        color: C.blue,    dim: C.blueDim,    emoji: '🔁' },
+  { id: 'not_interested', label: 'Not Interested', icon: PhoneOff,     color: C.red,     dim: C.redDim,     emoji: '❌' },
 ]
 
 interface Lead {
@@ -90,11 +96,11 @@ function ScorePill({ score }: { score?: number|null }) {
   const hot  = score >= 75
   const warm = score >= 50
   const Icon = hot ? Flame : warm ? Thermometer : Snowflake
-  const color = hot ? C.red : warm ? C.amber : C.blue
-  const dim   = hot ? C.redDim : warm ? C.amberDim : C.blueDim
+  const color = hot ? '#FCA5A5' : warm ? '#FCD34D' : '#93C5FD'
+  const bg    = hot ? 'rgba(239,68,68,0.2)' : warm ? 'rgba(217,119,6,0.2)' : 'rgba(37,99,235,0.2)'
   const label = hot ? 'Hot' : warm ? 'Warm' : 'New'
   return (
-    <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:800, background:dim, color, borderRadius:20, padding:'3px 10px', border:`1px solid ${color}30` }}>
+    <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:800, background:bg, color, borderRadius:20, padding:'3px 10px' }}>
       <Icon size={11}/> {label} {score}
     </span>
   )
@@ -194,51 +200,71 @@ export default function PowerDialerPage() {
   // ── Welcome ────────────────────────────────────────────────────────────
   if (!sessionOn) {
     return (
-      <div style={{ minHeight:'100vh', background:C.bg, display:'flex', flexDirection:'column' }}>
-        <div style={{ flex:1, padding: isMobile ? '32px 20px 20px' : '40px 28px', maxWidth: isMobile ? '100%' : 600, margin:'0 auto', width:'100%' }}>
-          <div style={{ textAlign:'center', marginBottom: isMobile ? 28 : 36 }}>
-            <div style={{ width:isMobile?64:72, height:isMobile?64:72, borderRadius:20, background:'linear-gradient(135deg,#2563EB,#7C3AED)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', boxShadow:'0 8px 24px rgba(37,99,235,0.25)' }}>
-              <Phone size={isMobile?26:30} color="#fff"/>
+      <div style={{ minHeight:'100vh', background:C.bg }}>
+        {/* Hero banner */}
+        <div style={{ background:'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', padding: isMobile ? '36px 20px 28px' : '48px 40px 36px' }}>
+          <div style={{ maxWidth:560, margin:'0 auto', textAlign:'center' }}>
+            <div style={{ width:64, height:64, borderRadius:20, background:'linear-gradient(135deg,#3B82F6,#7C3AED)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 18px', boxShadow:'0 0 0 8px rgba(59,130,246,0.15), 0 8px 32px rgba(37,99,235,0.4)' }}>
+              <Phone size={28} color="#fff"/>
             </div>
-            <h1 style={{ fontSize:isMobile?22:26, fontWeight:800, color:C.text, margin:'0 0 8px' }}>Power Dialer</h1>
-            <p style={{ fontSize:14, color:C.muted, margin:0, lineHeight:1.6 }}>
-              Your hottest leads, sorted by score.<br/>
-              Tap to call · Log in 3 taps · Move to next.
+            <h1 style={{ fontSize:isMobile?24:30, fontWeight:900, color:'#F8FAFC', margin:'0 0 10px', letterSpacing:'-0.02em' }}>Power Dialer</h1>
+            <p style={{ fontSize:14, color:'#94A3B8', margin:'0 0 20px', lineHeight:1.7 }}>
+              Work your hottest leads, fastest path to a conversation.
             </p>
-          </div>
-
-          {!loading && leads.length > 0 && (
-            <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:18, overflow:'hidden', marginBottom:20 }}>
-              <div style={{ padding:'11px 16px', borderBottom:`1px solid ${C.border}`, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <span style={{ fontSize:13, fontWeight:700, color:C.text }}>{leads.length} leads in queue</span>
-                <span style={{ fontSize:11, color:C.label }}>Hottest first ↓</span>
+            {!loading && leads.length > 0 && (
+              <div style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(5,150,105,0.15)', border:'1px solid rgba(5,150,105,0.4)', borderRadius:20, padding:'6px 16px' }}>
+                <Zap size={13} color="#34D399"/>
+                <span style={{ fontSize:13, fontWeight:700, color:'#34D399' }}>{leads.length} leads ready to dial</span>
               </div>
-              {leads.slice(0,3).map(l => (
-                <div key={l.id} style={{ padding:'10px 16px', borderBottom:`1px solid ${C.borderDim}`, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                    <div style={{ width:32, height:32, borderRadius:10, background:C.blueDim, display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:800, color:C.blue }}>{l.name.firstName.charAt(0)}</div>
-                    <div>
-                      <div style={{ fontSize:13, fontWeight:600, color:C.text }}>{fname(l)}</div>
-                      <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-                        <span style={{ fontSize:9, fontWeight:700, color:'#64748B', background:'#F1F5F9', border:'1px solid #E2E8F0', padding:'1px 5px', borderRadius:4, fontFamily:'monospace', letterSpacing:'0.04em' }}>{getCsId(l)}</span>
-                        <span style={{ fontSize:11, color:C.muted }}>{l.city ?? '—'}{l.propertyType?.[0] ? ` · ${l.propertyType[0]}` : ''}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <ScorePill score={l.intentScore}/>
-                </div>
-              ))}
-              {leads.length > 3 && <div style={{ padding:'10px 16px', textAlign:'center', fontSize:12, color:C.label }}>+{leads.length-3} more</div>}
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        <div style={{ padding: isMobile ? '16px 20px 32px' : '0 28px 32px', maxWidth:isMobile?'100%':600, margin:'0 auto', width:'100%', boxSizing:'border-box' }}>
+        {/* Lead queue preview */}
+        <div style={{ maxWidth:560, margin:'0 auto', padding: isMobile ? '20px 16px' : '24px 20px' }}>
+          {!loading && leads.length > 0 && (
+            <div style={{ background:C.panel, borderRadius:18, border:`1px solid ${C.border}`, overflow:'hidden', marginBottom:16, boxShadow:'0 4px 20px rgba(0,0,0,0.06)' }}>
+              <div style={{ padding:'12px 18px', borderBottom:`1px solid ${C.border}`, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <span style={{ fontSize:12, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em' }}>Call queue · Hottest first</span>
+                <TrendingUp size={14} color={C.blue}/>
+              </div>
+              {leads.slice(0,5).map((l, i) => {
+                const hot = (l.intentScore ?? 0) >= 75
+                const warm = (l.intentScore ?? 0) >= 50
+                return (
+                  <div key={l.id} style={{ padding:'11px 18px', borderBottom: i < 4 ? `1px solid ${C.borderDim}` : 'none', display:'flex', alignItems:'center', gap:12 }}>
+                    <div style={{ width:22, height:22, borderRadius:6, background: i===0 ? 'linear-gradient(135deg,#3B82F6,#7C3AED)' : C.bg, border:`1px solid ${i===0 ? 'transparent' : C.border}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:800, color: i===0 ? '#fff' : C.label, flexShrink:0 }}>
+                      {i+1}
+                    </div>
+                    <div style={{ width:34, height:34, borderRadius:10, background: hot ? 'linear-gradient(135deg,#EF4444,#DC2626)' : warm ? 'linear-gradient(135deg,#F59E0B,#D97706)' : 'linear-gradient(135deg,#3B82F6,#2563EB)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:800, color:'#fff', flexShrink:0 }}>
+                      {l.name.firstName.charAt(0)}
+                    </div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:13, fontWeight:700, color:C.text, marginBottom:2 }}>{fname(l)}</div>
+                      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                        <span style={{ fontSize:9, fontWeight:700, color:'#64748B', background:'#F1F5F9', border:'1px solid #E2E8F0', padding:'1px 5px', borderRadius:4, fontFamily:'monospace' }}>{getCsId(l)}</span>
+                        {l.city && <span style={{ fontSize:11, color:C.label }}>{l.city}</span>}
+                      </div>
+                    </div>
+                    <ScorePill score={l.intentScore}/>
+                  </div>
+                )
+              })}
+              {leads.length > 5 && (
+                <div style={{ padding:'10px 18px', textAlign:'center', fontSize:12, color:C.label, background:C.bg, borderTop:`1px solid ${C.borderDim}` }}>
+                  +{leads.length-5} more leads in queue
+                </div>
+              )}
+            </div>
+          )}
           {loading
-            ? <div style={{ textAlign:'center', padding:20, color:C.muted }}><Loader2 size={20} style={{ animation:'spin 1s linear infinite', display:'block', margin:'0 auto 8px' }}/> Loading leads…</div>
-            : <button onClick={() => setSessionOn(true)} style={{ width:'100%', padding: isMobile?'18px 0':'16px 0', background:'linear-gradient(135deg,#2563EB,#7C3AED)', border:'none', borderRadius:16, color:'#fff', fontSize:isMobile?17:16, fontWeight:800, cursor:'pointer', boxShadow:'0 6px 20px rgba(37,99,235,0.3)', display:'flex', alignItems:'center', justifyContent:'center', gap:10 }}>
-                <PhoneCall size={isMobile?20:18}/> Start Dialing Session
+            ? <div style={{ textAlign:'center', padding:32, color:C.muted }}><Loader2 size={22} style={{ animation:'spin 1s linear infinite', display:'block', margin:'0 auto 10px' }}/> Loading your leads…</div>
+            : (
+              <button onClick={() => setSessionOn(true)}
+                style={{ width:'100%', padding:'18px 0', background:'linear-gradient(135deg,#059669,#047857)', border:'none', borderRadius:16, color:'#fff', fontSize:17, fontWeight:800, cursor:'pointer', boxShadow:'0 6px 24px rgba(5,150,105,0.35)', display:'flex', alignItems:'center', justifyContent:'center', gap:10, letterSpacing:'-0.01em' }}>
+                <PhoneCall size={20}/> Start Dialing Session
               </button>
+            )
           }
         </div>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
@@ -251,24 +277,24 @@ export default function PowerDialerPage() {
     return (
       <div style={{ minHeight:'100vh', background:C.bg, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
         <div style={{ textAlign:'center', maxWidth:400, width:'100%' }}>
-          <div style={{ width:80, height:80, borderRadius:24, background:C.emeraldDim, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px' }}>
-            <Trophy size={36} color={C.emerald}/>
+          <div style={{ width:88, height:88, borderRadius:26, background:'linear-gradient(135deg,#059669,#047857)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px', boxShadow:'0 8px 32px rgba(5,150,105,0.35)' }}>
+            <Trophy size={40} color="#fff"/>
           </div>
-          <h2 style={{ fontSize:24, fontWeight:800, color:C.text, margin:'0 0 8px' }}>Session complete!</h2>
-          <p style={{ fontSize:14, color:C.muted, margin:'0 0 28px' }}>You called through the entire queue.</p>
+          <h2 style={{ fontSize:26, fontWeight:900, color:C.text, margin:'0 0 8px', letterSpacing:'-0.02em' }}>Session complete!</h2>
+          <p style={{ fontSize:14, color:C.muted, margin:'0 0 28px' }}>You worked through the entire queue. Nice work.</p>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:28 }}>
             {[
-              { label:'Called',    value:stats.total,      color:C.blue    },
+              { label:'Dialed',    value:stats.total,      color:C.blue    },
               { label:'Connected', value:stats.connected,  color:C.emerald },
               { label:'Rate',      value:`${connectRate}%`,color:C.violet  },
             ].map(s => (
-              <div key={s.label} style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:14, padding:'16px 10px' }}>
-                <div style={{ fontSize:22, fontWeight:800, color:s.color }}>{s.value}</div>
-                <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>{s.label}</div>
+              <div key={s.label} style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:16, padding:'18px 10px', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+                <div style={{ fontSize:28, fontWeight:900, color:s.color, letterSpacing:'-0.02em' }}>{s.value}</div>
+                <div style={{ fontSize:11, color:C.muted, marginTop:3, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em' }}>{s.label}</div>
               </div>
             ))}
           </div>
-          <button onClick={restart} style={{ width:'100%', padding:'16px 0', background:C.blue, border:'none', borderRadius:14, color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer' }}>
+          <button onClick={restart} style={{ width:'100%', padding:'16px 0', background:C.dark, border:'none', borderRadius:14, color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer' }}>
             Start New Session
           </button>
         </div>
@@ -280,17 +306,19 @@ export default function PowerDialerPage() {
   // ── MOBILE active session ──────────────────────────────────────────────
   if (isMobile) {
     return (
-      <div style={{ minHeight:'100vh', background:C.bg, display:'flex', flexDirection:'column' }}>
+      <div style={{ minHeight:'100vh', background:C.dark, display:'flex', flexDirection:'column' }}>
 
-        {/* Sticky top bar */}
-        <div style={{ background:C.panel, borderBottom:`1px solid ${C.border}`, padding:'12px 16px', display:'flex', justifyContent:'space-between', alignItems:'center', position:'sticky', top:0, zIndex:10 }}>
+        {/* Top bar */}
+        <div style={{ padding:'12px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
           <div>
-            <span style={{ fontSize:13, fontWeight:700, color:C.text }}>Lead {queueIdx+1} / {leads.length}</span>
-            <span style={{ fontSize:11, color:C.label, marginLeft:8 }}>{leads.length-queueIdx-1} left</span>
+            <span style={{ fontSize:13, fontWeight:700, color:'#F8FAFC' }}>{queueIdx+1} / {leads.length}</span>
+            <span style={{ fontSize:11, color:'#64748B', marginLeft:8 }}>{leads.length-queueIdx-1} left</span>
           </div>
           <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-            <span style={{ fontSize:11, fontWeight:700, background:C.emeraldDim, color:C.emerald, borderRadius:20, padding:'3px 10px' }}>{stats.connected} connected</span>
-            <button onClick={() => setShowLog(v => !v)} style={{ padding:'6px 10px', border:`1px solid ${C.border}`, borderRadius:8, background:C.panel, color:C.muted, cursor:'pointer', display:'flex', alignItems:'center', gap:4, fontSize:11 }}>
+            <span style={{ fontSize:11, fontWeight:700, background:'rgba(5,150,105,0.2)', color:'#34D399', borderRadius:20, padding:'3px 10px', border:'1px solid rgba(5,150,105,0.3)' }}>
+              {stats.connected} connected
+            </span>
+            <button onClick={() => setShowLog(v => !v)} style={{ padding:'6px 10px', border:'1px solid #334155', borderRadius:8, background:'#1E293B', color:'#94A3B8', cursor:'pointer', display:'flex', alignItems:'center', gap:4, fontSize:11 }}>
               <List size={13}/> Log
             </button>
           </div>
@@ -298,7 +326,7 @@ export default function PowerDialerPage() {
 
         {/* Call log drawer */}
         {showLog && (
-          <div style={{ position:'fixed', inset:0, zIndex:50, background:'rgba(0,0,0,0.4)' }} onClick={() => setShowLog(false)}>
+          <div style={{ position:'fixed', inset:0, zIndex:50, background:'rgba(0,0,0,0.6)' }} onClick={() => setShowLog(false)}>
             <div style={{ position:'absolute', bottom:0, left:0, right:0, background:C.panel, borderRadius:'20px 20px 0 0', maxHeight:'70vh', overflow:'auto' }} onClick={e => e.stopPropagation()}>
               <div style={{ padding:'14px 18px', borderBottom:`1px solid ${C.border}`, fontWeight:700, fontSize:14, color:C.text, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                 Today&apos;s calls ({log.length})
@@ -323,109 +351,112 @@ export default function PowerDialerPage() {
           </div>
         )}
 
-        {/* Scrollable content */}
-        <div style={{ flex:1, overflowY:'auto', padding:'20px 16px 120px' }}>
-
-          {/* Lead card */}
-          <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:22, overflow:'hidden', marginBottom:16, boxShadow:'0 2px 12px rgba(0,0,0,0.06)' }}>
-            <div style={{ padding:'22px 20px 16px', background:'linear-gradient(135deg,#EFF6FF,#F5F3FF)' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:12 }}>
-                <div style={{ width:58, height:58, borderRadius:18, background:'linear-gradient(135deg,#2563EB,#7C3AED)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, fontWeight:800, color:'#fff', flexShrink:0 }}>
-                  {name.charAt(0)}
-                </div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <h2 style={{ fontSize:20, fontWeight:800, color:C.text, margin:'0 0 5px', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{name}</h2>
-                  <ScorePill score={current.intentScore}/>
-                </div>
+        {/* Lead card — dark */}
+        <div style={{ margin:'0 16px', background:'#1E293B', borderRadius:22, border:'1px solid #334155', overflow:'hidden', marginBottom:16 }}>
+          <div style={{ padding:'22px 20px 18px' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:14 }}>
+              <div style={{ width:56, height:56, borderRadius:18, background:'linear-gradient(135deg,#3B82F6,#7C3AED)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, fontWeight:900, color:'#fff', flexShrink:0, boxShadow:'0 0 0 4px rgba(59,130,246,0.2)' }}>
+                {name.charAt(0)}
               </div>
-              <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-                {current.city && <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:12, color:C.muted, background:'rgba(255,255,255,0.8)', border:`1px solid ${C.border}`, borderRadius:20, padding:'3px 10px' }}><MapPin size={11}/>{current.city}</span>}
-                {current.propertyType?.[0] && <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:12, color:C.muted, background:'rgba(255,255,255,0.8)', border:`1px solid ${C.border}`, borderRadius:20, padding:'3px 10px' }}><Home size={11}/>{current.propertyType[0]}</span>}
-                {budget && <span style={{ fontSize:12, fontWeight:600, color:C.emerald, background:C.emeraldDim, border:`1px solid #A7F3D0`, borderRadius:20, padding:'3px 10px' }}>{budget}</span>}
-                {current.sourcePortal && <span style={{ fontSize:11, fontWeight:700, background:C.blueDim, color:C.blue, borderRadius:20, padding:'3px 10px' }}>{current.sourcePortal}</span>}
+              <div style={{ flex:1, minWidth:0 }}>
+                <h2 style={{ fontSize:20, fontWeight:800, color:'#F8FAFC', margin:'0 0 5px', letterSpacing:'-0.01em', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{name}</h2>
+                <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                  <ScorePill score={current.intentScore}/>
+                  {current.sourcePortal && <span style={{ fontSize:10, fontWeight:700, color:'#93C5FD', background:'rgba(59,130,246,0.15)', border:'1px solid rgba(59,130,246,0.25)', borderRadius:20, padding:'2px 8px' }}>{current.sourcePortal}</span>}
+                </div>
               </div>
             </div>
-            {/* Phone number + CS ID */}
-            <div style={{ padding:'14px 20px', borderTop:`1px solid ${C.border}` }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: csId ? 8 : 0 }}>
-                <span style={{ fontSize:20, fontWeight:800, color:C.text, letterSpacing:'0.02em' }}>{phone || '—'}</span>
-                <button onClick={copyPhone} style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 13px', border:`1px solid ${C.border}`, borderRadius:9, background:copied ? C.emeraldDim : C.bg, color:copied ? C.emerald : C.muted, fontSize:12, fontWeight:600, cursor:'pointer' }}>
-                  {copied ? <><Check size={12}/>Copied!</> : <><Copy size={12}/>Copy</>}
-                </button>
+
+            {/* Phone hero */}
+            <div style={{ background:'rgba(255,255,255,0.05)', borderRadius:14, padding:'14px 16px', marginBottom:12 }}>
+              <div style={{ fontSize:10, fontWeight:700, color:'#64748B', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>Phone</div>
+              <div style={{ fontSize:26, fontWeight:900, color:'#F8FAFC', letterSpacing:'-0.01em', fontVariantNumeric:'tabular-nums', marginBottom:8 }}>
+                {formatIndianPhone(phone) || '—'}
               </div>
-              {csId && (
-                <button onClick={copyCsId} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'4px 10px', border:`1px solid ${csidCopied ? '#A7F3D0' : C.border}`, borderRadius:7, background: csidCopied ? C.emeraldDim : '#F8FAFC', cursor:'pointer', transition:'all 0.15s' }}>
-                  <span style={{ fontSize:12, fontWeight:700, color: csidCopied ? C.emerald : '#475569', fontFamily:'monospace', letterSpacing:'0.06em' }}>{csId}</span>
-                  {csidCopied
-                    ? <Check size={11} color={C.emerald} />
-                    : <Copy size={11} color="#94A3B8" />}
-                  <span style={{ fontSize:10, color: csidCopied ? C.emerald : '#94A3B8', fontWeight:500 }}>{csidCopied ? 'Copied!' : 'Copy ID'}</span>
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={copyPhone} style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 12px', border:'1px solid #334155', borderRadius:8, background: copied ? 'rgba(5,150,105,0.15)' : 'rgba(255,255,255,0.06)', color: copied ? '#34D399' : '#94A3B8', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                  {copied ? <><Check size={11}/>Copied!</> : <><Copy size={11}/>Copy</>}
                 </button>
-              )}
+                {csId && (
+                  <button onClick={copyCsId} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'5px 12px', border:`1px solid ${csidCopied ? 'rgba(5,150,105,0.4)' : '#334155'}`, borderRadius:8, background: csidCopied ? 'rgba(5,150,105,0.15)' : 'rgba(255,255,255,0.06)', cursor:'pointer' }}>
+                    <span style={{ fontSize:11, fontWeight:700, color: csidCopied ? '#34D399' : '#64748B', fontFamily:'monospace', letterSpacing:'0.06em' }}>{csId}</span>
+                    {csidCopied ? <Check size={10} color="#34D399"/> : <Copy size={10} color="#475569"/>}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Context tags */}
+            <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+              {current.city && <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:11, color:'#64748B', background:'rgba(255,255,255,0.05)', border:'1px solid #334155', borderRadius:20, padding:'3px 10px' }}><MapPin size={10}/>{current.city}</span>}
+              {current.propertyType?.[0] && <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:11, color:'#64748B', background:'rgba(255,255,255,0.05)', border:'1px solid #334155', borderRadius:20, padding:'3px 10px' }}><Home size={10}/>{current.propertyType[0]}</span>}
+              {budget && <span style={{ fontSize:11, fontWeight:600, color:'#34D399', background:'rgba(5,150,105,0.12)', border:'1px solid rgba(5,150,105,0.25)', borderRadius:20, padding:'3px 10px' }}>{budget}</span>}
             </div>
           </div>
+        </div>
 
-          {/* Step 1 — call actions */}
+        {/* Actions */}
+        <div style={{ padding:'0 16px', flex:1 }}>
           {step === 1 && (
-            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-              <button onClick={startCall} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'18px 0', background: phone ? 'linear-gradient(135deg,#059669,#047857)' : '#E2E8F0', borderRadius:16, color: phone ? '#fff' : C.label, fontSize:17, fontWeight:800, border:'none', cursor: phone ? 'pointer' : 'not-allowed', boxShadow: phone ? '0 6px 20px rgba(5,150,105,0.3)' : 'none' }}>
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              <button onClick={startCall} disabled={!phone}
+                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'18px 0', background: phone ? 'linear-gradient(135deg,#059669,#047857)' : '#1E293B', borderRadius:16, color: phone ? '#fff' : '#475569', fontSize:17, fontWeight:800, border:'none', cursor: phone ? 'pointer' : 'not-allowed', boxShadow: phone ? '0 6px 24px rgba(5,150,105,0.4)' : 'none', letterSpacing:'-0.01em' }}>
                 <PhoneCall size={20}/> Call now
               </button>
               {phone && (
                 <a href={waLink(phone)} target="_blank" rel="noreferrer"
-                  style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'14px 0', background:'#DCFCE7', border:`1.5px solid #86EFAC`, borderRadius:14, color:'#15803D', fontSize:15, fontWeight:700, textDecoration:'none' }}>
+                  style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'14px 0', background:'rgba(21,128,61,0.12)', border:'1.5px solid rgba(21,128,61,0.3)', borderRadius:14, color:'#34D399', fontSize:15, fontWeight:700, textDecoration:'none' }}>
                   <MessageCircle size={17}/> WhatsApp
                 </a>
               )}
-              <button onClick={skip} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'12px 0', background:'transparent', border:`1px solid ${C.border}`, borderRadius:14, color:C.label, fontSize:14, fontWeight:600, cursor:'pointer' }}>
-                <SkipForward size={14}/> Skip this lead
+              <button onClick={skip} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'12px 0', background:'transparent', border:'1px solid #1E293B', borderRadius:14, color:'#475569', fontSize:14, fontWeight:600, cursor:'pointer' }}>
+                <SkipForward size={14}/> Skip
               </button>
             </div>
           )}
 
-          {/* Step 2 — in progress */}
           {step === 2 && (
-            <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:20, padding:'32px 20px', textAlign:'center', boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>
-              <div style={{ fontSize:11, fontWeight:700, color:C.emerald, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:10 }}>Call in progress</div>
-              <div style={{ fontSize:52, fontWeight:800, color:C.text, fontVariantNumeric:'tabular-nums' }}>{fmtTime(elapsed)}</div>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, margin:'10px 0 28px' }}>
-                <div style={{ width:9, height:9, borderRadius:'50%', background:C.emerald, animation:'pulse 1.5s infinite' }}/>
-                <span style={{ fontSize:13, color:C.muted }}>Calling {name.split(' ')[0]}…</span>
+            <div style={{ background:'#1E293B', border:'1px solid #334155', borderRadius:20, padding:'28px 20px', textAlign:'center' }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, marginBottom:12 }}>
+                <div style={{ width:9, height:9, borderRadius:'50%', background:'#34D399', animation:'pulse 1.5s infinite' }}/>
+                <span style={{ fontSize:12, fontWeight:700, color:'#34D399', textTransform:'uppercase', letterSpacing:'0.08em' }}>Live call</span>
               </div>
-              <button onClick={() => setStep(3)} style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'18px 0', background:C.red, border:'none', borderRadius:16, color:'#fff', fontSize:17, fontWeight:800, cursor:'pointer', boxShadow:'0 4px 16px rgba(239,68,68,0.3)' }}>
-                <PhoneOff size={20}/> Call Ended — Log It
+              <div style={{ fontSize:54, fontWeight:900, color:'#F8FAFC', fontVariantNumeric:'tabular-nums', letterSpacing:'-0.02em', marginBottom:6 }}>{fmtTime(elapsed)}</div>
+              <div style={{ fontSize:13, color:'#64748B', marginBottom:24 }}>Calling {name.split(' ')[0]}</div>
+              <button onClick={() => setStep(3)} style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'16px 0', background:'linear-gradient(135deg,#EF4444,#DC2626)', border:'none', borderRadius:14, color:'#fff', fontSize:16, fontWeight:800, cursor:'pointer', boxShadow:'0 4px 16px rgba(239,68,68,0.4)' }}>
+                <PhoneOff size={18}/> Call Ended — Log It
               </button>
             </div>
           )}
 
-          {/* Step 3 — log outcome */}
           {step === 3 && (
-            <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:20, padding:'22px 18px', boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>
-              <p style={{ fontSize:13, fontWeight:700, color:C.text, margin:'0 0 14px' }}>How did it go?</p>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
+            <div style={{ background:'#1E293B', border:'1px solid #334155', borderRadius:20, padding:'20px 18px' }}>
+              <p style={{ fontSize:13, fontWeight:700, color:'#F8FAFC', margin:'0 0 14px' }}>How did it go?</p>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
                 {OUTCOMES.map(o => {
                   const Icon = o.icon
                   const sel  = outcome === o.id
                   return (
                     <button key={o.id} onClick={() => setOutcome(o.id)}
-                      style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, padding:'18px 10px', borderRadius:16, border:`2px solid ${sel ? o.color : C.border}`, background: sel ? o.dim : C.bg, color: sel ? o.color : C.muted, fontSize:13, fontWeight:700, cursor:'pointer', minHeight:80 }}>
-                      <Icon size={22}/>
+                      style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, padding:'16px 10px', borderRadius:14, border:`2px solid ${sel ? o.color : '#334155'}`, background: sel ? `${o.color}18` : 'rgba(255,255,255,0.03)', color: sel ? o.color : '#64748B', fontSize:13, fontWeight:700, cursor:'pointer', minHeight:76 }}>
+                      <Icon size={20}/>
                       {o.label}
                     </button>
                   )
                 })}
               </div>
               <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Quick note (optional)…"
-                style={{ width:'100%', padding:'12px 14px', border:`1px solid ${C.border}`, borderRadius:12, fontSize:14, color:C.text, resize:'none', minHeight:70, outline:'none', boxSizing:'border-box', marginBottom:14, background:C.bg }}/>
+                style={{ width:'100%', padding:'12px 14px', border:'1px solid #334155', borderRadius:12, fontSize:14, color:'#F8FAFC', resize:'none', minHeight:64, outline:'none', boxSizing:'border-box', marginBottom:12, background:'rgba(255,255,255,0.04)' }}/>
               <button onClick={logAndNext} disabled={!outcome}
-                style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'18px 0', background:!outcome ? C.borderDim : (outMeta?.color ?? C.blue), border:'none', borderRadius:16, color:!outcome ? C.label : '#fff', fontSize:17, fontWeight:800, cursor:!outcome ? 'not-allowed' : 'pointer', boxShadow: outcome ? `0 4px 16px ${outMeta?.color ?? C.blue}35` : 'none' }}>
-                Log &amp; Next <ChevronRight size={18}/>
+                style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'16px 0', background:!outcome ? '#1E293B' : (outMeta?.color ?? C.blue), border:`1px solid ${!outcome ? '#334155' : 'transparent'}`, borderRadius:14, color:!outcome ? '#475569' : '#fff', fontSize:16, fontWeight:800, cursor:!outcome ? 'not-allowed' : 'pointer' }}>
+                Log &amp; Next <ChevronRight size={17}/>
               </button>
-              {elapsed > 0 && <p style={{ fontSize:11, color:C.label, textAlign:'center', margin:'10px 0 0' }}>Duration: {fmtTime(elapsed)}</p>}
+              {elapsed > 0 && <p style={{ fontSize:11, color:'#475569', textAlign:'center', margin:'10px 0 0' }}>Duration: {fmtTime(elapsed)}</p>}
             </div>
           )}
         </div>
 
+        <div style={{ height:32 }}/>
         <style>{`
           @keyframes spin  { to { transform: rotate(360deg) } }
           @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.85)} }
@@ -436,128 +467,144 @@ export default function PowerDialerPage() {
 
   // ── DESKTOP active session ─────────────────────────────────────────────
   return (
-    <div className="px-4 py-5 pb-24 lg:px-7 min-h-screen" style={{ background:C.bg }}>
+    <div style={{ minHeight:'100vh', background:C.bg }}>
 
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20, flexWrap:'wrap', gap:10 }}>
+      {/* Dark top bar */}
+      <div style={{ background:'linear-gradient(135deg, #0F172A, #1E293B)', padding:'14px 28px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <div>
-          <h1 style={{ fontSize:20, fontWeight:800, color:C.text, margin:'0 0 2px' }}>Power Dialer</h1>
-          <p style={{ fontSize:12, color:C.muted, margin:0 }}>Lead {queueIdx+1} of {leads.length} · {leads.length-queueIdx-1} remaining</p>
+          <span style={{ fontSize:14, fontWeight:800, color:'#F8FAFC', letterSpacing:'-0.01em' }}>Power Dialer</span>
+          <span style={{ fontSize:12, color:'#475569', marginLeft:12 }}>Lead {queueIdx+1} of {leads.length} · {leads.length-queueIdx-1} remaining</span>
         </div>
         <div style={{ display:'flex', gap:8 }}>
-          <button onClick={loadLeads} style={{ display:'flex', alignItems:'center', gap:5, padding:'8px 14px', border:`1px solid ${C.border}`, borderRadius:9, background:C.panel, color:C.muted, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+          <button onClick={loadLeads} style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 14px', border:'1px solid #334155', borderRadius:9, background:'rgba(255,255,255,0.05)', color:'#94A3B8', fontSize:12, fontWeight:600, cursor:'pointer' }}>
             <RotateCcw size={12}/> Refresh
           </button>
-          <button onClick={restart} style={{ display:'flex', alignItems:'center', gap:5, padding:'8px 14px', border:`1px solid ${C.border}`, borderRadius:9, background:C.panel, color:C.muted, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+          <button onClick={restart} style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 14px', border:'1px solid #334155', borderRadius:9, background:'rgba(255,255,255,0.05)', color:'#94A3B8', fontSize:12, fontWeight:600, cursor:'pointer' }}>
             End session
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-[10px] mb-[22px]">
-        {[
-          { label:'Remaining', value:leads.length-queueIdx, color:C.blue    },
-          { label:'Dialed',    value:stats.total,           color:C.text    },
-          { label:'Connected', value:stats.connected,       color:C.emerald },
-          { label:'Rate',      value:`${connectRate}%`,     color:C.violet  },
-        ].map(s => (
-          <div key={s.label} style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 16px' }}>
-            <div style={{ fontSize:20, fontWeight:800, color:s.color }}>{s.value}</div>
-            <div style={{ fontSize:10, color:C.muted, fontWeight:600, marginTop:1, textTransform:'uppercase', letterSpacing:'0.05em' }}>{s.label}</div>
-          </div>
-        ))}
+      {/* Scoreboard */}
+      <div style={{ background:C.dark, padding:'0 28px 16px' }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+          {[
+            { label:'Remaining', value:leads.length-queueIdx, color:'#93C5FD', dim:'rgba(59,130,246,0.12)' },
+            { label:'Dialed',    value:stats.total,           color:'#F8FAFC',  dim:'rgba(255,255,255,0.06)' },
+            { label:'Connected', value:stats.connected,       color:'#34D399',  dim:'rgba(5,150,105,0.12)' },
+            { label:'Rate',      value:`${connectRate}%`,     color:'#C4B5FD',  dim:'rgba(124,58,237,0.12)' },
+          ].map(s => (
+            <div key={s.label} style={{ background:s.dim, border:'1px solid rgba(255,255,255,0.06)', borderRadius:12, padding:'12px 16px' }}>
+              <div style={{ fontSize:22, fontWeight:900, color:s.color, letterSpacing:'-0.02em' }}>{s.value}</div>
+              <div style={{ fontSize:10, color:'#475569', fontWeight:700, marginTop:2, textTransform:'uppercase', letterSpacing:'0.06em' }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-[18px] items-start">
+      {/* Main content */}
+      <div style={{ padding:'18px 28px 28px', display:'grid', gridTemplateColumns:'1fr 300px', gap:18, alignItems:'start' }}>
 
         {/* Dialer card */}
-        <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:22, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,0.05)' }}>
-          {/* Lead hero */}
-          <div style={{ padding:'24px 28px 20px', background:'linear-gradient(135deg,#F8FAFC,#EFF6FF)', borderBottom:`1px solid ${C.border}` }}>
+        <div style={{ borderRadius:22, overflow:'hidden', boxShadow:'0 4px 24px rgba(0,0,0,0.12)', border:'1px solid #334155' }}>
+
+          {/* Dark lead header */}
+          <div style={{ background:'linear-gradient(160deg, #0F172A 0%, #1E293B 100%)', padding:'26px 28px 22px' }}>
             <div style={{ display:'flex', alignItems:'flex-start', gap:16 }}>
-              <div style={{ width:60, height:60, borderRadius:18, background:'linear-gradient(135deg,#2563EB,#7C3AED)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, fontWeight:800, color:'#fff', flexShrink:0 }}>
+              <div style={{ width:60, height:60, borderRadius:18, background:'linear-gradient(135deg,#3B82F6,#7C3AED)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, fontWeight:900, color:'#fff', flexShrink:0, boxShadow:'0 0 0 5px rgba(59,130,246,0.2), 0 4px 16px rgba(37,99,235,0.4)' }}>
                 {name.charAt(0)}
               </div>
               <div style={{ flex:1 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', marginBottom:6 }}>
-                  <h2 style={{ fontSize:20, fontWeight:800, color:C.text, margin:0 }}>{name}</h2>
+                <h2 style={{ fontSize:22, fontWeight:900, color:'#F8FAFC', margin:'0 0 8px', letterSpacing:'-0.02em' }}>{name}</h2>
+                <div style={{ display:'flex', gap:7, flexWrap:'wrap', alignItems:'center' }}>
                   <ScorePill score={current.intentScore}/>
-                </div>
-                <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8, flexWrap:'wrap' }}>
-                  <span style={{ fontSize:17, fontWeight:800, color:C.blue }}>{phone || 'No number'}</span>
-                  <button onClick={copyPhone} style={{ display:'flex', alignItems:'center', gap:4, padding:'3px 9px', border:`1px solid ${C.border}`, borderRadius:6, background:C.panel, color:copied ? C.emerald : C.label, fontSize:11, fontWeight:600, cursor:'pointer' }}>
-                    {copied ? <><Check size={10}/>Copied</> : <><Copy size={10}/>Copy</>}
-                  </button>
-                  {csId && (
-                    <button onClick={copyCsId} style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'3px 9px', border:`1px solid ${csidCopied ? '#A7F3D0' : C.border}`, borderRadius:6, background: csidCopied ? C.emeraldDim : C.panel, cursor:'pointer' }}>
-                      <span style={{ fontSize:11, fontWeight:700, color: csidCopied ? C.emerald : '#475569', fontFamily:'monospace', letterSpacing:'0.04em' }}>{csId}</span>
-                      {csidCopied ? <Check size={10} color={C.emerald}/> : <Copy size={10} color="#94A3B8"/>}
-                    </button>
-                  )}
-                </div>
-                <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-                  {current.city && <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:12, color:C.muted, background:C.bg, border:`1px solid ${C.border}`, borderRadius:20, padding:'3px 10px' }}><MapPin size={11}/>{current.city}</span>}
-                  {current.propertyType?.[0] && <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:12, color:C.muted, background:C.bg, border:`1px solid ${C.border}`, borderRadius:20, padding:'3px 10px' }}><Home size={11}/>{current.propertyType[0]}</span>}
-                  {budget && <span style={{ fontSize:12, fontWeight:600, color:C.emerald, background:C.emeraldDim, border:`1px solid #A7F3D0`, borderRadius:20, padding:'3px 10px' }}>{budget}</span>}
-                  {current.sourcePortal && <span style={{ fontSize:11, fontWeight:700, background:C.blueDim, color:C.blue, borderRadius:20, padding:'3px 10px' }}>{current.sourcePortal}</span>}
+                  {current.sourcePortal && <span style={{ fontSize:11, fontWeight:700, color:'#93C5FD', background:'rgba(59,130,246,0.15)', border:'1px solid rgba(59,130,246,0.25)', borderRadius:20, padding:'2px 9px' }}>{current.sourcePortal}</span>}
+                  {current.city && <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:12, color:'#64748B' }}><MapPin size={10}/>{current.city}</span>}
+                  {current.propertyType?.[0] && <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:12, color:'#64748B' }}><Home size={10}/>{current.propertyType[0]}</span>}
+                  {budget && <span style={{ fontSize:12, fontWeight:600, color:'#34D399' }}>{budget}</span>}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Step 1 */}
+          {/* Phone hero — white */}
+          <div style={{ background:'#fff', padding:'22px 28px', borderBottom:`1px solid ${C.border}` }}>
+            <div style={{ fontSize:10, fontWeight:700, color:C.label, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:8 }}>Contact</div>
+            <div style={{ display:'flex', alignItems:'center', gap:14, flexWrap:'wrap' }}>
+              <span style={{ fontSize:30, fontWeight:900, color:C.dark, letterSpacing:'-0.01em', fontVariantNumeric:'tabular-nums' }}>
+                {formatIndianPhone(phone) || '—'}
+              </span>
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={copyPhone} style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 12px', border:`1px solid ${C.border}`, borderRadius:8, background: copied ? C.emeraldDim : C.bg, color: copied ? C.emerald : C.muted, fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                  {copied ? <><Check size={11}/>Copied</> : <><Copy size={11}/>Copy</>}
+                </button>
+                {csId && (
+                  <button onClick={copyCsId} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', border:`1px solid ${csidCopied ? '#A7F3D0' : C.border}`, borderRadius:8, background: csidCopied ? C.emeraldDim : C.bg, cursor:'pointer' }}>
+                    <span style={{ fontSize:11, fontWeight:700, color: csidCopied ? C.emerald : '#475569', fontFamily:'monospace', letterSpacing:'0.05em' }}>{csId}</span>
+                    {csidCopied ? <Check size={10} color={C.emerald}/> : <Copy size={10} color="#94A3B8"/>}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Step 1 — actions */}
           {step === 1 && (
-            <div style={{ padding:'22px 28px' }}>
+            <div style={{ background:C.bg, padding:'20px 28px' }}>
               <div style={{ display:'flex', gap:10, marginBottom:10 }}>
-                <button onClick={startCall} style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'13px 0', background: phone ? 'linear-gradient(135deg,#059669,#047857)' : '#E2E8F0', borderRadius:13, color: phone ? '#fff' : C.label, fontSize:15, fontWeight:800, border:'none', cursor: phone ? 'pointer' : 'not-allowed', boxShadow: phone ? '0 4px 14px rgba(5,150,105,0.3)' : 'none' }}>
-                  <PhoneCall size={16}/> Call now
+                <button onClick={startCall} disabled={!phone}
+                  style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:10, padding:'15px 0', background: phone ? 'linear-gradient(135deg,#059669,#047857)' : '#E2E8F0', borderRadius:14, color: phone ? '#fff' : C.label, fontSize:16, fontWeight:800, border:'none', cursor: phone ? 'pointer' : 'not-allowed', boxShadow: phone ? '0 4px 18px rgba(5,150,105,0.35)' : 'none', letterSpacing:'-0.01em' }}>
+                  <PhoneCall size={17}/> Call now
                 </button>
                 {phone && (
-                  <a href={waLink(phone)} target="_blank" rel="noreferrer" style={{ display:'flex', alignItems:'center', gap:8, padding:'13px 16px', background:'#DCFCE7', border:`1px solid #86EFAC`, borderRadius:13, color:'#15803D', fontSize:14, fontWeight:700, textDecoration:'none' }}>
-                    <MessageCircle size={15}/> WhatsApp
+                  <a href={waLink(phone)} target="_blank" rel="noreferrer"
+                    style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'15px 18px', background:'#DCFCE7', border:'1px solid #86EFAC', borderRadius:14, color:'#15803D', fontSize:14, fontWeight:700, textDecoration:'none' }}>
+                    <MessageCircle size={16}/> WA
                   </a>
                 )}
               </div>
-              <button onClick={skip} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'9px 0', background:'transparent', border:'none', color:C.label, fontSize:13, fontWeight:600, cursor:'pointer', width:'100%' }}>
+              <button onClick={skip} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'8px 0', background:'transparent', border:'none', color:C.label, fontSize:13, fontWeight:500, cursor:'pointer', width:'100%' }}>
                 <SkipForward size={13}/> Skip this lead
               </button>
             </div>
           )}
 
-          {/* Step 2 */}
+          {/* Step 2 — timer */}
           {step === 2 && (
-            <div style={{ padding:'32px 28px', textAlign:'center' }}>
-              <div style={{ fontSize:11, fontWeight:700, color:C.emerald, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:10 }}>Call in progress</div>
-              <div style={{ fontSize:48, fontWeight:800, color:C.text, fontVariantNumeric:'tabular-nums' }}>{fmtTime(elapsed)}</div>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, margin:'10px 0 24px' }}>
-                <div style={{ width:8, height:8, borderRadius:'50%', background:C.emerald, animation:'pulse 1.5s infinite' }}/>
-                <span style={{ fontSize:13, color:C.muted }}>Calling {phone}</span>
+            <div style={{ background:'#0F172A', padding:'32px 28px', textAlign:'center' }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:7, marginBottom:12 }}>
+                <div style={{ width:9, height:9, borderRadius:'50%', background:'#34D399', animation:'pulse 1.5s infinite' }}/>
+                <span style={{ fontSize:11, fontWeight:700, color:'#34D399', textTransform:'uppercase', letterSpacing:'0.1em' }}>Live call</span>
               </div>
-              <button onClick={() => setStep(3)} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'13px 28px', background:C.red, border:'none', borderRadius:14, color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer', margin:'0 auto', boxShadow:'0 4px 14px rgba(239,68,68,0.25)' }}>
+              <div style={{ fontSize:52, fontWeight:900, color:'#F8FAFC', fontVariantNumeric:'tabular-nums', letterSpacing:'-0.03em', marginBottom:6 }}>{fmtTime(elapsed)}</div>
+              <div style={{ fontSize:13, color:'#475569', marginBottom:24 }}>Calling {phone}</div>
+              <button onClick={() => setStep(3)}
+                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:9, padding:'13px 28px', background:'linear-gradient(135deg,#EF4444,#DC2626)', border:'none', borderRadius:14, color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer', margin:'0 auto', boxShadow:'0 4px 18px rgba(239,68,68,0.4)' }}>
                 <PhoneOff size={16}/> Call Ended — Log It
               </button>
             </div>
           )}
 
-          {/* Step 3 */}
+          {/* Step 3 — log */}
           {step === 3 && (
-            <div style={{ padding:'22px 28px' }}>
-              <p style={{ fontSize:12, fontWeight:700, color:C.label, textTransform:'uppercase', letterSpacing:'0.06em', margin:'0 0 12px' }}>How did the call go?</p>
+            <div style={{ background:C.bg, padding:'22px 28px' }}>
+              <p style={{ fontSize:12, fontWeight:700, color:C.label, textTransform:'uppercase', letterSpacing:'0.08em', margin:'0 0 12px' }}>How did the call go?</p>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:12 }}>
                 {OUTCOMES.map(o => {
                   const Icon = o.icon
                   const sel  = outcome === o.id
                   return (
                     <button key={o.id} onClick={() => setOutcome(o.id)}
-                      style={{ display:'flex', alignItems:'center', gap:9, padding:'12px 14px', borderRadius:12, border:`2px solid ${sel ? o.color : C.border}`, background: sel ? o.dim : C.bg, color: sel ? o.color : C.muted, fontSize:13, fontWeight:700, cursor:'pointer' }}>
+                      style={{ display:'flex', alignItems:'center', gap:9, padding:'12px 14px', borderRadius:12, border:`2px solid ${sel ? o.color : C.border}`, background: sel ? o.dim : C.panel, color: sel ? o.color : C.muted, fontSize:13, fontWeight:700, cursor:'pointer', transition:'all 0.1s' }}>
                       <Icon size={15}/> {o.label}
                     </button>
                   )
                 })}
               </div>
               <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Quick note (optional)…"
-                style={{ width:'100%', padding:'10px 12px', border:`1px solid ${C.border}`, borderRadius:10, fontSize:13, color:C.text, resize:'none', minHeight:56, outline:'none', boxSizing:'border-box', marginBottom:12, background:C.bg }}/>
+                style={{ width:'100%', padding:'10px 12px', border:`1px solid ${C.border}`, borderRadius:10, fontSize:13, color:C.text, resize:'none', minHeight:54, outline:'none', boxSizing:'border-box', marginBottom:12, background:C.panel }}/>
               <button onClick={logAndNext} disabled={!outcome}
-                style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'13px 0', background:!outcome ? C.borderDim : (outMeta?.color ?? C.blue), border:'none', borderRadius:13, color:!outcome ? C.label : '#fff', fontSize:14, fontWeight:800, cursor:!outcome ? 'not-allowed' : 'pointer' }}>
+                style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'13px 0', background:!outcome ? C.borderDim : (outMeta?.color ?? C.blue), border:'none', borderRadius:13, color:!outcome ? C.label : '#fff', fontSize:14, fontWeight:800, cursor:!outcome ? 'not-allowed' : 'pointer', boxShadow: outcome ? `0 4px 14px ${outMeta?.color ?? C.blue}40` : 'none' }}>
                 Log &amp; Next <ChevronRight size={16}/>
               </button>
               {elapsed > 0 && <p style={{ fontSize:11, color:C.label, textAlign:'center', margin:'8px 0 0' }}>Duration: {fmtTime(elapsed)}</p>}
@@ -567,12 +614,14 @@ export default function PowerDialerPage() {
 
         {/* Right sidebar */}
         <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-          <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:18, overflow:'hidden' }}>
+
+          {/* Today's calls */}
+          <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:18, overflow:'hidden', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
             <div style={{ padding:'12px 16px', borderBottom:`1px solid ${C.border}`, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-              <span style={{ fontSize:13, fontWeight:700, color:C.text }}>Today&apos;s calls</span>
-              <span style={{ fontSize:11, fontWeight:700, color:C.blue, background:C.blueDim, borderRadius:20, padding:'2px 8px' }}>{log.length}</span>
+              <span style={{ fontSize:12, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em' }}>Today&apos;s calls</span>
+              <span style={{ fontSize:12, fontWeight:800, color:C.blue, background:C.blueDim, borderRadius:20, padding:'2px 9px' }}>{log.length}</span>
             </div>
-            <div style={{ maxHeight:220, overflowY:'auto' }}>
+            <div style={{ maxHeight:200, overflowY:'auto' }}>
               {log.length === 0
                 ? <div style={{ padding:'20px 16px', textAlign:'center', fontSize:12, color:C.label }}>No calls yet</div>
                 : log.map((c,i) => {
@@ -591,24 +640,31 @@ export default function PowerDialerPage() {
             </div>
           </div>
 
-          <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:18, overflow:'hidden' }}>
-            <div style={{ padding:'12px 16px', borderBottom:`1px solid ${C.border}`, fontSize:13, fontWeight:700, color:C.text }}>Up next</div>
-            <div style={{ maxHeight:300, overflowY:'auto' }}>
-              {leads.slice(queueIdx+1, queueIdx+8).map((lead,i) => (
-                <div key={lead.id} style={{ padding:'10px 16px', borderBottom:`1px solid ${C.borderDim}`, display:'flex', justifyContent:'space-between', alignItems:'center', opacity: Math.max(0.3, 1-i*0.1) }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:9 }}>
-                    <div style={{ width:28, height:28, borderRadius:8, background:C.blueDim, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:800, color:C.blue, flexShrink:0 }}>{lead.name.firstName.charAt(0)}</div>
-                    <div>
-                      <div style={{ fontSize:12, fontWeight:600, color:C.text }}>{fname(lead)}</div>
-                      <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-                        <span style={{ fontSize:9, fontWeight:700, color:'#64748B', background:'#F1F5F9', border:'1px solid #E2E8F0', padding:'1px 5px', borderRadius:4, fontFamily:'monospace', letterSpacing:'0.04em' }}>{getCsId(lead)}</span>
-                        <span style={{ fontSize:10, color:C.label }}>{lead.city ?? '—'}</span>
+          {/* Up next */}
+          <div style={{ background:C.panel, border:`1px solid ${C.border}`, borderRadius:18, overflow:'hidden', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div style={{ padding:'12px 16px', borderBottom:`1px solid ${C.border}`, fontSize:12, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em' }}>Up next</div>
+            <div style={{ maxHeight:340, overflowY:'auto' }}>
+              {leads.slice(queueIdx+1, queueIdx+9).map((lead,i) => {
+                const hot  = (lead.intentScore ?? 0) >= 75
+                const warm = (lead.intentScore ?? 0) >= 50
+                return (
+                  <div key={lead.id} style={{ padding:'10px 16px', borderBottom:`1px solid ${C.borderDim}`, display:'flex', justifyContent:'space-between', alignItems:'center', opacity: Math.max(0.35, 1-i*0.09) }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:9 }}>
+                      <div style={{ width:30, height:30, borderRadius:9, background: hot ? 'linear-gradient(135deg,#EF4444,#DC2626)' : warm ? 'linear-gradient(135deg,#F59E0B,#D97706)' : C.blueDim, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:800, color: (hot||warm) ? '#fff' : C.blue, flexShrink:0 }}>
+                        {lead.name.firstName.charAt(0)}
+                      </div>
+                      <div>
+                        <div style={{ fontSize:12, fontWeight:700, color:C.text }}>{fname(lead)}</div>
+                        <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                          <span style={{ fontSize:9, fontWeight:700, color:'#64748B', background:'#F1F5F9', border:'1px solid #E2E8F0', padding:'1px 5px', borderRadius:4, fontFamily:'monospace' }}>{getCsId(lead)}</span>
+                          <span style={{ fontSize:10, color:C.label }}>{lead.city ?? '—'}</span>
+                        </div>
                       </div>
                     </div>
+                    <ScorePill score={lead.intentScore}/>
                   </div>
-                  <ScorePill score={lead.intentScore}/>
-                </div>
-              ))}
+                )
+              })}
               {queueIdx+1 >= leads.length && (
                 <div style={{ padding:'14px 16px', textAlign:'center' }}>
                   <Star size={14} color={C.emerald} style={{ display:'block', margin:'0 auto 4px' }}/>
