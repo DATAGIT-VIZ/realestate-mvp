@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth'
 import { gql } from '@/lib/twenty'
 import type { CRMLead } from '@/lib/twenty'
 import { LEAD_FIELDS } from '@/lib/twenty'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -80,8 +81,13 @@ export async function GET(req: NextRequest) {
 
 // ─── POST — send broadcast ────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
-  const { response } = await requireAuth()
+  const { userId, response } = await requireAuth()
   if (response) return response
+
+  // 5 broadcasts per user per hour (each can hit hundreds of contacts)
+  if (!checkRateLimit(`broadcast:${userId}`, 5, 60 * 60_000)) {
+    return NextResponse.json({ data: null, error: 'Broadcast limit reached. Max 5 per hour.' }, { status: 429 })
+  }
 
   if (!process.env.INTERAKT_API_KEY) {
     return NextResponse.json({ data: null, error: 'INTERAKT_API_KEY not configured' }, { status: 503 })

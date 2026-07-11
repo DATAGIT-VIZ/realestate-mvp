@@ -1,10 +1,14 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireAdminSecret } from '@/lib/admin-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const guard = requireAdminSecret(request)
+  if (guard) return guard
+
   try {
     const { userId } = await request.json()
     

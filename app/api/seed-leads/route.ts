@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { gql } from '@/lib/twenty'
 import type { CRMLead } from '@/lib/twenty'
 import { LEAD_FIELDS } from '@/lib/twenty'
+import { requireAdminSecret } from '@/lib/admin-guard'
 
 const MUTATION = /* GraphQL */ `
   mutation CreateLead($data: PersonCreateInput!) {
@@ -67,7 +68,10 @@ const SEEDS = [
   },
 ]
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const guard = requireAdminSecret(req)
+  if (guard) return guard
+
   const results: { name: string; id?: string; error?: string }[] = []
 
   for (const seed of SEEDS) {

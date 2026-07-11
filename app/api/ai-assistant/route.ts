@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { requireAuth } from '@/lib/auth'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -124,6 +126,14 @@ Today: ${new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric
 }
 
 export async function POST(req: NextRequest) {
+  const { userId, response: authResponse } = await requireAuth()
+  if (authResponse) return authResponse
+
+  // 20 AI messages per user per minute
+  if (!checkRateLimit(`ai-advisor:${userId}`, 20, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests. Please wait a moment.' }, { status: 429 })
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
     return NextResponse.json(

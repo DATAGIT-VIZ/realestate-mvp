@@ -14,8 +14,8 @@ export async function requireAuth(): Promise<{
   userId: string | null
   response: NextResponse | null
 }> {
-  // Dev bypass: set DEV_BYPASS_AUTH=true in .env.local to skip login
-  if (process.env.DEV_BYPASS_AUTH === 'true') {
+  // Dev bypass — only active in non-production environments
+  if (process.env.DEV_BYPASS_AUTH === 'true' && process.env.NODE_ENV !== 'production') {
     return { userId: '00000000-0000-0000-0000-000000000001', response: null }
   }
 

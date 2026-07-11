@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getAdminClient } from '@/lib/supabase-admin'
+import { requireAdminSecret } from '@/lib/admin-guard'
 
 const DEMO_SEQUENCES = [
   {
@@ -73,7 +74,10 @@ const DEMO_SEQUENCES = [
   },
 ]
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const guard = requireAdminSecret(req)
+  if (guard) return guard
+
   const sb = getAdminClient()
   if (!sb) return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 })
 

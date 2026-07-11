@@ -3,8 +3,8 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
-  // Dev bypass — skip auth entirely when flag is set
-  if (process.env.DEV_BYPASS_AUTH === 'true') {
+  // Dev bypass — skip auth entirely when flag is set (never active in production)
+  if (process.env.DEV_BYPASS_AUTH === 'true' && process.env.NODE_ENV !== 'production') {
     return NextResponse.next()
   }
 

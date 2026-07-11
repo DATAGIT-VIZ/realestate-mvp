@@ -6,8 +6,9 @@
  * Usage: curl -s -X POST http://localhost:3000/api/seed-demo | jq
  */
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getAdminClient } from '@/lib/supabase-admin'
+import { requireAdminSecret } from '@/lib/admin-guard'
 
 export const runtime = 'nodejs'
 
@@ -74,7 +75,10 @@ const PORTAL_LEADS = [
   ...Array.from({ length: 8  }, (_, i) => ({ source_portal: 'Referral',     ingestion_status: 'created',                                              contact_name: `Lead ${i+65}`, contact_phone: `98500${String(i+1).padStart(5,'0')}`, raw_payload: {}, created_at: daysAgo(i * 6 + 1) })),
 ]
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const guard = requireAdminSecret(req)
+  if (guard) return guard
+
   const sb = getAdminClient()
   if (!sb) return NextResponse.json({ error: 'Supabase service key not configured' }, { status: 503 })
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { requireAuth } from '@/lib/auth'
 import { getAdminClient } from '@/lib/supabase-admin'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -14,8 +15,13 @@ function formatINR(n: number) {
 }
 
 export async function POST(req: NextRequest) {
-  const { response } = await requireAuth()
+  const { userId, response } = await requireAuth()
   if (response) return response
+
+  // 20 requests per user per minute
+  if (!checkRateLimit(`property-matcher:${userId}`, 20, 60_000)) {
+    return NextResponse.json({ data: null, error: 'Too many requests. Please wait a moment.' }, { status: 429 })
+  }
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ data: null, error: 'ANTHROPIC_API_KEY not configured' }, { status: 503 })
