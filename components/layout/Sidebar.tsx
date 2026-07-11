@@ -51,7 +51,6 @@ const NAV_SECTIONS = [
       { name: 'Billing',        href: '/dashboard/settings/billing',  icon: CreditCard, exact: false },
       { name: 'Integrations',   href: '/dashboard/integrations',      icon: Plug,       exact: false },
       { name: 'Help & Support', href: '/dashboard/help',              icon: HelpCircle, exact: false },
-      { name: 'Settings',       href: '/dashboard/settings',          icon: Settings,   exact: true  },
     ],
   },
 ]
