@@ -9,12 +9,11 @@ import { WhatsAppModal } from '@/components/WhatsAppModal'
 import { CallModal } from '@/components/CallModal'
 import { FollowUpWriter } from '@/components/FollowUpWriter'
 import { PropertyMatcher } from '@/components/PropertyMatcher'
-import { EnrollSequenceModal } from '@/components/EnrollSequenceModal'
 import {
   ArrowLeft, Phone, Mail, MapPin, Building2, Clock, Tag,
-  TrendingUp, Calendar, Edit2, Trash2, Loader2, Activity,
-  AlertCircle, Plus, MessageCircle, CheckCircle, XCircle, X,
-  MinusCircle, HelpCircle, ChevronDown, IndianRupee, User, Zap, PhoneOff, Copy,
+  TrendingUp, Calendar, Trash2, Loader2, Activity,
+  AlertCircle, Plus, MessageCircle, CheckCircle, XCircle,
+  MinusCircle, HelpCircle, ChevronDown, User, PhoneOff, Copy,
 } from 'lucide-react'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -177,9 +176,9 @@ function CardHeader({ title, icon: Icon, action }: { title: string; icon: React.
   )
 }
 
-function InfoRow({ label, value, href }: { label: string; value: string | null | undefined; href?: string }) {
+function InfoRow({ label, value, href, last }: { label: string; value: string | null | undefined; href?: string; last?: boolean }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, padding: '10px 0', borderBottom: last ? 'none' : `1px solid ${BORDER}` }}>
       <span style={{ fontSize: 12, color: MUTED, flexShrink: 0 }}>{label}</span>
       {href
         ? <a href={href} style={{ fontSize: 13, color: BLUE, textDecoration: 'none', textAlign: 'right' }}>{value || '—'}</a>
@@ -201,13 +200,7 @@ export default function LeadDetailPage() {
   const [showActivityModal, setShowActivityModal] = useState(false)
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
   const [showCallModal, setShowCallModal]         = useState(false)
-  const [showSequenceModal, setShowSequenceModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [enrollments, setEnrollments] = useState<Array<{
-    id: string; status: string; current_step: number; next_fire_at: string | null; created_at: string;
-    sequences: { id: string; name: string; description: string | null; sequence_steps: Array<{ step_order: number; channel: string }> } | null
-  }>>([])
-  const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [deleting, setDeleting]   = useState(false)
   const [stageChanging, setStageChanging] = useState(false)
   const [showStageMenu, setShowStageMenu] = useState(false)
@@ -231,23 +224,6 @@ export default function LeadDetailPage() {
   }, [leadId])
 
   useEffect(() => { fetchLead() }, [fetchLead])
-
-  const fetchEnrollments = useCallback(async () => {
-    try {
-      const res  = await fetch(`/api/outreach/enrollments?leadId=${leadId}`)
-      const json = await res.json()
-      setEnrollments(json.data?.enrollments ?? [])
-    } catch { /* enrollments are non-critical */ }
-  }, [leadId])
-
-  useEffect(() => { fetchEnrollments() }, [fetchEnrollments])
-
-  const handleCancelEnrollment = async (enrollmentId: string) => {
-    setCancellingId(enrollmentId)
-    await fetch(`/api/outreach/enrollments?id=${enrollmentId}`, { method: 'DELETE' })
-    setCancellingId(null)
-    fetchEnrollments()
-  }
 
   const handleStageChange = async (stage: string) => {
     if (!lead) return
@@ -403,11 +379,6 @@ export default function LeadDetailPage() {
                 <MessageCircle style={{ width: 14, height: 14 }} />WhatsApp
               </button>
             )}
-            <button onClick={() => setShowSequenceModal(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.25)', borderRadius: 10, color: '#7C3AED', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-            >
-              <Zap style={{ width: 14, height: 14 }} />Sequence
-            </button>
             <button onClick={() => setShowActivityModal(true)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: BLUE, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
             >
@@ -429,7 +400,7 @@ export default function LeadDetailPage() {
                 <InfoRow label="Phone" value={phone} href={phone ? `tel:${phone}` : undefined} />
                 <InfoRow label="Email" value={email} href={email ? `mailto:${email}` : undefined} />
                 <InfoRow label="City" value={lead.city} />
-                <InfoRow label="Localities" value={lead.localities?.join(', ') || null} />
+                <InfoRow label="Localities" value={lead.localities?.join(', ') || null} last />
               </div>
             </Card>
 
@@ -440,7 +411,7 @@ export default function LeadDetailPage() {
                 <InfoRow label="Property Type" value={lead.propertyType?.join(', ') || null} />
                 <InfoRow label="Budget" value={formatBudget(lead.budgetMin, lead.budgetMax)} />
                 <InfoRow label="Timeline" value={lead.timeline} />
-                <InfoRow label="Status" value={lead.status} />
+                <InfoRow label="Status" value={lead.status} last />
               </div>
             </Card>
 
@@ -643,6 +614,32 @@ export default function LeadDetailPage() {
               </div>
             </Card>
 
+            {/* AI Property Matcher — high value, above the fold */}
+            <PropertyMatcher lead={{
+              name,
+              city:         lead.city ?? null,
+              budgetMin:    lead.budgetMin ?? null,
+              budgetMax:    lead.budgetMax ?? null,
+              propertyType: lead.propertyType ?? null,
+              timeline:     lead.timeline ?? null,
+              localities:   lead.localities ?? null,
+              phone:        phone || null,
+            }} />
+
+            {/* AI Follow-up Writer */}
+            <FollowUpWriter lead={{
+              leadId,
+              name,
+              city:         lead.city ?? null,
+              budget:       formatBudget(lead.budgetMin, lead.budgetMax) !== '—' ? formatBudget(lead.budgetMin, lead.budgetMax) : null,
+              propertyType: lead.propertyType?.join(', ') ?? null,
+              timeline:     lead.timeline ?? null,
+              score,
+              lastActivity: activities[0]?.type ?? null,
+              status:       lead.status ?? null,
+              phone:        phone || null,
+            }} />
+
             {/* Call Attempt Tracker */}
             <Card>
               <CardHeader title="Call Attempts" icon={PhoneOff}
@@ -697,67 +694,6 @@ export default function LeadDetailPage() {
               </div>
             </Card>
 
-            {/* Active Sequences */}
-            <Card>
-              <CardHeader
-                title="Sequences"
-                icon={Zap}
-                action={
-                  <button onClick={() => setShowSequenceModal(true)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#7C3AED', background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)', borderRadius: 7, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 }}>
-                    <Plus style={{ width: 11, height: 11 }} /> Enroll
-                  </button>
-                }
-              />
-              <div style={{ padding: '8px 0' }}>
-                {enrollments.length === 0 && (
-                  <p style={{ fontSize: 12, color: MUTED, padding: '10px 20px', margin: 0 }}>Not enrolled in any sequence.</p>
-                )}
-                {enrollments.map(en => {
-                  const seq  = en.sequences
-                  const total = seq?.sequence_steps?.length ?? 0
-                  const step  = Math.min(en.current_step + 1, total)
-                  const active = en.status === 'active'
-                  const statusColor = active ? '#059669' : en.status === 'completed' ? '#2563EB' : '#64748B'
-                  return (
-                    <div key={en.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 20px', borderBottom: `1px solid ${BORDER}` }}>
-                      <div style={{ width: 30, height: 30, borderRadius: 8, background: active ? 'rgba(5,150,105,0.08)' : 'rgba(100,116,139,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-                        <Zap style={{ width: 13, height: 13, color: statusColor }} />
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: TEXT, margin: '0 0 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{seq?.name ?? 'Unknown'}</p>
-                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 20, background: active ? 'rgba(5,150,105,0.1)' : 'rgba(100,116,139,0.08)', color: statusColor }}>
-                            {en.status}
-                          </span>
-                          {total > 0 && (
-                            <span style={{ fontSize: 10, color: MUTED }}>Step {step}/{total}</span>
-                          )}
-                        </div>
-                        {/* Mini step progress */}
-                        {total > 0 && (
-                          <div style={{ display: 'flex', gap: 2, marginTop: 5 }}>
-                            {Array.from({ length: total }).map((_, i) => (
-                              <div key={i} style={{ flex: 1, height: 2.5, borderRadius: 2, background: i < step ? '#7C3AED' : BORDER }} />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      {(active || en.status === 'paused') && (
-                        <button
-                          onClick={() => handleCancelEnrollment(en.id)}
-                          disabled={cancellingId === en.id}
-                          title="Cancel enrollment"
-                          style={{ width: 24, height: 24, borderRadius: 6, border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)', color: '#EF4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <X style={{ width: 10, height: 10 }} />
-                        </button>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </Card>
-
             {/* Lead details */}
             <Card>
               <CardHeader title="Lead Details" icon={Tag} />
@@ -771,35 +707,9 @@ export default function LeadDetailPage() {
                   <InfoRow label="Source detail" value={lead.sourceDetail.split(']').slice(1).join(']').trim()} />
                 )}
                 <InfoRow label="Added" value={formatDate(lead.createdAt)} />
-                <InfoRow label="Last updated" value={formatDate(lead.updatedAt)} />
+                <InfoRow label="Last updated" value={formatDate(lead.updatedAt)} last />
               </div>
             </Card>
-
-            {/* AI Property Matcher */}
-            <PropertyMatcher lead={{
-              name,
-              city:         lead.city ?? null,
-              budgetMin:    lead.budgetMin ?? null,
-              budgetMax:    lead.budgetMax ?? null,
-              propertyType: lead.propertyType ?? null,
-              timeline:     lead.timeline ?? null,
-              localities:   lead.localities ?? null,
-              phone:        phone || null,
-            }} />
-
-            {/* AI Follow-up Writer */}
-            <FollowUpWriter lead={{
-              leadId:       leadId,
-              name,
-              city:         lead.city ?? null,
-              budget:       formatBudget(lead.budgetMin, lead.budgetMax) !== '—' ? formatBudget(lead.budgetMin, lead.budgetMax) : null,
-              propertyType: lead.propertyType?.join(', ') ?? null,
-              timeline:     lead.timeline ?? null,
-              score,
-              lastActivity: activities[0]?.type ?? null,
-              status:       lead.status ?? null,
-              phone:        phone || null,
-            }} />
           </div>
         </div>
       </div>
@@ -819,15 +729,6 @@ export default function LeadDetailPage() {
         leadName={lead ? `${lead.name.firstName} ${lead.name.lastName}`.trim() : ''}
         leadPhone={lead?.phones.primaryPhoneNumber ?? ''}
         city={lead?.city ?? ''}
-      />
-
-      <EnrollSequenceModal
-        isOpen={showSequenceModal}
-        onClose={() => setShowSequenceModal(false)}
-        leadId={leadId}
-        leadName={name}
-        leadPhone={phone}
-        onEnrolled={() => { setShowSequenceModal(false); fetchEnrollments() }}
       />
 
       <CallModal
