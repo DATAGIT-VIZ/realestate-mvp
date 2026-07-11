@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { gql } from '@/lib/twenty'
+import { getAdminClient } from '@/lib/supabase-admin'
 import { requireAuth } from '@/lib/auth'
 import { createNotification } from '@/lib/notifications'
 
-// Activity types we support
 export type ActivityType =
   | 'Call Made'
   | 'Call Missed'
@@ -21,95 +20,57 @@ export type ActivityPayload = {
   type: ActivityType
   notes?: string
   outcome?: string
-  duration?: number        // call duration in seconds
-  nextActionDate?: string  // ISO date
+  duration?: number
+  nextActionDate?: string
   metadata?: Record<string, unknown>
 }
 
-// Activities are stored as Notes in Twenty, linked to the Person via NoteTarget
-// Title = activity type, body = JSON payload
+type RouteCtx = { params: Promise<{ id: string }> }
 
 // ─── GET /api/crm/leads/[id]/activities ──────────────────────────────────────
-
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: RouteCtx
 ) {
-  const { response } = await requireAuth()
+  const { userId, response } = await requireAuth()
   if (response) return response
+
+  const sb = getAdminClient()
+  if (!sb) return NextResponse.json({ data: null, error: 'Database not configured' }, { status: 503 })
 
   try {
     const { id } = await params
 
-    const query = /* GraphQL */ `
-      query GetLeadActivities($filter: NoteTargetFilterInput) {
-        noteTargets(
-          filter: $filter
-          orderBy: [{ note: { createdAt: DescNullsLast } }]
-          first: 100
-        ) {
-          edges {
-            node {
-              note {
-                id
-                title
-                body
-                createdAt
-                updatedAt
-              }
-            }
-          }
-          totalCount
-        }
-      }
-    `
-
-    const result = await gql<{
-      noteTargets: {
-        edges: {
-          node: {
-            note: {
-              id: string
-              title: string
-              body: string | null
-              createdAt: string
-              updatedAt: string
-            }
-          }
-        }[]
-        totalCount: number
-      }
-    }>(query, {
-      filter: { personId: { eq: id } },
-    })
-
-    if (result.errors?.length) {
-      return NextResponse.json({ data: null, error: result.errors[0].message }, { status: 400 })
+    // Verify lead belongs to this agent
+    const { data: lead, error: leadErr } = await sb
+      .from('leads').select('id').eq('id', id).eq('agent_id', userId!).single()
+    if (leadErr || !lead) {
+      return NextResponse.json({ data: null, error: 'Lead not found' }, { status: 404 })
     }
 
-    const activities = result.data?.noteTargets.edges
-      .map(e => {
-        const note = e.node.note
-        let parsed: ActivityPayload | null = null
-        try {
-          parsed = JSON.parse(note.body ?? '{}')
-        } catch {
-          parsed = null
-        }
-        return {
-          id: note.id,
-          createdAt: note.createdAt,
-          updatedAt: note.updatedAt,
-          ...(parsed ?? { notes: note.body }),
-          type: note.title as ActivityType, // always use the stored title as source of truth
-        }
-      })
-      .filter(Boolean) ?? []
+    const { data: rows, error } = await sb
+      .from('lead_activities')
+      .select('*')
+      .eq('lead_id', id)
+      .order('created_at', { ascending: false })
+      .limit(100)
 
-    return NextResponse.json({
-      data: { activities, totalCount: result.data?.noteTargets.totalCount ?? 0 },
-      error: null,
+    if (error) return NextResponse.json({ data: null, error: error.message }, { status: 400 })
+
+    const activities = (rows ?? []).map(a => {
+      const d = (a.activity_data as Record<string, unknown>) ?? {}
+      return {
+        id:             a.id,
+        type:           a.activity_type,
+        createdAt:      a.created_at,
+        notes:          (d.notes          as string  | null) ?? null,
+        outcome:        (d.outcome        as string  | null) ?? null,
+        duration:       (d.duration       as number  | null) ?? null,
+        nextActionDate: (d.nextActionDate as string  | null) ?? null,
+      }
     })
+
+    return NextResponse.json({ data: { activities, totalCount: activities.length }, error: null })
   } catch (err) {
     console.error('[GET /api/crm/leads/[id]/activities]', err)
     return NextResponse.json({ data: null, error: 'Failed to fetch activities' }, { status: 500 })
@@ -117,14 +78,15 @@ export async function GET(
 }
 
 // ─── POST /api/crm/leads/[id]/activities ─────────────────────────────────────
-// Logs an activity by creating a Note and linking it to the Person
-
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: RouteCtx
 ) {
-  const { response } = await requireAuth()
+  const { userId, response } = await requireAuth()
   if (response) return response
+
+  const sb = getAdminClient()
+  if (!sb) return NextResponse.json({ data: null, error: 'Database not configured' }, { status: 503 })
 
   try {
     const { id } = await params
@@ -134,86 +96,61 @@ export async function POST(
       return NextResponse.json({ data: null, error: 'activity type is required' }, { status: 400 })
     }
 
-    // Step 1: Create the Note
-    const createNote = /* GraphQL */ `
-      mutation CreateNote($data: NoteCreateInput!) {
-        createNote(data: $data) {
-          id
-          title
-          body
-          createdAt
-        }
-      }
-    `
+    // Verify lead belongs to this agent
+    const { data: lead, error: leadErr } = await sb
+      .from('leads').select('id').eq('id', id).eq('agent_id', userId!).single()
+    if (leadErr || !lead) {
+      return NextResponse.json({ data: null, error: 'Lead not found' }, { status: 404 })
+    }
 
-    const noteResult = await gql<{ createNote: { id: string; title: string; body: string; createdAt: string } }>(
-      createNote,
-      {
-        data: {
-          title: body.type,
-          body: JSON.stringify({
-            notes: body.notes ?? null,
-            outcome: body.outcome ?? null,
-            duration: body.duration ?? null,
-            nextActionDate: body.nextActionDate ?? null,
-            ...(body.metadata ?? {}),
-          }),
+    // Insert into Supabase lead_activities
+    const { data: act, error: actErr } = await sb
+      .from('lead_activities')
+      .insert({
+        lead_id:       id,
+        activity_type: body.type,
+        activity_data: {
+          notes:          body.notes          ?? null,
+          outcome:        body.outcome        ?? null,
+          duration:       body.duration       ?? null,
+          nextActionDate: body.nextActionDate ?? null,
+          ...(body.metadata ?? {}),
         },
-      }
-    )
+      })
+      .select()
+      .single()
 
-    if (noteResult.errors?.length) {
-      return NextResponse.json({ data: null, error: noteResult.errors[0].message }, { status: 400 })
+    if (actErr) {
+      console.error('[POST lead_activities insert]', actErr)
+      return NextResponse.json({ data: null, error: actErr.message }, { status: 400 })
     }
 
-    const noteId = noteResult.data?.createNote.id
-    if (!noteId) {
-      return NextResponse.json({ data: null, error: 'Note creation failed' }, { status: 500 })
-    }
-
-    // Step 2: Link the Note to the Person via NoteTarget
-    const createTarget = /* GraphQL */ `
-      mutation CreateNoteTarget($data: NoteTargetCreateInput!) {
-        createNoteTarget(data: $data) {
-          id
-          noteId
-          personId
-        }
-      }
-    `
-
-    const targetResult = await gql<{ createNoteTarget: { id: string; noteId: string; personId: string } }>(
-      createTarget,
-      { data: { noteId, personId: id } }
-    )
-
-    if (targetResult.errors?.length) {
-      return NextResponse.json({ data: null, error: targetResult.errors[0].message }, { status: 400 })
-    }
-
-    // Schedule a follow-up reminder notification when a follow-up date is set
+    // Schedule follow-up notification if applicable
     if (body.type === 'Follow Up Set' && body.nextActionDate) {
       const scheduledFor = new Date(body.nextActionDate)
-      scheduledFor.setHours(9, 0, 0, 0) // fire at 9 AM on the follow-up day
+      scheduledFor.setHours(9, 0, 0, 0)
       if (scheduledFor > new Date()) {
         createNotification({
           type: 'follow_up_due',
-          title: `Follow-up: lead`,
+          title: 'Follow-up reminder',
           body: body.notes ? `Note: ${body.notes}` : 'Follow-up reminder triggered.',
           leadId: id,
           scheduledFor,
-        }).catch(() => {}) // fire-and-forget
+        }).catch(() => {})
       }
     }
 
-    const { type: activityType, ...restBody } = body
+    const d = (act.activity_data as Record<string, unknown>) ?? {}
     return NextResponse.json(
       {
         data: {
-          id: noteId,
-          type: activityType,
-          createdAt: noteResult.data?.createNote.createdAt,
-          ...restBody,
+          id:             act.id,
+          type:           act.activity_type,
+          createdAt:      act.created_at,
+          notes:          (d.notes          as string | null) ?? null,
+          outcome:        (d.outcome        as string | null) ?? null,
+          duration:       (d.duration       as number | null) ?? null,
+          nextActionDate: (d.nextActionDate as string | null) ?? null,
         },
         error: null,
       },

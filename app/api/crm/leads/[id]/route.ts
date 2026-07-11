@@ -61,14 +61,18 @@ export async function GET(_req: NextRequest, { params }: RouteCtx) {
       .eq('lead_id', id)
       .order('created_at', { ascending: false })
 
-    // Map to the same shape the UI expects from Twenty.com Notes
-    const activities = (actRows ?? []).map(a => ({
-      id:        a.id,
-      title:     a.activity_type,
-      body:      JSON.stringify(a.activity_data ?? {}),
-      createdAt: a.created_at,
-      updatedAt: a.created_at,
-    }))
+    const activities = (actRows ?? []).map(a => {
+      const d = (a.activity_data as Record<string, unknown>) ?? {}
+      return {
+        id:             a.id,
+        type:           a.activity_type,
+        createdAt:      a.created_at,
+        notes:          (d.notes          as string  | null) ?? null,
+        outcome:        (d.outcome        as string  | null) ?? null,
+        duration:       (d.duration       as number  | null) ?? null,
+        nextActionDate: (d.nextActionDate as string  | null) ?? null,
+      }
+    })
 
     return NextResponse.json({ data: { lead: rowToCrm(lead as Record<string, unknown>), activities }, error: null })
   } catch (err) {
