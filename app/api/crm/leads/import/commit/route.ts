@@ -8,7 +8,7 @@ type DedupStrategy = 'skip' | 'overwrite'
 
 // ─── POST /api/crm/leads/import/commit ───────────────────────────────────────
 export async function POST(req: NextRequest) {
-  const { response } = await requireAuth()
+  const { userId, response } = await requireAuth()
   if (response) return response
 
   const sb = getAdminClient()
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
         intent_score: score,
         import_batch_id: batchId,
         failed_contact_attempts: 0,
-        agent_id:     null,
+        agent_id:     userId,
       }
     })
 
