@@ -82,7 +82,7 @@ ${portal.steps.map((s, i) => `  ${i + 1}. ${s}`).join('\n')}
   const emailBody = encodeURIComponent(
 `Hi,
 
-I am using RealEdge CRM to manage my property enquiries. I'd like to enable automatic lead forwarding from ${portal.name} to my CRM.
+I am using Vya Pulse CRM to manage my property enquiries. I'd like to enable automatic lead forwarding from ${portal.name} to my CRM.
 
 Please configure PUSH integration with the following webhook details:
 
@@ -99,7 +99,7 @@ Thank you!`
   const mailtoLink = `mailto:${portal.managerEmail ?? ''}?subject=${emailSubject}&body=${emailBody}`
 
   const waMessage = encodeURIComponent(
-`Hi, I'm using RealEdge CRM and would like to enable automatic lead forwarding from ${portal.name}.
+`Hi, I'm using Vya Pulse CRM and would like to enable automatic lead forwarding from ${portal.name}.
 
 Please configure a PUSH integration to:
 

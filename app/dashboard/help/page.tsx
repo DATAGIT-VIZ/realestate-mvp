@@ -25,7 +25,7 @@ const FAQS = [
     items: [
       {
         q: 'What is a CS ID?',
-        a: 'CS ID (Customer System ID) is a unique identifier assigned to every lead the moment they enter RealEdge — whether added manually, imported via CSV, or auto-captured from portals like MagicBricks or 99acres. Format: CS00001, CS00042, etc. Use it to search for a lead instantly across any screen.',
+        a: 'CS ID (Customer System ID) is a unique identifier assigned to every lead the moment they enter Vya Pulse — whether added manually, imported via CSV, or auto-captured from portals like MagicBricks or 99acres. Format: CS00001, CS00042, etc. Use it to search for a lead instantly across any screen.',
       },
       {
         q: 'How do I add a lead manually?',
@@ -155,7 +155,7 @@ export default function HelpPage() {
             <h1 style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: 0 }}>Help & Support</h1>
           </div>
           <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', margin: '0 0 20px', lineHeight: 1.6 }}>
-            Everything you need to get the most out of RealEdge CRM.
+            Everything you need to get the most out of Vya Pulse CRM.
           </p>
           {/* Search */}
           <div style={{ position: 'relative' }}>
@@ -222,7 +222,7 @@ export default function HelpPage() {
           <p style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: '0 0 4px' }}>Still need help?</p>
           <p style={{ fontSize: 12, color: C.muted, margin: '0 0 16px', lineHeight: 1.6 }}>Reach out — we typically respond within a few hours.</p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <a href="mailto:support@realedge.in"
+            <a href="mailto:support@vyapulse.in"
               style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 16px', background: C.blue, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
               <Mail style={{ width: 13, height: 13 }} /> Email support
             </a>

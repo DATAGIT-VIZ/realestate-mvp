@@ -29,20 +29,20 @@ type Template = {
 
 const TEMPLATES: Template[] = [
   {
-    name: 'realedge_welcome',
+    name: 'vyapulse_welcome',
     label: 'Welcome',
     description: 'First message after lead comes in',
-    body: `Hi {{name}}! 👋\n\nThank you for your interest in properties. I'm {{agent_name}} from RealEdge.\n\nI'd love to understand your requirements better and help you find your perfect property. Could we schedule a quick 10-minute call?`,
+    body: `Hi {{name}}! 👋\n\nThank you for your interest in properties. I'm {{agent_name}} from Vya Pulse.\n\nI'd love to understand your requirements better and help you find your perfect property. Could we schedule a quick 10-minute call?`,
     variables: [
       { key: 'name',       label: 'Lead name',  placeholder: 'Rahul', prefill: '' },
       { key: 'agent_name', label: 'Your name',  placeholder: 'Priya', prefill: '' },
     ],
   },
   {
-    name: 'realedge_followup_day1',
+    name: 'vyapulse_followup_day1',
     label: 'Follow-up Day 1',
     description: 'Next-day follow-up',
-    body: `Hi {{name}}, this is {{agent_name}} again from RealEdge.\n\nJust wanted to follow up on your property search. Have you had a chance to think about the budget and localities?\n\nI have some great options in {{city}} that match your requirements. Shall I share them?`,
+    body: `Hi {{name}}, this is {{agent_name}} again from Vya Pulse.\n\nJust wanted to follow up on your property search. Have you had a chance to think about the budget and localities?\n\nI have some great options in {{city}} that match your requirements. Shall I share them?`,
     variables: [
       { key: 'name',       label: 'Lead name', placeholder: 'Rahul', prefill: '' },
       { key: 'agent_name', label: 'Your name', placeholder: 'Priya', prefill: '' },
@@ -50,7 +50,7 @@ const TEMPLATES: Template[] = [
     ],
   },
   {
-    name: 'realedge_followup_day3',
+    name: 'vyapulse_followup_day3',
     label: 'Follow-up Day 3',
     description: 'Day 3 follow-up nudge',
     body: `Hi {{name}}! 🏠\n\nI've shortlisted {{count}} properties in {{city}} that are a great match for your budget of {{budget}}.\n\nWould you like me to share the details? A site visit can be arranged at your convenience.`,
@@ -62,7 +62,7 @@ const TEMPLATES: Template[] = [
     ],
   },
   {
-    name: 'realedge_property_recommendation',
+    name: 'vyapulse_property_recommendation',
     label: 'Property Recommendation',
     description: 'Share a specific property',
     body: `Hi {{name}}! I found a property that matches exactly what you're looking for:\n\n🏢 *{{property_name}}*\n📍 {{locality}}, {{city}}\n💰 ₹{{price}}\n🛏 {{bhk}}\n\nInterested in a site visit? I can arrange one this week!`,
@@ -76,7 +76,7 @@ const TEMPLATES: Template[] = [
     ],
   },
   {
-    name: 'realedge_site_visit_reminder',
+    name: 'vyapulse_site_visit_reminder',
     label: 'Site Visit Reminder',
     description: 'Reminder before a scheduled visit',
     body: `Hi {{name}}! 📅\n\nThis is a reminder about your site visit scheduled for *{{date}}* at *{{time}}*.\n\n📍 {{property_name}}, {{locality}}\n\nPlease confirm your attendance. See you there! 🙏`,

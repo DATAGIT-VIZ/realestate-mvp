@@ -172,7 +172,7 @@ export default function BillingPage() {
       const rzp = new window.Razorpay({
         key:             keyId,
         subscription_id: subscriptionId,
-        name:            'RealEdge CRM',
+        name:            'Vya Pulse CRM',
         description:     `${planLabel} Plan — Monthly`,
         image:           '/favicon.ico',
         currency:        'INR',
@@ -234,7 +234,7 @@ export default function BillingPage() {
         <div style={{ padding: '28px 0 28px', borderBottom: `1px solid ${C.border}`, marginBottom: 32, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: 0 }}>Billing & Plan</h1>
-            <p style={{ fontSize: 13, color: C.muted, margin: '4px 0 0' }}>Manage your RealEdge subscription</p>
+            <p style={{ fontSize: 13, color: C.muted, margin: '4px 0 0' }}>Manage your Vya Pulse subscription</p>
           </div>
           <button onClick={() => { setRefreshing(true); fetchStatus() }}
             style={{ width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, cursor: 'pointer' }}>

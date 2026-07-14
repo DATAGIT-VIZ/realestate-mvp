@@ -57,17 +57,17 @@ const NAV_SECTIONS = [
 
 function Logo({ collapsed }: { collapsed: boolean }) {
   return (
-    <div className={cn('flex items-center gap-3 px-4 h-14 border-b border-slate-100', collapsed && 'justify-center px-0')}>
+    <Link href="/dashboard" className={cn('flex items-center gap-3 px-4 h-14 border-b border-slate-100 hover:bg-slate-50 transition-colors', collapsed && 'justify-center px-0')}>
       <div className="relative shrink-0 flex items-center justify-center w-8 h-8 rounded-[9px]" style={{ background: 'linear-gradient(135deg, #7600bc 0%, #b100cd 100%)' }}>
         <span className="text-[11px] font-bold text-white tracking-tight">VP</span>
       </div>
       {!collapsed && (
         <div className="flex flex-col leading-none">
-          <span className="text-[14px] font-semibold tracking-[-0.02em]" style={{ color: '#4c00b0' }}>Vyapulse</span>
+          <span className="text-[14px] font-semibold tracking-[-0.02em]" style={{ color: '#4c00b0' }}>Vya Pulse</span>
           <span className="text-[10px] text-slate-400 font-medium">CRM</span>
         </div>
       )}
-    </div>
+    </Link>
   )
 }
 
@@ -175,7 +175,11 @@ export function Sidebar({
     return () => window.removeEventListener('plan-changed', sync)
   }, [])
 
-  useEffect(() => { setUserEmail('demo@realedge.in') }, [])
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserEmail(session?.user?.email ?? null)
+    })
+  }, [])
 
   const toggleCollapsed = () => {
     const next = !collapsed

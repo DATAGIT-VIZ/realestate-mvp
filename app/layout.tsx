@@ -9,7 +9,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'RealEdge CRM — Close more. Stress less.',
+  title: 'Vya Pulse CRM — Close more. Stress less.',
   description:
     'AI-powered real estate CRM for Indian agents. Capture leads from MagicBricks, 99acres, Housing.com. Auto follow-up. Close more deals.',
 }

@@ -74,11 +74,11 @@ function LoginForm() {
 
         {/* Brand */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <span style={{ fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px' }}>RE</span>
+          <div style={{ width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #7600bc 0%, #b100cd 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <span style={{ fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px' }}>VP</span>
           </div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: '0 0 6px' }}>Welcome back</h1>
-          <p style={{ fontSize: 14, color: C.muted, margin: 0 }}>Sign in to RealEdge CRM</p>
+          <p style={{ fontSize: 14, color: C.muted, margin: 0 }}>Sign in to Vya Pulse CRM</p>
         </div>
 
         {/* Card */}

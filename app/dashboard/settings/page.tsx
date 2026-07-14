@@ -298,7 +298,7 @@ function IntegrationsSection() {
   return (
     <div>
       <div style={{ fontSize: 12, color: MUTED, marginBottom: 16 }}>
-        Connect your property portals to auto-import leads directly into RealEdge. Each portal sends leads via webhook — no manual copy-paste.
+        Connect your property portals to auto-import leads directly into Vya Pulse. Each portal sends leads via webhook — no manual copy-paste.
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         {portals.map(p => (
@@ -319,7 +319,7 @@ function IntegrationsSection() {
       <div style={{ marginTop: 16, padding: '12px 14px', background: BLUE_D, border: `1px solid rgba(160,0,200,0.2)`, borderRadius: 10 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: BLUE, marginBottom: 2 }}>Your Webhook URL</div>
         <div style={{ fontSize: 11, color: MUTED, fontFamily: 'monospace', background: PANEL, padding: '6px 10px', borderRadius: 6, marginTop: 4, wordBreak: 'break-all' as const }}>
-          https://your-app.realedge.in/api/webhook/leads?token=••••••••
+          https://your-app.vyapulse.in/api/webhook/leads?token=••••••••
         </div>
         <div style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>Paste this URL in each portal's lead form CRM integration settings.</div>
       </div>
@@ -384,7 +384,7 @@ function BrandingSection() {
   return (
     <div>
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 12, color: MUTED, marginBottom: 14 }}>Your branding appears on printed reports and client-facing documents generated in RealEdge.</div>
+        <div style={{ fontSize: 12, color: MUTED, marginBottom: 14 }}>Your branding appears on printed reports and client-facing documents generated in Vya Pulse.</div>
         <Row label="Company Logo" description="Shown in the header of all printed reports">
           <button disabled style={{ fontSize: 12, fontWeight: 600, color: BLUE, background: BLUE_D, border: `1px solid ${BLUE}20`, borderRadius: 8, padding: '6px 14px', cursor: 'not-allowed' }}>Upload logo</button>
         </Row>

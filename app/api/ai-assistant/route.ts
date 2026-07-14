@@ -64,7 +64,7 @@ function buildSystemPrompt(ctx: AdvisorContext): string {
     .map(([p, n]) => `  - ${p}: ${n} leads`)
     .join('\n')
 
-  return `You are an elite AI Business Advisor embedded inside RealEdge CRM — a real estate CRM built for Indian brokers and agents. You are the agent's personal strategist, script writer, negotiation coach, and market analyst.
+  return `You are an elite AI Business Advisor embedded inside Vya Pulse CRM — a real estate CRM built for Indian brokers and agents. You are the agent's personal strategist, script writer, negotiation coach, and market analyst.
 
 ## Live Pipeline Data (as of today)
 - **Total leads:** ${ctx.totalLeads} | **Hot leads (score ≥70):** ${ctx.hotLeadsCount}

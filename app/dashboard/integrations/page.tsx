@@ -53,7 +53,7 @@ export default function IntegrationsPage() {
           <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0 }}>Integrations</h1>
         </div>
         <p style={{ fontSize: 13, color: C.muted, margin: '0 0 0 52px', lineHeight: 1.6 }}>
-          Connect RealEdge with your portals. Leads flow in automatically — no manual copy-paste.
+          Connect Vya Pulse with your portals. Leads flow in automatically — no manual copy-paste.
         </p>
       </div>
 
@@ -117,7 +117,7 @@ export default function IntegrationsPage() {
       <div style={{ marginTop: 28, background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '16px 20px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
         <AlertCircle size={16} color={C.blue} style={{ flexShrink: 0, marginTop: 1 }} />
         <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6 }}>
-          <strong style={{ color: C.text }}>How it works:</strong> Each integration gives you a unique webhook URL. Send it to your portal's account manager — they configure it on their end. Once done, every new enquiry lands directly in RealEdge, auto-scored and ready to call.
+          <strong style={{ color: C.text }}>How it works:</strong> Each integration gives you a unique webhook URL. Send it to your portal's account manager — they configure it on their end. Once done, every new enquiry lands directly in Vya Pulse, auto-scored and ready to call.
         </div>
       </div>
 

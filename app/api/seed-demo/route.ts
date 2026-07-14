@@ -20,11 +20,11 @@ const future  = (n: number) => new Date(Date.now() + n * 86400000).toISOString()
 
 // ─── Seed data ─────────────────────────────────────────────────────────────
 const AGENTS = [
-  { name: 'Rahul Sharma',  email: 'rahul@realedge.in',  phone: '9876543201', role: 'senior_agent', specialty_cities: ['Mumbai', 'Pune'],       specialty_types: ['3BHK', 'Villa'],  monthly_target: 8  },
-  { name: 'Priya Patel',   email: 'priya@realedge.in',  phone: '9876543202', role: 'agent',        specialty_cities: ['Bangalore'],             specialty_types: ['2BHK', '3BHK'],   monthly_target: 5  },
-  { name: 'Ankit Verma',   email: 'ankit@realedge.in',  phone: '9876543203', role: 'agent',        specialty_cities: ['Pune', 'Hyderabad'],     specialty_types: ['1BHK', '2BHK'],   monthly_target: 5  },
-  { name: 'Neha Gupta',    email: 'neha@realedge.in',   phone: '9876543204', role: 'agent',        specialty_cities: ['Hyderabad', 'Chennai'],  specialty_types: ['Plot', 'Villa'],   monthly_target: 4  },
-  { name: 'Vikram Singh',  email: 'vikram@realedge.in', phone: '9876543205', role: 'manager',      specialty_cities: ['Delhi', 'Gurgaon'],      specialty_types: ['4BHK+', 'Villa'], monthly_target: 10 },
+  { name: 'Rahul Sharma',  email: 'rahul@vyapulse.in',  phone: '9876543201', role: 'senior_agent', specialty_cities: ['Mumbai', 'Pune'],       specialty_types: ['3BHK', 'Villa'],  monthly_target: 8  },
+  { name: 'Priya Patel',   email: 'priya@vyapulse.in',  phone: '9876543202', role: 'agent',        specialty_cities: ['Bangalore'],             specialty_types: ['2BHK', '3BHK'],   monthly_target: 5  },
+  { name: 'Ankit Verma',   email: 'ankit@vyapulse.in',  phone: '9876543203', role: 'agent',        specialty_cities: ['Pune', 'Hyderabad'],     specialty_types: ['1BHK', '2BHK'],   monthly_target: 5  },
+  { name: 'Neha Gupta',    email: 'neha@vyapulse.in',   phone: '9876543204', role: 'agent',        specialty_cities: ['Hyderabad', 'Chennai'],  specialty_types: ['Plot', 'Villa'],   monthly_target: 4  },
+  { name: 'Vikram Singh',  email: 'vikram@vyapulse.in', phone: '9876543205', role: 'manager',      specialty_cities: ['Delhi', 'Gurgaon'],      specialty_types: ['4BHK+', 'Villa'], monthly_target: 10 },
 ]
 
 const DEALS = [

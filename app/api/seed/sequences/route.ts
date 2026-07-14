@@ -10,7 +10,7 @@ const DEMO_SEQUENCES = [
     steps: [
       {
         step_order: 0, delay_days: 0, channel: 'whatsapp',
-        message_body: `Hi {{name}}! Thank you for your interest in properties in {{city}}. I'm your dedicated advisor from RealEdge. Could you share your preferred configuration (2BHK/3BHK) and exact budget? I'll shortlist the best available options for you right away.`,
+        message_body: `Hi {{name}}! Thank you for your interest in properties in {{city}}. I'm your dedicated advisor from Vya Pulse. Could you share your preferred configuration (2BHK/3BHK) and exact budget? I'll shortlist the best available options for you right away.`,
       },
       {
         step_order: 1, delay_days: 0, channel: 'call_reminder',
