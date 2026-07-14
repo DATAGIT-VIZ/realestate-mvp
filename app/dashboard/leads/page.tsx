@@ -16,17 +16,43 @@ import {
 } from 'lucide-react'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
-const BG      = '#F8FAFC'
+const BG      = '#F7F8FA'
 const PANEL   = '#FFFFFF'
-const BORDER  = '#E2E8F0'
-const AMBER   = '#be2ed6'   // semantic: hot/warm lead status only
-const RED_HOT = '#a000c8'   // semantic: hot lead dot
-const TEXT    = '#0F172A'
-const MUTED   = '#64748B'
-const PRIMARY = '#a000c8'                                                    // Vyapulse purple
+const BORDER  = '#ECEEF2'
+const TEXT    = '#111827'
+const MUTED   = '#6B7280'
+const LABEL   = '#9CA3AF'
+const PRIMARY = '#a000c8'
 const PRIMARY_DIM = 'rgba(160,0,200,0.08)'
-const PRIMARY_BORDER = 'rgba(160,0,200,0.25)'
+const PRIMARY_BORDER = 'rgba(160,0,200,0.2)'
 const PRIMARY_GRAD = 'linear-gradient(135deg, #7600bc 0%, #b100cd 100%)'
+
+// Warm avatar palette — cycles deterministically by name
+const AVATAR_PALETTE = [
+  { bg: '#FFEDE8', fg: '#C2410C' },
+  { bg: '#FEF3C7', fg: '#B45309' },
+  { bg: '#DCFCE7', fg: '#15803D' },
+  { bg: '#DBEAFE', fg: '#1D4ED8' },
+  { bg: '#EDE9FE', fg: '#6D28D9' },
+  { bg: '#FCE7F3', fg: '#BE185D' },
+  { bg: '#CFFAFE', fg: '#0E7490' },
+  { bg: '#FFF7ED', fg: '#C2410C' },
+]
+function avatarColor(name: string) {
+  let h = 0
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) % AVATAR_PALETTE.length
+  return AVATAR_PALETTE[Math.abs(h)]
+}
+
+// Status pill config
+const STATUS_PILL: Record<string, { bg: string; color: string; dot: string }> = {
+  New:          { bg: '#EFF6FF', color: '#2563EB', dot: '#93C5FD' },
+  Cold:         { bg: '#F0F9FF', color: '#0369A1', dot: '#7DD3FC' },
+  Warm:         { bg: '#FFF7ED', color: '#C2410C', dot: '#FCA15A' },
+  Hot:          { bg: '#FDF2F8', color: '#A21CAF', dot: '#E879F9' },
+  Closed:       { bg: '#F0FDF4', color: '#15803D', dot: '#86EFAC' },
+  Disqualified: { bg: '#F9FAFB', color: '#6B7280', dot: '#D1D5DB' },
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 type ScoreFilter = 'all' | 'hot' | 'warm' | 'cold'
@@ -182,183 +208,143 @@ export default function LeadsPage() {
     setTimeout(() => setImportStatus(null), 6000)
   }
 
-  // Loading state (first load only)
-  if (loading && leads.length === 0) {
-    return (
-      <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Loader2 style={{ width: 28, height: 28, color: AMBER, animation: 'spin 1s linear infinite' }} />
-      </div>
-    )
-  }
-
   return (
     <div style={{ minHeight: '100vh', background: BG }}>
-      {/* Import progress toast */}
+      {/* Import toast */}
       {importStatus && (
-        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 200, background: '#0F172A', color: '#fff', borderRadius: 12, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.25)', minWidth: 280 }}>
+        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 200, background: '#111827', color: '#fff', borderRadius: 14, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.2)', minWidth: 280 }}>
           {importStatus.done < importStatus.total
-            ? <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite', color: '#be2ed6', flexShrink: 0 }} />
-            : <span style={{ fontSize: 16 }}>✓</span>}
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>{importStatus.label}</div>
-            {importStatus.done < importStatus.total && (
-              <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>Importing {importStatus.total.toLocaleString()} leads…</div>
-            )}
-          </div>
+            ? <Loader2 style={{ width: 15, height: 15, animation: 'spin 1s linear infinite', color: '#E879F9', flexShrink: 0 }} />
+            : <span style={{ fontSize: 15 }}>✓</span>}
+          <span style={{ fontSize: 13, fontWeight: 500 }}>{importStatus.label}</span>
         </div>
       )}
 
-      <div className="max-w-[1280px] mx-auto px-4 pb-24 lg:px-6">
+      <div className="max-w-[1320px] mx-auto px-4 pb-24 lg:px-8">
 
-        {/* ── Header ── */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 0 18px', borderBottom: `1px solid ${BORDER}`, marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
-          <div className="hidden lg:block">
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: TEXT, margin: 0, letterSpacing: '-0.3px' }}>Leads</h1>
-            <p style={{ fontSize: 13, color: MUTED, margin: '4px 0 0' }}>
-              {loading ? 'Refreshing…' : `${totalCount} total · sorted by intent score`}
-            </p>
+        {/* ── Page heading ── */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 0 20px', flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 700, color: TEXT, margin: 0, letterSpacing: '-0.4px' }}>
+              {loading && leads.length === 0 ? 'Leads' : `${totalCount.toLocaleString()} Leads`}
+            </h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <button onClick={() => setShowEmailModal(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 10, color: TEXT, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
-            >
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 8, color: MUTED, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
               <MailPlus style={{ width: 14, height: 14 }} />
               <span className="hidden sm:inline">Parse Email</span>
             </button>
             <button onClick={() => setShowCsvModal(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 10, color: TEXT, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
-            >
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 8, color: MUTED, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
               <UploadCloud style={{ width: 14, height: 14 }} />
               <span className="hidden sm:inline">Import CSV</span>
             </button>
             {unassignedCount > 0 && (
               <button onClick={() => setShowDistributeModal(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, borderRadius: 10, color: PRIMARY, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
-              >
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, borderRadius: 8, color: PRIMARY, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                 <Shuffle style={{ width: 14, height: 14 }} />
                 <span className="hidden sm:inline">Distribute</span>
-                <span style={{ background: PRIMARY, color: '#fff', fontSize: 10, fontWeight: 800, padding: '1px 6px', borderRadius: 99, marginLeft: 2 }}>{unassignedCount.toLocaleString()}</span>
+                <span style={{ background: PRIMARY, color: '#fff', fontSize: 10, fontWeight: 800, padding: '1px 6px', borderRadius: 99, marginLeft: 2 }}>{unassignedCount}</span>
               </button>
             )}
             <button onClick={() => setShowAddModal(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: PRIMARY_GRAD, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 8px rgba(160,0,200,0.3)' }}
-            >
-              <Plus style={{ width: 14, height: 14 }} />New Lead
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: PRIMARY_GRAD, border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              <Plus style={{ width: 14, height: 14 }} />Create lead
             </button>
           </div>
         </div>
 
-        {/* ── Toolbar ── */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, position: 'relative' }}>
-            <Search style={{ width: 14, height: 14, color: MUTED, position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
-            {loading && search && (
-              <Loader2 style={{ width: 12, height: 12, color: MUTED, position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', animation: 'spin 1s linear infinite' }} />
-            )}
-            <input
-              type="text" placeholder="Search name, phone, or email…"
-              value={search} onChange={e => handleSearchChange(e.target.value)}
-              style={{ width: '100%', paddingLeft: 36, paddingRight: 36, paddingTop: 9, paddingBottom: 9, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 10, color: TEXT, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
-            />
-          </div>
-          <div style={{ position: 'relative' }}>
+        {/* ── Filter bar ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+          {/* Status filter chips */}
+          {(() => {
+            const STATUS_TABS = [
+              { id: 'all',          label: 'All leads' },
+              { id: 'New',          label: 'New' },
+              { id: 'Cold',         label: 'Cold' },
+              { id: 'Warm',         label: 'Warm' },
+              { id: 'Hot',          label: 'Hot 🔥' },
+              { id: 'Closed',       label: 'Closed' },
+              { id: 'Disqualified', label: 'Disqualified' },
+            ]
+            const counts: Record<string, number> = { all: leads.length }
+            for (const l of leads) { const s = l.status ?? 'New'; counts[s] = (counts[s] ?? 0) + 1 }
+            return STATUS_TABS.map(tab => {
+              const active = statusFilter === tab.id
+              return (
+                <button key={tab.id} onClick={() => handleStatusFilter(tab.id)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 13px', borderRadius: 99, whiteSpace: 'nowrap', flexShrink: 0, border: `1px solid ${active ? PRIMARY_BORDER : BORDER}`, background: active ? PRIMARY_DIM : PANEL, color: active ? PRIMARY : MUTED, fontSize: 13, fontWeight: active ? 600 : 400, cursor: 'pointer', transition: 'all 0.12s' }}>
+                  {tab.label}
+                  {tab.id !== 'all' && counts[tab.id] ? (
+                    <span style={{ fontSize: 11, fontWeight: 600, color: active ? PRIMARY : LABEL }}>{counts[tab.id]}</span>
+                  ) : null}
+                </button>
+              )
+            })
+          })()}
+
+          {/* Score filter */}
+          <div style={{ position: 'relative', marginLeft: 4 }}>
             <button onClick={() => setShowFilterMenu(v => !v)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', background: PANEL, border: `1px solid ${scoreFilter !== 'all' ? PRIMARY_BORDER : BORDER}`, borderRadius: 10, color: scoreFilter !== 'all' ? PRIMARY : TEXT, fontSize: 13, cursor: 'pointer', minWidth: 150 }}
-            >
-              <Filter style={{ width: 13, height: 13 }} />
-              <span style={{ flex: 1, textAlign: 'left' }}>{FILTER_LABELS[scoreFilter]}</span>
-              <ChevronDown style={{ width: 12, height: 12 }} />
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 13px', background: scoreFilter !== 'all' ? PRIMARY_DIM : PANEL, border: `1px solid ${scoreFilter !== 'all' ? PRIMARY_BORDER : BORDER}`, borderRadius: 99, color: scoreFilter !== 'all' ? PRIMARY : MUTED, fontSize: 13, cursor: 'pointer' }}>
+              <Filter style={{ width: 12, height: 12 }} />
+              {scoreFilter !== 'all' ? FILTER_LABELS[scoreFilter] : 'Intent score'}
+              <ChevronDown style={{ width: 11, height: 11 }} />
             </button>
             {showFilterMenu && (
-              <div style={{ position: 'absolute', top: '100%', marginTop: 4, right: 0, minWidth: '100%', background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 10, zIndex: 20, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}>
+              <div style={{ position: 'absolute', top: '110%', left: 0, minWidth: 180, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 12, zIndex: 30, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}>
                 {(Object.keys(FILTER_LABELS) as ScoreFilter[]).map(s => (
                   <button key={s} onClick={() => handleScoreFilter(s)}
-                    style={{ display: 'block', width: '100%', padding: '9px 14px', background: scoreFilter === s ? PRIMARY_DIM : 'transparent', color: scoreFilter === s ? PRIMARY : TEXT, fontSize: 13, border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                  >
+                    style={{ display: 'block', width: '100%', padding: '9px 14px', background: scoreFilter === s ? PRIMARY_DIM : 'transparent', color: scoreFilter === s ? PRIMARY : TEXT, fontSize: 13, border: 'none', cursor: 'pointer', textAlign: 'left' }}>
                     {FILTER_LABELS[s]}
                   </button>
                 ))}
               </div>
             )}
           </div>
-          <div style={{ display: 'flex', background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 3, gap: 2 }}>
-            {([['list', List], ['board', LayoutGrid]] as const).map(([v, Icon]) => (
-              <button key={v} onClick={() => setViewMode(v)}
-                style={{ width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: 'none', cursor: 'pointer', background: viewMode === v ? PRIMARY_GRAD : 'transparent', color: viewMode === v ? '#fff' : MUTED }}
-              >
-                <Icon style={{ width: 14, height: 14 }} />
-              </button>
-            ))}
+
+          {/* Right side controls */}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Search */}
+            <div style={{ position: 'relative' }}>
+              <Search style={{ width: 13, height: 13, color: LABEL, position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)' }} />
+              {loading && search && <Loader2 style={{ width: 11, height: 11, color: LABEL, position: 'absolute', right: 11, top: '50%', transform: 'translateY(-50%)', animation: 'spin 1s linear infinite' }} />}
+              <input type="text" placeholder="Search…" value={search} onChange={e => handleSearchChange(e.target.value)}
+                style={{ paddingLeft: 30, paddingRight: 30, paddingTop: 7, paddingBottom: 7, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 8, color: TEXT, fontSize: 13, outline: 'none', width: 200 }} />
+            </div>
+            {/* View toggle */}
+            <div style={{ display: 'flex', background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 8, padding: 2, gap: 1 }}>
+              {([['list', List], ['board', LayoutGrid]] as const).map(([v, Icon]) => (
+                <button key={v} onClick={() => setViewMode(v)}
+                  style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: 'none', cursor: 'pointer', background: viewMode === v ? PRIMARY_GRAD : 'transparent', color: viewMode === v ? '#fff' : LABEL }}>
+                  <Icon style={{ width: 13, height: 13 }} />
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* ── Status tabs ── */}
-        {(() => {
-          const STATUS_TABS = [
-            { id: 'all',          label: 'All',          color: '#64748B' },
-            { id: 'New',          label: 'New',          color: '#64748B' },
-            { id: 'Cold',         label: 'Cold',         color: '#2563EB' },
-            { id: 'Warm',         label: 'Warm',         color: '#be2ed6' },
-            { id: 'Hot',          label: 'Hot 🔥',       color: '#a000c8' },
-            { id: 'Closed',       label: 'Closed',       color: '#059669' },
-            { id: 'Disqualified', label: 'Disqualified', color: '#94A3B8' },
-          ]
-          const counts: Record<string, number> = { all: leads.length }
-          for (const l of leads) {
-            const s = l.status ?? 'New'
-            counts[s] = (counts[s] ?? 0) + 1
-          }
-          return (
-            <div style={{ display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto', paddingBottom: 2 }}>
-              {STATUS_TABS.map(tab => {
-                const active = statusFilter === tab.id
-                const count  = counts[tab.id] ?? 0
-                return (
-                  <button key={tab.id} onClick={() => handleStatusFilter(tab.id)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      padding: '7px 14px', borderRadius: 9, whiteSpace: 'nowrap', flexShrink: 0,
-                      border: `1.5px solid ${active ? tab.color : BORDER}`,
-                      background: active ? `${tab.color}10` : PANEL,
-                      color: active ? tab.color : MUTED,
-                      fontSize: 13, fontWeight: active ? 700 : 500, cursor: 'pointer',
-                      transition: 'all 0.15s',
-                    }}>
-                    {tab.label}
-                    {tab.id !== 'all' && (
-                      <span style={{ fontSize: 11, fontWeight: 700, background: active ? `${tab.color}20` : '#F1F5F9', color: active ? tab.color : '#94A3B8', padding: '1px 7px', borderRadius: 99 }}>
-                        {count}
-                      </span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          )
-        })()}
-
         {/* ── De-dup banner ── */}
         {dupPhones.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 14px', background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.25)', borderRadius: 10, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 16px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10, marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Copy style={{ width: 13, height: 13, color: '#8a00c2', flexShrink: 0 }} />
-              <span style={{ fontSize: 13, color: '#7600bc', fontWeight: 600 }}>
-                {dupPhones.length} duplicate phone number{dupPhones.length > 1 ? 's' : ''} detected
+              <Copy style={{ width: 13, height: 13, color: '#B45309', flexShrink: 0 }} />
+              <span style={{ fontSize: 13, color: '#92400E', fontWeight: 500 }}>
+                {dupPhones.length} duplicate phone{dupPhones.length > 1 ? 's' : ''} detected — {dupLeadIds.size} leads affected
               </span>
-              <span style={{ fontSize: 12, color: '#8a00c2' }}>— {dupLeadIds.size} leads share the same number</span>
             </div>
-            <button
-              onClick={() => setShowDupsOnly(v => !v)}
-              style={{ fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 8, border: `1px solid ${showDupsOnly ? '#8a00c2' : 'rgba(138,0,194,0.3)'}`, background: showDupsOnly ? '#8a00c2' : 'transparent', color: showDupsOnly ? '#fff' : '#8a00c2', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              {showDupsOnly ? 'Show All' : 'Show Duplicates'}
+            <button onClick={() => setShowDupsOnly(v => !v)}
+              style={{ fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 8, border: '1px solid #D97706', background: showDupsOnly ? '#D97706' : 'transparent', color: showDupsOnly ? '#fff' : '#B45309', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              {showDupsOnly ? 'Show all' : 'Show duplicates'}
             </button>
           </div>
         )}
 
         {/* ── Error ── */}
         {error && (
-          <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
-            <p style={{ color: '#EF4444', fontSize: 13, margin: 0 }}>{error}</p>
+          <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '10px 16px', marginBottom: 14 }}>
+            <p style={{ color: '#DC2626', fontSize: 13, margin: 0 }}>{error}</p>
           </div>
         )}
 
@@ -368,19 +354,18 @@ export default function LeadsPage() {
         {/* ── Empty state ── */}
         {viewMode === 'list' && !loading && displayLeads.length === 0 && (
           <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, padding: '64px 24px', textAlign: 'center' }}>
-            <div style={{ width: 56, height: 56, borderRadius: 16, background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-              <UserPlus style={{ width: 24, height: 24, color: PRIMARY }} />
+            <div style={{ width: 52, height: 52, borderRadius: 14, background: PRIMARY_DIM, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
+              <UserPlus style={{ width: 22, height: 22, color: PRIMARY }} />
             </div>
-            <h3 style={{ fontSize: 16, fontWeight: 600, color: TEXT, margin: '0 0 8px' }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: TEXT, margin: '0 0 6px' }}>
               {search || scoreFilter !== 'all' ? 'No leads match your filters' : 'No leads yet'}
             </h3>
-            <p style={{ color: MUTED, fontSize: 13, margin: '0 0 24px' }}>
-              {search || scoreFilter !== 'all' ? 'Try adjusting your search or filter' : 'Add your first lead or import from a portal'}
+            <p style={{ color: MUTED, fontSize: 13, margin: '0 0 22px' }}>
+              {search || scoreFilter !== 'all' ? 'Try adjusting your search or filters' : 'Add your first lead or import from a portal'}
             </p>
             {!search && scoreFilter === 'all' && (
               <button onClick={() => setShowAddModal(true)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: PRIMARY_GRAD, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 8px rgba(160,0,200,0.3)' }}
-              >
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', background: PRIMARY_GRAD, border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                 <Plus style={{ width: 14, height: 14 }} /> Add Lead
               </button>
             )}
@@ -389,109 +374,102 @@ export default function LeadsPage() {
 
         {/* ── Table ── */}
         {viewMode === 'list' && displayLeads.length > 0 && (
-          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
-                  <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left' }}>Name</th>
-                  <th className="hidden sm:table-cell" style={{ padding: '12px 16px', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left' }}>Phone</th>
-                  <th className="hidden md:table-cell" style={{ padding: '12px 16px', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'center' }}>Score</th>
-                  <th className="hidden lg:table-cell" style={{ padding: '12px 16px', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left' }}>Budget</th>
-                  <th className="hidden lg:table-cell" style={{ padding: '12px 16px', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left' }}>Source</th>
-                  <th className="hidden lg:table-cell" style={{ padding: '12px 16px', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'right' }}>Updated</th>
-                  <th style={{ padding: '12px 16px', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'right' }}></th>
+                <tr style={{ borderBottom: `1px solid ${BORDER}`, background: '#FAFAFA' }}>
+                  <th style={{ padding: '10px 20px', fontSize: 11, fontWeight: 600, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left' }}>Lead name</th>
+                  <th className="hidden sm:table-cell" style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left' }}>Contact</th>
+                  <th className="hidden md:table-cell" style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left' }}>Lead source</th>
+                  <th style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left' }}>Lead status</th>
+                  <th className="hidden lg:table-cell" style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left' }}>Budget</th>
+                  <th style={{ padding: '10px 20px', width: 120 }}></th>
                 </tr>
               </thead>
               <tbody>
                 {displayLeads.map((lead, idx) => {
-                  const score = getScore(lead)
-                  const { label, color, bg, dot } = getScoreStyle(score)
-                  const isDup = dupLeadIds.has(lead.id)
+                  const name    = getDisplayName(lead)
+                  const av      = avatarColor(name)
+                  const initial = name.charAt(0).toUpperCase()
+                  const status  = lead.status ?? 'New'
+                  const pill    = STATUS_PILL[status] ?? STATUS_PILL['New']
+                  const isDup   = dupLeadIds.has(lead.id)
                   return (
                     <tr key={lead.id}
-                      style={{ borderBottom: idx < displayLeads.length - 1 ? `1px solid ${BORDER}` : 'none', transition: 'background 0.15s', background: isDup ? 'rgba(234,179,8,0.03)' : 'transparent' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = isDup ? 'rgba(234,179,8,0.07)' : '#F8FAFC')}
-                      onMouseLeave={e => (e.currentTarget.style.background = isDup ? 'rgba(234,179,8,0.03)' : 'transparent')}
+                      style={{ borderBottom: idx < displayLeads.length - 1 ? `1px solid ${BORDER}` : 'none', transition: 'background 0.1s' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#FAFBFC')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
-                      <td style={{ padding: '12px 16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: dot, flexShrink: 0 }} />
+                      {/* Lead name */}
+                      <td style={{ padding: '14px 20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          {/* Avatar */}
+                          <div style={{ width: 36, height: 36, borderRadius: '50%', background: av.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: av.fg }}>{initial}</span>
+                          </div>
                           <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                              <p style={{ fontSize: 13, fontWeight: 600, color: TEXT, margin: 0 }}>{getDisplayName(lead)}</p>
-                              {isDup && <span style={{ fontSize: 9, fontWeight: 700, background: 'rgba(138,0,194,0.1)', color: '#8a00c2', padding: '1px 6px', borderRadius: 6 }}>DUP</span>}
-                              <button
-                                title="Copy lead ID"
-                                onClick={e => { e.stopPropagation(); e.preventDefault(); navigator.clipboard.writeText(getCsId(lead)) }}
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 9, fontWeight: 700, color: '#64748B', background: '#F1F5F9', border: '1px solid #E2E8F0', padding: '1px 6px', borderRadius: 5, fontFamily: 'monospace', letterSpacing: '0.04em', cursor: 'pointer' }}
-                              >
-                                {getCsId(lead)}<Copy style={{ width: 8, height: 8, opacity: 0.5 }} />
-                              </button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{name}</span>
+                              {isDup && <span style={{ fontSize: 9, fontWeight: 700, background: '#FEF9C3', color: '#854D0E', padding: '1px 5px', borderRadius: 5 }}>DUP</span>}
                             </div>
-                            {/* Client type badge */}
-                            {lead.sourceDetail?.startsWith('[') && (
-                              <p style={{ fontSize: 10, color: '#8a00c2', background: 'rgba(160,0,200,0.08)', display: 'inline-block', padding: '0px 5px', borderRadius: 5, margin: '2px 0 0', fontWeight: 600 }}>
-                                {lead.sourceDetail.match(/^\[([^\]]+)\]/)?.[1]}
-                              </p>
-                            )}
-                            <p className="sm:hidden" style={{ fontSize: 11, color: MUTED, margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: 3 }}>
-                              <Phone style={{ width: 10, height: 10 }} />{getPhone(lead) || '—'}
-                            </p>
-                            {getEmail(lead) && (
-                              <p className="hidden sm:flex" style={{ fontSize: 11, color: MUTED, margin: 0, alignItems: 'center', gap: 3 }}>
-                                <Mail style={{ width: 10, height: 10 }} />{getEmail(lead)}
-                              </p>
-                            )}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                              <button title="Copy CS ID" onClick={e => { e.stopPropagation(); e.preventDefault(); navigator.clipboard.writeText(getCsId(lead)) }}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, color: LABEL, background: '#F3F4F6', border: 'none', padding: '1px 6px', borderRadius: 5, fontFamily: 'monospace', cursor: 'pointer' }}>
+                                {getCsId(lead)}<Copy style={{ width: 8, height: 8 }} />
+                              </button>
+                              <span style={{ fontSize: 11, color: LABEL }}>
+                                <Clock style={{ width: 9, height: 9, display: 'inline', verticalAlign: 'middle', marginRight: 2 }} />{timeAgo(lead.updatedAt)}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </td>
-                      <td className="hidden sm:table-cell" style={{ padding: '12px 16px' }}>
-                        <span style={{ fontSize: 13, color: MUTED, display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <Phone style={{ width: 12, height: 12 }} />{getPhone(lead) || '—'}
+
+                      {/* Contact */}
+                      <td className="hidden sm:table-cell" style={{ padding: '14px 16px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {getEmail(lead) && <span style={{ fontSize: 12, color: MUTED }}>{getEmail(lead)}</span>}
+                          <span style={{ fontSize: 12, color: LABEL }}>{getPhone(lead) || '—'}</span>
+                        </div>
+                      </td>
+
+                      {/* Source */}
+                      <td className="hidden md:table-cell" style={{ padding: '14px 16px' }}>
+                        {lead.sourcePortal ? (
+                          <span style={{ fontSize: 12, color: MUTED, background: '#F3F4F6', padding: '3px 9px', borderRadius: 99 }}>
+                            {lead.sourcePortal}
+                          </span>
+                        ) : <span style={{ fontSize: 12, color: LABEL }}>—</span>}
+                      </td>
+
+                      {/* Status pill */}
+                      <td style={{ padding: '14px 16px' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: pill.bg, fontSize: 12, fontWeight: 600, color: pill.color, whiteSpace: 'nowrap' }}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: pill.dot, flexShrink: 0 }} />
+                          {status}
                         </span>
                       </td>
-                      <td className="hidden md:table-cell" style={{ padding: '12px 16px', textAlign: 'center' }}>
-                        {score > 0 ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                            <div style={{ width: 34, height: 34, borderRadius: '50%', border: `2px solid ${dot}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <span style={{ fontSize: 11, fontWeight: 700, color: dot }}>{score}</span>
-                            </div>
-                            <span style={{ fontSize: 9, fontWeight: 600, color, background: bg, padding: '1px 6px', borderRadius: 8 }}>{label}</span>
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: 13, color: '#CBD5E1', fontWeight: 500 }}>—</span>
-                        )}
-                      </td>
-                      <td className="hidden lg:table-cell" style={{ padding: '12px 16px' }}>
+
+                      {/* Budget */}
+                      <td className="hidden lg:table-cell" style={{ padding: '14px 16px' }}>
                         <span style={{ fontSize: 12, color: MUTED }}>{formatBudget(lead.budgetMin, lead.budgetMax)}</span>
                       </td>
-                      <td className="hidden lg:table-cell" style={{ padding: '12px 16px' }}>
-                        <span style={{ fontSize: 13, color: MUTED }}>{lead.sourcePortal || '—'}</span>
-                      </td>
-                      <td className="hidden lg:table-cell" style={{ padding: '12px 16px', textAlign: 'right' }}>
-                        <span style={{ fontSize: 12, color: MUTED, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
-                          <Clock style={{ width: 11, height: 11 }} />{timeAgo(lead.updatedAt)}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+
+                      {/* Actions */}
+                      <td style={{ padding: '14px 20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
-                          <button
-                            onClick={e => { e.stopPropagation(); e.preventDefault(); setQuickLogLeadId(lead.id) }}
-                            title="Log activity"
+                          <button onClick={e => { e.stopPropagation(); e.preventDefault(); setQuickLogLeadId(lead.id) }}
                             className="hidden sm:inline-flex"
-                            style={{ alignItems: 'center', gap: 5, padding: '6px 10px', background: 'rgba(5,150,105,0.06)', border: '1px solid rgba(5,150,105,0.2)', borderRadius: 8, color: '#059669', fontSize: 12, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s' }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(5,150,105,0.12)' }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(5,150,105,0.06)' }}
-                          >
+                            style={{ alignItems: 'center', gap: 4, padding: '5px 10px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 7, color: MUTED, fontSize: 12, fontWeight: 500, cursor: 'pointer' }}
+                            onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = '#86EFAC'; b.style.color = '#15803D'; b.style.background = '#F0FDF4' }}
+                            onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = BORDER; b.style.color = MUTED; b.style.background = 'transparent' }}>
                             <Activity style={{ width: 11, height: 11 }} />Log
                           </button>
-                          <Link href={`/dashboard/leads/${lead.id}`}
-                            onClick={e => e.stopPropagation()}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 8, color: MUTED, fontSize: 12, fontWeight: 500, textDecoration: 'none', transition: 'all 0.15s' }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = PRIMARY_BORDER; (e.currentTarget as HTMLAnchorElement).style.color = PRIMARY; (e.currentTarget as HTMLAnchorElement).style.background = PRIMARY_DIM }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = BORDER; (e.currentTarget as HTMLAnchorElement).style.color = MUTED; (e.currentTarget as HTMLAnchorElement).style.background = 'transparent' }}
-                          >
-                            <Eye style={{ width: 12, height: 12 }} />View
+                          <Link href={`/dashboard/leads/${lead.id}`} onClick={e => e.stopPropagation()}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 12px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 7, color: MUTED, fontSize: 12, fontWeight: 500, textDecoration: 'none' }}
+                            onMouseEnter={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.borderColor = PRIMARY_BORDER; a.style.color = PRIMARY; a.style.background = PRIMARY_DIM }}
+                            onMouseLeave={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.borderColor = BORDER; a.style.color = MUTED; a.style.background = 'transparent' }}>
+                            <Eye style={{ width: 11, height: 11 }} />View
                           </Link>
                         </div>
                       </td>
@@ -503,10 +481,9 @@ export default function LeadsPage() {
           </div>
         )}
 
-
         {leads.length > 0 && (
-          <p style={{ fontSize: 12, color: MUTED, textAlign: 'center', marginTop: 16 }}>
-            {loading ? 'Refreshing…' : `Showing ${leads.length} of ${totalCount} leads`}
+          <p style={{ fontSize: 12, color: LABEL, textAlign: 'center', marginTop: 16 }}>
+            {loading ? 'Refreshing…' : `Showing ${displayLeads.length} of ${totalCount} leads`}
           </p>
         )}
       </div>
