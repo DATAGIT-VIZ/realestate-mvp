@@ -11,15 +11,15 @@ const C = {
   text:    '#0F172A',
   muted:   '#64748B',
   label:   '#94A3B8',
-  blue:    '#2563EB',
+  blue:    '#a000c8',
   emerald: '#059669',
-  amber:   '#D97706',
+  amber:   '#be2ed6',
   red:     '#EF4444',
 }
 
 const STATUS_META = {
   Available:     { color: C.emerald, bg: 'rgba(5,150,105,0.08)'  },
-  'Under Offer': { color: C.amber,   bg: 'rgba(217,119,6,0.08)'  },
+  'Under Offer': { color: C.amber,   bg: 'rgba(190,46,214,0.08)'  },
   Sold:          { color: C.muted,   bg: 'rgba(100,116,139,0.08)' },
 }
 
@@ -261,8 +261,8 @@ export default function PropertiesPage() {
         {/* Empty state */}
         {filtered.length === 0 && (
           <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '56px 24px', textAlign: 'center' }}>
-            <div style={{ width: 60, height: 60, borderRadius: 18, background: 'linear-gradient(135deg,#7C3AED15,#5B21B615)', border: '1px solid #7C3AED20', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
-              <Building2 style={{ width: 28, height: 28, color: '#7C3AED' }} />
+            <div style={{ width: 60, height: 60, borderRadius: 18, background: 'linear-gradient(135deg,#a000c815,#7600bc15)', border: '1px solid #a000c820', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
+              <Building2 style={{ width: 28, height: 28, color: '#a000c8' }} />
             </div>
             <h3 style={{ fontSize: 17, fontWeight: 700, color: '#0F172A', margin: '0 0 8px' }}>
               {properties.length === 0 ? 'No properties yet' : 'No results found'}
@@ -275,7 +275,7 @@ export default function PropertiesPage() {
             {properties.length === 0 && (
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
                 <button onClick={handleSeedDemo} disabled={seeding}
-                  style={{ padding: '11px 22px', background: 'linear-gradient(135deg,#7C3AED,#5B21B6)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 13, fontWeight: 700, cursor: seeding ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7, opacity: seeding ? 0.7 : 1, boxShadow: '0 2px 12px rgba(124,58,237,0.3)' }}>
+                  style={{ padding: '11px 22px', background: 'linear-gradient(135deg,#a000c8,#7600bc)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 13, fontWeight: 700, cursor: seeding ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7, opacity: seeding ? 0.7 : 1, boxShadow: '0 2px 12px rgba(160,0,200,0.3)' }}>
                   {seeding ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Sparkles style={{ width: 14, height: 14 }} />}
                   {seeding ? 'Loading Demo Data…' : 'Load Demo Properties'}
                 </button>

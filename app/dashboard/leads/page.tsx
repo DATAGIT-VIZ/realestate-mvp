@@ -7,21 +7,26 @@ import { AddLeadModal } from '@/components/AddLeadModal'
 import { KanbanBoard } from '@/components/crm/KanbanBoard'
 import { CsvUploadModal } from '@/components/crm/CsvUploadModal'
 import { EmailParserModal } from '@/components/crm/EmailParserModal'
+import { DistributeModal } from '@/components/crm/DistributeModal'
 import { LogActivityModal } from '@/components/LogActivityModal'
 import {
   Search, Plus, Filter, Eye, Loader2, UserPlus, Clock,
   ChevronDown, LayoutGrid, List, UploadCloud, MailPlus, Phone, Mail, Copy,
-  Activity,
+  Activity, Shuffle,
 } from 'lucide-react'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const BG      = '#F8FAFC'
 const PANEL   = '#FFFFFF'
 const BORDER  = '#E2E8F0'
-const AMBER   = '#D97706'
-const RED_HOT = '#F97316'
+const AMBER   = '#be2ed6'   // semantic: hot/warm lead status only
+const RED_HOT = '#a000c8'   // semantic: hot lead dot
 const TEXT    = '#0F172A'
 const MUTED   = '#64748B'
+const PRIMARY = '#a000c8'                                                    // Vyapulse purple
+const PRIMARY_DIM = 'rgba(160,0,200,0.08)'
+const PRIMARY_BORDER = 'rgba(160,0,200,0.25)'
+const PRIMARY_GRAD = 'linear-gradient(135deg, #7600bc 0%, #b100cd 100%)'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 type ScoreFilter = 'all' | 'hot' | 'warm' | 'cold'
@@ -35,8 +40,8 @@ const getEmail = (l: CRMLead) => l.emails.primaryEmail ?? null
 const getScore = (l: CRMLead) => l.intentScore ?? 0
 
 function getScoreStyle(score: number) {
-  if (score >= 70) return { label: 'High Intent', color: '#EA580C', bg: '#FFF7ED', dot: '#F97316' }
-  if (score >= 40) return { label: 'Medium',      color: '#B45309', bg: '#FFFBEB', dot: '#D97706' }
+  if (score >= 70) return { label: 'High Intent', color: '#a000c8', bg: 'rgba(160,0,200,0.07)', dot: '#a000c8' }
+  if (score >= 40) return { label: 'Medium',      color: '#8a00c2', bg: 'rgba(190,46,214,0.07)', dot: '#be2ed6' }
   return               { label: 'Low',          color: '#475569', bg: '#F1F5F9', dot: '#94A3B8' }
 }
 
@@ -78,12 +83,16 @@ export default function LeadsPage() {
   const [search, setSearch] = useState('')
   const [scoreFilter, setScoreFilter] = useState<ScoreFilter>('all')
   const [showFilterMenu, setShowFilterMenu] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<string>('all')
   const [viewMode, setViewMode] = useState<'list' | 'board'>('list')
   const [showAddModal, setShowAddModal] = useState(false)
   const [showCsvModal, setShowCsvModal] = useState(false)
   const [showEmailModal, setShowEmailModal] = useState(false)
+  const [showDistributeModal, setShowDistributeModal] = useState(false)
+  const [unassignedCount, setUnassignedCount] = useState(0)
   const [quickLogLeadId, setQuickLogLeadId] = useState<string | null>(null)
   const [showDupsOnly, setShowDupsOnly] = useState(false)
+  const [importStatus, setImportStatus] = useState<{ total: number; done: number; label: string } | null>(null)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   // De-dup detection — group leads by normalised phone number
@@ -106,13 +115,22 @@ export default function LeadsPage() {
     [leads, showDupsOnly, dupLeadIds]
   )
 
-  const fetchLeads = useCallback(async (q?: string, score?: ScoreFilter) => {
+  const fetchUnassigned = useCallback(async () => {
+    try {
+      const res = await fetch('/api/crm/leads/distribute')
+      const json = await res.json()
+      setUnassignedCount(json.unassigned ?? 0)
+    } catch { /* non-critical */ }
+  }, [])
+
+  const fetchLeads = useCallback(async (q?: string, score?: ScoreFilter, status?: string) => {
     try {
       setLoading(true)
       setError(null)
-      const params = new URLSearchParams({ limit: '100' })
+      const params = new URLSearchParams({ limit: '200' })
       if (q) params.set('search', q)
       if (score && score !== 'all') params.set('score', score)
+      if (status && status !== 'all') params.set('status', status)
       const res = await fetch(`/api/crm/leads?${params}`)
       const json = await res.json()
       if (json.error) throw new Error(json.error)
@@ -125,18 +143,23 @@ export default function LeadsPage() {
     }
   }, [])
 
-  useEffect(() => { fetchLeads() }, [fetchLeads])
+  useEffect(() => { fetchLeads(); fetchUnassigned() }, [fetchLeads, fetchUnassigned])
 
   const handleSearchChange = (val: string) => {
     setSearch(val)
     clearTimeout(searchTimer.current)
-    searchTimer.current = setTimeout(() => fetchLeads(val, scoreFilter), 300)
+    searchTimer.current = setTimeout(() => fetchLeads(val, scoreFilter, statusFilter), 300)
   }
 
   const handleScoreFilter = (s: ScoreFilter) => {
     setScoreFilter(s)
     setShowFilterMenu(false)
-    fetchLeads(search, s)
+    fetchLeads(search, s, statusFilter)
+  }
+
+  const handleStatusFilter = (s: string) => {
+    setStatusFilter(s)
+    fetchLeads(search, scoreFilter, s)
   }
 
   const handleLeadUpdate = async (leadId: string, newStatus: string) => {
@@ -150,30 +173,13 @@ export default function LeadsPage() {
     } catch { fetchLeads(search, scoreFilter) }
   }
 
-  const handleCsvImport = async (rows: Record<string, string>[]) => {
+  const handleCsvImport = async (result: { inserted: number; skipped: number; merged: number; failed: number; batchId: string | null; message: string }) => {
     setShowCsvModal(false)
-    setLoading(true)
-    for (const row of rows) {
-      const parts = (row.name ?? '').trim().split(' ')
-      await fetch('/api/crm/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          firstName: parts[0] || 'Unknown',
-          lastName: parts.slice(1).join(' ') || '',
-          phone: row.phone ?? '',
-          email: row.email || undefined,
-          city: row.city || undefined,
-          budgetMin: row.budget_min ? Number(row.budget_min) : undefined,
-          budgetMax: row.budget_max ? Number(row.budget_max) : undefined,
-          sourcePortal: row.source || 'CSV Import',
-          propertyType: row.property_type ? [row.property_type] : undefined,
-          timeline: row.timeline || undefined,
-          status: 'Fresh',
-        }),
-      })
-    }
+    setImportStatus({ total: result.inserted + result.skipped + result.merged + result.failed, done: result.inserted + result.skipped + result.merged + result.failed, label: result.message })
     await fetchLeads()
+    fetchUnassigned()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setTimeout(() => setImportStatus(null), 6000)
   }
 
   // Loading state (first load only)
@@ -187,6 +193,21 @@ export default function LeadsPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: BG }}>
+      {/* Import progress toast */}
+      {importStatus && (
+        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 200, background: '#0F172A', color: '#fff', borderRadius: 12, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.25)', minWidth: 280 }}>
+          {importStatus.done < importStatus.total
+            ? <Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite', color: '#be2ed6', flexShrink: 0 }} />
+            : <span style={{ fontSize: 16 }}>✓</span>}
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>{importStatus.label}</div>
+            {importStatus.done < importStatus.total && (
+              <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>Importing {importStatus.total.toLocaleString()} leads…</div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="max-w-[1280px] mx-auto px-4 pb-24 lg:px-6">
 
         {/* ── Header ── */}
@@ -210,8 +231,17 @@ export default function LeadsPage() {
               <UploadCloud style={{ width: 14, height: 14 }} />
               <span className="hidden sm:inline">Import CSV</span>
             </button>
+            {unassignedCount > 0 && (
+              <button onClick={() => setShowDistributeModal(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, borderRadius: 10, color: PRIMARY, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+              >
+                <Shuffle style={{ width: 14, height: 14 }} />
+                <span className="hidden sm:inline">Distribute</span>
+                <span style={{ background: PRIMARY, color: '#fff', fontSize: 10, fontWeight: 800, padding: '1px 6px', borderRadius: 99, marginLeft: 2 }}>{unassignedCount.toLocaleString()}</span>
+              </button>
+            )}
             <button onClick={() => setShowAddModal(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: AMBER, border: 'none', borderRadius: 10, color: '#000', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: PRIMARY_GRAD, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 8px rgba(160,0,200,0.3)' }}
             >
               <Plus style={{ width: 14, height: 14 }} />New Lead
             </button>
@@ -233,7 +263,7 @@ export default function LeadsPage() {
           </div>
           <div style={{ position: 'relative' }}>
             <button onClick={() => setShowFilterMenu(v => !v)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', background: PANEL, border: `1px solid ${scoreFilter !== 'all' ? AMBER : BORDER}`, borderRadius: 10, color: scoreFilter !== 'all' ? AMBER : TEXT, fontSize: 13, cursor: 'pointer', minWidth: 150 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', background: PANEL, border: `1px solid ${scoreFilter !== 'all' ? PRIMARY_BORDER : BORDER}`, borderRadius: 10, color: scoreFilter !== 'all' ? PRIMARY : TEXT, fontSize: 13, cursor: 'pointer', minWidth: 150 }}
             >
               <Filter style={{ width: 13, height: 13 }} />
               <span style={{ flex: 1, textAlign: 'left' }}>{FILTER_LABELS[scoreFilter]}</span>
@@ -243,7 +273,7 @@ export default function LeadsPage() {
               <div style={{ position: 'absolute', top: '100%', marginTop: 4, right: 0, minWidth: '100%', background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 10, zIndex: 20, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}>
                 {(Object.keys(FILTER_LABELS) as ScoreFilter[]).map(s => (
                   <button key={s} onClick={() => handleScoreFilter(s)}
-                    style={{ display: 'block', width: '100%', padding: '9px 14px', background: scoreFilter === s ? '#EFF6FF' : 'transparent', color: scoreFilter === s ? '#1D4ED8' : TEXT, fontSize: 13, border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                    style={{ display: 'block', width: '100%', padding: '9px 14px', background: scoreFilter === s ? PRIMARY_DIM : 'transparent', color: scoreFilter === s ? PRIMARY : TEXT, fontSize: 13, border: 'none', cursor: 'pointer', textAlign: 'left' }}
                   >
                     {FILTER_LABELS[s]}
                   </button>
@@ -254,7 +284,7 @@ export default function LeadsPage() {
           <div style={{ display: 'flex', background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 3, gap: 2 }}>
             {([['list', List], ['board', LayoutGrid]] as const).map(([v, Icon]) => (
               <button key={v} onClick={() => setViewMode(v)}
-                style={{ width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: 'none', cursor: 'pointer', background: viewMode === v ? AMBER : 'transparent', color: viewMode === v ? '#000' : MUTED }}
+                style={{ width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: 'none', cursor: 'pointer', background: viewMode === v ? PRIMARY_GRAD : 'transparent', color: viewMode === v ? '#fff' : MUTED }}
               >
                 <Icon style={{ width: 14, height: 14 }} />
               </button>
@@ -262,19 +292,64 @@ export default function LeadsPage() {
           </div>
         </div>
 
+        {/* ── Status tabs ── */}
+        {(() => {
+          const STATUS_TABS = [
+            { id: 'all',          label: 'All',          color: '#64748B' },
+            { id: 'New',          label: 'New',          color: '#64748B' },
+            { id: 'Cold',         label: 'Cold',         color: '#2563EB' },
+            { id: 'Warm',         label: 'Warm',         color: '#be2ed6' },
+            { id: 'Hot',          label: 'Hot 🔥',       color: '#a000c8' },
+            { id: 'Closed',       label: 'Closed',       color: '#059669' },
+            { id: 'Disqualified', label: 'Disqualified', color: '#94A3B8' },
+          ]
+          const counts: Record<string, number> = { all: leads.length }
+          for (const l of leads) {
+            const s = l.status ?? 'New'
+            counts[s] = (counts[s] ?? 0) + 1
+          }
+          return (
+            <div style={{ display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto', paddingBottom: 2 }}>
+              {STATUS_TABS.map(tab => {
+                const active = statusFilter === tab.id
+                const count  = counts[tab.id] ?? 0
+                return (
+                  <button key={tab.id} onClick={() => handleStatusFilter(tab.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '7px 14px', borderRadius: 9, whiteSpace: 'nowrap', flexShrink: 0,
+                      border: `1.5px solid ${active ? tab.color : BORDER}`,
+                      background: active ? `${tab.color}10` : PANEL,
+                      color: active ? tab.color : MUTED,
+                      fontSize: 13, fontWeight: active ? 700 : 500, cursor: 'pointer',
+                      transition: 'all 0.15s',
+                    }}>
+                    {tab.label}
+                    {tab.id !== 'all' && (
+                      <span style={{ fontSize: 11, fontWeight: 700, background: active ? `${tab.color}20` : '#F1F5F9', color: active ? tab.color : '#94A3B8', padding: '1px 7px', borderRadius: 99 }}>
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          )
+        })()}
+
         {/* ── De-dup banner ── */}
         {dupPhones.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 14px', background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.25)', borderRadius: 10, marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Copy style={{ width: 13, height: 13, color: '#B45309', flexShrink: 0 }} />
-              <span style={{ fontSize: 13, color: '#92400E', fontWeight: 600 }}>
+              <Copy style={{ width: 13, height: 13, color: '#8a00c2', flexShrink: 0 }} />
+              <span style={{ fontSize: 13, color: '#7600bc', fontWeight: 600 }}>
                 {dupPhones.length} duplicate phone number{dupPhones.length > 1 ? 's' : ''} detected
               </span>
-              <span style={{ fontSize: 12, color: '#B45309' }}>— {dupLeadIds.size} leads share the same number</span>
+              <span style={{ fontSize: 12, color: '#8a00c2' }}>— {dupLeadIds.size} leads share the same number</span>
             </div>
             <button
               onClick={() => setShowDupsOnly(v => !v)}
-              style={{ fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 8, border: `1px solid ${showDupsOnly ? '#B45309' : 'rgba(180,83,9,0.3)'}`, background: showDupsOnly ? '#B45309' : 'transparent', color: showDupsOnly ? '#fff' : '#B45309', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              style={{ fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 8, border: `1px solid ${showDupsOnly ? '#8a00c2' : 'rgba(138,0,194,0.3)'}`, background: showDupsOnly ? '#8a00c2' : 'transparent', color: showDupsOnly ? '#fff' : '#8a00c2', cursor: 'pointer', whiteSpace: 'nowrap' }}>
               {showDupsOnly ? 'Show All' : 'Show Duplicates'}
             </button>
           </div>
@@ -293,8 +368,8 @@ export default function LeadsPage() {
         {/* ── Empty state ── */}
         {viewMode === 'list' && !loading && displayLeads.length === 0 && (
           <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, padding: '64px 24px', textAlign: 'center' }}>
-            <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-              <UserPlus style={{ width: 24, height: 24, color: AMBER }} />
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <UserPlus style={{ width: 24, height: 24, color: PRIMARY }} />
             </div>
             <h3 style={{ fontSize: 16, fontWeight: 600, color: TEXT, margin: '0 0 8px' }}>
               {search || scoreFilter !== 'all' ? 'No leads match your filters' : 'No leads yet'}
@@ -304,7 +379,7 @@ export default function LeadsPage() {
             </p>
             {!search && scoreFilter === 'all' && (
               <button onClick={() => setShowAddModal(true)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: AMBER, border: 'none', borderRadius: 10, color: '#000', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: PRIMARY_GRAD, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 8px rgba(160,0,200,0.3)' }}
               >
                 <Plus style={{ width: 14, height: 14 }} /> Add Lead
               </button>
@@ -344,7 +419,7 @@ export default function LeadsPage() {
                           <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                               <p style={{ fontSize: 13, fontWeight: 600, color: TEXT, margin: 0 }}>{getDisplayName(lead)}</p>
-                              {isDup && <span style={{ fontSize: 9, fontWeight: 700, background: 'rgba(180,83,9,0.1)', color: '#B45309', padding: '1px 6px', borderRadius: 6 }}>DUP</span>}
+                              {isDup && <span style={{ fontSize: 9, fontWeight: 700, background: 'rgba(138,0,194,0.1)', color: '#8a00c2', padding: '1px 6px', borderRadius: 6 }}>DUP</span>}
                               <button
                                 title="Copy lead ID"
                                 onClick={e => { e.stopPropagation(); e.preventDefault(); navigator.clipboard.writeText(getCsId(lead)) }}
@@ -355,7 +430,7 @@ export default function LeadsPage() {
                             </div>
                             {/* Client type badge */}
                             {lead.sourceDetail?.startsWith('[') && (
-                              <p style={{ fontSize: 10, color: '#7C3AED', background: '#F5F3FF', display: 'inline-block', padding: '0px 5px', borderRadius: 5, margin: '2px 0 0', fontWeight: 600 }}>
+                              <p style={{ fontSize: 10, color: '#8a00c2', background: 'rgba(160,0,200,0.08)', display: 'inline-block', padding: '0px 5px', borderRadius: 5, margin: '2px 0 0', fontWeight: 600 }}>
                                 {lead.sourceDetail.match(/^\[([^\]]+)\]/)?.[1]}
                               </p>
                             )}
@@ -413,8 +488,8 @@ export default function LeadsPage() {
                           <Link href={`/dashboard/leads/${lead.id}`}
                             onClick={e => e.stopPropagation()}
                             style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 8, color: MUTED, fontSize: 12, fontWeight: 500, textDecoration: 'none', transition: 'all 0.15s' }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = AMBER; (e.currentTarget as HTMLAnchorElement).style.color = AMBER }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = BORDER; (e.currentTarget as HTMLAnchorElement).style.color = MUTED }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = PRIMARY_BORDER; (e.currentTarget as HTMLAnchorElement).style.color = PRIMARY; (e.currentTarget as HTMLAnchorElement).style.background = PRIMARY_DIM }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = BORDER; (e.currentTarget as HTMLAnchorElement).style.color = MUTED; (e.currentTarget as HTMLAnchorElement).style.background = 'transparent' }}
                           >
                             <Eye style={{ width: 12, height: 12 }} />View
                           </Link>
@@ -444,12 +519,26 @@ export default function LeadsPage() {
         />
       )}
       {showCsvModal && (
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        <CsvUploadModal onClose={() => setShowCsvModal(false)} onSuccess={(d: any) => handleCsvImport(d)} />
+        <CsvUploadModal onClose={() => setShowCsvModal(false)} onSuccess={handleCsvImport} />
+      )}
+      {showDistributeModal && (
+        <DistributeModal
+          onClose={() => setShowDistributeModal(false)}
+          onDone={() => { setShowDistributeModal(false); fetchLeads(); fetchUnassigned() }}
+        />
       )}
       {showEmailModal && (
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        <EmailParserModal onClose={() => setShowEmailModal(false)} onSuccess={(p: any) => handleCsvImport([p])} />
+        <EmailParserModal onClose={() => setShowEmailModal(false)} onSuccess={async (p: any) => {
+          setShowEmailModal(false)
+          setImportStatus({ total: 1, done: 0, label: 'Importing lead from email…' })
+          try {
+            const res  = await fetch('/api/crm/leads/batch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rows: [p] }) })
+            const json = await res.json()
+            setImportStatus({ total: 1, done: 1, label: json.message ?? 'Lead imported' })
+          } catch { setImportStatus({ total: 1, done: 1, label: 'Import failed' }) }
+          await fetchLeads(); fetchUnassigned()
+          setTimeout(() => setImportStatus(null), 5000)
+        }} />
       )}
       {quickLogLeadId && (
         <LogActivityModal
@@ -457,6 +546,8 @@ export default function LeadsPage() {
           isOpen={true}
           onClose={() => setQuickLogLeadId(null)}
           onActivityLogged={() => { setQuickLogLeadId(null); fetchLeads(search, scoreFilter) }}
+          currentStatus={leads.find(l => l.id === quickLogLeadId)?.status ?? 'New'}
+          existingActivityTypes={[]}
         />
       )}
     </div>

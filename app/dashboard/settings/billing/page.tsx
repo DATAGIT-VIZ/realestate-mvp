@@ -16,11 +16,11 @@ const C = {
   text:    '#0F172A',
   muted:   '#64748B',
   label:   '#94A3B8',
-  blue:    '#2563EB',
+  blue:    '#a000c8',
   emerald: '#059669',
-  amber:   '#D97706',
+  amber:   '#be2ed6',
   red:     '#EF4444',
-  violet:  '#7C3AED',
+  violet:  '#a000c8',
 }
 
 type BillingStatus = {
@@ -178,7 +178,7 @@ export default function BillingPage() {
         currency:        'INR',
         amount,
         prefill:         {},
-        theme:           { color: '#2563EB' },
+        theme:           { color: '#a000c8' },
         modal:           { ondismiss: () => setUpgrading(false) },
         handler:         () => {
           // Payment successful — webhook will update Supabase; poll status
@@ -264,7 +264,7 @@ export default function BillingPage() {
                 {status?.status ?? 'active'}
               </span>
               {status?.cancelAtPeriodEnd && (
-                <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: 'rgba(217,119,6,0.1)', color: C.amber }}>Cancels at period end</span>
+                <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 99, background: 'rgba(190,46,214,0.1)', color: C.amber }}>Cancels at period end</span>
               )}
             </div>
             {status?.currentPeriodEnd && (
@@ -295,7 +295,7 @@ export default function BillingPage() {
 
         {/* Razorpay not configured notice */}
         {!status?.razorpayConfigured && (
-          <div style={{ background: 'rgba(217,119,6,0.04)', border: `1px solid rgba(217,119,6,0.2)`, borderRadius: 14, padding: '16px 20px', marginBottom: 32, display: 'flex', gap: 12 }}>
+          <div style={{ background: 'rgba(190,46,214,0.04)', border: `1px solid rgba(190,46,214,0.2)`, borderRadius: 14, padding: '16px 20px', marginBottom: 32, display: 'flex', gap: 12 }}>
             <AlertCircle style={{ width: 16, height: 16, color: C.amber, flexShrink: 0, marginTop: 1 }} />
             <div>
               <p style={{ fontSize: 13, fontWeight: 600, color: C.text, margin: '0 0 4px' }}>Razorpay not configured</p>

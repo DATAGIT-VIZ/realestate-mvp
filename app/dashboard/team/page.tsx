@@ -10,8 +10,8 @@ import {
 const C = {
   bg: '#F8FAFC', panel: '#FFFFFF', border: '#E2E8F0',
   text: '#0F172A', muted: '#64748B', label: '#94A3B8',
-  blue: '#2563EB', emerald: '#059669', amber: '#D97706',
-  red: '#EF4444', violet: '#7C3AED',
+  blue: '#a000c8', emerald: '#059669', amber: '#be2ed6',
+  red: '#EF4444', violet: '#a000c8',
 }
 
 const ROLES      = ['agent', 'senior_agent', 'manager']
@@ -144,7 +144,7 @@ function AgentModal({ member, onClose, onSave }: {
               {CITIES.map(c => {
                 const on = (form.specialty_cities ?? []).includes(c)
                 return <button key={c} type="button" onClick={() => tog('specialty_cities', c)}
-                  style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, border: `1px solid ${on ? C.blue : C.border}`, background: on ? '#EFF6FF' : '#F8FAFC', color: on ? C.blue : C.muted, cursor: 'pointer' }}>
+                  style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, border: `1px solid ${on ? C.blue : C.border}`, background: on ? 'rgba(160,0,200,0.07)' : '#F8FAFC', color: on ? C.blue : C.muted, cursor: 'pointer' }}>
                   {c}
                 </button>
               })}
@@ -157,7 +157,7 @@ function AgentModal({ member, onClose, onSave }: {
               {PROP_TYPES.map(t => {
                 const on = (form.specialty_types ?? []).includes(t)
                 return <button key={t} type="button" onClick={() => tog('specialty_types', t)}
-                  style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, border: `1px solid ${on ? C.violet : C.border}`, background: on ? '#F5F3FF' : '#F8FAFC', color: on ? C.violet : C.muted, cursor: 'pointer' }}>
+                  style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, border: `1px solid ${on ? C.violet : C.border}`, background: on ? 'rgba(160,0,200,0.07)' : '#F8FAFC', color: on ? C.violet : C.muted, cursor: 'pointer' }}>
                   {t}
                 </button>
               })}
@@ -192,12 +192,19 @@ export default function TeamPage() {
   const [deleting,   setDeleting]   = useState<string | null>(null)
   const [activeTab,  setActiveTab]  = useState<'leaderboard' | 'agents'>('leaderboard')
 
+  const [assignedCounts, setAssignedCounts] = useState<Record<string, number>>({})
+
   const load = useCallback(async () => {
     setLoading(true)
-    const [mRes, dRes] = await Promise.all([fetch('/api/team'), fetch('/api/deals')])
-    const [mJson, dJson] = await Promise.all([mRes.json(), dRes.json()])
+    const [mRes, dRes, distRes] = await Promise.all([
+      fetch('/api/team'),
+      fetch('/api/deals'),
+      fetch('/api/crm/leads/distribute'),
+    ])
+    const [mJson, dJson, distJson] = await Promise.all([mRes.json(), dRes.json(), distRes.json()])
     setMembers(mJson.members ?? [])
     setDeals(dJson.deals ?? [])
+    setAssignedCounts(distJson.perAgent ?? {})
     setLoading(false)
   }, [])
 
@@ -246,9 +253,9 @@ export default function TeamPage() {
 
   const rankBadge = (i: number) => {
     const medals = [
-      { label: '1', bg: '#FEF3C7', color: '#D97706', border: '#FCD34D' },
+      { label: '1', bg: 'rgba(190,46,214,0.08)', color: '#be2ed6', border: 'rgba(190,46,214,0.25)' },
       { label: '2', bg: '#F1F5F9', color: '#64748B', border: '#CBD5E1' },
-      { label: '3', bg: '#FEF3C7', color: '#B45309', border: '#FDE68A' },
+      { label: '3', bg: 'rgba(190,46,214,0.08)', color: '#8a00c2', border: 'rgba(190,46,214,0.25)' },
     ]
     const m = medals[i]
     if (m) return (
@@ -275,7 +282,7 @@ export default function TeamPage() {
           <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>Manage agents, track performance, view leaderboard</p>
         </div>
         <button onClick={() => setModal('new')}
-          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: C.blue, border: 'none', borderRadius: 12, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(37,99,235,0.25)' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: C.blue, border: 'none', borderRadius: 12, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(160,0,200,0.25)' }}>
           <Plus style={{ width: 15, height: 15 }} /> Add Agent
         </button>
       </div>
@@ -335,7 +342,7 @@ export default function TeamPage() {
               </thead>
               <tbody>
                 {agentStats.map((a, i) => (
-                  <tr key={a.name} style={{ borderBottom: `1px solid ${C.border}`, background: i === 0 ? '#FFFBEB' : 'transparent' }}>
+                  <tr key={a.name} style={{ borderBottom: `1px solid ${C.border}`, background: i === 0 ? 'rgba(190,46,214,0.07)' : 'transparent' }}>
                     <td style={{ padding: '12px 16px' }}>{rankBadge(i)}</td>
                     <td style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -418,16 +425,17 @@ export default function TeamPage() {
 
                 {(m.specialty_cities.length > 0 || m.specialty_types.length > 0) && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 12 }}>
-                    {m.specialty_cities.map(c => <span key={c} style={{ fontSize: 10, fontWeight: 600, background: '#EFF6FF', color: C.blue, borderRadius: 20, padding: '2px 8px' }}>{c}</span>)}
-                    {m.specialty_types.map(t => <span key={t} style={{ fontSize: 10, fontWeight: 600, background: '#F5F3FF', color: C.violet, borderRadius: 20, padding: '2px 8px' }}>{t}</span>)}
+                    {m.specialty_cities.map(c => <span key={c} style={{ fontSize: 10, fontWeight: 600, background: 'rgba(160,0,200,0.07)', color: C.blue, borderRadius: 20, padding: '2px 8px' }}>{c}</span>)}
+                    {m.specialty_types.map(t => <span key={t} style={{ fontSize: 10, fontWeight: 600, background: 'rgba(160,0,200,0.07)', color: C.violet, borderRadius: 20, padding: '2px 8px' }}>{t}</span>)}
                   </div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
                   {[
-                    { label: 'Active', value: stats?.active ?? 0, color: C.blue },
-                    { label: 'Won',    value: stats?.won ?? 0,    color: C.emerald },
-                    { label: 'Target', value: `${stats?.won ?? 0}/${m.monthly_target}`, color: (stats?.won ?? 0) >= m.monthly_target ? C.emerald : C.amber },
+                    { label: 'Assigned', value: (assignedCounts[m.id] ?? 0).toLocaleString(), color: C.blue },
+                    { label: 'Active',   value: stats?.active ?? 0,                            color: C.violet },
+                    { label: 'Won',      value: stats?.won ?? 0,                               color: C.emerald },
+                    { label: 'Target',   value: `${stats?.won ?? 0}/${m.monthly_target}`,      color: (stats?.won ?? 0) >= m.monthly_target ? C.emerald : C.amber },
                   ].map(s => (
                     <div key={s.label} style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: 16, fontWeight: 800, color: s.color }}>{s.value}</div>

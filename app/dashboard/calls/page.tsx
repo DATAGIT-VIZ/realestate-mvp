@@ -14,12 +14,12 @@ const BORDER = '#E2E8F0'
 const TEXT   = '#0F172A'
 const MUTED  = '#64748B'
 const LABEL  = '#94A3B8'
-const BLUE   = '#2563EB'
-const BLUE_D = '#EFF6FF'
+const BLUE   = '#a000c8'
+const BLUE_D = 'rgba(160,0,200,0.07)'
 const GREEN  = '#059669'
 const GREEN_D= '#ECFDF5'
-const AMBER  = '#D97706'
-const AMBER_D= '#FFFBEB'
+const AMBER  = '#be2ed6'
+const AMBER_D= 'rgba(190,46,214,0.07)'
 const RED    = '#EF4444'
 const RED_D  = '#FFF1F2'
 
@@ -78,8 +78,8 @@ function ScoreBadge({ score }: { score?: number|null }) {
   if (!score) return null
   const hot = score >= 75, warm = score >= 50
   const Icon  = hot ? Flame : warm ? Thermometer : Snowflake
-  const color = hot ? '#EA580C' : warm ? AMBER : '#475569'
-  const bg    = hot ? '#FFF7ED' : warm ? AMBER_D : '#F1F5F9'
+  const color = hot ? '#a000c8' : warm ? AMBER : '#475569'
+  const bg    = hot ? 'rgba(160,0,200,0.07)' : warm ? AMBER_D : '#F1F5F9'
   const label = hot ? 'Hot' : warm ? 'Warm' : 'New'
   return (
     <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:700, background:bg, color, borderRadius:6, padding:'3px 8px', border:`1px solid ${color}25` }}>
@@ -230,7 +230,7 @@ export default function PowerDialerPage() {
             {[
               { label:'Dialed',    value:stats.total,      color:BLUE  },
               { label:'Connected', value:stats.connected,  color:GREEN },
-              { label:'Rate',      value:`${connectRate}%`,color:'#7C3AED' },
+              { label:'Rate',      value:`${connectRate}%`,color:'#a000c8' },
             ].map(s => (
               <div key={s.label} style={{ background:PANEL, border:`1px solid ${BORDER}`, borderRadius:12, padding:'14px 10px' }}>
                 <div style={{ fontSize:22, fontWeight:800, color:s.color, letterSpacing:'-0.01em' }}>{s.value}</div>
@@ -437,7 +437,7 @@ export default function PowerDialerPage() {
           { label:'Remaining', value:leads.length-queueIdx, color:BLUE   },
           { label:'Dialed',    value:stats.total,           color:TEXT   },
           { label:'Connected', value:stats.connected,       color:GREEN  },
-          { label:'Rate',      value:`${connectRate}%`,     color:'#7C3AED' },
+          { label:'Rate',      value:`${connectRate}%`,     color:'#a000c8' },
         ].map(s => (
           <div key={s.label} style={{ background:PANEL, border:`1px solid ${BORDER}`, borderRadius:12, padding:'14px 16px' }}>
             <div style={{ fontSize:22, fontWeight:800, color:s.color, letterSpacing:'-0.02em' }}>{s.value}</div>

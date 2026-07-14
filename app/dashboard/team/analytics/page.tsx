@@ -17,12 +17,12 @@ import type { CRMLead } from '@/lib/twenty'
 const C = {
   bg: '#F8FAFC', panel: '#FFFFFF', border: '#E2E8F0',
   text: '#0F172A', muted: '#64748B', label: '#94A3B8',
-  blue: '#2563EB', blueDim: '#EFF6FF',
+  blue: '#a000c8', blueDim: 'rgba(160,0,200,0.07)',
   emerald: '#059669', emeraldDim: '#ECFDF5',
-  amber: '#D97706', amberDim: '#FFFBEB',
+  amber: '#be2ed6', amberDim: 'rgba(190,46,214,0.07)',
   red: '#EF4444', redDim: '#FEF2F2',
-  violet: '#7C3AED', violetDim: '#F5F3FF',
-  orange: '#EA580C',
+  violet: '#a000c8', violetDim: 'rgba(160,0,200,0.07)',
+  orange: '#a000c8',
 }
 
 type Timeframe = 'week' | 'month' | 'quarter'
@@ -207,7 +207,7 @@ export default function TeamAnalyticsPage() {
         {[
           { label: 'New Leads',       value: kpis.newLeads,       sub: TF_LABEL[timeframe], icon: <PlusCircle size={17} color={C.blue}    />, accent: C.blue,    dim: C.blueDim    },
           { label: 'Deals Won',        value: kpis.wonLeads,       sub: 'all time',          icon: <Trophy     size={17} color={C.emerald} />, accent: C.emerald, dim: C.emeraldDim },
-          { label: 'Hot Leads',        value: kpis.hotLeads,       sub: 'score ≥ 70',        icon: <Flame      size={17} color={C.orange}  />, accent: C.orange,  dim: '#FFF7ED'    },
+          { label: 'Hot Leads',        value: kpis.hotLeads,       sub: 'score ≥ 70',        icon: <Flame      size={17} color={C.orange}  />, accent: C.orange,  dim: 'rgba(160,0,200,0.07)'    },
           { label: 'Total Activities', value: kpis.totalActivities, sub: TF_LABEL[timeframe], icon: <Activity   size={17} color={C.violet}  />, accent: C.violet,  dim: C.violetDim  },
           { label: 'Response Rate',    value: `${kpis.responseRate}%`, sub: 'leads contacted',icon: <TrendingUp size={17} color={C.amber}   />, accent: C.amber,   dim: C.amberDim   },
           { label: 'Total Leads',      value: kpis.totalLeads,     sub: 'in system',         icon: <Users      size={17} color={C.label}   />, accent: C.label,   dim: '#F8FAFC'    },

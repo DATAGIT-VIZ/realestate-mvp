@@ -12,9 +12,9 @@ const C = {
   label:   '#94A3B8',
   emerald: '#059669',
   red:     '#DC2626',
-  amber:   '#D97706',
-  blue:    '#2563EB',
-  orange:  '#EA580C',
+  amber:   '#be2ed6',
+  blue:    '#a000c8',
+  orange:  '#a000c8',
 }
 
 const OUTCOMES = [
@@ -71,12 +71,12 @@ export function CallModal({ isOpen, onClose, leadId, leadName, leadPhone, onLogg
     }
   }, [isOpen])
 
-  // Check if Exotel is configured (quick probe)
+  // Check if Exotel is configured
   useEffect(() => {
     if (!isOpen) return
-    fetch('/api/calls/make', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
+    fetch('/api/calls/configured')
       .then(r => r.json())
-      .then(j => setExoAvail(j.error !== 'Exotel not configured'))
+      .then(j => setExoAvail(j.configured === true))
       .catch(() => setExoAvail(false))
   }, [isOpen])
 
@@ -92,12 +92,11 @@ export function CallModal({ isOpen, onClose, leadId, leadName, leadPhone, onLogg
   useEffect(() => () => stopTimer(), [stopTimer])
 
   const handleStartCall = async () => {
-    if (!agentPhone.trim()) { setError('Enter your mobile number'); return }
-    localStorage.setItem(AGENT_PHONE_KEY, agentPhone.trim())
-    setError(null)
-
     if (exoAvail) {
-      // Exotel path
+      // Exotel path — needs agent phone
+      if (!agentPhone.trim()) { setError('Enter your mobile number'); return }
+      localStorage.setItem(AGENT_PHONE_KEY, agentPhone.trim())
+      setError(null)
       try {
         const res  = await fetch('/api/calls/make', {
           method: 'POST',
@@ -108,13 +107,12 @@ export function CallModal({ isOpen, onClose, leadId, leadName, leadPhone, onLogg
         if (json.error) throw new Error(json.error)
         setCallSid(json.data?.callSid ?? null)
         setStage('calling')
-        setTimeout(startTimer, 3000)  // give Exotel ~3s to ring agent
+        setTimeout(startTimer, 3000)
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Call failed')
       }
     } else {
-      // Fallback: open tel: link, move to log stage so agent can record outcome
-      window.open(`tel:${leadPhone}`)
+      // Demo mode: simulate call in-app, no dial needed
       setStage('calling')
       startTimer()
     }
@@ -206,40 +204,37 @@ export function CallModal({ isOpen, onClose, leadId, leadName, leadPhone, onLogg
           {/* SETUP */}
           {stage === 'setup' && (
             <div>
-              <div style={{ background: '#F8FAFC', border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 16px', marginBottom: 20 }}>
-                <p style={{ fontSize: 11, color: C.muted, margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Calling</p>
-                <p style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: 0 }}>{leadPhone}</p>
+              {/* Lead phone display */}
+              <div style={{ background: '#F8FAFC', border: `1px solid ${C.border}`, borderRadius: 12, padding: '16px', marginBottom: 20, textAlign: 'center' }}>
+                <p style={{ fontSize: 11, color: C.muted, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Lead phone</p>
+                <p style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0, letterSpacing: '-0.5px' }}>{leadPhone}</p>
               </div>
 
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 8 }}>
-                Your mobile number
-                <span style={{ fontWeight: 400, marginLeft: 6 }}>(Exotel will ring this first)</span>
-              </label>
-              <input
-                type="tel"
-                value={agentPhone}
-                onChange={e => setAgentPhone(e.target.value)}
-                placeholder="e.g. 9876543210"
-                style={{ width: '100%', padding: '10px 14px', border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 14, color: C.text, background: C.panel, outline: 'none', boxSizing: 'border-box' }}
-                onFocus={e => (e.currentTarget.style.borderColor = C.blue)}
-                onBlur={e  => (e.currentTarget.style.borderColor = C.border)}
-              />
-
-              {exoAvail === false && (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', background: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: 10, padding: '10px 14px', marginTop: 14 }}>
-                  <AlertCircle style={{ width: 14, height: 14, color: C.amber, flexShrink: 0, marginTop: 1 }} />
-                  <p style={{ fontSize: 12, color: '#92400E', margin: 0, lineHeight: 1.5 }}>
-                    Exotel not configured — will open your phone dialer instead. Add <code>EXOTEL_*</code> keys to enable bridged calling.
-                  </p>
+              {/* Exotel agent phone input — only when Exotel is available */}
+              {exoAvail === true && (
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 8 }}>
+                    Your mobile number
+                    <span style={{ fontWeight: 400, marginLeft: 6 }}>(Exotel will ring this first)</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={agentPhone}
+                    onChange={e => setAgentPhone(e.target.value)}
+                    placeholder="e.g. 9876543210"
+                    style={{ width: '100%', padding: '10px 14px', border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 14, color: C.text, background: C.panel, outline: 'none', boxSizing: 'border-box' }}
+                    onFocus={e => (e.currentTarget.style.borderColor = C.blue)}
+                    onBlur={e  => (e.currentTarget.style.borderColor = C.border)}
+                  />
+                  {error && <p style={{ fontSize: 12, color: C.red, marginTop: 8 }}>{error}</p>}
                 </div>
               )}
 
-              {error && <p style={{ fontSize: 12, color: C.red, marginTop: 10 }}>{error}</p>}
-
               <button onClick={handleStartCall}
-                style={{ width: '100%', marginTop: 20, padding: '12px 0', background: C.emerald, border: 'none', borderRadius: 12, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                style={{ width: '100%', padding: '13px 0', background: C.emerald, border: 'none', borderRadius: 12, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
               >
-                <Phone style={{ width: 16, height: 16 }} /> Start Call
+                <Phone style={{ width: 16, height: 16 }} />
+                {exoAvail ? 'Start Call via Exotel' : 'Start Call'}
               </button>
             </div>
           )}

@@ -19,8 +19,8 @@ export const PORTALS: PortalConfig[] = [
   {
     id:          'magicbricks',
     name:        'MagicBricks',
-    color:       '#EA580C',
-    bg:          'rgba(234,88,12,0.08)',
+    color:       '#a000c8',
+    bg:          'rgba(160,0,200,0.08)',
     emoji:       '🧱',
     tagline:     'India\'s largest property portal',
     webhookPath: `${BASE}/api/ingest/magicbricks`,

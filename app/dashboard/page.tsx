@@ -56,8 +56,8 @@ function timeAgo(iso: string) {
 }
 
 function scoreTag(score: number) {
-  if (score >= 70) return { label: 'Hot',  bg: '#FFF7ED', color: '#C2410C' }
-  if (score >= 40) return { label: 'Warm', bg: '#FEF3C7', color: '#92400E' }
+  if (score >= 70) return { label: 'Hot',  bg: 'rgba(160,0,200,0.07)', color: '#C2410C' }
+  if (score >= 40) return { label: 'Warm', bg: 'rgba(190,46,214,0.08)', color: '#7600bc' }
   return null
 }
 
@@ -67,19 +67,19 @@ const BORDER = '#E2E8F0'
 const TEXT   = '#0F172A'
 const MUTED  = '#64748B'
 const LABEL  = '#94A3B8'
-const PURPLE = '#7C3AED'
-const PURPLE10 = 'rgba(124,58,237,0.10)'
+const PURPLE = '#a000c8'
+const PURPLE10 = 'rgba(160,0,200,0.10)'
 
 const STAGE_COLORS: Record<string, string> = {
   New:         '#7C3AED',
   Contacted:   '#6366F1',
-  Qualified:   '#F59E0B',
-  Negotiation: '#F97316',
+  Qualified:   '#be2ed6',
+  Negotiation: '#a000c8',
   Won:         '#10B981',
   Lost:        '#94A3B8',
 }
 
-const SOURCE_COLORS = ['#7C3AED','#6366F1','#3B82F6','#10B981','#F59E0B','#F97316','#EC4899','#64748B']
+const SOURCE_COLORS = ['#a000c8','#7600bc','#b100cd','#10B981','#be2ed6','#a000c8','#da8ee7','#64748B']
 
 function StatCard({ icon, label, value, sub, accent }: {
   icon: React.ReactNode; label: string; value: string | number; sub?: string; accent: string
@@ -197,7 +197,7 @@ export default function DashboardPage() {
               Refresh
             </button>
             <Link href="/dashboard/leads">
-              <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', background: `linear-gradient(135deg, ${PURPLE}, #5B21B6)`, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 8px rgba(124,58,237,0.35)' }}>
+              <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', background: 'linear-gradient(135deg, #7600bc 0%, #b100cd 100%)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 8px rgba(160,0,200,0.35)' }}>
                 <Plus style={{ width: 14, height: 14 }} /> New Lead
               </button>
             </Link>
@@ -215,9 +215,9 @@ export default function DashboardPage() {
               <StatCard icon={<Users size={16} />} label="Total Leads" value={totalLeads}
                 sub={metrics.thisWk > 0 ? `+${metrics.thisWk} this week` : 'None this week'} accent={PURPLE} />
               <StatCard icon={<Flame size={16} />} label="Hot Leads" value={metrics.hot}
-                sub={metrics.hot > 0 ? 'Score 70+' : 'None yet'} accent="#EA580C" />
+                sub={metrics.hot > 0 ? 'Score 70+' : 'None yet'} accent="#a000c8" />
               <StatCard icon={<TrendingUp size={16} />} label="Warm Leads" value={metrics.warm}
-                sub="Score 40–69" accent="#D97706" />
+                sub="Score 40–69" accent="#be2ed6" />
               <StatCard icon={<IndianRupee size={16} />} label="Total Pipeline"
                 value={formatPipeline(metrics.pipe)} sub="Combined budgets" accent="#059669" />
             </div>

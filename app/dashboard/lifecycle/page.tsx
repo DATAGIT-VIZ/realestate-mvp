@@ -23,11 +23,11 @@ type Bucket = { id: string; label: string; color: string; stages: string[]; prim
 const STAGES: Stage[] = [
   { id: 'Fresh',           label: 'Fresh',               color: '#64748B' },
   { id: 'Attempting',      label: 'Attempting',           color: '#2563EB' },
-  { id: 'VM Done',         label: 'VM Done',              color: '#7C3AED' },
+  { id: 'VM Done',         label: 'VM Done',              color: '#a000c8' },
   { id: 'Connected',       label: 'Connected',            color: '#0EA5E9' },
-  { id: 'Virtual Meeting', label: 'Virtual Meeting Done', color: '#D97706' },
-  { id: 'Site Visit',      label: 'Site Visit Done',      color: '#F97316' },
-  { id: 'Negotiation',     label: 'Negotiation',          color: '#8B5CF6' },
+  { id: 'Virtual Meeting', label: 'Virtual Meeting Done', color: '#be2ed6' },
+  { id: 'Site Visit',      label: 'Site Visit Done',      color: '#a000c8' },
+  { id: 'Negotiation',     label: 'Negotiation',          color: '#a000c8' },
   { id: 'Won',             label: 'Closed',               color: '#059669' },
   { id: 'Lost',            label: 'Lost',                 color: '#DC2626' },
   { id: 'NC',              label: 'NC',                   color: '#94A3B8' },
@@ -39,8 +39,8 @@ const STAGE_IDS = new Set(STAGES.map(s => s.id))
 const BUCKETS: Bucket[] = [
   { id: 'new',  label: 'New Leads',         color: '#64748B', stages: ['Fresh'],                              primaryStage: 'Fresh'      },
   { id: 'cold', label: 'Cold Stage',        color: '#2563EB', stages: ['Attempting', 'VM Done'],             primaryStage: 'Attempting' },
-  { id: 'warm', label: 'Warm Stage',        color: '#D97706', stages: ['Connected', 'Virtual Meeting'],      primaryStage: 'Connected'  },
-  { id: 'hot',  label: 'Hot Stage',         color: '#F97316', stages: ['Site Visit', 'Negotiation', 'Won'], primaryStage: 'Site Visit' },
+  { id: 'warm', label: 'Warm Stage',        color: '#be2ed6', stages: ['Connected', 'Virtual Meeting'],      primaryStage: 'Connected'  },
+  { id: 'hot',  label: 'Hot Stage',         color: '#a000c8', stages: ['Site Visit', 'Negotiation', 'Won'], primaryStage: 'Site Visit' },
   { id: 'disq', label: 'Disqualified / NC', color: '#DC2626', stages: ['Lost', 'NC'],                        primaryStage: 'Lost'       },
 ]
 
@@ -96,14 +96,14 @@ function timeAgo(ts: string) {
 
 function scoreColor(s: number | null | undefined) {
   const n = s ?? 0
-  if (n >= 70) return '#F97316'
-  if (n >= 40) return '#D97706'
+  if (n >= 70) return '#a000c8'
+  if (n >= 40) return '#be2ed6'
   return '#94A3B8'
 }
 function scoreBg(s: number | null | undefined) {
   const n = s ?? 0
-  if (n >= 70) return '#FFF7ED'
-  if (n >= 40) return '#FFFBEB'
+  if (n >= 70) return 'rgba(160,0,200,0.07)'
+  if (n >= 40) return 'rgba(190,46,214,0.07)'
   return '#F1F5F9'
 }
 
@@ -413,7 +413,7 @@ export default function LifecyclePage() {
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-        <Loader2 style={{ width: 20, height: 20, color: '#2563EB', animation: 'spin 1s linear infinite' }} />
+        <Loader2 style={{ width: 20, height: 20, color: '#a000c8', animation: 'spin 1s linear infinite' }} />
         <span style={{ fontSize: 14, color: MUTED }}>Loading lifecycle…</span>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
@@ -430,7 +430,7 @@ export default function LifecyclePage() {
             <h1 className="hidden lg:block" style={{ fontSize: 22, fontWeight: 800, color: TEXT, margin: '0 0 4px' }}>Lead Lifecycle</h1>
             <p style={{ fontSize: 13, color: MUTED, margin: 0 }}>
               {leads.length} leads · drag to move between stages
-              {searchNorm && <span style={{ marginLeft: 8, color: '#2563EB', fontWeight: 600 }}>· filtering by CS ID: {searchNorm}</span>}
+              {searchNorm && <span style={{ marginLeft: 8, color: '#a000c8', fontWeight: 600 }}>· filtering by CS ID: {searchNorm}</span>}
             </p>
           </div>
           {/* Bucket legend */}

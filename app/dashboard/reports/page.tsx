@@ -16,13 +16,13 @@ const BORDER  = '#E2E8F0'
 const TEXT    = '#0F172A'
 const MUTED   = '#64748B'
 const LABEL   = '#94A3B8'
-const BLUE    = '#2563EB'
-const BLUE_D  = '#EFF6FF'
+const BLUE    = '#a000c8'
+const BLUE_D  = 'rgba(160,0,200,0.07)'
 const GREEN   = '#059669'
-const AMBER   = '#D97706'
-const AMBER_D = '#FFFBEB'
-const VIOLET  = '#7C3AED'
-const VIOLET_D= '#F5F3FF'
+const AMBER   = '#be2ed6'
+const AMBER_D = 'rgba(190,46,214,0.07)'
+const VIOLET  = '#a000c8'
+const VIOLET_D= 'rgba(160,0,200,0.07)'
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
@@ -76,11 +76,11 @@ function buildPrintHTML(
     return `₹${n.toLocaleString('en-IN')}`
   }
   const pctH = (a: number, b: number) => b ? Math.round((a / b) * 100) : 0
-  const bar  = (p: number, color = '#2563EB') =>
+  const bar  = (p: number, color = '#a000c8') =>
     `<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:7px;background:#E2E8F0;border-radius:4px"><div style="width:${p}%;height:100%;background:${color};border-radius:4px;print-color-adjust:exact;-webkit-print-color-adjust:exact"></div></div><span style="font-size:11px;font-weight:700;color:${color};min-width:32px">${p}%</span></div>`
 
   const STAGE_LABEL: Record<string,string> = {new:'New',site_visit:'Site Visit',negotiation:'Negotiation',token_paid:'Token Paid',won:'Won',lost:'Lost'}
-  const STAGE_COLOR: Record<string,string> = {new:'#94A3B8',site_visit:'#2563EB',negotiation:'#D97706',token_paid:'#7C3AED',won:'#059669',lost:'#EF4444'}
+  const STAGE_COLOR: Record<string,string> = {new:'#94A3B8',site_visit:'#a000c8',negotiation:'#be2ed6',token_paid:'#a000c8',won:'#059669',lost:'#EF4444'}
 
   const titleLabel: Record<string, string> = {
     productivity: 'Productivity Report',
@@ -94,22 +94,22 @@ function buildPrintHTML(
     body{font-family:-apple-system,Arial,Helvetica,sans-serif;color:#0F172A;background:#fff;font-size:13px}
     .page{max-width:900px;margin:0 auto}
     /* Header */
-    .rpt-header{background:#1E3A5F;color:#fff;padding:22px 32px;display:flex;justify-content:space-between;align-items:center;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .rpt-header{background:#4c00b0;color:#fff;padding:22px 32px;display:flex;justify-content:space-between;align-items:center;print-color-adjust:exact;-webkit-print-color-adjust:exact}
     .rpt-brand{font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;opacity:.65;margin-bottom:3px}
     .rpt-title{font-size:22px;font-weight:800;letter-spacing:-.02em}
     .rpt-gen{text-align:right;font-size:11px;opacity:.7;line-height:1.5}
     /* Subheader */
-    .rpt-sub{background:#F1F5F9;padding:12px 32px;border-bottom:3px solid #2563EB;display:flex;justify-content:space-between;align-items:center;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .rpt-sub{background:#F1F5F9;padding:12px 32px;border-bottom:3px solid #a000c8;display:flex;justify-content:space-between;align-items:center;print-color-adjust:exact;-webkit-print-color-adjust:exact}
     .rpt-agent{font-size:16px;font-weight:800;color:#0F172A}
     .rpt-period{font-size:12px;color:#64748B;margin-top:2px}
     .rpt-conf{font-size:9px;font-weight:800;color:#EF4444;text-transform:uppercase;letter-spacing:.08em;border:1.5px solid #EF4444;padding:2px 8px;border-radius:5px}
-    .demo-badge{font-size:9px;font-weight:800;background:#FFFBEB;color:#D97706;border:1px solid rgba(217,119,6,.3);border-radius:12px;padding:2px 9px;text-transform:uppercase;letter-spacing:.06em;margin-left:10px}
+    .demo-badge{font-size:9px;font-weight:800;background:rgba(190,46,214,0.07);color:#be2ed6;border:1px solid rgba(190,46,214,.3);border-radius:12px;padding:2px 9px;text-transform:uppercase;letter-spacing:.06em;margin-left:10px}
     /* Content */
     .rpt-body{padding:24px 32px}
     /* Section */
     .sec{margin-bottom:24px}
-    .sec-title{font-size:10px;font-weight:800;color:#2563EB;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;padding-bottom:7px;border-bottom:2px solid #EFF6FF;display:flex;align-items:center;gap:6px}
-    .sec-title::before{content:'';display:inline-block;width:3px;height:12px;background:#2563EB;border-radius:2px;flex-shrink:0}
+    .sec-title{font-size:10px;font-weight:800;color:#a000c8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;padding-bottom:7px;border-bottom:2px solid rgba(160,0,200,0.07);display:flex;align-items:center;gap:6px}
+    .sec-title::before{content:'';display:inline-block;width:3px;height:12px;background:#a000c8;border-radius:2px;flex-shrink:0}
     /* KPI grid */
     .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
     .kpi-box{border:1px solid #E2E8F0;border-radius:10px;padding:14px 14px 12px;position:relative;overflow:hidden;background:#fff}
@@ -118,13 +118,13 @@ function buildPrintHTML(
     .kpi-val{font-size:24px;font-weight:800;color:#0F172A;letter-spacing:-.02em;line-height:1}
     .kpi-sub{font-size:10px;color:#94A3B8;margin-top:4px}
     /* Banner */
-    .banner{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:14px 18px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;print-color-adjust:exact;-webkit-print-color-adjust:exact}
-    .banner-label{font-size:10px;font-weight:700;color:#2563EB;text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px}
+    .banner{background:rgba(160,0,200,0.07);border:1px solid rgba(160,0,200,0.2);border-radius:10px;padding:14px 18px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .banner-label{font-size:10px;font-weight:700;color:#a000c8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px}
     .banner-val{font-size:22px;font-weight:800;color:#0F172A}
     .banner-note{font-size:11px;color:#64748B}
     /* Tables */
     .tbl{width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden;border:1px solid #E2E8F0}
-    .tbl thead tr{background:#2563EB;color:#fff;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .tbl thead tr{background:#a000c8;color:#fff;print-color-adjust:exact;-webkit-print-color-adjust:exact}
     .tbl thead th{padding:10px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;text-align:left}
     .tbl tbody tr:nth-child(even){background:#F8FAFC;print-color-adjust:exact;-webkit-print-color-adjust:exact}
     .tbl tbody td{padding:10px 12px;font-size:12px;border-bottom:1px solid #F1F5F9;vertical-align:middle}
@@ -134,14 +134,14 @@ function buildPrintHTML(
     /* Stage dots */
     .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;flex-shrink:0;vertical-align:middle;print-color-adjust:exact;-webkit-print-color-adjust:exact}
     /* Highlight box */
-    .highlight{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:14px 16px;print-color-adjust:exact;-webkit-print-color-adjust:exact}
-    .highlight.amber{background:#FFFBEB;border-color:rgba(217,119,6,.25)}
+    .highlight{background:rgba(160,0,200,0.07);border:1px solid rgba(160,0,200,0.2);border-radius:10px;padding:14px 16px;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .highlight.amber{background:rgba(190,46,214,0.07);border-color:rgba(190,46,214,.25)}
     .highlight.green{background:#ECFDF5;border-color:rgba(5,150,105,.2)}
     .hl-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
     .hl-val{font-size:18px;font-weight:800;color:#0F172A}
     .hl-sub{font-size:11px;color:#64748B;margin-top:2px}
     /* Near close row */
-    .nc-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(37,99,235,.1)}
+    .nc-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(160,0,200,.1)}
     .nc-row:last-child{border-bottom:none}
     /* Footer */
     .rpt-footer{padding:12px 32px;border-top:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;margin-top:8px}
@@ -165,7 +165,7 @@ function buildPrintHTML(
       <div class="rpt-gen">
         <div>Generated</div>
         <div style="font-weight:700;color:#fff;font-size:13px">${today}</div>
-        ${isDemo ? '<div style="margin-top:4px"><span style="font-size:9px;background:rgba(251,191,36,.2);color:#FCD34D;border:1px solid rgba(251,191,36,.3);border-radius:10px;padding:1px 8px;text-transform:uppercase;letter-spacing:.06em">Sample Data</span></div>' : ''}
+        ${isDemo ? '<div style="margin-top:4px"><span style="font-size:9px;background:rgba(251,191,36,.2);color:rgba(190,46,214,0.25);border:1px solid rgba(251,191,36,.3);border-radius:10px;padding:1px 8px;text-transform:uppercase;letter-spacing:.06em">Sample Data</span></div>' : ''}
       </div>
     </div>
     <div class="rpt-sub">
@@ -219,12 +219,12 @@ function buildPrintHTML(
       <div class="sec">
         <div class="sec-title">Performance Snapshot</div>
         <div class="kpi-grid">
-          <div class="kpi-box"><div class="kpi-accent" style="background:#2563EB"></div><div class="kpi-label">Leads Added</div><div class="kpi-val">${totalLeads}</div><div class="kpi-sub">${hotLeads} hot leads (score ≥70)</div></div>
-          <div class="kpi-box"><div class="kpi-accent" style="background:#7C3AED"></div><div class="kpi-label">Calls Made</div><div class="kpi-val">${calls}</div><div class="kpi-sub">${connected} connected · ${calls - connected} not reached</div></div>
-          <div class="kpi-box"><div class="kpi-accent" style="background:#D97706"></div><div class="kpi-label">Site Visits</div><div class="kpi-val">${siteVisits}</div><div class="kpi-sub">${pctH(siteVisits, calls)}% of calls converted to visit</div></div>
+          <div class="kpi-box"><div class="kpi-accent" style="background:#a000c8"></div><div class="kpi-label">Leads Added</div><div class="kpi-val">${totalLeads}</div><div class="kpi-sub">${hotLeads} hot leads (score ≥70)</div></div>
+          <div class="kpi-box"><div class="kpi-accent" style="background:#a000c8"></div><div class="kpi-label">Calls Made</div><div class="kpi-val">${calls}</div><div class="kpi-sub">${connected} connected · ${calls - connected} not reached</div></div>
+          <div class="kpi-box"><div class="kpi-accent" style="background:#be2ed6"></div><div class="kpi-label">Site Visits</div><div class="kpi-val">${siteVisits}</div><div class="kpi-sub">${pctH(siteVisits, calls)}% of calls converted to visit</div></div>
           <div class="kpi-box"><div class="kpi-accent" style="background:#059669"></div><div class="kpi-label">Deals Won</div><div class="kpi-val">${wonDeals}</div><div class="kpi-sub">Revenue: ${fmtH(wonVal)}</div></div>
           <div class="kpi-box"><div class="kpi-accent" style="background:#059669"></div><div class="kpi-label">Win Rate</div><div class="kpi-val">${winRate}%</div><div class="kpi-sub">Out of ${closedDeals} closed deals</div></div>
-          <div class="kpi-box"><div class="kpi-accent" style="background:#2563EB"></div><div class="kpi-label">Response Rate</div><div class="kpi-val">${responseRate}%</div><div class="kpi-sub">Leads contacted at least once</div></div>
+          <div class="kpi-box"><div class="kpi-accent" style="background:#a000c8"></div><div class="kpi-label">Response Rate</div><div class="kpi-val">${responseRate}%</div><div class="kpi-sub">Leads contacted at least once</div></div>
         </div>
         ${pipelineVal > 0 ? `<div class="banner"><div><div class="banner-label">Active Pipeline Value</div><div class="banner-val">${fmtH(pipelineVal)}</div><div class="banner-note">Deals currently in progress (excl. won/lost)</div></div></div>` : ''}
       </div>
@@ -238,7 +238,7 @@ function buildPrintHTML(
             ${sources.map(([src,n]) => `
               <tr>
                 <td style="font-weight:600">${src}</td>
-                <td style="font-weight:700;color:#2563EB">${n}</td>
+                <td style="font-weight:700;color:#a000c8">${n}</td>
                 <td style="width:200px">${bar(pctH(n,srcTotal))}</td>
                 <td style="font-weight:700;color:#64748B">${pctH(n,srcTotal)}%</td>
               </tr>`).join('')}
@@ -271,7 +271,7 @@ function buildPrintHTML(
               ${actRows.map(([t,n]) => `
                 <tr>
                   <td style="text-transform:capitalize">${t.replace(/_/g,' ')}</td>
-                  <td style="text-align:right;font-weight:700;color:#7C3AED">${n}</td>
+                  <td style="text-align:right;font-weight:700;color:#a000c8">${n}</td>
                 </tr>`).join('')}
             </tbody>
           </table>
@@ -282,7 +282,7 @@ function buildPrintHTML(
       <div class="sec">
         <div class="sec-title">City Focus</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px">
-          ${cities.map(([c,n])=>`<div style="display:flex;align-items:center;gap:6px;padding:5px 13px;border:1px solid #E2E8F0;border-radius:20px"><span style="font-size:12px;font-weight:600">${c}</span><span style="font-size:11px;font-weight:700;background:#EFF6FF;color:#2563EB;padding:1px 7px;border-radius:10px">${n}</span></div>`).join('')}
+          ${cities.map(([c,n])=>`<div style="display:flex;align-items:center;gap:6px;padding:5px 13px;border:1px solid #E2E8F0;border-radius:20px"><span style="font-size:12px;font-weight:600">${c}</span><span style="font-size:11px;font-weight:700;background:rgba(160,0,200,0.07);color:#a000c8;padding:1px 7px;border-radius:10px">${n}</span></div>`).join('')}
         </div>
       </div>` : ''}
     `
@@ -320,7 +320,7 @@ function buildPrintHTML(
             <div class="hl-sub">${best.conv}% lead-to-deal conversion · ${best.leads} leads</div>
           </div>
           <div class="highlight">
-            <div class="hl-label" style="color:#2563EB">Total Leads Analysed</div>
+            <div class="hl-label" style="color:#a000c8">Total Leads Analysed</div>
             <div class="hl-val">${leads.length}</div>
             <div class="hl-sub">Across ${rows.length} source${rows.length!==1?'s':''} · Period: ${period}</div>
           </div>
@@ -335,11 +335,11 @@ function buildPrintHTML(
             ${rows.map(r=>`
               <tr>
                 <td style="font-weight:700">${r.portal}</td>
-                <td style="font-weight:700;color:#2563EB">${r.leads}</td>
+                <td style="font-weight:700;color:#a000c8">${r.leads}</td>
                 <td style="color:${r.hot>0?'#059669':'#94A3B8'};font-weight:${r.hot>0?700:400}">${r.hot}</td>
                 <td>
                   <div style="display:flex;align-items:center;gap:6px">
-                    <div style="width:36px;height:5px;background:#E2E8F0;border-radius:3px"><div style="width:${r.avg}%;height:100%;background:${r.avg>=70?'#059669':r.avg>=50?'#D97706':'#94A3B8'};border-radius:3px"></div></div>
+                    <div style="width:36px;height:5px;background:#E2E8F0;border-radius:3px"><div style="width:${r.avg}%;height:100%;background:${r.avg>=70?'#059669':r.avg>=50?'#be2ed6':'#94A3B8'};border-radius:3px"></div></div>
                     <span style="font-size:11px;color:#64748B">${r.avg}</span>
                   </div>
                 </td>
@@ -347,8 +347,8 @@ function buildPrintHTML(
                 <td style="font-weight:700;color:${r.won>0?'#059669':'#94A3B8'}">${r.won}</td>
                 <td>
                   <div style="display:flex;align-items:center;gap:5px">
-                    <div style="width:42px;height:6px;background:#E2E8F0;border-radius:3px"><div style="width:${r.conv}%;height:100%;background:${r.conv>=20?'#059669':r.conv>=10?'#D97706':'#94A3B8'};border-radius:3px"></div></div>
-                    <span style="font-weight:700;font-size:11px;color:${r.conv>=20?'#059669':r.conv>=10?'#D97706':'#94A3B8'}">${r.conv}%</span>
+                    <div style="width:42px;height:6px;background:#E2E8F0;border-radius:3px"><div style="width:${r.conv}%;height:100%;background:${r.conv>=20?'#059669':r.conv>=10?'#be2ed6':'#94A3B8'};border-radius:3px"></div></div>
+                    <span style="font-weight:700;font-size:11px;color:${r.conv>=20?'#059669':r.conv>=10?'#be2ed6':'#94A3B8'}">${r.conv}%</span>
                   </div>
                 </td>
               </tr>`).join('')}
@@ -365,8 +365,8 @@ function buildPrintHTML(
             ${ptRows.map(([t,n])=>`
               <tr>
                 <td style="font-weight:600">${t}</td>
-                <td style="font-weight:700;color:#7C3AED">${n}</td>
-                <td style="width:180px">${bar(pctH(n,ptTotal),'#7C3AED')}</td>
+                <td style="font-weight:700;color:#a000c8">${n}</td>
+                <td style="width:180px">${bar(pctH(n,ptTotal),'#a000c8')}</td>
                 <td style="font-weight:700;color:#64748B">${pctH(n,ptTotal)}%</td>
               </tr>`).join('')}
           </tbody>
@@ -408,7 +408,7 @@ function buildPrintHTML(
             <div class="hl-sub">${best.leads} leads · ${best.acts} activities${best.won?` · ${best.won} won`:''}</div>
           </div>
           <div class="highlight amber">
-            <div class="hl-label" style="color:#D97706">Slowest Month</div>
+            <div class="hl-label" style="color:#be2ed6">Slowest Month</div>
             <div class="hl-val">${worst?.label??'—'}</div>
             <div class="hl-sub">${worst?.leads??0} leads · ${worst?.acts??0} activities</div>
           </div>
@@ -423,9 +423,9 @@ function buildPrintHTML(
             ${sorted.map(r=>`
               <tr>
                 <td style="font-weight:700">${r.label}</td>
-                <td style="font-weight:700;color:#2563EB">${r.leads}</td>
+                <td style="font-weight:700;color:#a000c8">${r.leads}</td>
                 <td style="width:160px">${bar(pctH(r.leads,maxL))}</td>
-                <td style="color:#7C3AED;font-weight:${r.acts>0?600:400}">${r.acts}</td>
+                <td style="color:#a000c8;font-weight:${r.acts>0?600:400}">${r.acts}</td>
                 <td style="color:${r.won>0?'#059669':'#94A3B8'};font-weight:${r.won>0?700:400}">${r.won>0?r.won:'—'}</td>
               </tr>`).join('')}
             ${sorted.length===0?'<tr><td colspan="5" style="color:#94A3B8;text-align:center;padding:20px">No historical data yet</td></tr>':''}
@@ -448,7 +448,7 @@ function buildPrintHTML(
       <div class="sec">
         <div class="sec-title">Pipeline Summary</div>
         <div class="kpi-grid">
-          <div class="kpi-box"><div class="kpi-accent" style="background:#2563EB"></div><div class="kpi-label">Active Pipeline</div><div class="kpi-val">${fmtH(pipeVal)}</div><div class="kpi-sub">${active.length} deals in progress</div></div>
+          <div class="kpi-box"><div class="kpi-accent" style="background:#a000c8"></div><div class="kpi-label">Active Pipeline</div><div class="kpi-val">${fmtH(pipeVal)}</div><div class="kpi-sub">${active.length} deals in progress</div></div>
           <div class="kpi-box"><div class="kpi-accent" style="background:#059669"></div><div class="kpi-label">Revenue Closed (Won)</div><div class="kpi-val">${fmtH(wonVal)}</div><div class="kpi-sub">${won.length} deals won</div></div>
           <div class="kpi-box"><div class="kpi-accent" style="background:#EF4444"></div><div class="kpi-label">Deals Lost</div><div class="kpi-val">${lost.length}</div><div class="kpi-sub">${fmtH(lostVal)} walked away</div></div>
         </div>
@@ -466,7 +466,7 @@ function buildPrintHTML(
               </div>
               <div style="display:flex;align-items:center;gap:14px">
                 <span style="font-size:12px;font-weight:600;color:${STAGE_COLOR[d.stage]??'#64748B'}">${STAGE_LABEL[d.stage]??d.stage}</span>
-                <span style="font-size:14px;font-weight:800;color:#2563EB">${fmtH(d.deal_value??0)}</span>
+                <span style="font-size:14px;font-weight:800;color:#a000c8">${fmtH(d.deal_value??0)}</span>
               </div>
             </div>`).join('')}
         </div>
@@ -685,7 +685,7 @@ function ProductivityView({data,range}:{data:ReportData;range:string}) {
 
       {/* Pipeline value */}
       {pipelineVal > 0 && (
-        <div style={{background:BLUE_D,border:`1px solid #BFDBFE`,borderRadius:12,padding:'12px 16px',marginBottom:14,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={{background:BLUE_D,border:`1px solid rgba(160,0,200,0.2)`,borderRadius:12,padding:'12px 16px',marginBottom:14,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
           <div>
             <div style={{fontSize:10,fontWeight:700,color:BLUE,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:2}}>Active Pipeline Value</div>
             <div style={{fontSize:22,fontWeight:800,color:TEXT,letterSpacing:'-0.02em'}}>{fmt(pipelineVal)}</div>
@@ -786,7 +786,7 @@ function BySourceView({data,range}:{data:ReportData;range:string}) {
   return (
     <div>
       {best?.portal && (
-        <div style={{background:BLUE_D,border:`1px solid #BFDBFE`,borderRadius:12,padding:'12px 16px',marginBottom:14,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={{background:BLUE_D,border:`1px solid rgba(160,0,200,0.2)`,borderRadius:12,padding:'12px 16px',marginBottom:14,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
           <div>
             <div style={{fontSize:10,fontWeight:700,color:BLUE,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:2}}>Best Converting Source</div>
             <div style={{fontSize:18,fontWeight:800,color:TEXT}}>{best.portal}</div>
@@ -896,7 +896,7 @@ function SeasonalView({data}:{data:ReportData}) {
     <div>
       {sorted.length > 0 && (
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:14}}>
-          <div style={{background:BLUE_D,border:`1px solid #BFDBFE`,borderRadius:12,padding:'12px 16px'}}>
+          <div style={{background:BLUE_D,border:`1px solid rgba(160,0,200,0.2)`,borderRadius:12,padding:'12px 16px'}}>
             <div style={{fontSize:10,fontWeight:700,color:BLUE,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:2}}>Best Month</div>
             <div style={{fontSize:18,fontWeight:800,color:TEXT}}>{best?.label}</div>
             <div style={{fontSize:12,color:MUTED}}>{best?.leads} leads · {best?.acts} activities</div>
@@ -951,7 +951,7 @@ function PipelineView({data}:{data:ReportData}) {
       </div>
 
       {nearClose.length > 0 && (
-        <div style={{background:BLUE_D,border:`1px solid #BFDBFE`,borderRadius:12,padding:'12px 16px',marginBottom:14}}>
+        <div style={{background:BLUE_D,border:`1px solid rgba(160,0,200,0.2)`,borderRadius:12,padding:'12px 16px',marginBottom:14}}>
           <div style={{fontSize:10,fontWeight:700,color:BLUE,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:8}}>Near Closing — Action Required</div>
           {nearClose.map(d=>(
             <div key={d.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 0',borderBottom:`1px solid ${BLUE}15`}}>

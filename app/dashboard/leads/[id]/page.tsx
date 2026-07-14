@@ -14,17 +14,20 @@ import {
   TrendingUp, Calendar, Trash2, Loader2, Activity,
   AlertCircle, Plus, MessageCircle, CheckCircle, XCircle,
   MinusCircle, HelpCircle, ChevronDown, User, PhoneOff, Copy, Send,
-  Zap, Bell,
+  Zap, Bell, Award,
 } from 'lucide-react'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const BG      = '#F4F6FA'
 const PANEL   = '#FFFFFF'
 const BORDER  = '#E8EDF2'
-const BLUE    = '#2563EB'
+const BLUE         = '#a000c8'
+const PRIMARY_DIM  = 'rgba(160,0,200,0.08)'
+const PRIMARY_BORDER = 'rgba(160,0,200,0.25)'
+const PRIMARY_GRAD = 'linear-gradient(135deg, #7600bc 0%, #b100cd 100%)'
 const EMERALD = '#059669'
 const RED     = '#DC2626'
-const AMBER   = '#D97706'
+const AMBER   = '#be2ed6'
 const TEXT    = '#0F172A'
 const MUTED   = '#64748B'
 const MUTED2  = '#334155'
@@ -35,13 +38,13 @@ const ACT_COLORS: Record<string, { icon: string; bg: string; accent: string }> =
   'Call Missed':          { icon: '#DC2626', bg: '#FEF2F2', accent: '#DC2626' },
   'WhatsApp Sent':        { icon: WA_GRN,   bg: '#F0FDF4', accent: WA_GRN    },
   'WhatsApp Received':    { icon: WA_GRN,   bg: '#F0FDF4', accent: WA_GRN    },
-  'Email Sent':           { icon: '#7C3AED', bg: '#F5F3FF', accent: '#7C3AED' },
-  'Email Received':       { icon: '#7C3AED', bg: '#F5F3FF', accent: '#7C3AED' },
-  'Site Visit Scheduled': { icon: '#D97706', bg: '#FFFBEB', accent: '#D97706' },
-  'Site Visit Done':      { icon: '#F97316', bg: '#FFF7ED', accent: '#F97316' },
-  'Follow Up Set':        { icon: '#D97706', bg: '#FFFBEB', accent: '#D97706' },
-  'Note':                 { icon: BLUE,      bg: '#EFF6FF', accent: BLUE      },
-  'Status Changed':       { icon: '#8B5CF6', bg: '#F5F3FF', accent: '#8B5CF6' },
+  'Email Sent':           { icon: '#a000c8', bg: PRIMARY_DIM, accent: '#a000c8' },
+  'Email Received':       { icon: '#a000c8', bg: PRIMARY_DIM, accent: '#a000c8' },
+  'Site Visit Scheduled': { icon: '#be2ed6', bg: 'rgba(190,46,214,0.07)', accent: '#be2ed6' },
+  'Site Visit Done':      { icon: '#a000c8', bg: 'rgba(160,0,200,0.07)', accent: '#a000c8' },
+  'Follow Up Set':        { icon: '#be2ed6', bg: 'rgba(190,46,214,0.07)', accent: '#be2ed6' },
+  'Note':                 { icon: BLUE,      bg: PRIMARY_DIM, accent: BLUE    },
+  'Status Changed':       { icon: '#a000c8', bg: PRIMARY_DIM, accent: '#a000c8' },
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -87,8 +90,8 @@ function formatShortDate(s: string) {
   return new Date(s).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 }
 function scoreStyle(score: number) {
-  if (score >= 70) return { label: 'High Intent', color: '#EA580C', ring: '#F97316', bg: '#FFF7ED' }
-  if (score >= 40) return { label: 'Medium',      color: '#B45309', ring: '#D97706', bg: '#FFFBEB' }
+  if (score >= 70) return { label: 'High Intent', color: '#a000c8', ring: '#a000c8', bg: 'rgba(160,0,200,0.07)' }
+  if (score >= 40) return { label: 'Medium',      color: '#8a00c2', ring: '#be2ed6', bg: 'rgba(190,46,214,0.07)' }
   return               { label: 'Low',            color: '#64748B', ring: '#CBD5E1', bg: '#F1F5F9' }
 }
 function scoreBreakdown(l: CRMLead) {
@@ -114,7 +117,7 @@ const OUTCOME_CFG: Record<string, { Icon: React.ElementType; color: string; bg: 
   'Positive':    { Icon: CheckCircle, color: '#059669', bg: '#ECFDF5' },
   'Neutral':     { Icon: MinusCircle, color: '#64748B', bg: '#F1F5F9' },
   'Negative':    { Icon: XCircle,     color: '#DC2626', bg: '#FEF2F2' },
-  'No Response': { Icon: HelpCircle,  color: '#B45309', bg: '#FFFBEB' },
+  'No Response': { Icon: HelpCircle,  color: '#8a00c2', bg: 'rgba(190,46,214,0.07)' },
 }
 const ACT_ICON: Record<string, React.ElementType> = {
   'Call Made': Phone, 'Call Missed': Phone, 'WhatsApp Sent': MessageCircle,
@@ -124,23 +127,20 @@ const ACT_ICON: Record<string, React.ElementType> = {
 }
 
 const STAGES = [
-  { id: 'Fresh',           label: 'Fresh',               color: '#64748B', desc: 'Unworked — just arrived',             terminal: false },
-  { id: 'Attempting',      label: 'Attempting',           color: '#2563EB', desc: 'Active call attempts',                terminal: false },
-  { id: 'VM Done',         label: 'VM Done',              color: '#7C3AED', desc: 'Voicemail / message left',            terminal: false },
-  { id: 'Connected',       label: 'Connected',            color: '#0EA5E9', desc: 'First contact made',                  terminal: false },
-  { id: 'Virtual Meeting', label: 'Virtual Meeting Done', color: '#D97706', desc: 'Video / virtual call done',           terminal: false },
-  { id: 'Site Visit',      label: 'Site Visit Done',      color: '#F97316', desc: 'Physical site visit completed',       terminal: false },
-  { id: 'Negotiation',     label: 'Negotiation',          color: '#8B5CF6', desc: 'Terms & pricing discussion',          terminal: false },
-  { id: 'Won',             label: 'Closed',               color: '#059669', desc: 'Deal closed successfully',            terminal: true  },
-  { id: 'Lost',            label: 'Lost',                 color: '#DC2626', desc: 'Lead not proceeding',                 terminal: true  },
-  { id: 'NC',              label: 'NC',                   color: '#94A3B8', desc: 'Non-contactable (5 failed attempts)', terminal: true  },
+  { id: 'New',          label: 'New',          color: '#64748B', desc: 'Unworked — just assigned',            terminal: false },
+  { id: 'Cold',         label: 'Cold',         color: '#2563EB', desc: 'Calls / WhatsApp only, no engagement', terminal: false },
+  { id: 'Warm',         label: 'Warm',         color: '#be2ed6', desc: 'VM / OBM / SV done or docs requested', terminal: false },
+  { id: 'Hot',          label: 'Hot',          color: '#a000c8', desc: 'EOI received — high intent to book',   terminal: false },
+  { id: 'Closed',       label: 'Closed',       color: '#059669', desc: 'Deal closed — EOI paid',               terminal: true  },
+  { id: 'Disqualified', label: 'Disqualified', color: '#94A3B8', desc: 'Not proceeding — NC or rejected',      terminal: true  },
 ]
 const BUCKETS = [
-  { label: 'New Leads',         color: '#64748B', stages: ['Fresh']                             },
-  { label: 'Cold Stage',        color: '#2563EB', stages: ['Attempting', 'VM Done']             },
-  { label: 'Warm Stage',        color: '#D97706', stages: ['Connected', 'Virtual Meeting']      },
-  { label: 'Hot Stage',         color: '#F97316', stages: ['Site Visit', 'Negotiation', 'Won'] },
-  { label: 'Disqualified / NC', color: '#DC2626', stages: ['Lost', 'NC']                        },
+  { label: 'New',          color: '#64748B', stages: ['New']          },
+  { label: 'Cold',         color: '#2563EB', stages: ['Cold']         },
+  { label: 'Warm',         color: '#be2ed6', stages: ['Warm']         },
+  { label: 'Hot',          color: '#a000c8', stages: ['Hot']          },
+  { label: 'Closed',       color: '#059669', stages: ['Closed']       },
+  { label: 'Disqualified', color: '#94A3B8', stages: ['Disqualified'] },
 ]
 
 // ─── Shared sub-components ────────────────────────────────────────────────────
@@ -194,7 +194,7 @@ function ActivityCard({ act }: { act: LeadActivity }) {
           </span>
         )}
         {act.nextActionDate && (
-          <span style={{ fontSize: 11, color: AMBER, display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
+          <span style={{ fontSize: 11, color: BLUE, display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
             <Calendar style={{ width: 10, height: 10 }} />Follow up: {formatDate(act.nextActionDate)}
           </span>
         )}
@@ -284,7 +284,7 @@ export default function LeadDetailPage() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-      <Loader2 style={{ width: 22, height: 22, color: AMBER, animation: 'spin 1s linear infinite' }} />
+      <Loader2 style={{ width: 22, height: 22, color: BLUE, animation: 'spin 1s linear infinite' }} />
       <span style={{ fontSize: 14, color: MUTED }}>Loading lead…</span>
     </div>
   )
@@ -314,6 +314,40 @@ export default function LeadDetailPage() {
   const daysInPipe = Math.floor((Date.now() - new Date(lead.createdAt).getTime()) / 86_400_000)
   const daysSince  = lastAct ? Math.floor((Date.now() - new Date(lastAct.createdAt).getTime()) / 86_400_000) : null
 
+  // ── Last-achieved milestone ──────────────────────────────────────────────────
+  const MILESTONE_STATUS: Record<string, string> = {
+    'Deal Closed': 'Closed', 'EOI Received': 'Hot',
+    'Site Visit Done': 'Warm', 'OBM Done': 'Warm', 'VM Done': 'Warm',
+  }
+  const MILESTONE_COLOR: Record<string, string> = {
+    Closed: '#059669', Hot: '#a000c8', Warm: '#be2ed6',
+  }
+  const activityTypes = activities.map(a => a.type)
+  const topMilestone  = ['Deal Closed', 'EOI Received', 'Site Visit Done', 'OBM Done', 'VM Done']
+    .find(m => activityTypes.includes(m)) ?? null
+  const achievedStage = topMilestone ? MILESTONE_STATUS[topMilestone] : null
+
+  // ── Status transition markers (simulate lifecycle engine client-side) ─────────
+  const STATUS_ADV_CLIENT: Record<string, string> = {
+    'Call Made': 'Cold', 'Call Missed': 'Cold', 'WhatsApp Sent': 'Cold',
+    'WhatsApp Received': 'Cold', 'Email Sent': 'Cold',
+    'VM Done': 'Warm', 'OBM Done': 'Warm', 'Site Visit Done': 'Warm',
+    'EOI Received': 'Hot', 'Deal Closed': 'Closed',
+  }
+  const SIM_ORDER = ['New', 'Cold', 'Warm', 'Hot', 'Closed']
+  const statusMarkers = new Map<string, string>()
+  {
+    let sim = 'New'
+    const chrono = [...activities].reverse()
+    for (const act of chrono) {
+      const target = STATUS_ADV_CLIENT[act.type]
+      if (target) {
+        const ci = SIM_ORDER.indexOf(sim), ti = SIM_ORDER.indexOf(target)
+        if (ti > ci) { statusMarkers.set(act.id, target); sim = target }
+      }
+    }
+  }
+
   // ── Tab data ────────────────────────────────────────────────────────────────
   const callActs = activities.filter(a => a.type.toLowerCase().includes('call'))
   const waActs   = activities.filter(a => a.type.toLowerCase().includes('whatsapp'))
@@ -334,17 +368,17 @@ export default function LeadDetailPage() {
   if (!nudgeDismissed) {
     if (futureFU) {
       const daysUntil = Math.ceil((new Date(futureFU).getTime() - Date.now()) / 86_400_000)
-      if (daysUntil <= 2) nudge = { icon: Bell, color: AMBER, bg: '#FFFBEB', border: '#FDE68A', text: `Follow-up ${daysUntil === 0 ? 'today' : daysUntil === 1 ? 'tomorrow' : 'in 2 days'}`, sub: `Scheduled on ${formatShortDate(futureFU)} — log the outcome when done`, actionLabel: 'Log Outcome', onAction: () => setShowActivityModal(true) }
+      if (daysUntil <= 2) nudge = { icon: Bell, color: AMBER, bg: 'rgba(190,46,214,0.07)', border: 'rgba(190,46,214,0.25)', text: `Follow-up ${daysUntil === 0 ? 'today' : daysUntil === 1 ? 'tomorrow' : 'in 2 days'}`, sub: `Scheduled on ${formatShortDate(futureFU)} — log the outcome when done`, actionLabel: 'Log Outcome', onAction: () => setShowActivityModal(true) }
     } else if (activities.length === 0) {
-      nudge = { icon: Zap, color: BLUE, bg: '#EFF6FF', border: '#BFDBFE', text: 'Make your first move', sub: 'This lead hasn\'t been contacted yet — a quick call increases conversion by 3×', actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
-    } else if (score >= 70 && ['Fresh', 'Attempting', 'VM Done'].includes(lead.status || 'Fresh')) {
-      nudge = { icon: Zap, color: '#EA580C', bg: '#FFF7ED', border: '#FED7AA', text: 'High intent — move fast', sub: `Score ${score}/100 but still in early stage. Don't let a hot lead go cold`, actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
+      nudge = { icon: Zap, color: BLUE, bg: PRIMARY_DIM, border: PRIMARY_BORDER, text: 'Make your first move', sub: 'This lead hasn\'t been contacted yet — a quick call increases conversion by 3×', actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
+    } else if (score >= 70 && ['New', 'Cold'].includes(lead.status || 'New')) {
+      nudge = { icon: Zap, color: '#a000c8', bg: 'rgba(160,0,200,0.07)', border: 'rgba(160,0,200,0.2)', text: 'High intent — move fast', sub: `Score ${score}/100 but still in early stage. Don't let a hot lead go cold`, actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
     } else if (callAttempts.length >= 2 && lastAct?.type.includes('Call') && lastAct?.outcome === 'No Response') {
       nudge = { icon: MessageCircle, color: WA_GRN, bg: '#F0FDF4', border: '#BBF7D0', text: 'Switch to WhatsApp', sub: `${callAttempts.length} calls with no answer — leads respond 4× faster to messages`, actionLabel: 'Send WA', onAction: () => setShowWhatsAppModal(true) }
     } else if (daysSince !== null && daysSince >= 7) {
       nudge = { icon: AlertCircle, color: RED, bg: '#FEF2F2', border: '#FECACA', text: `No contact in ${daysSince} days`, sub: 'Lead is going cold — reach out now before they look elsewhere', actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
     } else if (daysSince !== null && daysSince >= 3) {
-      nudge = { icon: Bell, color: AMBER, bg: '#FFFBEB', border: '#FDE68A', text: `${daysSince} days since last contact`, sub: 'A quick touchpoint now keeps the lead warm and moving', actionLabel: 'Log Activity', onAction: () => setShowActivityModal(true) }
+      nudge = { icon: Bell, color: AMBER, bg: 'rgba(190,46,214,0.07)', border: 'rgba(190,46,214,0.25)', text: `${daysSince} days since last contact`, sub: 'A quick touchpoint now keeps the lead warm and moving', actionLabel: 'Log Activity', onAction: () => setShowActivityModal(true) }
     }
   }
 
@@ -382,14 +416,21 @@ export default function LeadDetailPage() {
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, color: copied ? EMERALD : '#64748B', background: copied ? '#ECFDF5' : '#F8FAFC', border: `1px solid ${copied ? '#A7F3D0' : '#E2E8F0'}`, padding: '3px 10px', borderRadius: 6, fontFamily: 'monospace', cursor: 'pointer', marginBottom: 10, transition: 'all 0.15s' }}>
                 {copied ? '✓ Copied' : <>{getCsId(lead)}<Copy style={{ width: 9, height: 9, opacity: 0.5 }} /></>}
               </button>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 5, flexWrap: 'wrap', marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 5, flexWrap: 'wrap', marginBottom: achievedStage ? 8 : 14 }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: ss.color, background: ss.bg, padding: '3px 10px', borderRadius: 20 }}>{ss.label}</span>
                 {lead.sourceDetail?.startsWith('[') && (
-                  <span style={{ fontSize: 11, fontWeight: 600, color: '#7C3AED', background: '#F5F3FF', border: '1px solid #DDD6FE', padding: '3px 10px', borderRadius: 20 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: '#8a00c2', background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, padding: '3px 10px', borderRadius: 20 }}>
                     {lead.sourceDetail.match(/^\[([^\]]+)\]/)?.[1]}
                   </span>
                 )}
               </div>
+              {achievedStage && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: MILESTONE_COLOR[achievedStage] ?? MUTED, background: `${MILESTONE_COLOR[achievedStage] ?? MUTED}12`, border: `1px solid ${MILESTONE_COLOR[achievedStage] ?? MUTED}30`, padding: '3px 10px', borderRadius: 20 }}>
+                    <Award style={{ width: 10, height: 10 }} />Reached {achievedStage} · {topMilestone}
+                  </span>
+                </div>
+              )}
               {/* Score bar */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
@@ -408,10 +449,18 @@ export default function LeadDetailPage() {
 
             {/* Quick actions */}
             <div style={{ padding: '14px 16px', borderBottom: `1px solid ${BORDER}` }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 7, marginBottom: 10 }}>
+              {/* Primary call CTA */}
+              {phone && (
+                <button onClick={() => setShowCallModal(true)}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px', background: 'linear-gradient(135deg,#059669,#047857)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', marginBottom: 8, boxShadow: '0 2px 8px rgba(5,150,105,0.35)', position: 'relative', overflow: 'hidden' }}>
+                  <Phone style={{ width: 15, height: 15 }} />
+                  Call {lead.name.firstName || 'Lead'}
+                  <span style={{ fontSize: 11, opacity: 0.75, fontWeight: 500, marginLeft: 2 }}>{phone}</span>
+                </button>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: phone ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: 7, marginBottom: 10 }}>
                 {[
                   { icon: Activity,      label: 'Log',    onClick: () => setShowActivityModal(true), danger: false, show: true },
-                  { icon: Phone,         label: 'Call',   onClick: () => setShowCallModal(true),     danger: false, show: !!phone },
                   { icon: MessageCircle, label: 'WA',     onClick: () => setShowWhatsAppModal(true), danger: false, show: !!phone },
                   { icon: Trash2,        label: 'Delete', onClick: () => setShowDeleteConfirm(true), danger: true,  show: true },
                 ].filter(b => b.show).map(btn => {
@@ -426,7 +475,7 @@ export default function LeadDetailPage() {
                 })}
               </div>
               <button onClick={() => setShowActivityModal(true)}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px', background: BLUE, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px', background: PRIMARY_GRAD, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                 <Plus style={{ width: 14, height: 14 }} />Log Activity
               </button>
             </div>
@@ -435,7 +484,7 @@ export default function LeadDetailPage() {
             <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}` }}>
               {(['info', 'requirements'] as LeftTab[]).map(tab => (
                 <button key={tab} onClick={() => setLeftTab(tab)}
-                  style={{ flex: 1, padding: '10px 0', fontSize: 12, fontWeight: 600, color: leftTab === tab ? BLUE : MUTED, background: leftTab === tab ? '#F0F7FF' : 'transparent', border: 'none', borderBottom: leftTab === tab ? `2px solid ${BLUE}` : '2px solid transparent', cursor: 'pointer' }}>
+                  style={{ flex: 1, padding: '10px 0', fontSize: 12, fontWeight: 600, color: leftTab === tab ? BLUE : MUTED, background: leftTab === tab ? PRIMARY_DIM : 'transparent', border: 'none', borderBottom: leftTab === tab ? `2px solid ${BLUE}` : '2px solid transparent', cursor: 'pointer' }}>
                   {tab === 'info' ? 'Lead Info' : 'Requirements'}
                 </button>
               ))}
@@ -471,7 +520,7 @@ export default function LeadDetailPage() {
                     <div>
                       <div style={{ fontSize: 10, color: '#94A3B8', marginBottom: 5 }}>Localities</div>
                       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                        {lead.localities.map(l => <span key={l} style={{ fontSize: 10, fontWeight: 600, color: '#1E40AF', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '2px 7px', borderRadius: 5 }}>{l}</span>)}
+                        {lead.localities.map(l => <span key={l} style={{ fontSize: 10, fontWeight: 600, color: '#8a00c2', background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, padding: '2px 7px', borderRadius: 5 }}>{l}</span>)}
                       </div>
                     </div>
                   </div>
@@ -486,7 +535,7 @@ export default function LeadDetailPage() {
                   <div style={{ marginBottom: 12 }}>
                     <div style={{ fontSize: 10, color: '#94A3B8', marginBottom: 6 }}>Property Type</div>
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                      {lead.propertyType.map(pt => <span key={pt} style={{ fontSize: 11, fontWeight: 700, color: '#92400E', background: '#FFFBEB', border: '1px solid #FDE68A', padding: '3px 9px', borderRadius: 6 }}>{pt}</span>)}
+                      {lead.propertyType.map(pt => <span key={pt} style={{ fontSize: 11, fontWeight: 700, color: '#7600bc', background: 'rgba(190,46,214,0.07)', border: '1px solid rgba(190,46,214,0.25)', padding: '3px 9px', borderRadius: 6 }}>{pt}</span>)}
                     </div>
                   </div>
                 )}
@@ -506,7 +555,7 @@ export default function LeadDetailPage() {
                   <div style={{ marginTop: 10 }}>
                     <div style={{ fontSize: 10, color: '#94A3B8', marginBottom: 6 }}>Preferred Areas</div>
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                      {lead.localities.map(l => <span key={l} style={{ fontSize: 10, fontWeight: 600, color: '#1E40AF', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '2px 7px', borderRadius: 5 }}>{l}</span>)}
+                      {lead.localities.map(l => <span key={l} style={{ fontSize: 10, fontWeight: 600, color: '#8a00c2', background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, padding: '2px 7px', borderRadius: 5 }}>{l}</span>)}
                     </div>
                   </div>
                 )}
@@ -531,7 +580,7 @@ export default function LeadDetailPage() {
                   style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '12px 16px', fontSize: 13, fontWeight: activeTab === tab.key ? 700 : 500, color: activeTab === tab.key ? BLUE : MUTED, background: 'transparent', border: 'none', borderBottom: activeTab === tab.key ? `2px solid ${BLUE}` : '2px solid transparent', cursor: 'pointer' }}>
                   {tab.label}
                   {tabCounts[tab.key] > 0 && (
-                    <span style={{ fontSize: 10, fontWeight: 700, color: activeTab === tab.key ? '#1D4ED8' : '#94A3B8', background: activeTab === tab.key ? '#DBEAFE' : '#F1F5F9', padding: '1px 6px', borderRadius: 10 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: activeTab === tab.key ? '#7600bc' : '#94A3B8', background: activeTab === tab.key ? PRIMARY_DIM : '#F1F5F9', padding: '1px 6px', borderRadius: 10 }}>
                       {tabCounts[tab.key]}
                     </span>
                   )}
@@ -568,7 +617,7 @@ export default function LeadDetailPage() {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
                   <span style={{ fontSize: 12, color: MUTED }}>{activities.length} {activities.length === 1 ? 'activity' : 'activities'}</span>
                   <button onClick={() => setShowActivityModal(true)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, color: BLUE, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, borderRadius: 8, color: BLUE, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                     <Plus style={{ width: 12, height: 12 }} />Create activity
                   </button>
                 </div>
@@ -593,7 +642,24 @@ export default function LeadDetailPage() {
                 <div style={{ flex: 1, padding: '12px 16px', overflowY: 'auto' }}>
                   {activities.length === 0
                     ? <EmptyState icon={Clock} title="No activities yet" sub="Log a call, note, or WhatsApp to get started" action={{ label: 'Log first activity', onClick: () => setShowActivityModal(true) }} />
-                    : activities.map(act => <ActivityCard key={act.id} act={act} />)
+                    : activities.map(act => {
+                        const advancedTo = statusMarkers.get(act.id)
+                        const advColor = advancedTo ? ({ New: '#64748B', Cold: '#2563EB', Warm: '#be2ed6', Hot: '#a000c8', Closed: '#059669', Disqualified: '#94A3B8' } as Record<string, string>)[advancedTo] ?? '#64748B' : null
+                        return (
+                          <div key={act.id}>
+                            <ActivityCard act={act} />
+                            {advancedTo && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0 8px', margin: '0 0 4px' }}>
+                                <div style={{ flex: 1, height: 1, background: `${advColor}30` }} />
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, color: advColor!, background: `${advColor}12`, border: `1px solid ${advColor}30`, padding: '2px 10px', borderRadius: 99, whiteSpace: 'nowrap' }}>
+                                  <TrendingUp style={{ width: 9, height: 9 }} /> Moved to {advancedTo}
+                                </span>
+                                <div style={{ flex: 1, height: 1, background: `${advColor}30` }} />
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })
                   }
                 </div>
               </div>
@@ -662,10 +728,10 @@ export default function LeadDetailPage() {
                 {showNCSuggest && (
                   <div style={{ margin: '10px 16px 0', padding: '10px 14px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, flexShrink: 0 }}>
                     <p style={{ fontSize: 12, fontWeight: 700, color: RED, margin: '0 0 4px' }}>📵 5 failed call attempts</p>
-                    <p style={{ fontSize: 11, color: '#991B1B', margin: '0 0 8px' }}>Move this lead to NC. A re-engagement will auto-trigger in 7 days.</p>
-                    <button onClick={() => { handleStageChange('NC'); setShowNCSuggest(false) }}
+                    <p style={{ fontSize: 11, color: '#991B1B', margin: '0 0 8px' }}>Mark as Disqualified — non-contactable after 5 failed attempts.</p>
+                    <button onClick={() => { handleStageChange('Disqualified'); setShowNCSuggest(false) }}
                       style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: RED, border: 'none', borderRadius: 7, padding: '6px 14px', cursor: 'pointer' }}>
-                      Mark as NC
+                      Disqualify (NC)
                     </button>
                   </div>
                 )}
@@ -776,72 +842,118 @@ export default function LeadDetailPage() {
             </SideCard>
 
             {/* Lead Lifecycle */}
-            <SideCard style={{ overflow: 'visible' }}>
+            <SideCard>
               <SideCardHeader title="Lead Lifecycle" icon={TrendingUp} />
-              <div style={{ padding: 12 }}>
+              <div style={{ padding: '14px 12px' }}>
                 {(() => {
-                  const cur = STAGES.find(s => s.id === (lead.status || 'Fresh')) ?? STAGES[0]
+                  const PIPELINE = ['New', 'Cold', 'Warm', 'Hot', 'Closed'] as const
+                  const STAGE_CFG: Record<string, { color: string; emoji: string; desc: string }> = {
+                    New:          { color: '#64748B', emoji: '📋', desc: 'Unworked' },
+                    Cold:         { color: '#2563EB', emoji: '❄️', desc: 'Calls / WA only' },
+                    Warm:         { color: '#be2ed6', emoji: '🌡️', desc: 'VM / OBM / SV done' },
+                    Hot:          { color: '#a000c8', emoji: '🔥', desc: 'EOI received' },
+                    Closed:       { color: '#059669', emoji: '✅', desc: 'Deal closed' },
+                    Disqualified: { color: '#94A3B8', emoji: '✗',  desc: 'Not proceeding' },
+                  }
+
+                  const currentStatus = lead.status ?? 'New'
+                  const isDisqualified = currentStatus === 'Disqualified'
+                  const currentIdx     = PIPELINE.indexOf(currentStatus as typeof PIPELINE[number])
+                  const isTerminal     = currentStatus === 'Closed' || isDisqualified
+
                   return (
-                    <div style={{ position: 'relative' }}>
-                      <button onClick={() => setShowStageMenu(v => !v)} disabled={stageChanging}
-                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', background: `${cur.color}10`, border: `1px solid ${cur.color}40`, borderRadius: 9, color: cur.color, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                          <span style={{ width: 7, height: 7, borderRadius: '50%', background: cur.color, display: 'inline-block' }} />
-                          {stageChanging ? 'Updating…' : cur.label}
-                        </span>
-                        <ChevronDown style={{ width: 13, height: 13 }} />
-                      </button>
-                      {!stageChanging && <p style={{ fontSize: 10, color: MUTED, margin: '4px 0 0 4px' }}>{cur.desc}</p>}
-                      {showStageMenu && (
-                        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 12, zIndex: 20, overflow: 'hidden', boxShadow: '0 16px 40px rgba(0,0,0,0.12)' }}>
-                          {BUCKETS.map(bucket => (
-                            <div key={bucket.label}>
-                              <div style={{ padding: '6px 12px 3px', display: 'flex', alignItems: 'center', gap: 5 }}>
-                                <div style={{ width: 5, height: 5, borderRadius: '50%', background: bucket.color }} />
-                                <span style={{ fontSize: 9, fontWeight: 700, color: bucket.color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{bucket.label}</span>
+                    <div>
+                      {/* Pipeline steps */}
+                      {PIPELINE.map((stage, idx) => {
+                        const cfg     = STAGE_CFG[stage]
+                        const isDone  = !isDisqualified && currentIdx > idx
+                        const isCur   = currentStatus === stage
+                        const isFuture = !isDisqualified && currentIdx < idx && !isTerminal
+                        const canClick = !isTerminal && idx > currentIdx
+
+                        return (
+                          <div key={stage}>
+                            <button
+                              onClick={() => canClick && handleStageChange(stage)}
+                              disabled={!canClick && !isCur}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                                padding: '9px 10px', borderRadius: 10, border: 'none', textAlign: 'left',
+                                background: isCur ? `${cfg.color}12` : 'transparent',
+                                cursor: canClick ? 'pointer' : 'default',
+                                outline: isCur ? `2px solid ${cfg.color}40` : 'none',
+                                transition: 'background 0.15s',
+                              }}
+                            >
+                              {/* Step indicator */}
+                              <div style={{
+                                width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                                background: isDone ? cfg.color : isCur ? cfg.color : '#F1F5F9',
+                                border: `2px solid ${isDone || isCur ? cfg.color : '#E2E8F0'}`,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: isDone ? 14 : 13,
+                              }}>
+                                {isDone
+                                  ? <span style={{ color: '#fff', fontWeight: 700, fontSize: 13 }}>✓</span>
+                                  : <span style={{ filter: isFuture ? 'grayscale(1) opacity(0.3)' : 'none' }}>{cfg.emoji}</span>}
                               </div>
-                              {bucket.stages.map(sid => {
-                                const s = STAGES.find(x => x.id === sid); if (!s) return null
-                                const isActive = lead.status === s.id
-                                return (
-                                  <button key={s.id} onClick={() => handleStageChange(s.id)}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '6px 12px 6px 24px', background: isActive ? `${s.color}0D` : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-                                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
-                                    <div>
-                                      <div style={{ fontSize: 11, fontWeight: isActive ? 700 : 500, color: isActive ? s.color : TEXT }}>{s.label}</div>
-                                      <div style={{ fontSize: 9, color: MUTED }}>{s.desc}</div>
-                                    </div>
-                                    {isActive && <span style={{ marginLeft: 'auto', fontSize: 9, fontWeight: 700, color: s.color }}>✓</span>}
-                                  </button>
-                                )
-                              })}
+
+                              {/* Label */}
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 13, fontWeight: isCur ? 700 : isDone ? 600 : 400, color: isCur ? cfg.color : isDone ? cfg.color : isFuture ? '#CBD5E1' : '#94A3B8' }}>
+                                  {stage}
+                                  {isCur && <span style={{ fontSize: 10, fontWeight: 700, background: `${cfg.color}20`, color: cfg.color, padding: '1px 6px', borderRadius: 99, marginLeft: 6 }}>Current</span>}
+                                </div>
+                                <div style={{ fontSize: 10, color: isFuture ? '#CBD5E1' : '#94A3B8', marginTop: 1 }}>{cfg.desc}</div>
+                              </div>
+
+                              {/* Move-to hint */}
+                              {canClick && (
+                                <span style={{ fontSize: 10, color: cfg.color, fontWeight: 600, opacity: 0.7 }}>Move →</span>
+                              )}
+                            </button>
+
+                            {/* Connector line */}
+                            {idx < PIPELINE.length - 1 && (
+                              <div style={{ marginLeft: 25, width: 2, height: 10, background: isDone ? cfg.color : '#E2E8F0', borderRadius: 1 }} />
+                            )}
+                          </div>
+                        )
+                      })}
+
+                      {/* Disqualified — separate terminal */}
+                      <div style={{ marginTop: 10, borderTop: `1px dashed ${BORDER}`, paddingTop: 10 }}>
+                        <button
+                          onClick={() => !isTerminal && handleStageChange('Disqualified')}
+                          disabled={isTerminal}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                            padding: '8px 10px', borderRadius: 9, border: 'none', textAlign: 'left',
+                            background: isDisqualified ? 'rgba(148,163,184,0.12)' : 'transparent',
+                            cursor: isTerminal ? 'default' : 'pointer',
+                            outline: isDisqualified ? '2px solid rgba(148,163,184,0.3)' : 'none',
+                          }}
+                        >
+                          <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: isDisqualified ? '#94A3B8' : '#F1F5F9', border: `2px solid ${isDisqualified ? '#94A3B8' : '#E2E8F0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, filter: !isDisqualified && !isTerminal ? 'grayscale(0.3)' : 'none' }}>
+                            {isDisqualified ? <span style={{ color: '#fff', fontWeight: 700, fontSize: 12 }}>✗</span> : <span style={{ opacity: 0.4 }}>✗</span>}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 13, fontWeight: isDisqualified ? 700 : 400, color: isDisqualified ? '#94A3B8' : '#CBD5E1' }}>
+                              Disqualified
+                              {isDisqualified && <span style={{ fontSize: 10, fontWeight: 700, background: 'rgba(148,163,184,0.2)', color: '#94A3B8', padding: '1px 6px', borderRadius: 99, marginLeft: 6 }}>Current</span>}
                             </div>
-                          ))}
-                        </div>
+                            <div style={{ fontSize: 10, color: '#CBD5E1', marginTop: 1 }}>NC / not proceeding</div>
+                          </div>
+                          {!isTerminal && <span style={{ fontSize: 10, color: '#94A3B8', fontWeight: 600, opacity: 0.5 }}>Mark →</span>}
+                        </button>
+                      </div>
+
+                      {stageChanging && (
+                        <div style={{ marginTop: 8, fontSize: 12, color: MUTED, textAlign: 'center' }}>Updating…</div>
                       )}
                     </div>
                   )
                 })()}
-                <div style={{ marginTop: 10 }}>
-                  <div style={{ display: 'flex', gap: 2 }}>
-                    {STAGES.filter(s => !s.terminal).map(s => {
-                      const stages = STAGES.filter(x => !x.terminal)
-                      const isDone = stages.indexOf(s) <= stages.findIndex(x => x.id === (lead.status || 'Fresh'))
-                      return <div key={s.id} title={s.label} style={{ flex: 1, height: 3, borderRadius: 2, background: isDone ? s.color : BORDER }} />
-                    })}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
-                    <span style={{ fontSize: 9, color: MUTED }}>New</span>
-                    <span style={{ fontSize: 9, color: MUTED }}>Hot Stage</span>
-                  </div>
-                </div>
-                {['Won','Lost','NC'].includes(lead.status ?? '') && (
-                  <div style={{ marginTop: 8, padding: '7px 10px', borderRadius: 7, background: `${STAGES.find(s=>s.id===lead.status)?.color}10`, border: `1px solid ${STAGES.find(s=>s.id===lead.status)?.color}30` }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: STAGES.find(s=>s.id===lead.status)?.color }}>
-                      {lead.status === 'Won' ? '🏆 Closed' : lead.status === 'Lost' ? '❌ Lost' : '📵 NC'}
-                    </span>
-                  </div>
-                )}
               </div>
             </SideCard>
 
@@ -870,7 +982,18 @@ export default function LeadDetailPage() {
       </div>
 
       {/* ── Modals ── */}
-      <LogActivityModal leadId={leadId} isOpen={showActivityModal} onClose={() => setShowActivityModal(false)} onActivityLogged={() => { setShowActivityModal(false); fetchLead() }} />
+      <LogActivityModal
+        leadId={leadId}
+        isOpen={showActivityModal}
+        onClose={() => setShowActivityModal(false)}
+        currentStatus={lead.status ?? 'New'}
+        existingActivityTypes={activities.map(a => a.type)}
+        onActivityLogged={(result) => {
+          setShowActivityModal(false)
+          if (result?.statusAdvancedTo) setLead(p => p ? { ...p, status: result.statusAdvancedTo! } : p)
+          fetchLead()
+        }}
+      />
       <WhatsAppModal isOpen={showWhatsAppModal} onClose={() => { setShowWhatsAppModal(false); fetchLead() }} leadId={leadId} leadName={`${lead.name.firstName} ${lead.name.lastName}`.trim()} leadPhone={lead.phones.primaryPhoneNumber ?? ''} city={lead.city ?? ''} />
       <CallModal isOpen={showCallModal} onClose={() => setShowCallModal(false)} leadId={leadId} leadName={`${lead.name.firstName} ${lead.name.lastName}`.trim()} leadPhone={lead.phones.primaryPhoneNumber ?? ''} onLogged={fetchLead} />
 
@@ -909,7 +1032,7 @@ function EmptyState({ icon: Icon, title, sub, action, waStyle }: { icon: React.E
       <p style={{ fontSize: 12, color: '#94A3B8', margin: '0 0 16px', maxWidth: 220 }}>{sub}</p>
       {action && (
         <button onClick={action.onClick}
-          style={{ padding: '8px 18px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, color: '#2563EB', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+          style={{ padding: '8px 18px', background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, borderRadius: 8, color: BLUE, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
           {action.label}
         </button>
       )}

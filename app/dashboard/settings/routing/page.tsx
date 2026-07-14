@@ -6,8 +6,8 @@ import { Plus, X, Trash2, Loader2, ArrowRight, Shield, ToggleLeft, ToggleRight, 
 const C = {
   bg: '#F8FAFC', panel: '#FFFFFF', border: '#E2E8F0',
   text: '#0F172A', muted: '#64748B', label: '#94A3B8',
-  blue: '#2563EB', emerald: '#059669', amber: '#D97706',
-  red: '#EF4444', violet: '#7C3AED',
+  blue: '#a000c8', emerald: '#059669', amber: '#be2ed6',
+  red: '#EF4444', violet: '#a000c8',
 }
 
 const RULE_TYPES = [
@@ -44,9 +44,9 @@ const BLANK: FormState = { rule_type: 'city', match_value: '', agent_id: '', pri
 
 function RuleTypeBadge({ type }: { type: string }) {
   const colors: Record<string, { bg: string; color: string }> = {
-    city:          { bg: '#EFF6FF', color: C.blue },
-    portal:        { bg: '#F5F3FF', color: C.violet },
-    property_type: { bg: '#FFFBEB', color: C.amber },
+    city:          { bg: 'rgba(160,0,200,0.07)', color: C.blue },
+    portal:        { bg: 'rgba(160,0,200,0.07)', color: C.violet },
+    property_type: { bg: 'rgba(190,46,214,0.07)', color: C.amber },
     round_robin:   { bg: '#F0FDF4', color: C.emerald },
   }
   const c = colors[type] ?? { bg: '#F8FAFC', color: C.muted }
@@ -127,9 +127,9 @@ export default function RoutingPage() {
       </div>
 
       {/* How it works */}
-      <div style={{ background: '#EFF6FF', border: `1px solid rgba(37,99,235,0.2)`, borderRadius: 16, padding: '14px 18px', marginBottom: 24, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+      <div style={{ background: 'rgba(160,0,200,0.07)', border: `1px solid rgba(160,0,200,0.2)`, borderRadius: 16, padding: '14px 18px', marginBottom: 24, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
         <Info style={{ width: 16, height: 16, color: C.blue, flexShrink: 0, marginTop: 1 }} />
-        <div style={{ fontSize: 13, color: '#1E40AF', lineHeight: 1.6 }}>
+        <div style={{ fontSize: 13, color: '#7600bc', lineHeight: 1.6 }}>
           Rules are evaluated in <strong>priority order</strong> (lower number = first match). When a lead arrives via any ingest endpoint, the first matching active rule determines assignment. Round Robin applies to all unmatched leads.
         </div>
       </div>

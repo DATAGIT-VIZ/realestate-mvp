@@ -30,9 +30,9 @@ function timeAgo(iso: string) {
 }
 
 const TYPE_META: Record<NotificationType, { icon: React.ElementType; color: string; bg: string }> = {
-  follow_up_due:      { icon: Clock,         color: '#D97706', bg: 'rgba(217,119,6,0.1)'  },
-  new_lead:           { icon: UserPlus,       color: '#2563EB', bg: 'rgba(37,99,235,0.1)'  },
-  hot_lead_inactive:  { icon: Flame,          color: '#EA580C', bg: 'rgba(234,88,12,0.1)'  },
+  follow_up_due:      { icon: Clock,         color: '#be2ed6', bg: 'rgba(190,46,214,0.1)'  },
+  new_lead:           { icon: UserPlus,       color: '#a000c8', bg: 'rgba(160,0,200,0.1)'  },
+  hot_lead_inactive:  { icon: Flame,          color: '#a000c8', bg: 'rgba(160,0,200,0.1)'  },
   portal_error:       { icon: AlertTriangle,  color: '#EF4444', bg: 'rgba(239,68,68,0.1)'  },
   morning_digest:     { icon: Sun,            color: '#059669', bg: 'rgba(5,150,105,0.1)'  },
 }
@@ -132,7 +132,7 @@ export function NotificationCenter({ onUnreadChange }: Props) {
             style={{
               position: 'absolute', top: 5, right: 5,
               minWidth: 16, height: 16,
-              background: '#2563EB', borderRadius: 9,
+              background: '#a000c8', borderRadius: 9,
               fontSize: 9, fontWeight: 700, color: '#fff',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               padding: '0 3px', lineHeight: 1,
@@ -163,7 +163,7 @@ export function NotificationCenter({ onUnreadChange }: Props) {
               <BellIcon style={{ width: 15, height: 15, color: '#64748B' }} />
               <span style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>Notifications</span>
               {unreadCount > 0 && (
-                <span style={{ padding: '1px 7px', background: 'rgba(37,99,235,0.1)', color: '#2563EB', borderRadius: 9, fontSize: 11, fontWeight: 700 }}>
+                <span style={{ padding: '1px 7px', background: 'rgba(160,0,200,0.1)', color: '#a000c8', borderRadius: 9, fontSize: 11, fontWeight: 700 }}>
                   {unreadCount} new
                 </span>
               )}
@@ -206,12 +206,12 @@ export function NotificationCenter({ onUnreadChange }: Props) {
                     style={{
                       display: 'flex', gap: 11, padding: '12px 16px',
                       borderBottom: idx < notifications.length - 1 ? '1px solid #F1F5F9' : 'none',
-                      background: n.read ? '#FFFFFF' : 'rgba(37,99,235,0.03)',
+                      background: n.read ? '#FFFFFF' : 'rgba(160,0,200,0.03)',
                       cursor: n.lead_id ? 'pointer' : 'default',
                       transition: 'background 0.1s',
                     }}
-                    onMouseEnter={e => { if (!n.read) (e.currentTarget as HTMLDivElement).style.background = 'rgba(37,99,235,0.05)' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = n.read ? '#FFFFFF' : 'rgba(37,99,235,0.03)' }}
+                    onMouseEnter={e => { if (!n.read) (e.currentTarget as HTMLDivElement).style.background = 'rgba(160,0,200,0.05)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = n.read ? '#FFFFFF' : 'rgba(160,0,200,0.03)' }}
                   >
                     {/* Icon */}
                     <div style={{ width: 34, height: 34, borderRadius: 10, background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
@@ -235,7 +235,7 @@ export function NotificationCenter({ onUnreadChange }: Props) {
 
                     {/* Unread dot */}
                     {!n.read && (
-                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#2563EB', flexShrink: 0, marginTop: 6 }} />
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#a000c8', flexShrink: 0, marginTop: 6 }} />
                     )}
                   </div>
                 )
@@ -248,7 +248,7 @@ export function NotificationCenter({ onUnreadChange }: Props) {
             <div style={{ borderTop: '1px solid #E2E8F0', padding: '10px 16px', display: 'flex', justifyContent: 'center' }}>
               <button
                 onClick={() => { setOpen(false); router.push('/dashboard/leads') }}
-                style={{ fontSize: 12, color: '#2563EB', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}
+                style={{ fontSize: 12, color: '#a000c8', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}
               >
                 View all leads →
               </button>

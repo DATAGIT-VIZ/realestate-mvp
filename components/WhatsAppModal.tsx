@@ -7,7 +7,7 @@ import { X, MessageCircle, Send, Loader2, Check } from 'lucide-react'
 const BG_OVERLAY = 'rgba(15,23,42,0.4)'
 const PANEL      = '#FFFFFF'
 const BORDER     = '#E2E8F0'
-const BLUE       = '#2563EB'
+const BLUE       = '#a000c8'
 const GREEN      = '#059669'
 const TEXT       = '#0F172A'
 const MUTED      = '#64748B'
@@ -203,7 +203,7 @@ export function WhatsAppModal({ isOpen, onClose, leadId, leadName = '', leadPhon
               {TEMPLATES.map(tpl => (
                 <button key={tpl.name} onClick={() => selectTemplate(tpl)}
                   style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '13px 16px', background: BG, border: `1px solid ${BORDER}`, borderRadius: 12, cursor: 'pointer', textAlign: 'left', transition: 'all 0.12s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = BLUE; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(37,99,235,0.03)' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = BLUE; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(160,0,200,0.03)' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = BORDER; (e.currentTarget as HTMLButtonElement).style.background = BG }}
                 >
                   <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{tpl.label}</span>
@@ -282,7 +282,7 @@ export function WhatsAppModal({ isOpen, onClose, leadId, leadName = '', leadPhon
               ← Back
             </button>
             <button onClick={send} disabled={loading || !leadPhone}
-              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 20px', background: loading ? 'rgba(37,99,235,0.5)' : BLUE, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 20px', background: loading ? 'rgba(160,0,200,0.5)' : BLUE, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}
             >
               {loading
                 ? <><Loader2 style={{ width: 13, height: 13, animation: 'spin 1s linear infinite' }} />Sending…</>

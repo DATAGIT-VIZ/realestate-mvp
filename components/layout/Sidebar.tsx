@@ -58,12 +58,12 @@ const NAV_SECTIONS = [
 function Logo({ collapsed }: { collapsed: boolean }) {
   return (
     <div className={cn('flex items-center gap-3 px-4 h-14 border-b border-slate-100', collapsed && 'justify-center px-0')}>
-      <div className="relative shrink-0 flex items-center justify-center w-8 h-8 rounded-[9px] bg-gradient-to-br from-blue-500 to-violet-600">
-        <span className="text-[11px] font-bold text-white tracking-tight">RE</span>
+      <div className="relative shrink-0 flex items-center justify-center w-8 h-8 rounded-[9px]" style={{ background: 'linear-gradient(135deg, #7600bc 0%, #b100cd 100%)' }}>
+        <span className="text-[11px] font-bold text-white tracking-tight">VP</span>
       </div>
       {!collapsed && (
         <div className="flex flex-col leading-none">
-          <span className="text-[14px] font-semibold text-slate-800 tracking-[-0.02em]">RealEdge</span>
+          <span className="text-[14px] font-semibold tracking-[-0.02em]" style={{ color: '#4c00b0' }}>Vyapulse</span>
           <span className="text-[10px] text-slate-400 font-medium">CRM</span>
         </div>
       )}
@@ -98,7 +98,7 @@ function NavItem({
           <span className="flex-1">{item.name}</span>
         )}
         {!collapsed && (
-          <span className="text-[8px] font-bold uppercase tracking-wide bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full">Teams</span>
+          <span className="text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(160,0,200,0.1)', color: '#a000c8' }}>Teams</span>
         )}
         {collapsed && (
           <span className="pointer-events-none absolute left-full ml-3 hidden rounded-lg bg-slate-800 px-2.5 py-1.5 text-xs text-white whitespace-nowrap shadow-lg group-hover:block z-50">
@@ -118,16 +118,17 @@ function NavItem({
         'group relative flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-all duration-150',
         collapsed ? 'justify-center w-9 h-9 mx-auto' : 'px-3 py-2',
         active
-          ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-500'
+          ? 'border-l-2'
           : 'text-slate-500 border-l-2 border-transparent hover:bg-slate-50 hover:text-slate-800'
       )}
+      style={active ? { background: 'rgba(160,0,200,0.07)', color: '#8a00c2', borderLeftColor: '#a000c8' } : undefined}
     >
       <Icon
         className={cn(
           'shrink-0 transition-colors duration-150',
           collapsed ? 'w-[18px] h-[18px]' : 'w-4 h-4',
-          active ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
         )}
+        style={{ color: active ? '#a000c8' : undefined }}
       />
       {!collapsed && item.name}
 
@@ -251,38 +252,39 @@ export function Sidebar({
         <div className={cn('px-2 pb-3 border-t border-slate-100 pt-3', collapsed && 'px-1.5')}>
           {collapsed ? (
             <div className="flex justify-center">
-              <div className={cn(
-                'w-8 h-8 rounded-full border flex items-center justify-center',
-                role === 'admin' ? 'bg-violet-50 border-violet-100' : 'bg-blue-50 border-blue-100'
-              )}>
-                <span className={cn('text-[11px] font-bold', role === 'admin' ? 'text-violet-600' : 'text-blue-600')}>{initial}</span>
+              <div
+                className="w-8 h-8 rounded-full border flex items-center justify-center"
+                style={{ background: 'rgba(160,0,200,0.08)', borderColor: '#e8bcf0' }}
+              >
+                <span className="text-[11px] font-bold" style={{ color: '#8a00c2' }}>{initial}</span>
               </div>
             </div>
           ) : (
             <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-slate-50 transition-colors group">
-              <div className={cn(
-                'w-7 h-7 rounded-full border flex items-center justify-center shrink-0',
-                role === 'admin' ? 'bg-violet-50 border-violet-100' : 'bg-blue-50 border-blue-100'
-              )}>
-                <span className={cn('text-[11px] font-bold', role === 'admin' ? 'text-violet-600' : 'text-blue-600')}>{initial}</span>
+              <div
+                className="w-7 h-7 rounded-full border flex items-center justify-center shrink-0"
+                style={{ background: 'rgba(160,0,200,0.08)', borderColor: '#e8bcf0' }}
+              >
+                <span className="text-[11px] font-bold" style={{ color: '#8a00c2' }}>{initial}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[12px] font-semibold text-slate-700 truncate">{userEmail}</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   {plan === 'teams' && (
-                    <span className={cn(
-                      'text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide',
-                      role === 'admin'
-                        ? 'bg-violet-100 text-violet-600'
-                        : 'bg-blue-100 text-blue-600'
-                    )}>
+                    <span
+                      className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
+                      style={{ background: 'rgba(160,0,200,0.1)', color: '#8a00c2' }}
+                    >
                       {role === 'admin' ? 'Admin' : 'Agent'}
                     </span>
                   )}
-                  <span className={cn(
-                    'text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide',
-                    plan === 'teams' ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'
-                  )}>
+                  <span
+                    className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
+                    style={plan === 'teams'
+                      ? { background: 'rgba(160,0,200,0.1)', color: '#a000c8' }
+                      : { background: '#F1F5F9', color: '#64748B' }
+                    }
+                  >
                     {plan === 'teams' ? 'Teams' : 'Solo'}
                   </span>
                 </div>

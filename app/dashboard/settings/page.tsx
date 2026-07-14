@@ -16,14 +16,14 @@ const BORDER  = '#E2E8F0'
 const TEXT    = '#0F172A'
 const MUTED   = '#64748B'
 const LABEL   = '#94A3B8'
-const BLUE    = '#2563EB'
-const BLUE_D  = '#EFF6FF'
+const BLUE    = '#a000c8'
+const BLUE_D  = 'rgba(160,0,200,0.07)'
 const GREEN   = '#059669'
 const GREEN_D = '#ECFDF5'
-const AMBER   = '#D97706'
-const AMBER_D = '#FFFBEB'
-const VIOLET  = '#7C3AED'
-const VIOLET_D= '#F5F3FF'
+const AMBER   = '#be2ed6'
+const AMBER_D = 'rgba(190,46,214,0.07)'
+const VIOLET  = '#a000c8'
+const VIOLET_D= 'rgba(160,0,200,0.07)'
 const RED     = '#EF4444'
 const RED_D   = '#FEF2F2'
 
@@ -289,11 +289,11 @@ function IntegrationsSection() {
     { name: 'MagicBricks',  status: 'not_connected', color: '#E8460A' },
     { name: '99acres',      status: 'not_connected', color: '#E63946' },
     { name: 'Housing.com',  status: 'not_connected', color: '#EC4899' },
-    { name: 'NoBroker',     status: 'not_connected', color: '#7C3AED' },
+    { name: 'NoBroker',     status: 'not_connected', color: '#a000c8' },
     { name: 'Square Yards', status: 'not_connected', color: '#0EA5E9' },
     { name: 'Facebook Lead Ads', status: 'not_connected', color: '#1877F2' },
     { name: 'Google Ads',   status: 'not_connected', color: '#EA4335' },
-    { name: 'IndiaProperty',status: 'not_connected', color: '#F59E0B' },
+    { name: 'IndiaProperty',status: 'not_connected', color: '#be2ed6' },
   ]
   return (
     <div>
@@ -316,7 +316,7 @@ function IntegrationsSection() {
           </div>
         ))}
       </div>
-      <div style={{ marginTop: 16, padding: '12px 14px', background: BLUE_D, border: `1px solid #BFDBFE`, borderRadius: 10 }}>
+      <div style={{ marginTop: 16, padding: '12px 14px', background: BLUE_D, border: `1px solid rgba(160,0,200,0.2)`, borderRadius: 10 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: BLUE, marginBottom: 2 }}>Your Webhook URL</div>
         <div style={{ fontSize: 11, color: MUTED, fontFamily: 'monospace', background: PANEL, padding: '6px 10px', borderRadius: 6, marginTop: 4, wordBreak: 'break-all' as const }}>
           https://your-app.realedge.in/api/webhook/leads?token=••••••••
@@ -388,7 +388,7 @@ function BrandingSection() {
         <Row label="Company Logo" description="Shown in the header of all printed reports">
           <button disabled style={{ fontSize: 12, fontWeight: 600, color: BLUE, background: BLUE_D, border: `1px solid ${BLUE}20`, borderRadius: 8, padding: '6px 14px', cursor: 'not-allowed' }}>Upload logo</button>
         </Row>
-        <Row label="Brand Colour" description="Accent colour on report headers"><PlaceholderInput placeholder="#2563EB"/></Row>
+        <Row label="Brand Colour" description="Accent colour on report headers"><PlaceholderInput placeholder="#a000c8"/></Row>
         <Row label="Report footer text" description="Line shown at the bottom of every report"><PlaceholderInput placeholder="© 2026 Your Agency · RERA Registered"/></Row>
         <Row label="Show RERA number on reports" last><PlaceholderToggle/></Row>
       </div>

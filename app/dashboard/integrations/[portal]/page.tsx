@@ -11,7 +11,7 @@ import {
 const C = {
   bg: '#F8FAFC', panel: '#FFFFFF', border: '#E2E8F0', borderDim: '#F1F5F9',
   text: '#0F172A', muted: '#64748B', label: '#94A3B8',
-  blue: '#2563EB', blueDim: '#EFF6FF',
+  blue: '#a000c8', blueDim: 'rgba(160,0,200,0.07)',
   emerald: '#059669', emeraldDim: '#ECFDF5',
   wa: '#25D366',
 }
@@ -40,14 +40,14 @@ export default function PortalDetailPage({ params }: { params: Promise<{ portal:
         setStats([
           { label: 'Total Leads', value: mine.length, color: portal.color },
           { label: 'New',         value: newC,         color: C.blue },
-          { label: 'Duplicates',  value: dupC,         color: '#D97706' },
+          { label: 'Duplicates',  value: dupC,         color: '#be2ed6' },
           { label: 'Errors',      value: errC,         color: '#DC2626' },
         ])
       })
       .catch(() => { setStats([
         { label: 'Total Leads', value: 0, color: portal?.color ?? C.blue },
         { label: 'New',         value: 0, color: C.blue },
-        { label: 'Duplicates',  value: 0, color: '#D97706' },
+        { label: 'Duplicates',  value: 0, color: '#be2ed6' },
         { label: 'Errors',      value: 0, color: '#DC2626' },
       ])})
       .finally(() => setLoadStats(false))
@@ -151,7 +151,7 @@ Please confirm once done. Thank you!`
             {(loadStats ? [
               { label: 'Total Leads', value: '—', color: portal.color },
               { label: 'New', value: '—', color: C.blue },
-              { label: 'Duplicates', value: '—', color: '#D97706' },
+              { label: 'Duplicates', value: '—', color: '#be2ed6' },
               { label: 'Errors', value: '—', color: '#DC2626' },
             ] : stats).map((s, i) => (
               <div key={i} style={{ background: C.bg, borderRadius: 12, padding: '14px 16px' }}>

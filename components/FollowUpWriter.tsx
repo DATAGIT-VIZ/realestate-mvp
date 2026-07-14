@@ -9,11 +9,11 @@ const C = {
   text:    '#0F172A',
   muted:   '#64748B',
   label:   '#94A3B8',
-  violet:  '#7C3AED',
-  blue:    '#2563EB',
+  violet:  '#a000c8',
+  blue:    '#a000c8',
   emerald: '#059669',
   red:     '#EF4444',
-  amber:   '#D97706',
+  amber:   '#be2ed6',
 }
 
 type OutputType = 'whatsapp' | 'email'
@@ -102,7 +102,7 @@ export function FollowUpWriter({ lead }: Props) {
         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: 'transparent', border: 'none', cursor: 'pointer' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(124,58,237,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(160,0,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Sparkles style={{ width: 14, height: 14, color: C.violet }} />
           </div>
           <div style={{ textAlign: 'left' }}>
@@ -175,7 +175,7 @@ export function FollowUpWriter({ lead }: Props) {
             disabled={loading || !agentContext.trim()}
             style={{
               width: '100%', marginTop: 10, padding: '10px 0',
-              background: loading || !agentContext.trim() ? '#E2E8F0' : `linear-gradient(135deg, #7C3AED, #6D28D9)`,
+              background: loading || !agentContext.trim() ? '#E2E8F0' : `linear-gradient(135deg, #a000c8, #7600bc)`,
               border: 'none', borderRadius: 10, color: loading || !agentContext.trim() ? C.label : '#fff',
               fontSize: 12, fontWeight: 700, cursor: loading || !agentContext.trim() ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,

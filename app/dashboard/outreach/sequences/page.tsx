@@ -14,9 +14,9 @@ const C = {
   text:    '#0F172A',
   muted:   '#64748B',
   label:   '#94A3B8',
-  violet:  '#7C3AED',
+  violet:  '#a000c8',
   emerald: '#059669',
-  amber:   '#D97706',
+  amber:   '#be2ed6',
   red:     '#EF4444',
   wa:      '#25D366',
   waDark:  '#128C7E',
@@ -40,8 +40,8 @@ type Sequence = {
 
 const CHANNEL_META = {
   whatsapp:      { label: 'WhatsApp',      icon: MessageCircle, color: C.wa,     bg: 'rgba(37,211,102,0.08)' },
-  call_reminder: { label: 'Call Reminder', icon: Phone,         color: '#2563EB', bg: 'rgba(37,99,235,0.08)'  },
-  note:          { label: 'Note',          icon: FileText,      color: C.violet,  bg: 'rgba(124,58,237,0.08)' },
+  call_reminder: { label: 'Call Reminder', icon: Phone,         color: '#a000c8', bg: 'rgba(160,0,200,0.08)'  },
+  note:          { label: 'Note',          icon: FileText,      color: C.violet,  bg: 'rgba(160,0,200,0.08)' },
 }
 
 const DEFAULT_STEPS: Step[] = [
@@ -210,7 +210,7 @@ function SequenceModal({ onSave, onClose, saving }: {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Steps ({steps.length})</span>
             <button onClick={addStep}
-              style={{ padding: '6px 14px', background: 'linear-gradient(135deg,#7C3AED,#5B21B6)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+              style={{ padding: '6px 14px', background: 'linear-gradient(135deg,#a000c8,#7600bc)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
               <Plus style={{ width: 12, height: 12 }} /> Add Step
             </button>
           </div>
@@ -228,7 +228,7 @@ function SequenceModal({ onSave, onClose, saving }: {
         <div style={{ padding: '16px 24px', borderTop: `1px solid ${C.border}`, display: 'flex', gap: 10, flexShrink: 0 }}>
           <button onClick={onClose} style={{ padding: '10px 20px', background: '#F1F5F9', border: 'none', borderRadius: 10, color: C.muted, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
           <button onClick={() => onSave(name, desc, steps)} disabled={saving || !name || steps.length === 0}
-            style={{ flex: 1, padding: '10px 0', background: saving || !name || steps.length === 0 ? '#E2E8F0' : 'linear-gradient(135deg,#7C3AED,#5B21B6)', border: 'none', borderRadius: 10, color: saving || !name || steps.length === 0 ? C.label : '#fff', fontSize: 13, fontWeight: 700, cursor: saving || !name || steps.length === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            style={{ flex: 1, padding: '10px 0', background: saving || !name || steps.length === 0 ? '#E2E8F0' : 'linear-gradient(135deg,#a000c8,#7600bc)', border: 'none', borderRadius: 10, color: saving || !name || steps.length === 0 ? C.label : '#fff', fontSize: 13, fontWeight: 700, cursor: saving || !name || steps.length === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             {saving ? 'Saving…' : <><Check style={{ width: 14, height: 14 }} /> Create Sequence</>}
           </button>
         </div>
@@ -415,14 +415,14 @@ export default function SequencesPage() {
               <RefreshCw style={{ width: 15, height: 15, color: C.muted, animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
             </button>
             <button onClick={() => setShowNew(true)}
-              style={{ padding: '9px 18px', background: 'linear-gradient(135deg,#7C3AED,#5B21B6)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 10px rgba(124,58,237,0.3)' }}>
+              style={{ padding: '9px 18px', background: 'linear-gradient(135deg,#a000c8,#7600bc)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 10px rgba(160,0,200,0.3)' }}>
               <Plus style={{ width: 14, height: 14 }} /> New Sequence
             </button>
           </div>
         </div>
 
         {/* How it works */}
-        <div style={{ background: 'linear-gradient(135deg,rgba(124,58,237,0.04),rgba(91,33,182,0.06))', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 14, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+        <div style={{ background: 'linear-gradient(135deg,rgba(160,0,200,0.04),rgba(91,33,182,0.06))', border: '1px solid rgba(160,0,200,0.15)', borderRadius: 14, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
           <Zap style={{ width: 18, height: 18, color: C.violet, flexShrink: 0, marginTop: 1 }} />
           <div>
             <p style={{ fontSize: 13, fontWeight: 700, color: C.violet, margin: '0 0 4px' }}>How sequences work</p>
@@ -435,7 +435,7 @@ export default function SequencesPage() {
         {/* Empty state */}
         {sequences.length === 0 && (
           <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '56px 24px', textAlign: 'center' }}>
-            <div style={{ width: 60, height: 60, borderRadius: 18, background: 'linear-gradient(135deg,rgba(124,58,237,0.12),rgba(91,33,182,0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
+            <div style={{ width: 60, height: 60, borderRadius: 18, background: 'linear-gradient(135deg,rgba(160,0,200,0.12),rgba(91,33,182,0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
               <Zap style={{ width: 28, height: 28, color: C.violet }} />
             </div>
             <h3 style={{ fontSize: 17, fontWeight: 700, color: C.text, margin: '0 0 8px' }}>No sequences yet</h3>
@@ -444,7 +444,7 @@ export default function SequencesPage() {
             </p>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button onClick={handleSeedDemo} disabled={seeding}
-                style={{ padding: '11px 22px', background: 'linear-gradient(135deg,#7C3AED,#5B21B6)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 13, fontWeight: 700, cursor: seeding ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7, opacity: seeding ? 0.7 : 1, boxShadow: '0 2px 12px rgba(124,58,237,0.3)' }}>
+                style={{ padding: '11px 22px', background: 'linear-gradient(135deg,#a000c8,#7600bc)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 13, fontWeight: 700, cursor: seeding ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7, opacity: seeding ? 0.7 : 1, boxShadow: '0 2px 12px rgba(160,0,200,0.3)' }}>
                 {seeding ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Sparkles style={{ width: 14, height: 14 }} />}
                 {seeding ? 'Loading…' : 'Load Demo Sequences'}
               </button>

@@ -17,9 +17,11 @@ import { format, subDays, subMonths, differenceInHours } from 'date-fns'
 // ─── Design tokens ─────────────────────────────────────────────────────────
 const C = {
   bg: '#F8FAFC', panel: '#FFFFFF', border: '#E2E8F0',
-  amber: '#D97706', amberDim: 'rgba(217,119,6,0.10)',
-  emerald: '#059669', red: '#EF4444', blue: '#2563EB',
-  orange: '#EA580C', purple: '#7C3AED',
+  amber: '#be2ed6', amberDim: 'rgba(190,46,214,0.08)',
+  emerald: '#059669', red: '#EF4444', blue: '#a000c8',  // primary = Vyapulse purple
+  orange: '#a000c8', purple: '#a000c8',
+  purpleDim: 'rgba(160,0,200,0.08)', purpleBorder: 'rgba(160,0,200,0.25)',
+  purpleGrad: 'linear-gradient(135deg, #7600bc 0%, #b100cd 100%)',
   muted: '#64748B', label: '#94A3B8', text: '#0F172A',
 }
 
@@ -291,7 +293,7 @@ export default function AnalyticsPage() {
     return (
       <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
-          <Loader2 style={{ width: 32, height: 32, color: C.amber, margin: '0 auto 12px', animation: 'spin 1s linear infinite' }} />
+          <Loader2 style={{ width: 32, height: 32, color: C.purple, margin: '0 auto 12px', animation: 'spin 1s linear infinite' }} />
           <p style={{ color: C.muted, fontSize: 14 }}>Loading insights…</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -303,13 +305,13 @@ export default function AnalyticsPage() {
     return (
       <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
         <div style={{ textAlign: 'center', maxWidth: 480 }}>
-          <div style={{ width: 72, height: 72, borderRadius: 20, background: C.amberDim, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-            <BarChart3 style={{ width: 32, height: 32, color: C.amber }} />
+          <div style={{ width: 72, height: 72, borderRadius: 20, background: C.purpleDim, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+            <BarChart3 style={{ width: 32, height: 32, color: C.purple }} />
           </div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: C.text, margin: '0 0 12px' }}>Not enough data yet</h1>
           <p style={{ color: C.muted, marginBottom: 32, lineHeight: 1.6 }}>Add at least 3 leads and log some activities to unlock analytics.</p>
           <button onClick={() => router.push('/dashboard/leads')}
-            style={{ padding: '12px 28px', background: C.amber, color: '#fff', fontWeight: 600, borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 14 }}>
+            style={{ padding: '12px 28px', background: C.purpleGrad, color: '#fff', fontWeight: 600, borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 14 }}>
             Go to Leads
           </button>
         </div>
@@ -348,14 +350,14 @@ export default function AnalyticsPage() {
         </div>
 
         {/* ── AI insight strip (both tabs) ── */}
-        <div style={{ background: 'linear-gradient(135deg, rgba(217,119,6,0.07) 0%, rgba(217,119,6,0.02) 100%)', border: '1px solid rgba(217,119,6,0.2)', borderRadius: 14, padding: '12px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.amberDim, border: '1px solid rgba(217,119,6,0.3)', borderRadius: 20, padding: '4px 12px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-            <Sparkles style={{ width: 12, height: 12, color: C.amber }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: C.amber, letterSpacing: '0.05em', textTransform: 'uppercase' }}>AI Insight</span>
+        <div style={{ background: 'linear-gradient(135deg, rgba(160,0,200,0.06) 0%, rgba(160,0,200,0.02) 100%)', border: '1px solid rgba(160,0,200,0.18)', borderRadius: 14, padding: '12px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.purpleDim, border: `1px solid ${C.purpleBorder}`, borderRadius: 20, padding: '4px 12px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <Sparkles style={{ width: 12, height: 12, color: C.purple }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: C.purple, letterSpacing: '0.05em', textTransform: 'uppercase' }}>AI Insight</span>
           </div>
           <p style={{ fontSize: 13, color: C.text, margin: 0, lineHeight: 1.5, flex: 1 }}>{insight.text}</p>
           <button onClick={() => router.push(insight.href)}
-            style={{ padding: '6px 14px', background: C.amber, color: '#fff', fontWeight: 600, borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap', flexShrink: 0 }}>
+            style={{ padding: '6px 14px', background: C.purpleGrad, color: '#fff', fontWeight: 600, borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap', flexShrink: 0 }}>
             {insight.cta} →
           </button>
         </div>
@@ -438,13 +440,13 @@ export default function AnalyticsPage() {
                     <Tooltip content={<Tip />} />
                     <Bar dataKey="count" name="Total" radius={[6, 6, 0, 0]}>
                       {portalBreakdown.map((_, i) => {
-                        const colors = [C.blue, C.emerald, C.amber, C.purple, C.red]
+                        const colors = [C.purple, C.emerald, '#be2ed6', '#da8ee7', C.red]
                         return <Cell key={i} fill={colors[i % colors.length]} fillOpacity={0.8} />
                       })}
                     </Bar>
                     <Bar dataKey="hot" name="Hot" radius={[6, 6, 0, 0]}>
                       {portalBreakdown.map((_, i) => {
-                        const colors = [C.blue, C.emerald, C.amber, C.purple, C.red]
+                        const colors = [C.purple, C.emerald, '#be2ed6', '#da8ee7', C.red]
                         return <Cell key={i} fill={colors[i % colors.length]} />
                       })}
                     </Bar>
@@ -460,7 +462,7 @@ export default function AnalyticsPage() {
                 <p style={{ fontSize: 12, color: C.muted, margin: '0 0 20px' }}>Conversion by stage</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {funnel.map((s, i) => {
-                    const colors = [C.label, C.blue, C.amber, C.orange]
+                    const colors = [C.label, C.purple, '#be2ed6', C.orange]
                     return (
                       <div key={i}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>

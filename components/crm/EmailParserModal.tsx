@@ -4,12 +4,16 @@ import { useState } from 'react'
 import { X, Mail, Loader2, Check, AlertCircle } from 'lucide-react'
 import { Lead } from '@/lib/supabase'
 
-const BG = '#080D18'
-const PANEL = '#0E1623'
-const BORDER = 'rgba(255,255,255,0.06)'
-const AMBER = '#F59E0B'
-const TEXT = '#F1F5F9'
-const MUTED = 'rgba(255,255,255,0.35)'
+const PANEL        = '#FFFFFF'
+const BORDER       = '#E2E8F0'
+const BG_TINT      = '#FAFAFA'
+const TEXT         = '#0F172A'
+const MUTED        = '#64748B'
+const LABEL        = '#94A3B8'
+const PRIMARY      = '#a000c8'
+const PRIMARY_DIM  = 'rgba(160,0,200,0.08)'
+const PRIMARY_BORDER = 'rgba(160,0,200,0.25)'
+const GRAD         = 'linear-gradient(135deg, #7600bc 0%, #b100cd 100%)'
 
 interface EmailParserModalProps {
     onClose: () => void
@@ -27,24 +31,16 @@ export function EmailParserModal({ onClose, onSuccess }: EmailParserModalProps) 
             setError('Please paste some email or message text.')
             return
         }
-
         setLoading(true)
         setError(null)
         setParsedData(null)
-
         try {
             const response = await fetch('/api/leads/parse-email', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text: emailText }),
             })
-
-            if (!response.ok) {
-                throw new Error('Failed to parse email. Please try again.')
-            }
-
+            if (!response.ok) throw new Error('Failed to parse email. Please try again.')
             const data = await response.json()
             setParsedData(data)
         } catch (err: any) {
@@ -55,148 +51,111 @@ export function EmailParserModal({ onClose, onSuccess }: EmailParserModalProps) 
     }
 
     const handleConfirm = () => {
-        if (parsedData) {
-            onSuccess(parsedData)
-        }
+        if (parsedData) onSuccess(parsedData)
     }
+
+    const Field = ({ label, value }: { label: string; value?: string | null }) => (
+        <div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>{label}</label>
+            <div style={{ padding: '9px 13px', background: BG_TINT, border: `1px solid ${BORDER}`, borderRadius: 8, color: value ? TEXT : LABEL, fontSize: 13 }}>
+                {value || 'Not found'}
+            </div>
+        </div>
+    )
 
     return (
         <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
             {/* Backdrop */}
             <div
-                style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+                style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(6px)' }}
                 onClick={onClose}
             />
 
             {/* Modal */}
-            <div style={{ position: 'relative', width: '100%', maxWidth: 600, maxHeight: '90vh', background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 24, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 48px rgba(0,0,0,0.4)' }}>
+            <div style={{ position: 'relative', width: '100%', maxWidth: 560, maxHeight: '90vh', background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 20, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 60px rgba(100,0,160,0.12), 0 4px 16px rgba(0,0,0,0.08)' }}>
 
                 {/* Header */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: `1px solid ${BORDER}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: `1px solid ${BORDER}` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(245,158,11,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Mail style={{ width: 16, height: 16, color: AMBER }} />
+                        <div style={{ width: 34, height: 34, borderRadius: 10, background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Mail style={{ width: 15, height: 15, color: PRIMARY }} />
                         </div>
-                        <h2 style={{ fontSize: 16, fontWeight: 600, color: TEXT, margin: 0 }}>Parse from Email/Text</h2>
+                        <div>
+                            <h2 style={{ fontSize: 15, fontWeight: 600, color: TEXT, margin: 0 }}>Parse from Email / Text</h2>
+                            <p style={{ fontSize: 12, color: MUTED, margin: 0 }}>AI extracts lead info automatically</p>
+                        </div>
                     </div>
                     <button
                         onClick={onClose}
-                        style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', borderRadius: 8, color: MUTED, cursor: 'pointer', transition: 'all 0.15s' }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; (e.currentTarget as HTMLElement).style.color = TEXT }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = MUTED }}
+                        style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 8, color: MUTED, cursor: 'pointer' }}
                     >
-                        <X style={{ width: 16, height: 16 }} />
+                        <X style={{ width: 14, height: 14 }} />
                     </button>
                 </div>
 
                 {/* Content */}
-                <div style={{ padding: 24, overflowY: 'auto' }}>
+                <div style={{ padding: 24, overflowY: 'auto', flex: 1 }}>
                     {!parsedData ? (
                         <>
-                            <p style={{ fontSize: 13, color: MUTED, marginBottom: 16, lineHeight: 1.5 }}>
+                            <p style={{ fontSize: 13, color: MUTED, marginBottom: 14, lineHeight: 1.6 }}>
                                 Paste the contents of an email, WhatsApp message, or SMS. Our AI will automatically extract the lead's name, contact info, and requirements.
                             </p>
-
                             <textarea
                                 value={emailText}
                                 onChange={(e) => setEmailText(e.target.value)}
                                 placeholder="Paste message text here..."
-                                style={{
-                                    width: '100%',
-                                    height: 200,
-                                    padding: 16,
-                                    background: 'rgba(0,0,0,0.2)',
-                                    border: `1px solid ${BORDER}`,
-                                    borderRadius: 12,
-                                    color: TEXT,
-                                    fontSize: 14,
-                                    lineHeight: 1.5,
-                                    resize: 'vertical',
-                                    outline: 'none',
-                                    boxSizing: 'border-box'
-                                }}
+                                style={{ width: '100%', height: 180, padding: 14, background: BG_TINT, border: `1px solid ${BORDER}`, borderRadius: 10, color: TEXT, fontSize: 13, lineHeight: 1.6, resize: 'vertical', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', transition: 'border-color 0.15s' }}
+                                onFocus={e => { e.currentTarget.style.borderColor = PRIMARY_BORDER }}
+                                onBlur={e => { e.currentTarget.style.borderColor = BORDER }}
                                 disabled={loading}
                             />
-
                             {error && (
-                                <div style={{ marginTop: 16, padding: '12px 16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <AlertCircle style={{ width: 14, height: 14, color: '#EF4444' }} />
+                                <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <AlertCircle style={{ width: 14, height: 14, color: '#EF4444', flexShrink: 0 }} />
                                     <p style={{ fontSize: 13, color: '#EF4444', margin: 0 }}>{error}</p>
                                 </div>
                             )}
                         </>
                     ) : (
                         <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '12px 16px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 8 }}>
-                                <Check style={{ width: 16, height: 16, color: '#10B981' }} />
-                                <p style={{ fontSize: 13, color: '#10B981', margin: 0, fontWeight: 500 }}>Successfully extracted lead details!</p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18, padding: '10px 14px', background: 'rgba(5,150,105,0.07)', border: '1px solid rgba(5,150,105,0.2)', borderRadius: 8 }}>
+                                <Check style={{ width: 14, height: 14, color: '#059669', flexShrink: 0 }} />
+                                <p style={{ fontSize: 13, color: '#059669', margin: 0, fontWeight: 600 }}>Lead details extracted successfully</p>
                             </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Name</label>
-                                    <div style={{ padding: '10px 14px', background: 'rgba(0,0,0,0.2)', border: `1px solid ${BORDER}`, borderRadius: 8, color: TEXT, fontSize: 14 }}>
-                                        {parsedData.name || <span style={{ color: MUTED }}>Not found</span>}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Phone</label>
-                                    <div style={{ padding: '10px 14px', background: 'rgba(0,0,0,0.2)', border: `1px solid ${BORDER}`, borderRadius: 8, color: TEXT, fontSize: 14 }}>
-                                        {parsedData.phone || <span style={{ color: MUTED }}>Not found</span>}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Email</label>
-                                    <div style={{ padding: '10px 14px', background: 'rgba(0,0,0,0.2)', border: `1px solid ${BORDER}`, borderRadius: 8, color: TEXT, fontSize: 14 }}>
-                                        {parsedData.email || <span style={{ color: MUTED }}>Not found</span>}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Property Type</label>
-                                    <div style={{ padding: '10px 14px', background: 'rgba(0,0,0,0.2)', border: `1px solid ${BORDER}`, borderRadius: 8, color: TEXT, fontSize: 14 }}>
-                                        {parsedData.property_type || <span style={{ color: MUTED }}>Not found</span>}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Timeline</label>
-                                    <div style={{ padding: '10px 14px', background: 'rgba(0,0,0,0.2)', border: `1px solid ${BORDER}`, borderRadius: 8, color: TEXT, fontSize: 14 }}>
-                                        {parsedData.timeline || <span style={{ color: MUTED }}>Not found</span>}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Source</label>
-                                    <div style={{ padding: '10px 14px', background: 'rgba(0,0,0,0.2)', border: `1px solid ${BORDER}`, borderRadius: 8, color: TEXT, fontSize: 14 }}>
-                                        {parsedData.source || <span style={{ color: MUTED }}>Not found</span>}
-                                    </div>
-                                </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                <Field label="Name"          value={parsedData.name} />
+                                <Field label="Phone"         value={parsedData.phone} />
+                                <Field label="Email"         value={parsedData.email} />
+                                <Field label="Property Type" value={parsedData.property_type} />
+                                <Field label="Timeline"      value={parsedData.timeline} />
+                                <Field label="Source"        value={parsedData.source} />
                             </div>
                         </div>
                     )}
                 </div>
 
                 {/* Footer */}
-                <div style={{ padding: '16px 24px', borderTop: `1px solid ${BORDER}`, display: 'flex', justifyContent: 'flex-end', gap: 12, background: 'rgba(0,0,0,0.2)' }}>
+                <div style={{ padding: '14px 24px', borderTop: `1px solid ${BORDER}`, display: 'flex', justifyContent: 'flex-end', gap: 10, background: BG_TINT }}>
                     <button
                         onClick={parsedData ? () => setParsedData(null) : onClose}
-                        style={{ padding: '10px 18px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 10, color: TEXT, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
+                        style={{ padding: '9px 18px', background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 9, color: TEXT, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
                     >
                         {parsedData ? 'Back' : 'Cancel'}
                     </button>
-
                     {!parsedData ? (
                         <button
                             onClick={handleParse}
                             disabled={loading || !emailText.trim()}
-                            style={{ padding: '10px 18px', background: AMBER, border: 'none', borderRadius: 10, color: '#000', fontSize: 13, fontWeight: 600, cursor: (loading || !emailText.trim()) ? 'not-allowed' : 'pointer', opacity: (loading || !emailText.trim()) ? 0.7 : 1, display: 'flex', alignItems: 'center', gap: 8 }}
+                            style={{ padding: '9px 20px', background: (loading || !emailText.trim()) ? '#e8bcf0' : GRAD, border: 'none', borderRadius: 9, color: '#fff', fontSize: 13, fontWeight: 600, cursor: (loading || !emailText.trim()) ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
                         >
                             {loading ? <><Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> Parsing...</> : 'Extract Info'}
                         </button>
                     ) : (
                         <button
                             onClick={handleConfirm}
-                            style={{ padding: '10px 18px', background: AMBER, border: 'none', borderRadius: 10, color: '#000', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                            style={{ padding: '9px 20px', background: GRAD, border: 'none', borderRadius: 9, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                         >
-                            Continue to Add Lead
+                            Add Lead →
                         </button>
                     )}
                 </div>

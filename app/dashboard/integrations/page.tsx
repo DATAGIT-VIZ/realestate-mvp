@@ -8,7 +8,7 @@ import { Plug, ChevronRight, CheckCircle2, AlertCircle, Loader2 } from 'lucide-r
 const C = {
   bg: '#F8FAFC', panel: '#FFFFFF', border: '#E2E8F0', borderDim: '#F1F5F9',
   text: '#0F172A', muted: '#64748B', label: '#94A3B8',
-  blue: '#2563EB', blueDim: '#EFF6FF',
+  blue: '#a000c8', blueDim: 'rgba(160,0,200,0.07)',
   emerald: '#059669', emeraldDim: '#ECFDF5',
 }
 
@@ -38,7 +38,7 @@ export default function IntegrationsPage() {
   const METHOD_LABELS: Record<string, { label: string; color: string; bg: string }> = {
     account_manager: { label: 'Via Account Manager', color: C.muted,    bg: C.borderDim   },
     self_serve:      { label: 'Self-serve',           color: C.emerald, bg: C.emeraldDim  },
-    zapier:          { label: 'Via Zapier',           color: '#D97706',  bg: '#FFFBEB'     },
+    zapier:          { label: 'Via Zapier',           color: '#be2ed6',  bg: 'rgba(190,46,214,0.07)'     },
   }
 
   return (
@@ -47,7 +47,7 @@ export default function IntegrationsPage() {
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#2563EB,#7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#a000c8,#a000c8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Plug size={18} color="#fff" />
           </div>
           <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0 }}>Integrations</h1>
@@ -104,7 +104,7 @@ export default function IntegrationsPage() {
                 </span>
                 <button
                   onClick={() => router.push(`/dashboard/integrations/${portal.id}`)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: active ? portal.bg : 'linear-gradient(135deg,#2563EB,#7C3AED)', border: active ? `1px solid ${portal.color}40` : 'none', borderRadius: 10, color: active ? portal.color : '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: active ? portal.bg : 'linear-gradient(135deg,#a000c8,#a000c8)', border: active ? `1px solid ${portal.color}40` : 'none', borderRadius: 10, color: active ? portal.color : '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                   {active ? 'Manage' : 'Configure'} <ChevronRight size={13} />
                 </button>
               </div>

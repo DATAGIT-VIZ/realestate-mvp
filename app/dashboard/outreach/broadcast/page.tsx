@@ -13,9 +13,9 @@ const C = {
   text:    '#0F172A',
   muted:   '#64748B',
   label:   '#94A3B8',
-  violet:  '#7C3AED',
+  violet:  '#a000c8',
   emerald: '#059669',
-  amber:   '#D97706',
+  amber:   '#be2ed6',
   red:     '#EF4444',
   wa:      '#25D366',
   waDark:  '#128C7E',
@@ -108,8 +108,8 @@ function PhonePreview({ message, recipientCount }: { message: string; recipientC
 function StatusBadge({ status }: { status: string | null }) {
   const map: Record<string, { bg: string; color: string }> = {
     Hot:  { bg: 'rgba(239,68,68,0.1)', color: C.red },
-    Warm: { bg: 'rgba(217,119,6,0.1)', color: C.amber },
-    New:  { bg: 'rgba(124,58,237,0.1)', color: C.violet },
+    Warm: { bg: 'rgba(190,46,214,0.1)', color: C.amber },
+    New:  { bg: 'rgba(160,0,200,0.1)', color: C.violet },
     Cold: { bg: 'rgba(100,116,139,0.1)', color: C.muted },
   }
   const s = status ?? 'New'
@@ -212,7 +212,7 @@ export default function BroadcastPage() {
             {/* Step 1 — Segment */}
             <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 22 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(124,58,237,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(160,0,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Filter style={{ width: 13, height: 13, color: C.violet }} />
                 </div>
                 <div style={{ flex: 1 }}>
@@ -351,7 +351,7 @@ export default function BroadcastPage() {
                   { id: 'agent',  label: 'Specific agent',             desc: 'Assign to one agent by name' },
                 ].map(opt => (
                   <button key={opt.id} onClick={() => setRouteTo(opt.id)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 10, border: `1.5px solid ${routeTo === opt.id ? C.violet : C.border}`, background: routeTo === opt.id ? 'rgba(124,58,237,0.05)' : 'transparent', cursor: 'pointer', textAlign: 'left' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 10, border: `1.5px solid ${routeTo === opt.id ? C.violet : C.border}`, background: routeTo === opt.id ? 'rgba(160,0,200,0.05)' : 'transparent', cursor: 'pointer', textAlign: 'left' }}>
                     <div style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${routeTo === opt.id ? C.violet : C.border}`, background: routeTo === opt.id ? C.violet : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {routeTo === opt.id && <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#fff' }} />}
                     </div>
@@ -390,7 +390,7 @@ export default function BroadcastPage() {
             )}
 
             {/* Interakt note */}
-            <div style={{ background: 'rgba(124,58,237,0.04)', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 12, padding: '11px 14px', display: 'flex', gap: 8 }}>
+            <div style={{ background: 'rgba(160,0,200,0.04)', border: '1px solid rgba(160,0,200,0.15)', borderRadius: 12, padding: '11px 14px', display: 'flex', gap: 8 }}>
               <Info style={{ width: 13, height: 13, color: C.violet, flexShrink: 0, marginTop: 1 }} />
               <p style={{ fontSize: 11.5, color: C.violet, margin: 0, lineHeight: 1.5 }}>
                 Connects to <strong>Interakt Business API</strong> when configured. Demo mode simulates sends.

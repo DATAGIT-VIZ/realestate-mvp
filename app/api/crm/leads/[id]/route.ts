@@ -15,7 +15,7 @@ function rowToCrm(r: Record<string, unknown>): CRMLead {
     emails:       { primaryEmail: (r.email as string) ?? '' },
     city:         (r.city as string) ?? null,
     intentScore:  (r.intent_score as number) ?? 0,
-    status:       (r.status as string) ?? 'Fresh',
+    status:       (r.status as string) ?? 'New',
     leadPortalId: (r.cs_id as string) ?? null,
     sourcePortal: (r.source as string) ?? null,
     sourceDetail: (() => {
@@ -34,6 +34,8 @@ function rowToCrm(r: Record<string, unknown>): CRMLead {
   }
 }
 
+const DEV_AGENT = '00000000-0000-0000-0000-000000000001'
+
 // ─── GET /api/crm/leads/[id] ─────────────────────────────────────────────────
 export async function GET(_req: NextRequest, { params }: RouteCtx) {
   const { userId, response } = await requireAuth()
@@ -42,14 +44,14 @@ export async function GET(_req: NextRequest, { params }: RouteCtx) {
   const sb = getAdminClient()
   if (!sb) return NextResponse.json({ data: null, error: 'Database not configured' }, { status: 503 })
 
+  const isDevBypass = userId === DEV_AGENT
+
   try {
     const { id } = await params
 
-    const { data: lead, error: leadErr } = await sb.from('leads')
-      .select('*')
-      .eq('id', id)
-      .eq('agent_id', userId!)
-      .single()
+    let leadQ = sb.from('leads').select('*').eq('id', id)
+    if (!isDevBypass) leadQ = leadQ.or(`agent_id.is.null,agent_id.eq.${userId}`)
+    const { data: lead, error: leadErr } = await leadQ.single()
 
     if (leadErr || !lead) {
       return NextResponse.json({ data: null, error: 'Lead not found' }, { status: 404 })
@@ -89,12 +91,29 @@ export async function PATCH(req: NextRequest, { params }: RouteCtx) {
   const sb = getAdminClient()
   if (!sb) return NextResponse.json({ data: null, error: 'Database not configured' }, { status: 503 })
 
+  const isDevBypass = userId === DEV_AGENT
+
   try {
     const { id } = await params
     const body: Record<string, unknown> = await req.json()
 
     // Build Supabase update object from incoming fields
     const update: Record<string, unknown> = {}
+
+    // Block status regression — status can only move forward (or to Disqualified)
+    if (body.status !== undefined) {
+      const STATUS_ORDER = ['New', 'Cold', 'Warm', 'Hot', 'Closed']
+      const { data: cur } = await sb.from('leads').select('status').eq('id', id).single()
+      const currentStatus = (cur?.status as string) ?? 'New'
+      const currentIdx    = STATUS_ORDER.indexOf(currentStatus)
+      const targetIdx     = STATUS_ORDER.indexOf(body.status as string)
+      if (
+        currentStatus === 'Closed' ||
+        (currentStatus !== 'Disqualified' && targetIdx !== -1 && targetIdx < currentIdx)
+      ) {
+        return NextResponse.json({ data: null, error: `Cannot move lead from ${currentStatus} back to ${body.status}. Lifecycle only moves forward.` }, { status: 422 })
+      }
+    }
 
     if (body.firstName !== undefined || body.lastName !== undefined) {
       // Merge with existing name if only one half is sent
@@ -134,12 +153,9 @@ export async function PATCH(req: NextRequest, { params }: RouteCtx) {
       }
     }
 
-    const { data: updated, error: updateErr } = await sb.from('leads')
-      .update(update)
-      .eq('id', id)
-      .eq('agent_id', userId!)
-      .select()
-      .single()
+    let updateQ = sb.from('leads').update(update).eq('id', id)
+    if (!isDevBypass) updateQ = updateQ.or(`agent_id.is.null,agent_id.eq.${userId}`)
+    const { data: updated, error: updateErr } = await updateQ.select().single()
 
     if (updateErr) return NextResponse.json({ data: null, error: updateErr.message }, { status: 400 })
 
@@ -158,9 +174,13 @@ export async function DELETE(_req: NextRequest, { params }: RouteCtx) {
   const sb = getAdminClient()
   if (!sb) return NextResponse.json({ data: null, error: 'Database not configured' }, { status: 503 })
 
+  const isDevBypass = userId === DEV_AGENT
+
   try {
     const { id } = await params
-    const { error } = await sb.from('leads').delete().eq('id', id).eq('agent_id', userId!)
+    let delQ = sb.from('leads').delete().eq('id', id)
+    if (!isDevBypass) delQ = delQ.or(`agent_id.is.null,agent_id.eq.${userId}`)
+    const { error } = await delQ
     if (error) return NextResponse.json({ data: null, error: error.message }, { status: 400 })
     return NextResponse.json({ data: { id }, error: null })
   } catch (err) {

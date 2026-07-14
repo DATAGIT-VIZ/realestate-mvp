@@ -19,17 +19,18 @@ const C = {
   text:         '#0F172A',
   muted:        '#64748B',
   label:        '#94A3B8',
-  blue:         '#2563EB',
-  blueDim:      '#EFF6FF',
-  blueBorder:   '#BFDBFE',
-  amber:        '#D97706',
-  amberDim:     '#FFFBEB',
-  amberBorder:  '#FDE68A',
+  blue:         '#a000c8',
+  blueDim:      'rgba(160,0,200,0.07)',
+  blueBorder:   'rgba(160,0,200,0.22)',
+  amber:        '#be2ed6',
+  amberDim:     'rgba(190,46,214,0.07)',
+  amberBorder:  'rgba(190,46,214,0.25)',
   emerald:      '#059669',
   emeraldDim:   '#ECFDF5',
-  violet:       '#7C3AED',
-  violetDim:    '#F5F3FF',
-  violetBorder: '#DDD6FE',
+  violet:       '#a000c8',
+  violetDim:    'rgba(160,0,200,0.07)',
+  violetBorder: 'rgba(160,0,200,0.22)',
+  purpleGrad:   'linear-gradient(135deg, #7600bc 0%, #b100cd 100%)',
   red:          '#EF4444',
 }
 
@@ -306,7 +307,7 @@ function TokenBadge({ tokens }: { tokens: number }) {
   const costUSD = estimateCostUSD(tokens)
   const costINR = costUSD * 84
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, background: tokens > 5000 ? '#FEF3C7' : C.bg, border: `1px solid ${tokens > 5000 ? C.amberBorder : C.border}` }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, background: tokens > 5000 ? 'rgba(190,46,214,0.08)' : C.bg, border: `1px solid ${tokens > 5000 ? C.amberBorder : C.border}` }}>
       <Coins size={12} color={C.muted} />
       <span style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>~{tokens.toLocaleString()} tokens</span>
       <span style={{ fontSize: 10, color: C.label }}>≈ ₹{costINR.toFixed(2)}</span>
@@ -507,9 +508,9 @@ export default function AdvisorPage() {
       <div style={{ width: 268, borderRight: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', background: C.panel, flexShrink: 0, overflowY: 'auto' }}>
 
         {/* Branding */}
-        <div style={{ padding: '16px 16px 14px', borderBottom: `1px solid ${C.border}`, background: 'linear-gradient(135deg, #EFF6FF 0%, #F5F3FF 100%)' }}>
+        <div style={{ padding: '16px 16px 14px', borderBottom: `1px solid ${C.border}`, background: 'linear-gradient(135deg, rgba(160,0,200,0.05) 0%, rgba(160,0,200,0.02) 100%)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 12, background: 'linear-gradient(135deg, #2563EB, #7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(37,99,235,0.25)' }}>
+            <div style={{ width: 38, height: 38, borderRadius: 12, background: C.purpleGrad, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(37,99,235,0.25)' }}>
               <Bot size={18} color="#fff" />
             </div>
             <div>
@@ -553,7 +554,7 @@ export default function AdvisorPage() {
 
         {/* New chat */}
         <div style={{ padding: '10px 12px 14px', borderTop: `1px solid ${C.border}` }}>
-          <button onClick={newConvo} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '9px 0', borderRadius: 10, background: 'linear-gradient(135deg,#7C3AED,#5B21B6)', border: 'none', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 10px rgba(124,58,237,0.3)' }}>
+          <button onClick={newConvo} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '9px 0', borderRadius: 10, background: C.purpleGrad, border: 'none', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 10px rgba(160,0,200,0.3)' }}>
             <Plus size={14} /> New Chat
           </button>
         </div>
@@ -565,7 +566,7 @@ export default function AdvisorPage() {
         {/* Top bar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px', background: C.panel, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 30, height: 30, borderRadius: 9, background: 'linear-gradient(135deg, #2563EB, #7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 30, height: 30, borderRadius: 9, background: C.purpleGrad, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Sparkles size={14} color="#fff" />
             </div>
             <div>
@@ -587,7 +588,7 @@ export default function AdvisorPage() {
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28, maxWidth: 680, margin: '0 auto', width: '100%', padding: '20px 0' }}>
               {/* Hero */}
               <div style={{ textAlign: 'center' }}>
-                <div style={{ width: 64, height: 64, borderRadius: 20, background: 'linear-gradient(135deg, #2563EB, #7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: '0 8px 24px rgba(37,99,235,0.2)' }}>
+                <div style={{ width: 64, height: 64, borderRadius: 20, background: C.purpleGrad, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: '0 8px 24px rgba(37,99,235,0.2)' }}>
                   <Bot size={28} color="#fff" />
                 </div>
                 <h2 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: '0 0 8px' }}>What do you need today?</h2>
@@ -659,7 +660,7 @@ export default function AdvisorPage() {
 
                 {/* AI avatar only */}
                 {!isUser && (
-                  <div style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #7C3AED, #5B21B6)', boxShadow: '0 2px 8px rgba(124,58,237,0.25)', marginTop: 2 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.purpleGrad, boxShadow: '0 2px 8px rgba(160,0,200,0.25)', marginTop: 2 }}>
                     <Bot size={14} color="#fff" />
                   </div>
                 )}
@@ -667,7 +668,7 @@ export default function AdvisorPage() {
                 {/* Message content */}
                 {isUser ? (
                   <div style={{
-                    maxWidth: '72%', background: 'linear-gradient(135deg, #1E1B4B, #312E81)',
+                    maxWidth: '72%', background: 'linear-gradient(135deg, #4c00b0, #8a00c2)',
                     borderRadius: '18px 4px 18px 18px', padding: '11px 17px',
                     boxShadow: '0 2px 8px rgba(30,27,75,0.2)',
                   }}>
@@ -702,14 +703,14 @@ export default function AdvisorPage() {
         {/* Input bar */}
         <div style={{ padding: '12px 24px 16px', background: C.panel, borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, background: '#FAFAFF', border: `1.5px solid ${C.violetBorder}`, borderRadius: 18, padding: '10px 10px 10px 16px', maxWidth: 820, margin: '0 auto', transition: 'border-color 0.15s, box-shadow 0.15s' }}
-            onFocusCapture={e => { e.currentTarget.style.borderColor = C.violet; e.currentTarget.style.boxShadow = `0 0 0 3px rgba(124,58,237,0.1)` }}
+            onFocusCapture={e => { e.currentTarget.style.borderColor = C.violet; e.currentTarget.style.boxShadow = `0 0 0 3px rgba(160,0,200,0.1)` }}
             onBlurCapture={e  => { e.currentTarget.style.borderColor = C.violetBorder; e.currentTarget.style.boxShadow = 'none' }}>
             <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={onKey}
               placeholder={ctx?.hotLeads[0] ? `Ask about ${ctx.hotLeads[0].name}, write a script, get market intel…` : 'Ask anything about your pipeline, clients, or market…'}
               rows={1} disabled={loading}
-              style={{ flex: 1, background: 'transparent', border: 'none', color: C.text, fontSize: 13.5, resize: 'none', outline: 'none', fontFamily: 'Inter, system-ui, sans-serif', lineHeight: 1.6, maxHeight: 120, overflow: 'auto' }} />
+              style={{ flex: 1, background: 'transparent', border: 'none', color: C.text, fontSize: 13.5, resize: 'none', outline: 'none', fontFamily: 'Plus Jakarta Sans, system-ui, sans-serif', lineHeight: 1.6, maxHeight: 120, overflow: 'auto' }} />
             <button onClick={() => send(input)} disabled={!input.trim() || loading}
-              style={{ width: 38, height: 38, borderRadius: 12, border: 'none', flexShrink: 0, background: input.trim() && !loading ? 'linear-gradient(135deg,#7C3AED,#5B21B6)' : C.borderDim, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: input.trim() && !loading ? 'pointer' : 'not-allowed', transition: 'all 0.15s', boxShadow: input.trim() && !loading ? '0 2px 10px rgba(124,58,237,0.35)' : 'none' }}>
+              style={{ width: 38, height: 38, borderRadius: 12, border: 'none', flexShrink: 0, background: input.trim() && !loading ? C.purpleGrad : C.borderDim, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: input.trim() && !loading ? 'pointer' : 'not-allowed', transition: 'all 0.15s', boxShadow: input.trim() && !loading ? '0 2px 10px rgba(160,0,200,0.35)' : 'none' }}>
               {loading ? <Loader2 size={15} color={C.muted} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={15} color={input.trim() ? '#fff' : C.label} />}
             </button>
           </div>

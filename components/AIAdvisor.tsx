@@ -24,7 +24,7 @@ const C = {
     panel: '#0E1623',
     panelAlt: '#111C2D',
     border: 'rgba(255,255,255,0.06)',
-    amber: '#F59E0B',
+    amber: '#be2ed6',
     amberDim: 'rgba(245,158,11,0.10)',
     blue: '#3B82F6',
     muted: 'rgba(255,255,255,0.35)',

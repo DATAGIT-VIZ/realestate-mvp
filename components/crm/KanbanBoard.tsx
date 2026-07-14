@@ -1,183 +1,98 @@
 'use client'
 
-import { useState } from 'react'
-import {
-  DndContext, closestCenter, KeyboardSensor, PointerSensor,
-  useSensor, useSensors, DragOverlay, defaultDropAnimationSideEffects,
-  type DragStartEvent, type DragOverEvent, type DragEndEvent, type DropAnimation,
-} from '@dnd-kit/core'
-import {
-  arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
+import Link from 'next/link'
 import { type CRMLead } from '@/lib/twenty'
-import { Phone, Mail, MoreHorizontal } from 'lucide-react'
+import { Phone, Mail } from 'lucide-react'
 
 const COLUMNS = [
-  { id: 'New',         title: 'New Leads',    color: '#7B5EA7' },
-  { id: 'Contacted',   title: 'Contacted',    color: '#4A90D9' },
-  { id: 'Qualified',   title: 'Qualified',    color: '#F5A623' },
-  { id: 'Negotiation', title: 'Negotiation',  color: '#9B59B6' },
-  { id: 'Won',         title: 'Closed Won',   color: '#27AE60' },
-  { id: 'Lost',        title: 'Lost',         color: '#8C8C8C' },
+  { id: 'New',          title: 'New',          color: '#64748B', bg: '#F8FAFC' },
+  { id: 'Cold',         title: 'Cold',         color: '#2563EB', bg: '#EFF6FF' },
+  { id: 'Warm',         title: 'Warm',         color: '#be2ed6', bg: '#FDF4FF' },
+  { id: 'Hot',          title: 'Hot 🔥',       color: '#a000c8', bg: '#FDF4FF' },
+  { id: 'Closed',       title: 'Closed ✓',     color: '#059669', bg: '#F0FDF4' },
+  { id: 'Disqualified', title: 'Disqualified', color: '#94A3B8', bg: '#F8FAFC' },
 ]
 
 const getName  = (l: CRMLead) => `${l.name.firstName} ${l.name.lastName}`.trim() || 'Unnamed'
 const getPhone = (l: CRMLead) => l.phones.primaryPhoneNumber ?? ''
-const getEmail = (l: CRMLead) => l.emails.primaryEmail ?? ''
 const getScore = (l: CRMLead) => l.intentScore ?? 0
 
 function scoreDot(score: number) {
-  if (score >= 70) return '#FB923C'
-  if (score >= 40) return '#F5A623'
-  return '#6B7280'
+  if (score >= 70) return '#a000c8'
+  if (score >= 40) return '#be2ed6'
+  return '#94A3B8'
 }
 
-// ─── Card ─────────────────────────────────────────────────────────────────────
-function SortableLeadCard({ lead }: { lead: CRMLead }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: lead.id, data: { lead },
-  })
+function LeadCard({ lead }: { lead: CRMLead }) {
   const score = getScore(lead)
-  const dot = scoreDot(score)
-
   return (
-    <div
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }}
-      {...attributes}
-      {...listeners}
-      className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm hover:shadow-md group cursor-grab active:cursor-grabbing mb-2 transition-shadow"
-    >
-      <div className="flex justify-between items-start mb-2">
-        <h4 className="font-semibold text-slate-800 text-sm truncate pr-2">{getName(lead)}</h4>
-        <div style={{ width: 8, height: 8, borderRadius: '50%', background: dot, boxShadow: `0 0 6px ${dot}`, flexShrink: 0, marginTop: 3 }} />
-      </div>
-
-      <div className="space-y-1 mb-2">
+    <Link href={`/dashboard/leads/${lead.id}`} style={{ textDecoration: 'none' }}>
+      <div style={{
+        background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10,
+        padding: '10px 12px', marginBottom: 7, cursor: 'pointer',
+        transition: 'box-shadow 0.15s, border-color 0.15s',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+      }}
+        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'; (e.currentTarget as HTMLDivElement).style.borderColor = '#CBD5E1' }}
+        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'; (e.currentTarget as HTMLDivElement).style.borderColor = '#E2E8F0' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}>
+            {getName(lead)}
+          </span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: scoreDot(score), background: `${scoreDot(score)}15`, padding: '2px 6px', borderRadius: 99, flexShrink: 0, marginLeft: 4 }}>
+            {score}
+          </span>
+        </div>
         {getPhone(lead) && (
-          <div className="flex items-center text-xs text-slate-400">
-            <Phone className="w-3 h-3 mr-1.5" />{getPhone(lead)}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#64748B', marginBottom: 2 }}>
+            <Phone style={{ width: 10, height: 10, flexShrink: 0 }} />{getPhone(lead)}
           </div>
         )}
-        {getEmail(lead) && (
-          <div className="flex items-center text-xs text-slate-400 truncate">
-            <Mail className="w-3 h-3 mr-1.5" />{getEmail(lead)}
-          </div>
+        {lead.city && (
+          <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>{lead.city}</div>
         )}
       </div>
-
-      <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-        <span className="text-xs text-slate-400">
-          Score: <span style={{ color: dot }} className="font-semibold">{score}</span>
-        </span>
-        <button className="text-slate-200 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">
-          <MoreHorizontal className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
+    </Link>
   )
 }
 
-// ─── Board ────────────────────────────────────────────────────────────────────
 interface KanbanBoardProps {
   leads: CRMLead[]
   onLeadUpdate: (leadId: string, newStatus: string) => void
 }
 
-export function KanbanBoard({ leads, onLeadUpdate }: KanbanBoardProps) {
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [items, setItems] = useState<Record<string, string[]>>(() => {
-    const map: Record<string, string[]> = {}
-    COLUMNS.forEach(col => {
-      map[col.id] = leads
-        .filter(l => (l.status ?? 'New') === col.id)
-        .map(l => l.id)
-    })
-    return map
-  })
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  )
-
-  const findContainer = (id: string) => {
-    if (id in items) return id
-    return Object.keys(items).find(k => items[k].includes(id))
-  }
-
-  const handleDragStart = ({ active }: DragStartEvent) => setActiveId(active.id as string)
-
-  const handleDragOver = ({ active, over }: DragOverEvent) => {
-    if (!over) return
-    const fromCol = findContainer(active.id as string)
-    const toCol = findContainer(over.id as string) ?? (COLUMNS.find(c => c.id === over.id)?.id)
-    if (!fromCol || !toCol || fromCol === toCol) return
-
-    setItems(prev => {
-      const fromItems = prev[fromCol]
-      const toItems = prev[toCol]
-      const fromIdx = fromItems.indexOf(active.id as string)
-      const toIdx = toItems.indexOf(over.id as string)
-      const below = over && active.rect.current.translated &&
-        active.rect.current.translated.top > over.rect.top + over.rect.height
-      const newIdx = toIdx >= 0 ? toIdx + (below ? 1 : 0) : toItems.length + 1
-
-      return {
-        ...prev,
-        [fromCol]: prev[fromCol].filter(id => id !== active.id),
-        [toCol]: [...toItems.slice(0, newIdx), fromItems[fromIdx], ...toItems.slice(newIdx)],
-      }
-    })
-  }
-
-  const handleDragEnd = ({ active, over }: DragEndEvent) => {
-    const fromCol = findContainer(active.id as string)
-    const toCol = over ? (findContainer(over.id as string) ?? COLUMNS.find(c => c.id === over.id)?.id) : null
-    if (fromCol && toCol && fromCol !== toCol) {
-      onLeadUpdate(active.id as string, toCol)
-    }
-    setActiveId(null)
-  }
-
-  const dropAnimation: DropAnimation = {
-    sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.5' } } }),
-  }
-
+export function KanbanBoard({ leads }: KanbanBoardProps) {
   return (
-    <DndContext
-      sensors={sensors} collisionDetection={closestCenter}
-      onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}
-    >
-      <div className="flex gap-3 overflow-x-auto pb-4" style={{ height: 'calc(100vh - 220px)', minHeight: 500 }}>
-        {COLUMNS.map(col => (
-          <div key={col.id} className="flex-shrink-0 w-64 rounded-xl border border-slate-200 flex flex-col" style={{ background: '#F8FAFC' }}>
-            <div className="px-3 py-2.5 border-b border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div style={{ width: 9, height: 9, borderRadius: '50%', background: col.color }} />
-                <h3 className="font-semibold text-slate-700 text-sm">{col.title}</h3>
+    <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 16, height: 'calc(100vh - 240px)', minHeight: 480 }}>
+      {COLUMNS.map(col => {
+        const colLeads = leads.filter(l => (l.status ?? 'New') === col.id)
+        return (
+          <div key={col.id} style={{ flexShrink: 0, width: 240, borderRadius: 12, border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', background: col.bg }}>
+            {/* Column header */}
+            <div style={{ padding: '10px 12px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', borderRadius: '12px 12px 0 0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: col.color }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>{col.title}</span>
               </div>
-              <span className="text-xs font-medium text-slate-400 bg-white px-1.5 py-0.5 rounded-md border border-slate-200">
-                {items[col.id]?.length ?? 0}
+              <span style={{ fontSize: 11, fontWeight: 700, color: col.color, background: `${col.color}15`, padding: '2px 8px', borderRadius: 99 }}>
+                {colLeads.length}
               </span>
             </div>
-            <div className="p-2 flex-1 overflow-y-auto min-h-[100px]">
-              <SortableContext id={col.id} items={items[col.id] ?? []} strategy={verticalListSortingStrategy}>
-                <div>
-                  {(items[col.id] ?? []).map(id => {
-                    const lead = leads.find(l => l.id === id)
-                    return lead ? <SortableLeadCard key={id} lead={lead} /> : null
-                  })}
+
+            {/* Cards */}
+            <div style={{ padding: 8, flex: 1, overflowY: 'auto' }}>
+              {colLeads.length === 0 ? (
+                <div style={{ padding: '24px 0', textAlign: 'center', color: '#CBD5E1', fontSize: 12 }}>
+                  No leads
                 </div>
-              </SortableContext>
+              ) : (
+                colLeads.map(lead => <LeadCard key={lead.id} lead={lead} />)
+              )}
             </div>
           </div>
-        ))}
-      </div>
-      <DragOverlay dropAnimation={dropAnimation}>
-        {activeId ? <SortableLeadCard lead={leads.find(l => l.id === activeId)!} /> : null}
-      </DragOverlay>
-    </DndContext>
+        )
+      })}
+    </div>
   )
 }

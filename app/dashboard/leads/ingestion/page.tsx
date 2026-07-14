@@ -11,11 +11,11 @@ import type { PortalLeadRow, IngestionStatus } from '@/lib/ingestionLog'
 const C = {
   bg: '#F8FAFC', panel: '#FFFFFF', border: '#E2E8F0', borderDim: '#F1F5F9',
   text: '#0F172A', muted: '#64748B', label: '#94A3B8',
-  blue: '#2563EB', blueDim: '#EFF6FF', blueBorder: '#BFDBFE',
+  blue: '#a000c8', blueDim: 'rgba(160,0,200,0.07)', blueBorder: 'rgba(160,0,200,0.2)',
   emerald: '#059669', emeraldDim: '#ECFDF5',
-  amber: '#D97706', amberDim: '#FFFBEB',
+  amber: '#be2ed6', amberDim: 'rgba(190,46,214,0.07)',
   red: '#EF4444', redDim: '#FFF1F2',
-  violet: '#7C3AED', violetDim: '#F5F3FF',
+  violet: '#a000c8', violetDim: 'rgba(160,0,200,0.07)',
 }
 
 const SOURCES = ['all', 'MagicBricks', '99acres', 'Housing.com', 'Email', 'Facebook']
@@ -28,7 +28,7 @@ const STATUS_META: Record<string, { label: string; bg: string; color: string }> 
 }
 
 const SOURCE_META: Record<string, { bg: string; color: string }> = {
-  MagicBricks:  { bg: 'rgba(234,88,12,0.08)',   color: '#EA580C' },
+  MagicBricks:  { bg: 'rgba(160,0,200,0.08)',   color: '#a000c8' },
   '99acres':    { bg: C.blueDim,                color: C.blue    },
   'Housing.com':{ bg: C.emeraldDim,             color: C.emerald },
   Email:        { bg: C.violetDim,              color: C.violet  },
@@ -93,7 +93,7 @@ function LeadPreviewCard({ data, onConfirm, onDiscard, saving }: {
       <div style={{ padding: '16px 18px' }}>
         {/* Name + phone */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 12 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#2563EB,#7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#a000c8,#a000c8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
             {data.firstName.charAt(0)}
           </div>
           <div>
@@ -310,7 +310,7 @@ Message: Looking for a ready-to-move flat for end use.`
                 <button
                   onClick={parse}
                   disabled={!body.trim() || parsing}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 20px', background: !body.trim() || parsing ? C.borderDim : 'linear-gradient(135deg,#2563EB,#7C3AED)', border: 'none', borderRadius: 12, color: !body.trim() || parsing ? C.label : '#fff', fontSize: 14, fontWeight: 800, cursor: !body.trim() || parsing ? 'not-allowed' : 'pointer', boxShadow: body.trim() && !parsing ? '0 4px 14px rgba(37,99,235,0.25)' : 'none' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 20px', background: !body.trim() || parsing ? C.borderDim : 'linear-gradient(135deg,#a000c8,#a000c8)', border: 'none', borderRadius: 12, color: !body.trim() || parsing ? C.label : '#fff', fontSize: 14, fontWeight: 800, cursor: !body.trim() || parsing ? 'not-allowed' : 'pointer', boxShadow: body.trim() && !parsing ? '0 4px 14px rgba(160,0,200,0.25)' : 'none' }}
                 >
                   {parsing
                     ? <><Sparkles size={14} style={{ animation: 'spin 1s linear infinite' }} /> Extracting…</>
@@ -347,7 +347,7 @@ Message: Looking for a ready-to-move flat for end use.`
 
               {parsing && (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', gap: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,#EFF6FF,#F5F3FF)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,rgba(160,0,200,0.07),rgba(160,0,200,0.07))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Sparkles size={22} color={C.violet} style={{ animation: 'pulse 1s infinite' }} />
                   </div>
                   <span style={{ fontSize: 13, fontWeight: 600, color: C.muted }}>AI is reading the email…</span>

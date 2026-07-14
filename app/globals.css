@@ -1,21 +1,36 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
-/* ─── RealEdge CRM — Light Design System ───────────────────────────────────── */
+/* ─── Vyapulse — Light Design System ───────────────────────────────────────── */
 :root {
-  /* App-level tokens */
+  /* ── Purple brand palette (from design reference) */
+  --purple-900: #4c00b0;
+  --purple-800: #7600bc;
+  --purple-700: #8a00c2;
+  --purple-600: #a000c8;   /* PRIMARY */
+  --purple-500: #b100cd;
+  --purple-400: #be2ed6;
+  --purple-300: #ca5cdd;
+  --purple-200: #da8ee7;
+  --purple-100: #e8bcf0;
+  --purple-50:  #faf5ff;
+
+  /* ── App-level tokens */
   --bg:           #F8FAFC;
   --panel:        #FFFFFF;
   --border-clr:   #E2E8F0;
   --text:         #0F172A;
   --text-muted:   #64748B;
   --text-label:   #94A3B8;
-  --blue:         #2563EB;
-  --blue-dim:     rgba(37, 99, 235, 0.08);
+
+  /* primary replaces blue everywhere — all var(--blue) refs pick this up */
+  --blue:         #a000c8;
+  --blue-dim:     rgba(160, 0, 200, 0.08);
+
   --amber:        #D97706;
   --amber-dim:    rgba(217, 119, 6, 0.10);
   --emerald:      #059669;
@@ -25,14 +40,14 @@
   --status-warm:  #D97706;
   --status-cold:  #94A3B8;
 
-  /* shadcn/ui light-mode tokens */
+  /* shadcn/ui light-mode tokens — primary updated to Vyapulse purple */
   --background:                    oklch(1 0 0);
   --foreground:                    oklch(0.145 0 0);
   --card:                          oklch(1 0 0);
   --card-foreground:               oklch(0.145 0 0);
   --popover:                       oklch(1 0 0);
   --popover-foreground:            oklch(0.145 0 0);
-  --primary:                       oklch(0.468 0.199 264);
+  --primary:                       oklch(0.42 0.22 309);   /* #a000c8 in oklch */
   --primary-foreground:            oklch(0.985 0 0);
   --secondary:                     oklch(0.97 0 0);
   --secondary-foreground:          oklch(0.205 0 0);
@@ -43,21 +58,21 @@
   --destructive:                   oklch(0.577 0.245 27.325);
   --border:                        oklch(0.922 0 0);
   --input:                         oklch(0.922 0 0);
-  --ring:                          oklch(0.708 0 0);
+  --ring:                          oklch(0.42 0.22 309);
   --radius:                        0.625rem;
-  --chart-1:                       oklch(0.87 0 0);
+  --chart-1:                       oklch(0.42 0.22 309);
   --chart-2:                       oklch(0.556 0 0);
   --chart-3:                       oklch(0.439 0 0);
   --chart-4:                       oklch(0.371 0 0);
   --chart-5:                       oklch(0.269 0 0);
   --sidebar:                       oklch(1 0 0);
   --sidebar-foreground:            oklch(0.145 0 0);
-  --sidebar-primary:               oklch(0.468 0.199 264);
+  --sidebar-primary:               oklch(0.42 0.22 309);
   --sidebar-primary-foreground:    oklch(0.985 0 0);
   --sidebar-accent:                oklch(0.97 0 0);
   --sidebar-accent-foreground:     oklch(0.205 0 0);
   --sidebar-border:                oklch(0.922 0 0);
-  --sidebar-ring:                  oklch(0.708 0 0);
+  --sidebar-ring:                  oklch(0.42 0.22 309);
 }
 
 @theme inline {
@@ -108,7 +123,7 @@
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 }
 
 /* ─── Range input accent ─────────────────────────────────────────────────────── */

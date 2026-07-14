@@ -52,7 +52,7 @@ const EMPTY: Form = {
 const BG_OVERLAY = 'rgba(15,23,42,0.4)'
 const BG_MODAL   = '#FFFFFF'
 const BORDER     = '#E2E8F0'
-const AMBER      = '#D97706'
+const AMBER      = '#be2ed6'
 const TEXT       = '#0F172A'
 const MUTED      = '#64748B'
 

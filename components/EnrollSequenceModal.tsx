@@ -9,7 +9,7 @@ const C = {
   text:    '#0F172A',
   muted:   '#64748B',
   label:   '#94A3B8',
-  blue:    '#2563EB',
+  blue:    '#a000c8',
   emerald: '#059669',
   red:     '#EF4444',
 }
@@ -75,7 +75,7 @@ export function EnrollSequenceModal({ isOpen, onClose, leadId, leadName, leadPho
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: `1px solid ${C.border}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(37,99,235,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(160,0,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Zap style={{ width: 15, height: 15, color: C.blue }} />
             </div>
             <div>
@@ -109,7 +109,7 @@ export function EnrollSequenceModal({ isOpen, onClose, leadId, leadName, leadPho
                 const isSelected = selected === seq.id
                 return (
                   <button key={seq.id} onClick={() => setSelected(seq.id)}
-                    style={{ width: '100%', padding: '12px 14px', border: `1.5px solid ${isSelected ? C.blue : C.border}`, borderRadius: 12, background: isSelected ? 'rgba(37,99,235,0.04)' : C.panel, cursor: 'pointer', textAlign: 'left', transition: 'all 0.12s' }}>
+                    style={{ width: '100%', padding: '12px 14px', border: `1.5px solid ${isSelected ? C.blue : C.border}`, borderRadius: 12, background: isSelected ? 'rgba(160,0,200,0.04)' : C.panel, cursor: 'pointer', textAlign: 'left', transition: 'all 0.12s' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <p style={{ fontSize: 13, fontWeight: 600, color: C.text, margin: 0 }}>{seq.name}</p>
                       <span style={{ fontSize: 11, color: C.muted }}>{(seq.sequence_steps as unknown[]).length} steps</span>

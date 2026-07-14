@@ -9,11 +9,11 @@ const C = {
   text:    '#0F172A',
   muted:   '#64748B',
   label:   '#94A3B8',
-  violet:  '#7C3AED',
+  violet:  '#a000c8',
   emerald: '#059669',
-  amber:   '#D97706',
+  amber:   '#be2ed6',
   red:     '#EF4444',
-  blue:    '#2563EB',
+  blue:    '#a000c8',
 }
 
 type Match = {
@@ -92,7 +92,7 @@ export function PropertyMatcher({ lead }: { lead: LeadProps }) {
         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: 'transparent', cursor: 'pointer' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(124,58,237,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(160,0,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Building2 style={{ width: 14, height: 14, color: C.violet }} />
           </div>
           <div style={{ textAlign: 'left' }}>
@@ -135,8 +135,8 @@ export function PropertyMatcher({ lead }: { lead: LeadProps }) {
 
           {/* No inventory hint */}
           {!loading && ran && !hasInventory && (
-            <div style={{ background: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: 10, padding: '10px 12px', marginBottom: 12 }}>
-              <p style={{ fontSize: 11, color: '#92400E', margin: 0, lineHeight: 1.5 }}>
+            <div style={{ background: 'rgba(190,46,214,0.07)', border: '1px solid rgba(190,46,214,0.25)', borderRadius: 10, padding: '10px 12px', marginBottom: 12 }}>
+              <p style={{ fontSize: 11, color: '#7600bc', margin: 0, lineHeight: 1.5 }}>
                 <strong>No inventory yet</strong> — showing AI suggestions. <a href="/dashboard/properties" style={{ color: C.violet, textDecoration: 'none', fontWeight: 600 }}>Add properties →</a>
               </p>
             </div>

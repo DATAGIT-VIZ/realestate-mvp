@@ -14,8 +14,8 @@ const C = {
   text:   '#0F172A',
   muted:  '#64748B',
   label:  '#94A3B8',
-  blue:   '#2563EB',
-  violet: '#7C3AED',
+  blue:   '#a000c8',
+  violet: '#a000c8',
   emerald:'#059669',
 }
 
@@ -112,8 +112,8 @@ const QUICK_LINKS = [
   { icon: BarChart3,  label: 'View lead analytics',     href: '/dashboard/analytics',          color: C.violet },
   { icon: Phone,      label: 'Start a dialing session', href: '/dashboard/calls',              color: C.emerald},
   { icon: MessageCircle, label: 'Send WhatsApp broadcast', href: '/dashboard/outreach/broadcast', color: '#25D366'},
-  { icon: BookOpen,   label: 'Lead lifecycle board',    href: '/dashboard/lifecycle',          color: '#F97316'},
-  { icon: Zap,        label: 'AI property advisor',     href: '/dashboard/advisor',            color: '#D97706'},
+  { icon: BookOpen,   label: 'Lead lifecycle board',    href: '/dashboard/lifecycle',          color: '#a000c8'},
+  { icon: Zap,        label: 'AI property advisor',     href: '/dashboard/advisor',            color: '#be2ed6'},
 ]
 
 function FAQItem({ q, a }: { q: string; a: string }) {
@@ -148,7 +148,7 @@ export default function HelpPage() {
     <div style={{ minHeight: '100vh', background: C.bg }}>
 
       {/* Header */}
-      <div style={{ background: 'linear-gradient(135deg,#1E3A5F,#2563EB)', padding: '32px 28px 28px' }}>
+      <div style={{ background: 'linear-gradient(135deg,#4c00b0,#a000c8)', padding: '32px 28px 28px' }}>
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <HelpCircle style={{ width: 22, height: 22, color: 'rgba(255,255,255,0.8)' }} />
@@ -218,7 +218,7 @@ export default function HelpPage() {
         )}
 
         {/* Contact section */}
-        <div style={{ background: 'linear-gradient(135deg,rgba(37,99,235,0.05),rgba(124,58,237,0.04))', border: `1px solid rgba(37,99,235,0.15)`, borderRadius: 16, padding: '20px 22px' }}>
+        <div style={{ background: 'linear-gradient(135deg,rgba(160,0,200,0.05),rgba(160,0,200,0.04))', border: `1px solid rgba(160,0,200,0.15)`, borderRadius: 16, padding: '20px 22px' }}>
           <p style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: '0 0 4px' }}>Still need help?</p>
           <p style={{ fontSize: 12, color: C.muted, margin: '0 0 16px', lineHeight: 1.6 }}>Reach out — we typically respond within a few hours.</p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

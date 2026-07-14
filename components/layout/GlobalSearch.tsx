@@ -14,16 +14,16 @@ type Lead = {
   intentScore: number
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  Fresh: 'bg-blue-50 text-blue-600',
-  Attempting: 'bg-amber-50 text-amber-600',
-  Connected: 'bg-green-50 text-green-600',
-  'VM Done': 'bg-slate-100 text-slate-500',
-  'Virtual Meeting': 'bg-purple-50 text-purple-600',
-  'Site Visit': 'bg-indigo-50 text-indigo-600',
-  Negotiation: 'bg-orange-50 text-orange-600',
-  Won: 'bg-emerald-50 text-emerald-700',
-  Lost: 'bg-red-50 text-red-500',
+const STATUS_STYLE: Record<string, React.CSSProperties> = {
+  Fresh:            { background: '#F8FAFC', color: '#64748B' },
+  Attempting:       { background: 'rgba(160,0,200,0.07)', color: '#a000c8' },
+  'VM Done':        { background: 'rgba(160,0,200,0.1)',  color: '#8a00c2' },
+  Connected:        { background: '#ECFDF5', color: '#059669' },
+  'Virtual Meeting':{ background: 'rgba(190,46,214,0.07)', color: '#be2ed6' },
+  'Site Visit':     { background: 'rgba(160,0,200,0.08)', color: '#8a00c2' },
+  Negotiation:      { background: 'rgba(160,0,200,0.1)',  color: '#7600bc' },
+  Won:              { background: '#ECFDF5', color: '#059669' },
+  Lost:             { background: '#FEF2F2', color: '#DC2626' },
 }
 
 export function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -134,7 +134,7 @@ export function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => 
                       {lead.city && <span className="text-[11px] text-slate-400">{lead.city}</span>}
                     </div>
                   </div>
-                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full shrink-0 ${STATUS_COLOR[lead.status] ?? 'bg-slate-100 text-slate-500'}`}>
+                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full shrink-0" style={STATUS_STYLE[lead.status] ?? { background: '#F1F5F9', color: '#64748B' }}>
                     {lead.status}
                   </span>
                   {i === selected && <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />}
