@@ -58,12 +58,12 @@ const NAV_SECTIONS = [
 function Logo({ collapsed }: { collapsed: boolean }) {
   return (
     <Link href="/dashboard" className={cn('flex items-center gap-3 px-4 h-14 border-b border-slate-100 hover:bg-slate-50 transition-colors', collapsed && 'justify-center px-0')}>
-      <div className="relative shrink-0 flex items-center justify-center w-8 h-8 rounded-[9px]" style={{ background: 'linear-gradient(135deg, #7600bc 0%, #b100cd 100%)' }}>
+      <div className="relative shrink-0 flex items-center justify-center w-8 h-8 rounded-[9px]" style={{ background: 'linear-gradient(135deg, #FF7043 0%, #FF8A65 100%)' }}>
         <span className="text-[11px] font-bold text-white tracking-tight">VP</span>
       </div>
       {!collapsed && (
         <div className="flex flex-col leading-none">
-          <span className="text-[14px] font-semibold tracking-[-0.02em]" style={{ color: '#4c00b0' }}>Vya Pulse</span>
+          <span className="text-[14px] font-semibold tracking-[-0.02em]" style={{ color: '#E64A19' }}>Vya Pulse</span>
           <span className="text-[10px] text-slate-400 font-medium">CRM</span>
         </div>
       )}
@@ -98,7 +98,7 @@ function NavItem({
           <span className="flex-1">{item.name}</span>
         )}
         {!collapsed && (
-          <span className="text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(160,0,200,0.1)', color: '#a000c8' }}>Teams</span>
+          <span className="text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,112,67,0.10)', color: '#FF7043' }}>Teams</span>
         )}
         {collapsed && (
           <span className="pointer-events-none absolute left-full ml-3 hidden rounded-lg bg-slate-800 px-2.5 py-1.5 text-xs text-white whitespace-nowrap shadow-lg group-hover:block z-50">
@@ -121,14 +121,14 @@ function NavItem({
           ? 'border-l-2'
           : 'text-slate-500 border-l-2 border-transparent hover:bg-slate-50 hover:text-slate-800'
       )}
-      style={active ? { background: 'rgba(160,0,200,0.07)', color: '#8a00c2', borderLeftColor: '#a000c8' } : undefined}
+      style={active ? { background: 'rgba(255,112,67,0.08)', color: '#FF7043', borderLeftColor: '#FF7043' } : undefined}
     >
       <Icon
         className={cn(
           'shrink-0 transition-colors duration-150',
           collapsed ? 'w-[18px] h-[18px]' : 'w-4 h-4',
         )}
-        style={{ color: active ? '#a000c8' : undefined }}
+        style={{ color: active ? '#FF7043' : undefined }}
       />
       {!collapsed && item.name}
 
@@ -260,7 +260,7 @@ export function Sidebar({
                 className="w-8 h-8 rounded-full border flex items-center justify-center"
                 style={{ background: 'rgba(160,0,200,0.08)', borderColor: '#e8bcf0' }}
               >
-                <span className="text-[11px] font-bold" style={{ color: '#8a00c2' }}>{initial}</span>
+                <span className="text-[11px] font-bold" style={{ color: '#FF7043' }}>{initial}</span>
               </div>
             </div>
           ) : (
@@ -269,7 +269,7 @@ export function Sidebar({
                 className="w-7 h-7 rounded-full border flex items-center justify-center shrink-0"
                 style={{ background: 'rgba(160,0,200,0.08)', borderColor: '#e8bcf0' }}
               >
-                <span className="text-[11px] font-bold" style={{ color: '#8a00c2' }}>{initial}</span>
+                <span className="text-[11px] font-bold" style={{ color: '#FF7043' }}>{initial}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[12px] font-semibold text-slate-700 truncate">{userEmail}</p>
@@ -277,7 +277,7 @@ export function Sidebar({
                   {plan === 'teams' && (
                     <span
                       className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
-                      style={{ background: 'rgba(160,0,200,0.1)', color: '#8a00c2' }}
+                      style={{ background: 'rgba(255,112,67,0.10)', color: '#FF7043' }}
                     >
                       {role === 'admin' ? 'Admin' : 'Agent'}
                     </span>
@@ -285,7 +285,7 @@ export function Sidebar({
                   <span
                     className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
                     style={plan === 'teams'
-                      ? { background: 'rgba(160,0,200,0.1)', color: '#a000c8' }
+                      ? { background: 'rgba(255,112,67,0.10)', color: '#FF7043' }
                       : { background: '#F1F5F9', color: '#64748B' }
                     }
                   >

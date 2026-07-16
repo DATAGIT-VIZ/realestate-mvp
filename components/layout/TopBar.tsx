@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { Menu, Search, Plus, ChevronDown, Settings, LogOut, User } from 'lucide-react'
+import { Menu, Search, ChevronDown, Settings, LogOut, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { NotificationCenter } from '@/components/layout/NotificationCenter'
 import { GlobalSearch } from '@/components/layout/GlobalSearch'
@@ -38,13 +38,6 @@ function getPageTitle(pathname: string): string {
   return 'Vya Pulse'
 }
 
-const QUICK_ADD_ITEMS = [
-  { label: 'New Lead',     shortcut: 'L', action: 'lead' },
-  { label: 'New Deal',     shortcut: 'D', action: 'deal' },
-  { label: 'New Property', shortcut: 'P', action: 'property' },
-  { label: 'Log Activity', shortcut: 'A', action: 'activity' },
-]
-
 export function TopBar({
   onMenuClick,
   sidebarCollapsed,
@@ -59,10 +52,8 @@ export function TopBar({
   const title = getPageTitle(pathname)
 
   const [searchOpen, setSearchOpen] = useState(false)
-  const [addOpen, setAddOpen]       = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
 
-  const addRef    = useRef<HTMLDivElement>(null)
   const avatarRef = useRef<HTMLDivElement>(null)
 
   // ⌘K global shortcut
@@ -77,23 +68,14 @@ export function TopBar({
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  // Close dropdowns on outside click
+  // Close avatar dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (addRef.current && !addRef.current.contains(e.target as Node)) setAddOpen(false)
       if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) setAvatarOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
-
-  function handleQuickAdd(action: string) {
-    setAddOpen(false)
-    if (action === 'lead')     { onNewLead?.() }
-    if (action === 'deal')     { router.push('/dashboard/deals') }
-    if (action === 'property') { router.push('/dashboard/properties/new') }
-    if (action === 'activity') { router.push('/dashboard/leads') }
-  }
 
   return (
     <>
@@ -131,36 +113,6 @@ export function TopBar({
               ⌘K
             </kbd>
           </button>
-
-          {/* Quick Add */}
-          <div ref={addRef} className="relative">
-            <button
-              onClick={() => setAddOpen(o => !o)}
-              className="flex items-center gap-1 h-8 px-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-[0.97] transition-all duration-150 text-white"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span className="text-[12px] font-semibold hidden sm:block">Add</span>
-            </button>
-
-            {addOpen && (
-              <div className="absolute right-0 top-full mt-1.5 w-48 rounded-xl bg-white border border-slate-200 shadow-lg shadow-black/[0.06] z-50">
-                <div className="p-1.5">
-                  {QUICK_ADD_ITEMS.map((item) => (
-                    <button
-                      key={item.label}
-                      onClick={() => handleQuickAdd(item.action)}
-                      className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-[13px] text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
-                    >
-                      <span>{item.label}</span>
-                      <kbd className="text-[10px] text-slate-400 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">
-                        {item.shortcut}
-                      </kbd>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
 
           {/* Notifications */}
           <NotificationCenter />

@@ -16,16 +16,16 @@ import {
 } from 'lucide-react'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
-const BG      = '#F7F8FA'
+const BG      = '#F5F6FA'
 const PANEL   = '#FFFFFF'
-const BORDER  = '#ECEEF2'
-const TEXT    = '#111827'
-const MUTED   = '#6B7280'
-const LABEL   = '#9CA3AF'
-const PRIMARY = '#a000c8'
-const PRIMARY_DIM = 'rgba(160,0,200,0.08)'
-const PRIMARY_BORDER = 'rgba(160,0,200,0.2)'
-const PRIMARY_GRAD = 'linear-gradient(135deg, #7600bc 0%, #b100cd 100%)'
+const BORDER  = '#E8ECF0'
+const TEXT    = '#263238'
+const MUTED   = '#78889B'
+const LABEL   = '#A4B1BE'
+const PRIMARY = '#FF7043'
+const PRIMARY_DIM = 'rgba(255,112,67,0.09)'
+const PRIMARY_BORDER = 'rgba(255,112,67,0.22)'
+const PRIMARY_GRAD = 'linear-gradient(135deg, #FF7043 0%, #FF8A65 100%)'
 
 // Warm avatar palette — cycles deterministically by name
 const AVATAR_PALETTE = [
@@ -44,14 +44,14 @@ function avatarColor(name: string) {
   return AVATAR_PALETTE[Math.abs(h)]
 }
 
-// Status pill config
-const STATUS_PILL: Record<string, { bg: string; color: string; dot: string }> = {
-  New:          { bg: '#EFF6FF', color: '#2563EB', dot: '#93C5FD' },
-  Cold:         { bg: '#F0F9FF', color: '#0369A1', dot: '#7DD3FC' },
-  Warm:         { bg: '#FFF7ED', color: '#C2410C', dot: '#FCA15A' },
-  Hot:          { bg: '#FDF2F8', color: '#A21CAF', dot: '#E879F9' },
-  Closed:       { bg: '#F0FDF4', color: '#15803D', dot: '#86EFAC' },
-  Disqualified: { bg: '#F9FAFB', color: '#6B7280', dot: '#D1D5DB' },
+// Status pill config — "+" prefix style matching reference
+const STATUS_PILL: Record<string, { bg: string; color: string; label: string }> = {
+  New:          { bg: '#EEF2FF', color: '#4338CA',  label: '+ New' },
+  Cold:         { bg: '#E0F2FE', color: '#0369A1',  label: '+ Cold' },
+  Warm:         { bg: '#FFF3E0', color: '#E65100',  label: '+ Warm' },
+  Hot:          { bg: '#FFEDE8', color: '#C2410C',  label: '+ Hot 🔥' },
+  Closed:       { bg: '#ECFDF5', color: '#059669',  label: '+ Closed' },
+  Disqualified: { bg: '#F3F4F6', color: '#78889B',  label: '+ Disqualified' },
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -66,9 +66,9 @@ const getEmail = (l: CRMLead) => l.emails.primaryEmail ?? null
 const getScore = (l: CRMLead) => l.intentScore ?? 0
 
 function getScoreStyle(score: number) {
-  if (score >= 70) return { label: 'High Intent', color: '#a000c8', bg: 'rgba(160,0,200,0.07)', dot: '#a000c8' }
-  if (score >= 40) return { label: 'Medium',      color: '#8a00c2', bg: 'rgba(190,46,214,0.07)', dot: '#be2ed6' }
-  return               { label: 'Low',          color: '#475569', bg: '#F1F5F9', dot: '#94A3B8' }
+  if (score >= 70) return { label: 'High Intent', color: '#FF7043', bg: 'rgba(255,112,67,0.09)', dot: '#FF7043' }
+  if (score >= 40) return { label: 'Medium',      color: '#F59E0B', bg: 'rgba(245,158,11,0.09)', dot: '#F59E0B' }
+  return               { label: 'Low',            color: '#78889B', bg: '#F0F2F5',               dot: '#A4B1BE' }
 }
 
 // Stable CS ID: real one if assigned, else derived from UUID so legacy leads always show one
@@ -377,13 +377,14 @@ export default function LeadsPage() {
           <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom: `1px solid ${BORDER}`, background: '#FAFAFA' }}>
-                  <th style={{ padding: '10px 20px', fontSize: 11, fontWeight: 600, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left' }}>Lead name</th>
-                  <th className="hidden sm:table-cell" style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left' }}>Contact</th>
-                  <th className="hidden md:table-cell" style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left' }}>Lead source</th>
-                  <th style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left' }}>Lead status</th>
-                  <th className="hidden lg:table-cell" style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left' }}>Budget</th>
-                  <th style={{ padding: '10px 20px', width: 120 }}></th>
+                <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+                  {(['Lead name','Contact','Lead source','Lead status','Budget',''] as const).map((h, i) => (
+                    <th key={i}
+                      className={i === 1 ? 'hidden sm:table-cell' : i === 2 ? 'hidden md:table-cell' : i === 4 ? 'hidden lg:table-cell' : ''}
+                      style={{ padding: `10px ${i === 0 || i === 5 ? '20px' : '16px'}`, fontSize: 11, fontWeight: 500, color: '#C1C7D0', textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left', background: '#FAFBFC', whiteSpace: 'nowrap' }}>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -394,81 +395,78 @@ export default function LeadsPage() {
                   const status  = lead.status ?? 'New'
                   const pill    = STATUS_PILL[status] ?? STATUS_PILL['New']
                   const isDup   = dupLeadIds.has(lead.id)
+                  const email   = getEmail(lead)
+                  const phone   = getPhone(lead)
                   return (
                     <tr key={lead.id}
                       style={{ borderBottom: idx < displayLeads.length - 1 ? `1px solid ${BORDER}` : 'none', transition: 'background 0.1s' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#FAFBFC')}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#FAFBFD')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
                       {/* Lead name */}
-                      <td style={{ padding: '14px 20px' }}>
+                      <td style={{ padding: '16px 20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          {/* Avatar */}
-                          <div style={{ width: 36, height: 36, borderRadius: '50%', background: av.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <div style={{ width: 34, height: 34, borderRadius: '50%', background: av.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             <span style={{ fontSize: 13, fontWeight: 700, color: av.fg }}>{initial}</span>
                           </div>
                           <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{name}</span>
+                              <span style={{ fontSize: 13, fontWeight: 500, color: TEXT }}>{name}</span>
                               {isDup && <span style={{ fontSize: 9, fontWeight: 700, background: '#FEF9C3', color: '#854D0E', padding: '1px 5px', borderRadius: 5 }}>DUP</span>}
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
                               <button title="Copy CS ID" onClick={e => { e.stopPropagation(); e.preventDefault(); navigator.clipboard.writeText(getCsId(lead)) }}
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, color: LABEL, background: '#F3F4F6', border: 'none', padding: '1px 6px', borderRadius: 5, fontFamily: 'monospace', cursor: 'pointer' }}>
-                                {getCsId(lead)}<Copy style={{ width: 8, height: 8 }} />
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10, color: LABEL, background: 'transparent', border: 'none', padding: 0, fontFamily: 'monospace', cursor: 'pointer' }}>
+                                {getCsId(lead)}
                               </button>
-                              <span style={{ fontSize: 11, color: LABEL }}>
-                                <Clock style={{ width: 9, height: 9, display: 'inline', verticalAlign: 'middle', marginRight: 2 }} />{timeAgo(lead.updatedAt)}
-                              </span>
+                              <span style={{ color: BORDER }}>·</span>
+                              <span style={{ fontSize: 11, color: LABEL }}>{timeAgo(lead.updatedAt)}</span>
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      {/* Contact */}
-                      <td className="hidden sm:table-cell" style={{ padding: '14px 16px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                          {getEmail(lead) && <span style={{ fontSize: 12, color: MUTED }}>{getEmail(lead)}</span>}
-                          <span style={{ fontSize: 12, color: LABEL }}>{getPhone(lead) || '—'}</span>
+                      {/* Contact — email on top, phone below */}
+                      <td className="hidden sm:table-cell" style={{ padding: '16px 16px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          <span style={{ fontSize: 12, color: MUTED }}>{email || '—'}</span>
+                          <span style={{ fontSize: 12, color: LABEL }}>{phone || '—'}</span>
                         </div>
                       </td>
 
                       {/* Source */}
-                      <td className="hidden md:table-cell" style={{ padding: '14px 16px' }}>
-                        {lead.sourcePortal ? (
-                          <span style={{ fontSize: 12, color: MUTED, background: '#F3F4F6', padding: '3px 9px', borderRadius: 99 }}>
-                            {lead.sourcePortal}
-                          </span>
-                        ) : <span style={{ fontSize: 12, color: LABEL }}>—</span>}
+                      <td className="hidden md:table-cell" style={{ padding: '16px 16px' }}>
+                        {lead.sourcePortal
+                          ? <span style={{ fontSize: 12, color: MUTED }}>{lead.sourcePortal}</span>
+                          : <span style={{ fontSize: 12, color: BORDER }}>—</span>}
                       </td>
 
-                      {/* Status pill */}
-                      <td style={{ padding: '14px 16px' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 99, background: pill.bg, fontSize: 12, fontWeight: 600, color: pill.color, whiteSpace: 'nowrap' }}>
-                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: pill.dot, flexShrink: 0 }} />
-                          {status}
+                      {/* Status — "+" prefix pill, no dot */}
+                      <td style={{ padding: '16px 16px' }}>
+                        <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 99, background: pill.bg, fontSize: 12, fontWeight: 500, color: pill.color, whiteSpace: 'nowrap' }}>
+                          {pill.label}
                         </span>
                       </td>
 
                       {/* Budget */}
-                      <td className="hidden lg:table-cell" style={{ padding: '14px 16px' }}>
+                      <td className="hidden lg:table-cell" style={{ padding: '16px 16px' }}>
                         <span style={{ fontSize: 12, color: MUTED }}>{formatBudget(lead.budgetMin, lead.budgetMax)}</span>
                       </td>
 
                       {/* Actions */}
-                      <td style={{ padding: '14px 20px' }}>
+                      <td style={{ padding: '16px 20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
                           <button onClick={e => { e.stopPropagation(); e.preventDefault(); setQuickLogLeadId(lead.id) }}
                             className="hidden sm:inline-flex"
-                            style={{ alignItems: 'center', gap: 4, padding: '5px 10px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 7, color: MUTED, fontSize: 12, fontWeight: 500, cursor: 'pointer' }}
+                            style={{ alignItems: 'center', gap: 4, padding: '5px 10px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 7, color: LABEL, fontSize: 12, fontWeight: 400, cursor: 'pointer' }}
                             onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = '#86EFAC'; b.style.color = '#15803D'; b.style.background = '#F0FDF4' }}
-                            onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = BORDER; b.style.color = MUTED; b.style.background = 'transparent' }}>
+                            onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = BORDER; b.style.color = LABEL; b.style.background = 'transparent' }}>
                             <Activity style={{ width: 11, height: 11 }} />Log
                           </button>
                           <Link href={`/dashboard/leads/${lead.id}`} onClick={e => e.stopPropagation()}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 12px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 7, color: MUTED, fontSize: 12, fontWeight: 500, textDecoration: 'none' }}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 12px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 7, color: LABEL, fontSize: 12, fontWeight: 400, textDecoration: 'none' }}
                             onMouseEnter={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.borderColor = PRIMARY_BORDER; a.style.color = PRIMARY; a.style.background = PRIMARY_DIM }}
-                            onMouseLeave={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.borderColor = BORDER; a.style.color = MUTED; a.style.background = 'transparent' }}>
+                            onMouseLeave={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.borderColor = BORDER; a.style.color = LABEL; a.style.background = 'transparent' }}>
                             <Eye style={{ width: 11, height: 11 }} />View
                           </Link>
                         </div>

@@ -26,6 +26,8 @@ export type WASendBody = {
   templateName: string
   variables?: string[]
   headerVariables?: string[]
+  brochureUrl?: string
+  brochureName?: string
 }
 
 async function sendViaInterakt(to: string, templateName: string, variables: string[], headerVariables: string[]) {
@@ -102,7 +104,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body: WASendBody = await req.json()
-    const { leadId, to, templateName, variables = [], headerVariables = [] } = body
+    const { leadId, to, templateName, variables = [], headerVariables = [], brochureUrl, brochureName } = body
 
     if (!leadId || !to || !templateName) {
       return NextResponse.json({ data: null, error: 'leadId, to, and templateName are required' }, { status: 400 })
@@ -110,7 +112,33 @@ export async function POST(req: NextRequest) {
 
     const interaktResponse = await sendViaInterakt(to, templateName, variables, headerVariables)
 
-    // Log activity in Twenty (fire-and-forget — don't let logging failure block the response)
+    // If brochure attached, send it as a document message after the template
+    if (brochureUrl) {
+      const phone = normalisePhone(to)
+      const apiKey = process.env.INTERAKT_API_KEY
+      if (apiKey && phone.length === 10) {
+        await fetch(INTERAKT_BASE, {
+          method: 'POST',
+          headers: {
+            Authorization: `Basic ${Buffer.from(apiKey + ':').toString('base64')}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            countryCode: '+91',
+            phoneNumber: phone,
+            callbackData: 'brochure',
+            type: 'document',
+            data: {
+              url: brochureUrl,
+              caption: brochureName ?? 'Property Brochure',
+              filename: (brochureName ?? 'brochure').replace(/\s+/g, '_') + '.pdf',
+            },
+          }),
+        }).catch(err => console.error('[WhatsApp brochure send]', err))
+      }
+    }
+
+    // Log activity (fire-and-forget)
     logActivityInTwenty(leadId, templateName, to, variables).catch(err =>
       console.error('[WhatsApp activity log]', err)
     )

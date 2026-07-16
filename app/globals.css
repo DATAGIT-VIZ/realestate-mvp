@@ -1,54 +1,51 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
-/* ─── Vyapulse — Light Design System ───────────────────────────────────────── */
+/* ─── Vya Pulse — Design System ────────────────────────────────────────────── */
 :root {
-  /* ── Purple brand palette (from design reference) */
-  --purple-900: #4c00b0;
-  --purple-800: #7600bc;
-  --purple-700: #8a00c2;
-  --purple-600: #a000c8;   /* PRIMARY */
-  --purple-500: #b100cd;
-  --purple-400: #be2ed6;
-  --purple-300: #ca5cdd;
-  --purple-200: #da8ee7;
-  --purple-100: #e8bcf0;
-  --purple-50:  #faf5ff;
+  /* ── Brand palette */
+  --orange:       #FF7043;   /* PRIMARY */
+  --orange-dim:   rgba(255, 112, 67, 0.08);
+  --orange-border:rgba(255, 112, 67, 0.22);
+  --orange-dark:  #E64A19;
+  --orange-light: #FF8A65;
+
+  --accent:       #2E66F6;   /* ACCENT BLUE */
+  --accent-dim:   rgba(46, 102, 246, 0.08);
+  --accent-border:rgba(46, 102, 246, 0.22);
 
   /* ── App-level tokens */
-  --bg:           #F8FAFC;
+  --bg:           #F5F6FA;
   --panel:        #FFFFFF;
-  --border-clr:   #E2E8F0;
-  --text:         #0F172A;
-  --text-muted:   #64748B;
-  --text-label:   #94A3B8;
+  --border-clr:   #E8ECF0;
+  --text:         #263238;
+  --text-muted:   #78889B;
+  --text-label:   #A4B1BE;
 
-  /* primary replaces blue everywhere — all var(--blue) refs pick this up */
-  --blue:         #a000c8;
-  --blue-dim:     rgba(160, 0, 200, 0.08);
+  /* legacy alias — keep so existing components don't break */
+  --blue:         #2E66F6;
+  --blue-dim:     rgba(46, 102, 246, 0.08);
 
-  --amber:        #D97706;
-  --amber-dim:    rgba(217, 119, 6, 0.10);
+  --amber:        #F59E0B;
+  --amber-dim:    rgba(245, 158, 11, 0.10);
   --emerald:      #059669;
-  --orange:       #EA580C;
   --danger:       #EF4444;
-  --status-hot:   #EA580C;
-  --status-warm:  #D97706;
-  --status-cold:  #94A3B8;
+  --status-hot:   #FF7043;
+  --status-warm:  #F59E0B;
+  --status-cold:  #78889B;
 
-  /* shadcn/ui light-mode tokens — primary updated to Vyapulse purple */
+  /* shadcn/ui light-mode tokens — primary = orange */
   --background:                    oklch(1 0 0);
-  --foreground:                    oklch(0.145 0 0);
+  --foreground:                    oklch(0.19 0.025 230);
   --card:                          oklch(1 0 0);
-  --card-foreground:               oklch(0.145 0 0);
+  --card-foreground:               oklch(0.19 0.025 230);
   --popover:                       oklch(1 0 0);
-  --popover-foreground:            oklch(0.145 0 0);
-  --primary:                       oklch(0.42 0.22 309);   /* #a000c8 in oklch */
-  --primary-foreground:            oklch(0.985 0 0);
+  --popover-foreground:            oklch(0.19 0.025 230);
+  --primary:                       oklch(0.65 0.19 33);    /* #FF7043 in oklch */
+  --primary-foreground:            oklch(1 0 0);
   --secondary:                     oklch(0.97 0 0);
   --secondary-foreground:          oklch(0.205 0 0);
   --muted:                         oklch(0.97 0 0);
@@ -78,7 +75,7 @@
 @theme inline {
   --color-background:                var(--background);
   --color-foreground:                var(--foreground);
-  --font-sans:                       var(--font-sans);
+  --font-sans:                       var(--font-jakarta);
   --font-mono:                       var(--font-geist-mono);
   --font-heading:                    var(--font-sans);
   --color-sidebar-ring:              var(--sidebar-ring);
@@ -123,7 +120,7 @@
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-jakarta), system-ui, -apple-system, sans-serif;
 }
 
 /* ─── Range input accent ─────────────────────────────────────────────────────── */

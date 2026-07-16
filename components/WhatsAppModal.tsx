@@ -1,17 +1,19 @@
 'use client'
 
-import { useState } from 'react'
-import { X, MessageCircle, Send, Loader2, Check } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { X, MessageCircle, Send, Loader2, Check, Paperclip, FileText, ChevronDown } from 'lucide-react'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const BG_OVERLAY = 'rgba(15,23,42,0.4)'
 const PANEL      = '#FFFFFF'
 const BORDER     = '#E2E8F0'
-const BLUE       = '#a000c8'
+const PRIMARY    = '#FF7043'
 const GREEN      = '#059669'
 const TEXT       = '#0F172A'
 const MUTED      = '#64748B'
 const BG         = '#F8FAFC'
+
+type Brochure = { id: string; name: string; project_name: string | null; file_url: string; file_type: string }
 
 // ─── Template definitions ─────────────────────────────────────────────────────
 // These match your template names in Interakt. Variables are shown as {{1}}, {{2}}…
@@ -110,16 +112,26 @@ type Props = {
 }
 
 export function WhatsAppModal({ isOpen, onClose, leadId, leadName = '', leadPhone = '', city = '' }: Props) {
-  const [step, setStep]               = useState<'pick' | 'fill' | 'sent'>('pick')
-  const [selectedTpl, setSelectedTpl] = useState<Template | null>(null)
-  const [values, setValues]           = useState<Record<string, string>>({})
-  const [loading, setLoading]         = useState(false)
-  const [error, setError]             = useState<string | null>(null)
+  const [step, setStep]                   = useState<'pick' | 'fill' | 'sent'>('pick')
+  const [selectedTpl, setSelectedTpl]     = useState<Template | null>(null)
+  const [values, setValues]               = useState<Record<string, string>>({})
+  const [brochures, setBrochures]         = useState<Brochure[]>([])
+  const [selectedBrochure, setSelectedBrochure] = useState<Brochure | null>(null)
+  const [brochureOpen, setBrochureOpen]   = useState(false)
+  const [loading, setLoading]             = useState(false)
+  const [error, setError]                 = useState<string | null>(null)
+
+  useEffect(() => {
+    if (isOpen) {
+      fetch('/api/brochures').then(r => r.json()).then(d => setBrochures(d.brochures ?? []))
+    }
+  }, [isOpen])
 
   if (!isOpen) return null
 
   const close = () => {
-    setStep('pick'); setSelectedTpl(null); setValues({}); setError(null); onClose()
+    setStep('pick'); setSelectedTpl(null); setValues({})
+    setSelectedBrochure(null); setBrochureOpen(false); setError(null); onClose()
   }
 
   const selectTemplate = (tpl: Template) => {
@@ -148,6 +160,8 @@ export function WhatsAppModal({ isOpen, onClose, leadId, leadName = '', leadPhon
           to: leadPhone,
           templateName: selectedTpl.name,
           variables: variableList,
+          brochureUrl:  selectedBrochure?.file_url  ?? undefined,
+          brochureName: selectedBrochure?.name ?? undefined,
         }),
       })
       const json = await res.json()
@@ -203,7 +217,7 @@ export function WhatsAppModal({ isOpen, onClose, leadId, leadName = '', leadPhon
               {TEMPLATES.map(tpl => (
                 <button key={tpl.name} onClick={() => selectTemplate(tpl)}
                   style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '13px 16px', background: BG, border: `1px solid ${BORDER}`, borderRadius: 12, cursor: 'pointer', textAlign: 'left', transition: 'all 0.12s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = BLUE; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(160,0,200,0.03)' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = PRIMARY; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(160,0,200,0.03)' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = BORDER; (e.currentTarget as HTMLButtonElement).style.background = BG }}
                 >
                   <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{tpl.label}</span>
@@ -241,6 +255,54 @@ export function WhatsAppModal({ isOpen, onClose, leadId, leadName = '', leadPhon
                 </div>
               )}
 
+              {/* Brochure picker */}
+              {brochures.length > 0 && (
+                <div>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Attach Brochure <span style={{ fontWeight: 400, textTransform: 'none' }}>— optional</span></p>
+                  <div style={{ position: 'relative' }}>
+                    <button type="button"
+                      onClick={() => setBrochureOpen(o => !o)}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: selectedBrochure ? 'rgba(255,112,67,0.05)' : BG, border: `1px solid ${selectedBrochure ? PRIMARY : BORDER}`, borderRadius: 9, cursor: 'pointer', textAlign: 'left' }}
+                    >
+                      <Paperclip style={{ width: 13, height: 13, color: selectedBrochure ? PRIMARY : MUTED, flexShrink: 0 }} />
+                      <span style={{ flex: 1, fontSize: 13, color: selectedBrochure ? TEXT : MUTED }}>
+                        {selectedBrochure ? selectedBrochure.name : 'Select a brochure…'}
+                      </span>
+                      {selectedBrochure && (
+                        <span onClick={e => { e.stopPropagation(); setSelectedBrochure(null) }}
+                          style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(255,112,67,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                          <X style={{ width: 9, height: 9, color: PRIMARY }} />
+                        </span>
+                      )}
+                      <ChevronDown style={{ width: 13, height: 13, color: MUTED, transform: brochureOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
+                    </button>
+                    {brochureOpen && (
+                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 10, marginTop: 4, boxShadow: '0 8px 24px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+                        {brochures.map(b => (
+                          <button key={b.id} type="button"
+                            onClick={() => { setSelectedBrochure(b); setBrochureOpen(false) }}
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: selectedBrochure?.id === b.id ? 'rgba(255,112,67,0.06)' : 'transparent', border: 'none', borderBottom: `1px solid ${BORDER}`, cursor: 'pointer', textAlign: 'left' }}
+                          >
+                            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,112,67,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <FileText style={{ width: 15, height: 15, color: PRIMARY }} />
+                            </div>
+                            <div>
+                              <p style={{ fontSize: 13, fontWeight: 600, color: TEXT, margin: 0 }}>{b.name}</p>
+                              {b.project_name && <p style={{ fontSize: 11, color: MUTED, margin: 0 }}>{b.project_name}</p>}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {selectedBrochure && (
+                    <p style={{ fontSize: 11, color: PRIMARY, margin: '6px 0 0', fontWeight: 500 }}>
+                      📎 Brochure will be sent as a separate document after the message
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Live preview */}
               <div>
                 <p style={{ fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Preview</p>
@@ -265,7 +327,7 @@ export function WhatsAppModal({ isOpen, onClose, leadId, leadName = '', leadPhon
                 {selectedTpl?.label} sent to {leadName || leadPhone}. Activity logged in timeline.
               </p>
               <button onClick={close}
-                style={{ padding: '9px 24px', background: BLUE, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                style={{ padding: '9px 24px', background: PRIMARY, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
               >
                 Done
               </button>
@@ -282,7 +344,7 @@ export function WhatsAppModal({ isOpen, onClose, leadId, leadName = '', leadPhon
               ← Back
             </button>
             <button onClick={send} disabled={loading || !leadPhone}
-              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 20px', background: loading ? 'rgba(160,0,200,0.5)' : BLUE, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 20px', background: loading ? 'rgba(160,0,200,0.5)' : PRIMARY, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}
             >
               {loading
                 ? <><Loader2 style={{ width: 13, height: 13, animation: 'spin 1s linear infinite' }} />Sending…</>

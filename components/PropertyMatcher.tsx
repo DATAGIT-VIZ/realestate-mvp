@@ -5,15 +5,15 @@ import { Building2, Sparkles, RefreshCw, MessageCircle, ChevronDown, ChevronUp, 
 
 const C = {
   panel:   '#FFFFFF',
-  border:  '#E2E8F0',
-  text:    '#0F172A',
-  muted:   '#64748B',
-  label:   '#94A3B8',
-  violet:  '#a000c8',
+  border:  '#E8ECF0',
+  text:    '#263238',
+  muted:   '#78889B',
+  label:   '#A4B1BE',
+  violet:  '#FF7043',
   emerald: '#059669',
-  amber:   '#be2ed6',
+  amber:   '#F59E0B',
   red:     '#EF4444',
-  blue:    '#a000c8',
+  blue:    '#FF7043',
 }
 
 type Match = {

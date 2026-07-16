@@ -11,26 +11,26 @@ import { FollowUpWriter } from '@/components/FollowUpWriter'
 import { PropertyMatcher } from '@/components/PropertyMatcher'
 import {
   ArrowLeft, Phone, Mail, MapPin, Clock, Tag,
-  TrendingUp, Calendar, Trash2, Loader2, Activity,
+  TrendingUp, Calendar, Trash2, Loader2, Activity, Filter,
   AlertCircle, Plus, MessageCircle, CheckCircle, XCircle,
   MinusCircle, HelpCircle, ChevronDown, User, PhoneOff, Copy, Send,
   Zap, Bell, Award,
 } from 'lucide-react'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
-const BG      = '#F4F6FA'
+const BG      = '#F5F6FA'
 const PANEL   = '#FFFFFF'
-const BORDER  = '#E8EDF2'
-const BLUE         = '#a000c8'
-const PRIMARY_DIM  = 'rgba(160,0,200,0.08)'
-const PRIMARY_BORDER = 'rgba(160,0,200,0.25)'
-const PRIMARY_GRAD = 'linear-gradient(135deg, #7600bc 0%, #b100cd 100%)'
+const BORDER  = '#E8ECF0'
+const BLUE         = '#FF7043'
+const PRIMARY_DIM  = 'rgba(255,112,67,0.08)'
+const PRIMARY_BORDER = 'rgba(255,112,67,0.22)'
+const PRIMARY_GRAD = 'linear-gradient(135deg, #FF7043 0%, #FF8A65 100%)'
 const EMERALD = '#059669'
 const RED     = '#DC2626'
-const AMBER   = '#be2ed6'
-const TEXT    = '#0F172A'
-const MUTED   = '#64748B'
-const MUTED2  = '#334155'
+const AMBER   = '#F59E0B'
+const TEXT    = '#263238'
+const MUTED   = '#78889B'
+const MUTED2  = '#455A64'
 const WA_GRN  = '#16A34A'
 
 const ACT_COLORS: Record<string, { icon: string; bg: string; accent: string }> = {
@@ -38,13 +38,13 @@ const ACT_COLORS: Record<string, { icon: string; bg: string; accent: string }> =
   'Call Missed':          { icon: '#DC2626', bg: '#FEF2F2', accent: '#DC2626' },
   'WhatsApp Sent':        { icon: WA_GRN,   bg: '#F0FDF4', accent: WA_GRN    },
   'WhatsApp Received':    { icon: WA_GRN,   bg: '#F0FDF4', accent: WA_GRN    },
-  'Email Sent':           { icon: '#a000c8', bg: PRIMARY_DIM, accent: '#a000c8' },
-  'Email Received':       { icon: '#a000c8', bg: PRIMARY_DIM, accent: '#a000c8' },
-  'Site Visit Scheduled': { icon: '#be2ed6', bg: 'rgba(190,46,214,0.07)', accent: '#be2ed6' },
-  'Site Visit Done':      { icon: '#a000c8', bg: 'rgba(160,0,200,0.07)', accent: '#a000c8' },
-  'Follow Up Set':        { icon: '#be2ed6', bg: 'rgba(190,46,214,0.07)', accent: '#be2ed6' },
+  'Email Sent':           { icon: '#FF7043', bg: PRIMARY_DIM, accent: '#FF7043' },
+  'Email Received':       { icon: '#FF7043', bg: PRIMARY_DIM, accent: '#FF7043' },
+  'Site Visit Scheduled': { icon: '#F59E0B', bg: 'rgba(245,158,11,0.09)', accent: '#F59E0B' },
+  'Site Visit Done':      { icon: '#FF7043', bg: 'rgba(255,112,67,0.08)', accent: '#FF7043' },
+  'Follow Up Set':        { icon: '#F59E0B', bg: 'rgba(245,158,11,0.09)', accent: '#F59E0B' },
   'Note':                 { icon: BLUE,      bg: PRIMARY_DIM, accent: BLUE    },
-  'Status Changed':       { icon: '#a000c8', bg: PRIMARY_DIM, accent: '#a000c8' },
+  'Status Changed':       { icon: '#FF7043', bg: PRIMARY_DIM, accent: '#FF7043' },
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -53,7 +53,13 @@ type LeadActivity = {
   notes?: string | null; outcome?: string | null
   duration?: number | null; nextActionDate?: string | null
 }
-type ActivityTab = 'all' | 'calls' | 'whatsapp' | 'notes'
+type LeadTask = {
+  id: string; lead_id: string; title: string; task_type: string
+  due_date: string; priority: 'High' | 'Medium' | 'Low'
+  status: 'Pending' | 'Done' | 'Cancelled'
+  notes?: string | null; assigned_to?: string | null; created_at: string
+}
+type ActivityTab = 'all' | 'calls' | 'whatsapp' | 'notes' | 'tasks'
 type LeftTab     = 'info' | 'requirements'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -90,9 +96,9 @@ function formatShortDate(s: string) {
   return new Date(s).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 }
 function scoreStyle(score: number) {
-  if (score >= 70) return { label: 'High Intent', color: '#a000c8', ring: '#a000c8', bg: 'rgba(160,0,200,0.07)' }
-  if (score >= 40) return { label: 'Medium',      color: '#8a00c2', ring: '#be2ed6', bg: 'rgba(190,46,214,0.07)' }
-  return               { label: 'Low',            color: '#64748B', ring: '#CBD5E1', bg: '#F1F5F9' }
+  if (score >= 70) return { label: 'High Intent', color: '#FF7043', ring: '#FF7043', bg: 'rgba(255,112,67,0.08)' }
+  if (score >= 40) return { label: 'Medium',      color: '#F59E0B', ring: '#F59E0B', bg: 'rgba(245,158,11,0.09)' }
+  return               { label: 'Low',            color: '#78889B', ring: '#CBD5E1', bg: '#F0F2F5' }
 }
 function scoreBreakdown(l: CRMLead) {
   const ph = getPhone(l), em = getEmail(l)
@@ -117,7 +123,7 @@ const OUTCOME_CFG: Record<string, { Icon: React.ElementType; color: string; bg: 
   'Positive':    { Icon: CheckCircle, color: '#059669', bg: '#ECFDF5' },
   'Neutral':     { Icon: MinusCircle, color: '#64748B', bg: '#F1F5F9' },
   'Negative':    { Icon: XCircle,     color: '#DC2626', bg: '#FEF2F2' },
-  'No Response': { Icon: HelpCircle,  color: '#8a00c2', bg: 'rgba(190,46,214,0.07)' },
+  'No Response': { Icon: HelpCircle,  color: '#FF7043', bg: 'rgba(245,158,11,0.09)' },
 }
 const ACT_ICON: Record<string, React.ElementType> = {
   'Call Made': Phone, 'Call Missed': Phone, 'WhatsApp Sent': MessageCircle,
@@ -129,16 +135,16 @@ const ACT_ICON: Record<string, React.ElementType> = {
 const STAGES = [
   { id: 'New',          label: 'New',          color: '#64748B', desc: 'Unworked — just assigned',            terminal: false },
   { id: 'Cold',         label: 'Cold',         color: '#2563EB', desc: 'Calls / WhatsApp only, no engagement', terminal: false },
-  { id: 'Warm',         label: 'Warm',         color: '#be2ed6', desc: 'VM / OBM / SV done or docs requested', terminal: false },
-  { id: 'Hot',          label: 'Hot',          color: '#a000c8', desc: 'EOI received — high intent to book',   terminal: false },
+  { id: 'Warm',         label: 'Warm',         color: '#F59E0B', desc: 'VM / OBM / SV done or docs requested', terminal: false },
+  { id: 'Hot',          label: 'Hot',          color: '#FF7043', desc: 'EOI received — high intent to book',   terminal: false },
   { id: 'Closed',       label: 'Closed',       color: '#059669', desc: 'Deal closed — EOI paid',               terminal: true  },
   { id: 'Disqualified', label: 'Disqualified', color: '#94A3B8', desc: 'Not proceeding — NC or rejected',      terminal: true  },
 ]
 const BUCKETS = [
   { label: 'New',          color: '#64748B', stages: ['New']          },
   { label: 'Cold',         color: '#2563EB', stages: ['Cold']         },
-  { label: 'Warm',         color: '#be2ed6', stages: ['Warm']         },
-  { label: 'Hot',          color: '#a000c8', stages: ['Hot']          },
+  { label: 'Warm',         color: '#F59E0B', stages: ['Warm']         },
+  { label: 'Hot',          color: '#FF7043', stages: ['Hot']          },
   { label: 'Closed',       color: '#059669', stages: ['Closed']       },
   { label: 'Disqualified', color: '#94A3B8', stages: ['Disqualified'] },
 ]
@@ -162,42 +168,77 @@ function SideCardHeader({ title, icon: Icon, action }: { title: string; icon: Re
   )
 }
 
-// Activity card used in multiple tabs
-function ActivityCard({ act }: { act: LeadActivity }) {
+// Kirrivan-style activity card
+function KirivanCard({ act, upcoming, onLog }: { act: LeadActivity; upcoming?: boolean; onLog: () => void }) {
   const AIcon = ACT_ICON[act.type] ?? Activity
   const ac    = ACT_COLORS[act.type] ?? { icon: '#64748B', bg: '#F8FAFC', accent: '#64748B' }
   const oc    = act.outcome ? OUTCOME_CFG[act.outcome] : null
   const OIcon = oc?.Icon
+
   return (
-    <div style={{ marginBottom: 8, padding: '12px 14px', background: '#FAFBFC', borderTop: `1px solid ${BORDER}`, borderRight: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}`, borderLeft: `3px solid ${ac.accent}`, borderRadius: '0 10px 10px 0' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: oc || act.notes || act.duration || act.nextActionDate ? 8 : 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: ac.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <AIcon style={{ width: 13, height: 13, color: ac.icon }} />
+    <div style={{ marginBottom: 14 }}>
+      {/* Header row — outside the card, like Kirrivan */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, paddingLeft: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <div style={{ width: 22, height: 22, borderRadius: '50%', background: ac.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <AIcon style={{ width: 11, height: 11, color: ac.icon }} />
           </div>
-          <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{act.type}</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: MUTED2 }}>{act.type}</span>
+          {upcoming && act.nextActionDate && (
+            <span style={{ fontSize: 11, color: BLUE, fontWeight: 500 }}>· Due {formatShortDate(act.nextActionDate)}</span>
+          )}
         </div>
-        <span style={{ fontSize: 11, color: MUTED, background: PANEL, border: `1px solid ${BORDER}`, padding: '2px 8px', borderRadius: 6, flexShrink: 0 }}>
-          {timeAgo(act.createdAt)}
-        </span>
+        <span style={{ fontSize: 11, color: MUTED }}>{timeAgo(act.createdAt)}</span>
       </div>
-      {oc && OIcon && (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: oc.color, background: oc.bg, padding: '2px 8px', borderRadius: 6, marginBottom: act.notes || act.duration || act.nextActionDate ? 6 : 0 }}>
-          <OIcon style={{ width: 10, height: 10 }} />{act.outcome}
-        </span>
-      )}
-      {act.notes && <p style={{ fontSize: 13, color: MUTED2, margin: '0 0 6px', lineHeight: 1.55 }}>{act.notes}</p>}
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        {act.duration && (
-          <span style={{ fontSize: 11, color: MUTED, display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Clock style={{ width: 10, height: 10 }} />{Math.floor(act.duration / 60)}m {act.duration % 60}s
-          </span>
-        )}
-        {act.nextActionDate && (
-          <span style={{ fontSize: 11, color: BLUE, display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
-            <Calendar style={{ width: 10, height: 10 }} />Follow up: {formatDate(act.nextActionDate)}
-          </span>
-        )}
+
+      {/* Card body */}
+      <div style={{ border: `1px solid ${BORDER}`, borderRadius: 12, overflow: 'hidden', background: PANEL, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+        <div style={{ padding: '13px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
+            {/* Status circle (like Kirrivan checkbox) */}
+            <div style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${upcoming ? BLUE : ac.accent}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, background: oc && !upcoming ? `${ac.accent}10` : 'transparent' }}>
+              {oc && OIcon && !upcoming && <OIcon style={{ width: 11, height: 11, color: oc.color }} />}
+            </div>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {/* Title + due date */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: act.notes ? 6 : 0 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{act.type}</span>
+                {act.nextActionDate && !upcoming && (
+                  <span style={{ fontSize: 11, color: BLUE, fontWeight: 600, flexShrink: 0 }}>
+                    Follow-up · {formatShortDate(act.nextActionDate)}
+                  </span>
+                )}
+              </div>
+              {/* Notes body */}
+              {act.notes && (
+                <p style={{ fontSize: 13, color: MUTED2, margin: 0, lineHeight: 1.58 }}>{act.notes}</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer metadata row — Kirrivan style */}
+        <div style={{ display: 'flex', borderTop: `1px solid ${BORDER}`, background: '#FAFBFC' }}>
+          <div style={{ flex: 1, padding: '8px 14px', borderRight: `1px solid ${BORDER}` }}>
+            <div style={{ fontSize: 10, color: MUTED, marginBottom: 2 }}>Reminder</div>
+            <div style={{ fontSize: 11, fontWeight: 500, color: act.nextActionDate ? BLUE : MUTED }}>
+              {act.nextActionDate ? formatShortDate(act.nextActionDate) : 'No reminder'}
+            </div>
+          </div>
+          <div style={{ flex: 1, padding: '8px 14px', borderRight: `1px solid ${BORDER}` }}>
+            <div style={{ fontSize: 10, color: MUTED, marginBottom: 2 }}>Duration</div>
+            <div style={{ fontSize: 11, fontWeight: 500, color: MUTED2 }}>
+              {act.duration ? `${Math.floor(act.duration / 60)}m ${act.duration % 60}s` : '—'}
+            </div>
+          </div>
+          <div style={{ flex: 1, padding: '8px 14px' }}>
+            <div style={{ fontSize: 10, color: MUTED, marginBottom: 2 }}>Outcome</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: oc ? oc.color : MUTED }}>
+              {act.outcome ?? '—'}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -228,6 +269,15 @@ export default function LeadDetailPage() {
   const [copied, setCopied]         = useState(false)
   const [nudgeDismissed, setNudgeDismissed] = useState(false)
 
+  // ── Tasks state ────────────────────────────────────────────────────────────
+  const [tasks,       setTasks]       = useState<LeadTask[]>([])
+  const [showTaskForm, setShowTaskForm] = useState(false)
+  const [savingTask,  setSavingTask]  = useState(false)
+  const [taskForm, setTaskForm] = useState({
+    task_type: 'Follow Up', title: '', date: '', time: '10:00',
+    priority: 'Medium' as 'High' | 'Medium' | 'Low', notes: '',
+  })
+
   const fetchLead = useCallback(async () => {
     try {
       setLoading(true); setError(null)
@@ -239,7 +289,12 @@ export default function LeadDetailPage() {
     finally { setLoading(false) }
   }, [leadId])
 
-  useEffect(() => { fetchLead() }, [fetchLead])
+  const fetchTasks = useCallback(async () => {
+    const res = await fetch(`/api/crm/leads/${leadId}/tasks`)
+    if (res.ok) { const d = await res.json(); setTasks(d.tasks ?? []) }
+  }, [leadId])
+
+  useEffect(() => { fetchLead(); fetchTasks() }, [fetchLead, fetchTasks])
 
   const handleStageChange = async (stage: string) => {
     if (!lead) return
@@ -320,7 +375,7 @@ export default function LeadDetailPage() {
     'Site Visit Done': 'Warm', 'OBM Done': 'Warm', 'VM Done': 'Warm',
   }
   const MILESTONE_COLOR: Record<string, string> = {
-    Closed: '#059669', Hot: '#a000c8', Warm: '#be2ed6',
+    Closed: '#059669', Hot: '#FF7043', Warm: '#F59E0B',
   }
   const activityTypes = activities.map(a => a.type)
   const topMilestone  = ['Deal Closed', 'EOI Received', 'Site Visit Done', 'OBM Done', 'VM Done']
@@ -349,11 +404,14 @@ export default function LeadDetailPage() {
   }
 
   // ── Tab data ────────────────────────────────────────────────────────────────
-  const callActs = activities.filter(a => a.type.toLowerCase().includes('call'))
-  const waActs   = activities.filter(a => a.type.toLowerCase().includes('whatsapp'))
-  const noteActs = activities.filter(a => a.type === 'Note')
+  const callActs    = activities.filter(a => a.type.toLowerCase().includes('call'))
+  const waActs      = activities.filter(a => a.type.toLowerCase().includes('whatsapp'))
+  const noteActs    = activities.filter(a => a.type === 'Note')
+  const upcomingTasks = activities.filter(a => a.nextActionDate && new Date(a.nextActionDate) > new Date())
+  const pendingTasks  = tasks.filter(t => t.status === 'Pending')
   const tabCounts: Record<ActivityTab, number> = {
-    all: activities.length, calls: callActs.length, whatsapp: waActs.length, notes: noteActs.length,
+    all: activities.length, calls: callActs.length, whatsapp: waActs.length,
+    notes: noteActs.length, tasks: pendingTasks.length,
   }
   const callStats = {
     total:      callActs.length,
@@ -368,17 +426,17 @@ export default function LeadDetailPage() {
   if (!nudgeDismissed) {
     if (futureFU) {
       const daysUntil = Math.ceil((new Date(futureFU).getTime() - Date.now()) / 86_400_000)
-      if (daysUntil <= 2) nudge = { icon: Bell, color: AMBER, bg: 'rgba(190,46,214,0.07)', border: 'rgba(190,46,214,0.25)', text: `Follow-up ${daysUntil === 0 ? 'today' : daysUntil === 1 ? 'tomorrow' : 'in 2 days'}`, sub: `Scheduled on ${formatShortDate(futureFU)} — log the outcome when done`, actionLabel: 'Log Outcome', onAction: () => setShowActivityModal(true) }
+      if (daysUntil <= 2) nudge = { icon: Bell, color: AMBER, bg: 'rgba(245,158,11,0.09)', border: 'rgba(255,112,67,0.22)', text: `Follow-up ${daysUntil === 0 ? 'today' : daysUntil === 1 ? 'tomorrow' : 'in 2 days'}`, sub: `Scheduled on ${formatShortDate(futureFU)} — log the outcome when done`, actionLabel: 'Log Outcome', onAction: () => setShowActivityModal(true) }
     } else if (activities.length === 0) {
       nudge = { icon: Zap, color: BLUE, bg: PRIMARY_DIM, border: PRIMARY_BORDER, text: 'Make your first move', sub: 'This lead hasn\'t been contacted yet — a quick call increases conversion by 3×', actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
     } else if (score >= 70 && ['New', 'Cold'].includes(lead.status || 'New')) {
-      nudge = { icon: Zap, color: '#a000c8', bg: 'rgba(160,0,200,0.07)', border: 'rgba(160,0,200,0.2)', text: 'High intent — move fast', sub: `Score ${score}/100 but still in early stage. Don't let a hot lead go cold`, actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
+      nudge = { icon: Zap, color: '#FF7043', bg: 'rgba(255,112,67,0.08)', border: 'rgba(160,0,200,0.2)', text: 'High intent — move fast', sub: `Score ${score}/100 but still in early stage. Don't let a hot lead go cold`, actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
     } else if (callAttempts.length >= 2 && lastAct?.type.includes('Call') && lastAct?.outcome === 'No Response') {
       nudge = { icon: MessageCircle, color: WA_GRN, bg: '#F0FDF4', border: '#BBF7D0', text: 'Switch to WhatsApp', sub: `${callAttempts.length} calls with no answer — leads respond 4× faster to messages`, actionLabel: 'Send WA', onAction: () => setShowWhatsAppModal(true) }
     } else if (daysSince !== null && daysSince >= 7) {
       nudge = { icon: AlertCircle, color: RED, bg: '#FEF2F2', border: '#FECACA', text: `No contact in ${daysSince} days`, sub: 'Lead is going cold — reach out now before they look elsewhere', actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
     } else if (daysSince !== null && daysSince >= 3) {
-      nudge = { icon: Bell, color: AMBER, bg: 'rgba(190,46,214,0.07)', border: 'rgba(190,46,214,0.25)', text: `${daysSince} days since last contact`, sub: 'A quick touchpoint now keeps the lead warm and moving', actionLabel: 'Log Activity', onAction: () => setShowActivityModal(true) }
+      nudge = { icon: Bell, color: AMBER, bg: 'rgba(245,158,11,0.09)', border: 'rgba(255,112,67,0.22)', text: `${daysSince} days since last contact`, sub: 'A quick touchpoint now keeps the lead warm and moving', actionLabel: 'Log Activity', onAction: () => setShowActivityModal(true) }
     }
   }
 
@@ -406,78 +464,58 @@ export default function LeadDetailPage() {
           <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
 
             {/* Avatar + Identity */}
-            <div style={{ padding: '24px 20px 16px', textAlign: 'center', borderBottom: `1px solid ${BORDER}` }}>
-              <div style={{ width: 72, height: 72, borderRadius: '50%', background: ss.bg, border: `3px solid ${ss.ring}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', position: 'relative' }}>
-                <span style={{ fontSize: 24, fontWeight: 800, color: ss.color, letterSpacing: '-1px' }}>{initials}</span>
-                <div style={{ position: 'absolute', bottom: 2, right: 2, width: 14, height: 14, borderRadius: '50%', background: ss.ring, border: '2px solid white' }} />
+            <div style={{ padding: '28px 20px 20px', textAlign: 'center', borderBottom: `1px solid ${BORDER}` }}>
+              {/* Large avatar */}
+              <div style={{ width: 84, height: 84, borderRadius: '50%', background: ss.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <span style={{ fontSize: 30, fontWeight: 800, color: ss.color, letterSpacing: '-1px' }}>{initials}</span>
               </div>
-              <h2 style={{ fontSize: 16, fontWeight: 800, color: TEXT, margin: '0 0 6px', letterSpacing: '-0.3px' }}>{name}</h2>
+
+              {/* Name + source */}
+              <h2 style={{ fontSize: 17, fontWeight: 700, color: TEXT, margin: '0 0 4px', letterSpacing: '-0.02em' }}>{name}</h2>
+              <p style={{ fontSize: 12, color: MUTED, margin: '0 0 12px' }}>
+                {lead.sourcePortal ? lead.sourcePortal.replace('OPT99ACRES','99acres').replace('MAGICBRICKS','MagicBricks').replace('HOUSING_COM','Housing.com').replace('FACEBOOK','Facebook') : 'Direct'}
+              </p>
+
+              {/* CS ID */}
               <button onClick={copyCsId}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, color: copied ? EMERALD : '#64748B', background: copied ? '#ECFDF5' : '#F8FAFC', border: `1px solid ${copied ? '#A7F3D0' : '#E2E8F0'}`, padding: '3px 10px', borderRadius: 6, fontFamily: 'monospace', cursor: 'pointer', marginBottom: 10, transition: 'all 0.15s' }}>
-                {copied ? '✓ Copied' : <>{getCsId(lead)}<Copy style={{ width: 9, height: 9, opacity: 0.5 }} /></>}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: copied ? EMERALD : MUTED, background: copied ? '#ECFDF5' : BG, border: `1px solid ${copied ? '#A7F3D0' : BORDER}`, padding: '4px 12px', borderRadius: 99, fontFamily: 'monospace', cursor: 'pointer', marginBottom: 14, transition: 'all 0.15s' }}>
+                {copied ? '✓ Copied' : <>{getCsId(lead)} <Copy style={{ width: 9, height: 9, opacity: 0.5 }} /></>}
               </button>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 5, flexWrap: 'wrap', marginBottom: achievedStage ? 8 : 14 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: ss.color, background: ss.bg, padding: '3px 10px', borderRadius: 20 }}>{ss.label}</span>
-                {lead.sourceDetail?.startsWith('[') && (
-                  <span style={{ fontSize: 11, fontWeight: 600, color: '#8a00c2', background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, padding: '3px 10px', borderRadius: 20 }}>
-                    {lead.sourceDetail.match(/^\[([^\]]+)\]/)?.[1]}
+
+              {/* Status + milestone badges */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: ss.color, background: ss.bg, padding: '4px 12px', borderRadius: 99 }}>{ss.label}</span>
+                {achievedStage && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: MILESTONE_COLOR[achievedStage] ?? MUTED, background: `${MILESTONE_COLOR[achievedStage] ?? MUTED}12`, border: `1px solid ${MILESTONE_COLOR[achievedStage] ?? MUTED}28`, padding: '4px 10px', borderRadius: 99 }}>
+                    <Award style={{ width: 9, height: 9 }} />{topMilestone}
                   </span>
                 )}
               </div>
-              {achievedStage && (
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: MILESTONE_COLOR[achievedStage] ?? MUTED, background: `${MILESTONE_COLOR[achievedStage] ?? MUTED}12`, border: `1px solid ${MILESTONE_COLOR[achievedStage] ?? MUTED}30`, padding: '3px 10px', borderRadius: 20 }}>
-                    <Award style={{ width: 10, height: 10 }} />Reached {achievedStage} · {topMilestone}
-                  </span>
+
+              {/* Meta stats row */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 0 }}>
+                <div style={{ textAlign: 'center', padding: '0 16px', borderRight: `1px solid ${BORDER}` }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{lastAct ? timeAgo(lastAct.createdAt) : '—'}</div>
+                  <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>Last contact</div>
                 </div>
-              )}
-              {/* Score bar */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <span style={{ fontSize: 10, color: MUTED, fontWeight: 600 }}>Intent Score</span>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: ss.color }}>{score}/100</span>
-                </div>
-                <div style={{ height: 5, background: '#F1F5F9', borderRadius: 3 }}>
-                  <div style={{ width: `${score}%`, height: '100%', background: ss.ring, borderRadius: 3, transition: 'width 0.6s ease' }} />
+                <div style={{ textAlign: 'center', padding: '0 16px' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{daysInPipe > 0 ? `${daysInPipe}d` : 'Today'}</div>
+                  <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>In pipeline</div>
                 </div>
               </div>
-              <p style={{ fontSize: 11, color: MUTED, margin: '10px 0 2px' }}>
-                {lastAct ? <>● Last: <strong style={{ color: MUTED2 }}>{timeAgo(lastAct.createdAt)}</strong></> : '● No contact yet'}
-              </p>
-              {daysInPipe > 0 && <p style={{ fontSize: 11, color: MUTED, margin: 0 }}>● In pipeline: <strong style={{ color: MUTED2 }}>{daysInPipe}d</strong></p>}
             </div>
 
-            {/* Quick actions */}
-            <div style={{ padding: '14px 16px', borderBottom: `1px solid ${BORDER}` }}>
-              {/* Primary call CTA */}
+            {/* Action buttons */}
+            <div style={{ padding: '16px', borderBottom: `1px solid ${BORDER}` }}>
+              {/* Primary CTA */}
               {phone && (
                 <button onClick={() => setShowCallModal(true)}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px', background: 'linear-gradient(135deg,#059669,#047857)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', marginBottom: 8, boxShadow: '0 2px 8px rgba(5,150,105,0.35)', position: 'relative', overflow: 'hidden' }}>
-                  <Phone style={{ width: 15, height: 15 }} />
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px', background: 'linear-gradient(135deg,#059669,#047857)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 3px 10px rgba(5,150,105,0.28)' }}>
+                  <Phone style={{ width: 14, height: 14 }} />
                   Call {lead.name.firstName || 'Lead'}
-                  <span style={{ fontSize: 11, opacity: 0.75, fontWeight: 500, marginLeft: 2 }}>{phone}</span>
+                  <span style={{ fontSize: 11, opacity: 0.72, fontWeight: 400, marginLeft: 2 }}>{phone}</span>
                 </button>
               )}
-              <div style={{ display: 'grid', gridTemplateColumns: phone ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: 7, marginBottom: 10 }}>
-                {[
-                  { icon: Activity,      label: 'Log',    onClick: () => setShowActivityModal(true), danger: false, show: true },
-                  { icon: MessageCircle, label: 'WA',     onClick: () => setShowWhatsAppModal(true), danger: false, show: !!phone },
-                  { icon: Trash2,        label: 'Delete', onClick: () => setShowDeleteConfirm(true), danger: true,  show: true },
-                ].filter(b => b.show).map(btn => {
-                  const BIcon = btn.icon
-                  return (
-                    <button key={btn.label} onClick={btn.onClick}
-                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '9px 4px', background: btn.danger ? 'rgba(239,68,68,0.06)' : '#F8FAFC', border: `1px solid ${btn.danger ? 'rgba(239,68,68,0.15)' : BORDER}`, borderRadius: 10, cursor: 'pointer' }}>
-                      <BIcon style={{ width: 15, height: 15, color: btn.danger ? RED : MUTED }} />
-                      <span style={{ fontSize: 10, fontWeight: 600, color: btn.danger ? RED : MUTED }}>{btn.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
-              <button onClick={() => setShowActivityModal(true)}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px', background: PRIMARY_GRAD, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                <Plus style={{ width: 14, height: 14 }} />Log Activity
-              </button>
             </div>
 
             {/* Info tabs */}
@@ -520,7 +558,7 @@ export default function LeadDetailPage() {
                     <div>
                       <div style={{ fontSize: 10, color: '#94A3B8', marginBottom: 5 }}>Localities</div>
                       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                        {lead.localities.map(l => <span key={l} style={{ fontSize: 10, fontWeight: 600, color: '#8a00c2', background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, padding: '2px 7px', borderRadius: 5 }}>{l}</span>)}
+                        {lead.localities.map(l => <span key={l} style={{ fontSize: 10, fontWeight: 600, color: '#FF7043', background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, padding: '2px 7px', borderRadius: 5 }}>{l}</span>)}
                       </div>
                     </div>
                   </div>
@@ -535,7 +573,7 @@ export default function LeadDetailPage() {
                   <div style={{ marginBottom: 12 }}>
                     <div style={{ fontSize: 10, color: '#94A3B8', marginBottom: 6 }}>Property Type</div>
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                      {lead.propertyType.map(pt => <span key={pt} style={{ fontSize: 11, fontWeight: 700, color: '#7600bc', background: 'rgba(190,46,214,0.07)', border: '1px solid rgba(190,46,214,0.25)', padding: '3px 9px', borderRadius: 6 }}>{pt}</span>)}
+                      {lead.propertyType.map(pt => <span key={pt} style={{ fontSize: 11, fontWeight: 700, color: '#E64A19', background: 'rgba(245,158,11,0.09)', border: '1px solid rgba(255,112,67,0.22)', padding: '3px 9px', borderRadius: 6 }}>{pt}</span>)}
                     </div>
                   </div>
                 )}
@@ -555,7 +593,7 @@ export default function LeadDetailPage() {
                   <div style={{ marginTop: 10 }}>
                     <div style={{ fontSize: 10, color: '#94A3B8', marginBottom: 6 }}>Preferred Areas</div>
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                      {lead.localities.map(l => <span key={l} style={{ fontSize: 10, fontWeight: 600, color: '#8a00c2', background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, padding: '2px 7px', borderRadius: 5 }}>{l}</span>)}
+                      {lead.localities.map(l => <span key={l} style={{ fontSize: 10, fontWeight: 600, color: '#FF7043', background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, padding: '2px 7px', borderRadius: 5 }}>{l}</span>)}
                     </div>
                   </div>
                 )}
@@ -564,23 +602,24 @@ export default function LeadDetailPage() {
           </div>
 
           {/* ══════════════════════════════════════════════════
-              CENTER — Activity Feed
+              CENTER — Activity Feed (Kirrivan style)
           ══════════════════════════════════════════════════ */}
           <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', minHeight: 560 }}>
 
-            {/* Tabs */}
-            <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, background: '#FAFBFC', flexShrink: 0 }}>
+            {/* ── Tab bar ── */}
+            <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, background: '#FAFBFC', flexShrink: 0, overflowX: 'auto' }}>
               {([
-                { key: 'all',      label: 'Activity'  },
-                { key: 'notes',    label: 'Notes'     },
-                { key: 'calls',    label: 'Calls'     },
-                { key: 'whatsapp', label: 'WhatsApp'  },
+                { key: 'all',      label: 'Log Activities' },
+                { key: 'notes',    label: 'Quick Notes' },
+                { key: 'calls',    label: 'Calls'    },
+                { key: 'whatsapp', label: 'WhatsApp' },
+                { key: 'tasks',    label: 'Tasks'    },
               ] as { key: ActivityTab; label: string }[]).map(tab => (
                 <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '12px 16px', fontSize: 13, fontWeight: activeTab === tab.key ? 700 : 500, color: activeTab === tab.key ? BLUE : MUTED, background: 'transparent', border: 'none', borderBottom: activeTab === tab.key ? `2px solid ${BLUE}` : '2px solid transparent', cursor: 'pointer' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '13px 16px', fontSize: 13, fontWeight: activeTab === tab.key ? 700 : 500, color: activeTab === tab.key ? BLUE : MUTED, background: 'transparent', border: 'none', borderBottom: activeTab === tab.key ? `2px solid ${BLUE}` : '2px solid transparent', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
                   {tab.label}
                   {tabCounts[tab.key] > 0 && (
-                    <span style={{ fontSize: 10, fontWeight: 700, color: activeTab === tab.key ? '#7600bc' : '#94A3B8', background: activeTab === tab.key ? PRIMARY_DIM : '#F1F5F9', padding: '1px 6px', borderRadius: 10 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: activeTab === tab.key ? BLUE : '#94A3B8', background: activeTab === tab.key ? PRIMARY_DIM : '#F1F5F9', padding: '1px 6px', borderRadius: 10 }}>
                       {tabCounts[tab.key]}
                     </span>
                   )}
@@ -588,182 +627,142 @@ export default function LeadDetailPage() {
               ))}
             </div>
 
-            {/* Smart Nudge Bar */}
+            {/* ── Filter / action bar (Kirrivan style) ── */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: `1px solid ${BORDER}`, background: '#FAFBFC', flexShrink: 0 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 11px', border: `1px solid ${BORDER}`, borderRadius: 8, background: PANEL, fontSize: 12, color: MUTED, cursor: 'default' }}>
+                  <Filter style={{ width: 11, height: 11 }} />
+                  {activeTab === 'all' ? `${activities.length} activities` : activeTab === 'calls' ? `${callActs.length} calls` : activeTab === 'notes' ? `${noteActs.length} notes` : activeTab === 'tasks' ? `${upcomingTasks.length} upcoming` : `${waActs.length} messages`}
+                </button>
+              </div>
+              <button onClick={() => setShowActivityModal(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 13px', background: BLUE, border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                <Plus style={{ width: 12, height: 12 }} />Create activity
+              </button>
+            </div>
+
+            {/* ── Smart Nudge Bar ── */}
             {nudge && activeTab === 'all' && (
-              <div style={{ margin: '12px 16px 0', padding: '12px 14px', background: nudge.bg, border: `1px solid ${nudge.border}`, borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: `${nudge.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <nudge.icon style={{ width: 16, height: 16, color: nudge.color }} />
+              <div style={{ margin: '10px 16px 0', padding: '11px 14px', background: nudge.bg, border: `1px solid ${nudge.border}`, borderRadius: 10, display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 9, background: `${nudge.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <nudge.icon style={{ width: 15, height: 15, color: nudge.color }} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, marginBottom: 2 }}>{nudge.text}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, marginBottom: 1 }}>{nudge.text}</div>
                   <div style={{ fontSize: 11, color: MUTED }}>{nudge.sub}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                  <button onClick={nudge.onAction}
-                    style={{ padding: '6px 12px', background: nudge.color, border: 'none', borderRadius: 8, color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                    {nudge.actionLabel}
-                  </button>
-                  <button onClick={() => setNudgeDismissed(true)}
-                    style={{ padding: '6px 8px', background: 'transparent', border: `1px solid ${nudge.border}`, borderRadius: 8, color: MUTED, fontSize: 11, cursor: 'pointer' }}>
-                    ✕
-                  </button>
+                  <button onClick={nudge.onAction} style={{ padding: '5px 12px', background: nudge.color, border: 'none', borderRadius: 7, color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>{nudge.actionLabel}</button>
+                  <button onClick={() => setNudgeDismissed(true)} style={{ padding: '5px 8px', background: 'transparent', border: `1px solid ${nudge.border}`, borderRadius: 7, color: MUTED, fontSize: 11, cursor: 'pointer' }}>✕</button>
                 </div>
               </div>
             )}
 
-            {/* ── ALL tab ─────────────────────────────────────────────────── */}
+            {/* ── ACTIVITY tab ── */}
             {activeTab === 'all' && (
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
-                  <span style={{ fontSize: 12, color: MUTED }}>{activities.length} {activities.length === 1 ? 'activity' : 'activities'}</span>
-                  <button onClick={() => setShowActivityModal(true)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, borderRadius: 8, color: BLUE, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                    <Plus style={{ width: 12, height: 12 }} />Create activity
-                  </button>
-                </div>
-                {/* Quick note input */}
-                <div style={{ padding: '10px 16px', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
-                  <div style={{ display: 'flex', gap: 8 }}>
+                {/* Quick note composer */}
+                <div style={{ padding: '12px 16px', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
                     <textarea value={quickNote} onChange={e => setQuickNote(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveQuickNote() }}
                       placeholder="Add a quick note… (⌘+Enter to save)"
                       rows={quickNote ? 3 : 1}
-                      style={{ flex: 1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '8px 12px', fontSize: 13, color: TEXT, background: '#F8FAFC', resize: 'none', outline: 'none', fontFamily: 'inherit', transition: 'all 0.2s' }} />
+                      style={{ flex: 1, border: `1px solid ${BORDER}`, borderRadius: 9, padding: '9px 13px', fontSize: 13, color: TEXT, background: BG, resize: 'none', outline: 'none', fontFamily: 'inherit', transition: 'rows 0.2s' }} />
                     {quickNote.trim() && (
                       <button onClick={saveQuickNote} disabled={savingNote}
-                        style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', background: BLUE, border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 600, cursor: savingNote ? 'not-allowed' : 'pointer', opacity: savingNote ? 0.7 : 1 }}>
+                        style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 14px', background: BLUE, border: 'none', borderRadius: 9, color: '#fff', fontSize: 12, fontWeight: 600, cursor: savingNote ? 'not-allowed' : 'pointer', opacity: savingNote ? 0.7 : 1, flexShrink: 0 }}>
                         {savingNote ? <Loader2 style={{ width: 11, height: 11, animation: 'spin 1s linear infinite' }} /> : <Send style={{ width: 11, height: 11 }} />}
                         Save
                       </button>
                     )}
                   </div>
                 </div>
-                {/* Activity list */}
-                <div style={{ flex: 1, padding: '12px 16px', overflowY: 'auto' }}>
-                  {activities.length === 0
-                    ? <EmptyState icon={Clock} title="No activities yet" sub="Log a call, note, or WhatsApp to get started" action={{ label: 'Log first activity', onClick: () => setShowActivityModal(true) }} />
-                    : activities.map(act => {
+
+                {/* Feed */}
+                <div style={{ flex: 1, padding: '16px', overflowY: 'auto' }}>
+                  {activities.length === 0 ? (
+                    <EmptyState icon={Clock} title="No activities yet" sub="Log a call, note, or WhatsApp to get started" action={{ label: 'Log first activity', onClick: () => setShowActivityModal(true) }} />
+                  ) : (
+                    <>
+                      {/* Upcoming section */}
+                      {upcomingTasks.length > 0 && (
+                        <>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>Upcoming Activity</div>
+                          {upcomingTasks.map(act => (
+                            <KirivanCard key={act.id} act={act} upcoming onLog={() => setShowActivityModal(true)} />
+                          ))}
+                          <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12, marginTop: 20 }}>Recent Activity</div>
+                        </>
+                      )}
+                      {/* All/Recent activities */}
+                      {activities.filter(a => !upcomingTasks.includes(a)).map(act => {
                         const advancedTo = statusMarkers.get(act.id)
-                        const advColor = advancedTo ? ({ New: '#64748B', Cold: '#2563EB', Warm: '#be2ed6', Hot: '#a000c8', Closed: '#059669', Disqualified: '#94A3B8' } as Record<string, string>)[advancedTo] ?? '#64748B' : null
+                        const advColor = advancedTo ? ({ New: '#78889B', Cold: '#2E66F6', Warm: '#F59E0B', Hot: '#FF7043', Closed: '#059669', Disqualified: '#94A3B8' } as Record<string, string>)[advancedTo] ?? '#78889B' : null
                         return (
                           <div key={act.id}>
-                            <ActivityCard act={act} />
+                            <KirivanCard act={act} onLog={() => setShowActivityModal(true)} />
                             {advancedTo && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0 8px', margin: '0 0 4px' }}>
-                                <div style={{ flex: 1, height: 1, background: `${advColor}30` }} />
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, color: advColor!, background: `${advColor}12`, border: `1px solid ${advColor}30`, padding: '2px 10px', borderRadius: 99, whiteSpace: 'nowrap' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0 12px' }}>
+                                <div style={{ flex: 1, height: 1, background: `${advColor}28` }} />
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, color: advColor!, background: `${advColor}10`, border: `1px solid ${advColor}28`, padding: '2px 10px', borderRadius: 99, whiteSpace: 'nowrap' }}>
                                   <TrendingUp style={{ width: 9, height: 9 }} /> Moved to {advancedTo}
                                 </span>
-                                <div style={{ flex: 1, height: 1, background: `${advColor}30` }} />
+                                <div style={{ flex: 1, height: 1, background: `${advColor}28` }} />
                               </div>
                             )}
                           </div>
                         )
-                      })
-                  }
+                      })}
+                    </>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* ── NOTES tab ───────────────────────────────────────────────── */}
+            {/* ── QUICK NOTES tab ── */}
             {activeTab === 'notes' && (
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                {/* Note compose — always open */}
-                <div style={{ padding: '16px', borderBottom: `1px solid ${BORDER}`, background: '#FAFBFC', flexShrink: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: MUTED2, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Tag style={{ width: 12, height: 12 }} /> Add a note
-                  </div>
+                <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <p style={{ fontSize: 12, color: MUTED, margin: 0 }}>Type a quick note — it will appear in the Log Activities feed.</p>
                   <textarea value={quickNote} onChange={e => setQuickNote(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveQuickNote() }}
-                    placeholder="Write your note here… (⌘+Enter to save)"
-                    rows={4}
-                    style={{ width: '100%', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '10px 14px', fontSize: 13, color: TEXT, background: PANEL, resize: 'none', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+                    placeholder="Write a note… (⌘+Enter to save)"
+                    rows={5}
+                    style={{ width: '100%', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '10px 13px', fontSize: 13, color: TEXT, background: BG, resize: 'none', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <button onClick={saveQuickNote} disabled={!quickNote.trim() || savingNote}
-                      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 18px', background: BLUE, border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, cursor: (!quickNote.trim() || savingNote) ? 'not-allowed' : 'pointer', opacity: (!quickNote.trim() || savingNote) ? 0.55 : 1 }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 18px', background: BLUE, border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, cursor: (!quickNote.trim() || savingNote) ? 'not-allowed' : 'pointer', opacity: (!quickNote.trim() || savingNote) ? 0.5 : 1 }}>
                       {savingNote ? <Loader2 style={{ width: 12, height: 12, animation: 'spin 1s linear infinite' }} /> : <Send style={{ width: 12, height: 12 }} />}
                       {savingNote ? 'Saving…' : 'Save Note'}
                     </button>
                   </div>
                 </div>
-                {/* Notes list */}
-                <div style={{ flex: 1, padding: '12px 16px', overflowY: 'auto' }}>
-                  {noteActs.length === 0
-                    ? <EmptyState icon={Tag} title="No notes yet" sub="Your notes appear here — use the form above to add one" />
-                    : noteActs.map(act => <ActivityCard key={act.id} act={act} />)
-                  }
-                </div>
               </div>
             )}
 
-            {/* ── CALLS tab ───────────────────────────────────────────────── */}
+            {/* ── CALLS tab ── */}
             {activeTab === 'calls' && (
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                {/* Call stats strip */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 0, borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', flexShrink: 0 }}>
                   {[
-                    { label: 'Total',       value: callStats.total,      color: MUTED2  },
-                    { label: 'Connected',   value: callStats.connected,  color: EMERALD },
-                    { label: 'No Answer',   value: callStats.noResponse, color: AMBER   },
-                    { label: 'Missed',      value: callStats.missed,     color: RED     },
-                  ].map((stat, i, a) => (
-                    <div key={stat.label} style={{ padding: '14px 0', textAlign: 'center', borderRight: i < a.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: stat.color, letterSpacing: '-0.5px' }}>{stat.value}</div>
-                      <div style={{ fontSize: 10, color: MUTED, marginTop: 2, fontWeight: 500 }}>{stat.label}</div>
+                    { label: 'Total',     value: callStats.total,      color: MUTED2  },
+                    { label: 'Connected', value: callStats.connected,  color: EMERALD },
+                    { label: 'No Answer', value: callStats.noResponse, color: AMBER   },
+                    { label: 'Missed',    value: callStats.missed,     color: RED     },
+                  ].map((s, i, a) => (
+                    <div key={s.label} style={{ padding: '20px 0', textAlign: 'center', borderRight: i < a.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
+                      <div style={{ fontSize: 28, fontWeight: 800, color: s.color, letterSpacing: '-0.5px' }}>{s.value}</div>
+                      <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>{s.label}</div>
                     </div>
                   ))}
                 </div>
-                {/* Log call CTA */}
-                <div style={{ padding: '10px 16px', borderBottom: `1px solid ${BORDER}`, display: 'flex', gap: 8, flexShrink: 0 }}>
-                  <button onClick={() => setShowCallModal(true)}
-                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px', background: 'rgba(5,150,105,0.08)', border: '1px solid rgba(5,150,105,0.25)', borderRadius: 9, color: EMERALD, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                    <Phone style={{ width: 14, height: 14 }} />Log a Call
-                  </button>
-                  <button onClick={logCallAttempt} disabled={callAttempts.length >= 5}
-                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 9, color: RED, fontSize: 13, fontWeight: 700, cursor: callAttempts.length >= 5 ? 'not-allowed' : 'pointer', opacity: callAttempts.length >= 5 ? 0.5 : 1 }}>
-                    <PhoneOff style={{ width: 14, height: 14 }} />No Answer
-                  </button>
-                </div>
-                {/* NC suggestion */}
-                {showNCSuggest && (
-                  <div style={{ margin: '10px 16px 0', padding: '10px 14px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, flexShrink: 0 }}>
-                    <p style={{ fontSize: 12, fontWeight: 700, color: RED, margin: '0 0 4px' }}>📵 5 failed call attempts</p>
-                    <p style={{ fontSize: 11, color: '#991B1B', margin: '0 0 8px' }}>Mark as Disqualified — non-contactable after 5 failed attempts.</p>
-                    <button onClick={() => { handleStageChange('Disqualified'); setShowNCSuggest(false) }}
-                      style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: RED, border: 'none', borderRadius: 7, padding: '6px 14px', cursor: 'pointer' }}>
-                      Disqualify (NC)
-                    </button>
-                  </div>
-                )}
-                {/* Call attempt dots */}
-                {callAttempts.length > 0 && (
-                  <div style={{ padding: '10px 16px', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <span style={{ fontSize: 11, color: MUTED }}>No-answer attempts</span>
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        {[1,2,3,4,5].map(n => (
-                          <div key={n} style={{ width: 20, height: 4, borderRadius: 2, background: n <= callAttempts.length ? (n >= 5 ? RED : n >= 3 ? AMBER : BLUE) : BORDER }} />
-                        ))}
-                      </div>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: callAttempts.length >= 5 ? RED : MUTED }}>{callAttempts.length}/5</span>
-                      <button onClick={clearCallAttempts} style={{ fontSize: 10, color: MUTED, background: 'none', border: 'none', cursor: 'pointer', marginLeft: 'auto' }}>Reset</button>
-                    </div>
-                  </div>
-                )}
-                {/* Calls list */}
-                <div style={{ flex: 1, padding: '12px 16px', overflowY: 'auto' }}>
-                  {callActs.length === 0
-                    ? <EmptyState icon={Phone} title="No calls logged" sub="Log a call above to track your conversation history" action={{ label: 'Log a Call', onClick: () => setShowCallModal(true) }} />
-                    : callActs.map(act => <ActivityCard key={act.id} act={act} />)
-                  }
-                </div>
               </div>
             )}
 
-            {/* ── WHATSAPP tab ─────────────────────────────────────────────── */}
+            {/* ── WHATSAPP tab ── */}
             {activeTab === 'whatsapp' && (
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                {/* WA header */}
                 <div style={{ padding: '12px 16px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: 10, background: '#F0FDF4', flexShrink: 0 }}>
                   <div style={{ width: 32, height: 32, borderRadius: '50%', background: WA_GRN, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <MessageCircle style={{ width: 16, height: 16, color: '#fff' }} />
@@ -777,31 +776,25 @@ export default function LeadDetailPage() {
                     <Send style={{ width: 12, height: 12 }} />Send WhatsApp
                   </button>
                 </div>
-                {/* Conversation thread */}
                 <div style={{ flex: 1, padding: '16px', overflowY: 'auto', background: '#F7FDF9', display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {waActs.length === 0 ? (
-                    <EmptyState icon={MessageCircle} title="No WhatsApp messages yet" sub="Send a message below to start the conversation" action={{ label: 'Send WhatsApp', onClick: () => setShowWhatsAppModal(true) }} waStyle />
-                  ) : (
-                    waActs.map(act => {
-                      const isSent = act.type === 'WhatsApp Sent'
-                      return (
-                        <div key={act.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isSent ? 'flex-end' : 'flex-start' }}>
-                          <div style={{ maxWidth: '75%', padding: '10px 14px', background: isSent ? '#DCF8C6' : PANEL, border: `1px solid ${isSent ? '#A7F3D0' : BORDER}`, borderRadius: isSent ? '18px 18px 4px 18px' : '18px 18px 18px 4px', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}>
-                            {act.notes
-                              ? <p style={{ fontSize: 13, color: TEXT, margin: 0, lineHeight: 1.5 }}>{act.notes}</p>
-                              : <p style={{ fontSize: 12, color: MUTED, margin: 0, fontStyle: 'italic' }}>{act.type}</p>
-                            }
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 3, padding: '0 2px' }}>
-                            <span style={{ fontSize: 10, color: MUTED }}>{timeAgo(act.createdAt)}</span>
-                            {isSent && <CheckCircle style={{ width: 10, height: 10, color: '#34B7F1' }} />}
-                          </div>
+                    <EmptyState icon={MessageCircle} title="No WhatsApp messages yet" sub="Send a message to start the conversation" action={{ label: 'Send WhatsApp', onClick: () => setShowWhatsAppModal(true) }} waStyle />
+                  ) : waActs.map(act => {
+                    const isSent = act.type === 'WhatsApp Sent'
+                    return (
+                      <div key={act.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isSent ? 'flex-end' : 'flex-start' }}>
+                        <div style={{ maxWidth: '75%', padding: '10px 14px', background: isSent ? '#DCF8C6' : PANEL, border: `1px solid ${isSent ? '#A7F3D0' : BORDER}`, borderRadius: isSent ? '18px 18px 4px 18px' : '18px 18px 18px 4px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                          {act.notes ? <p style={{ fontSize: 13, color: TEXT, margin: 0, lineHeight: 1.5 }}>{act.notes}</p>
+                            : <p style={{ fontSize: 12, color: MUTED, margin: 0, fontStyle: 'italic' }}>{act.type}</p>}
                         </div>
-                      )
-                    })
-                  )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 3, padding: '0 2px' }}>
+                          <span style={{ fontSize: 10, color: MUTED }}>{timeAgo(act.createdAt)}</span>
+                          {isSent && <CheckCircle style={{ width: 10, height: 10, color: '#34B7F1' }} />}
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
-                {/* Send bar */}
                 {phone && (
                   <div style={{ padding: '10px 16px', borderTop: `1px solid ${BORDER}`, background: PANEL, flexShrink: 0 }}>
                     <button onClick={() => setShowWhatsAppModal(true)}
@@ -812,6 +805,208 @@ export default function LeadDetailPage() {
                 )}
               </div>
             )}
+
+            {/* ── TASKS tab ── */}
+            {activeTab === 'tasks' && lead && (() => {
+              const TASK_TYPES = ['Follow Up', 'Call Back', 'Site Visit', 'Send Brochure', 'Meeting', 'Send Proposal', 'Check In', 'Custom']
+              const PRIORITY_CFG = { High: { color: RED, bg: 'rgba(220,38,38,0.09)' }, Medium: { color: AMBER, bg: 'rgba(245,158,11,0.09)' }, Low: { color: MUTED, bg: '#F1F5F9' } }
+              const TYPE_DEFAULTS: Record<string, string> = {
+                'Follow Up':     `Follow up with ${lead.name.firstName}`,
+                'Call Back':     `Call ${lead.name.firstName} back`,
+                'Site Visit':    `Site visit with ${lead.name.firstName}`,
+                'Send Brochure': `Send brochure to ${lead.name.firstName}`,
+                'Meeting':       `Meeting with ${lead.name.firstName}`,
+                'Send Proposal': `Send proposal to ${lead.name.firstName}`,
+                'Check In':      `Check in with ${lead.name.firstName}`,
+                'Custom':        '',
+              }
+              const now = new Date()
+              const todayStr = now.toISOString().slice(0, 10)
+
+              const fmtDue = (iso: string) => {
+                const d = new Date(iso)
+                const dateStr = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+                const timeStr = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+                const dDay = d.toISOString().slice(0, 10)
+                const label = dDay === todayStr ? 'Today' : dDay === new Date(Date.now() + 86400000).toISOString().slice(0, 10) ? 'Tomorrow' : d < now ? 'Overdue' : dateStr
+                return { label, timeStr, overdue: d < now && dDay !== todayStr }
+              }
+
+              const overdue  = pendingTasks.filter(t => { const d = new Date(t.due_date); return d < now && d.toISOString().slice(0,10) !== todayStr })
+              const today    = pendingTasks.filter(t => new Date(t.due_date).toISOString().slice(0,10) === todayStr)
+              const upcoming = pendingTasks.filter(t => { const d = new Date(t.due_date); return d >= now && d.toISOString().slice(0,10) !== todayStr })
+              const done     = tasks.filter(t => t.status === 'Done')
+              const cancelled = tasks.filter(t => t.status === 'Cancelled')
+
+              const updateTask = async (taskId: string, status: 'Done' | 'Cancelled') => {
+                await fetch(`/api/crm/leads/${leadId}/tasks/${taskId}`, {
+                  method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ status }),
+                })
+                fetchTasks()
+              }
+
+              const handleCreateTask = async () => {
+                if (!taskForm.title.trim() || !taskForm.date) return
+                setSavingTask(true)
+                const due_date = new Date(`${taskForm.date}T${taskForm.time}:00`).toISOString()
+                await fetch(`/api/crm/leads/${leadId}/tasks`, {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ title: taskForm.title, task_type: taskForm.task_type, due_date, priority: taskForm.priority, notes: taskForm.notes }),
+                })
+                setSavingTask(false)
+                setShowTaskForm(false)
+                setTaskForm({ task_type: 'Follow Up', title: '', date: '', time: '10:00', priority: 'Medium', notes: '' })
+                fetchTasks()
+              }
+
+              const TaskCard = ({ task }: { task: LeadTask }) => {
+                const { label, timeStr, overdue: isOverdue } = fmtDue(task.due_date)
+                const pc = PRIORITY_CFG[task.priority]
+                const isDone = task.status === 'Done'
+                const isCancelled = task.status === 'Cancelled'
+                return (
+                  <div style={{ display: 'flex', gap: 12, padding: '13px 0', borderBottom: `1px solid ${BORDER}`, opacity: isCancelled ? 0.45 : 1 }}>
+                    <div style={{ width: 3, borderRadius: 99, background: isDone ? EMERALD : isCancelled ? '#CBD5E1' : pc.color, flexShrink: 0, alignSelf: 'stretch', minHeight: 36 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 3 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: isDone ? MUTED : TEXT, textDecoration: isDone ? 'line-through' : 'none', lineHeight: 1.4 }}>{task.title}</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: pc.color, background: pc.bg, padding: '2px 7px', borderRadius: 99, flexShrink: 0 }}>{task.priority}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <span style={{ fontSize: 11, color: MUTED, background: '#F1F5F9', padding: '1px 7px', borderRadius: 99 }}>{task.task_type}</span>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: isOverdue ? RED : isDone ? EMERALD : MUTED }}>
+                          {isDone ? '✓ Done' : isCancelled ? 'Cancelled' : isOverdue ? `⚠ ${label} · ${timeStr}` : `${label} · ${timeStr}`}
+                        </span>
+                      </div>
+                      {task.notes && <p style={{ fontSize: 12, color: MUTED, margin: '0 0 6px', lineHeight: 1.5 }}>{task.notes}</p>}
+                      {task.status === 'Pending' && (
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button onClick={() => updateTask(task.id, 'Done')}
+                            style={{ fontSize: 11, fontWeight: 700, color: EMERALD, background: 'rgba(5,150,105,0.09)', border: 'none', borderRadius: 7, padding: '4px 12px', cursor: 'pointer' }}>
+                            ✓ Mark Done
+                          </button>
+                          <button onClick={() => updateTask(task.id, 'Cancelled')}
+                            style={{ fontSize: 11, fontWeight: 600, color: MUTED, background: '#F1F5F9', border: 'none', borderRadius: 7, padding: '4px 12px', cursor: 'pointer' }}>
+                            Cancel
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              }
+
+              const SectionHead = ({ label, count }: { label: string; count: number }) => (
+                <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', margin: '16px 0 2px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {label} <span style={{ fontWeight: 800, color: TEXT }}>{count}</span>
+                </div>
+              )
+
+              return (
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  {/* Add Task button */}
+                  <div style={{ padding: '12px 16px 0', display: 'flex', justifyContent: 'flex-end' }}>
+                    <button onClick={() => { setShowTaskForm(v => !v); setTaskForm(f => ({ ...f, title: TYPE_DEFAULTS['Follow Up'] })) }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: '#fff', background: PRIMARY_GRAD, border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(255,112,67,0.28)' }}>
+                      <Plus style={{ width: 13, height: 13 }} /> Add Task
+                    </button>
+                  </div>
+
+                  {/* Inline create form */}
+                  {showTaskForm && (
+                    <div style={{ margin: '12px 16px', background: '#FAFBFC', border: `1px solid ${BORDER}`, borderRadius: 12, padding: '16px' }}>
+                      {/* Task type */}
+                      <div style={{ marginBottom: 12 }}>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 5 }}>Task Type</label>
+                        <select value={taskForm.task_type}
+                          onChange={e => {
+                            const t = e.target.value
+                            setTaskForm(f => ({ ...f, task_type: t, title: TYPE_DEFAULTS[t] ?? f.title }))
+                          }}
+                          style={{ width: '100%', fontSize: 13, color: TEXT, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '8px 10px', outline: 'none' }}>
+                          {TASK_TYPES.map(t => <option key={t}>{t}</option>)}
+                        </select>
+                      </div>
+                      {/* Title */}
+                      <div style={{ marginBottom: 12 }}>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 5 }}>Title</label>
+                        <input type="text" value={taskForm.title} placeholder="Task title…"
+                          onChange={e => setTaskForm(f => ({ ...f, title: e.target.value }))}
+                          style={{ width: '100%', fontSize: 13, color: TEXT, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '8px 10px', outline: 'none', boxSizing: 'border-box' }} />
+                      </div>
+                      {/* Date + Time */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px', gap: 10, marginBottom: 12 }}>
+                        <div>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 5 }}>Due Date</label>
+                          <input type="date" value={taskForm.date} min={todayStr}
+                            onChange={e => setTaskForm(f => ({ ...f, date: e.target.value }))}
+                            style={{ width: '100%', fontSize: 13, color: TEXT, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '8px 10px', outline: 'none', boxSizing: 'border-box', colorScheme: 'light', accentColor: '#FF7043' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 5 }}>Time</label>
+                          <input type="time" value={taskForm.time}
+                            onChange={e => setTaskForm(f => ({ ...f, time: e.target.value }))}
+                            style={{ width: '100%', fontSize: 13, color: TEXT, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '8px 10px', outline: 'none', boxSizing: 'border-box', colorScheme: 'light', accentColor: '#FF7043' }} />
+                        </div>
+                      </div>
+                      {/* Priority */}
+                      <div style={{ marginBottom: 12 }}>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 7 }}>Priority</label>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          {(['High', 'Medium', 'Low'] as const).map(p => {
+                            const pc = PRIORITY_CFG[p]
+                            const active = taskForm.priority === p
+                            return (
+                              <button key={p} onClick={() => setTaskForm(f => ({ ...f, priority: p }))}
+                                style={{ flex: 1, fontSize: 12, fontWeight: 700, border: `1px solid ${active ? pc.color : BORDER}`, borderRadius: 8, padding: '7px 0', cursor: 'pointer', color: active ? pc.color : MUTED, background: active ? pc.bg : PANEL, transition: 'all 0.15s' }}>
+                                {p}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                      {/* Notes */}
+                      <div style={{ marginBottom: 14 }}>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 5 }}>Notes <span style={{ color: MUTED, fontWeight: 400 }}>(optional)</span></label>
+                        <textarea rows={2} value={taskForm.notes} placeholder="Any additional context…"
+                          onChange={e => setTaskForm(f => ({ ...f, notes: e.target.value }))}
+                          style={{ width: '100%', fontSize: 13, color: TEXT, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '8px 10px', outline: 'none', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                      </div>
+                      {/* Actions */}
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                        <button onClick={() => setShowTaskForm(false)}
+                          style={{ fontSize: 12, fontWeight: 600, color: MUTED, background: '#F1F5F9', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer' }}>
+                          Cancel
+                        </button>
+                        <button onClick={handleCreateTask} disabled={savingTask || !taskForm.title.trim() || !taskForm.date}
+                          style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: !taskForm.title.trim() || !taskForm.date ? '#CBD5E1' : PRIMARY_GRAD, border: 'none', borderRadius: 8, padding: '8px 18px', cursor: !taskForm.title.trim() || !taskForm.date ? 'not-allowed' : 'pointer' }}>
+                          {savingTask ? 'Saving…' : 'Add Task'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Task list */}
+                  <div style={{ flex: 1, padding: '4px 16px 16px', overflowY: 'auto' }}>
+                    {tasks.length === 0 && !showTaskForm ? (
+                      <EmptyState icon={Calendar} title="No tasks yet" sub="Add a task with a date and time — e.g. Call back on Friday at 4 PM" action={{ label: 'Add Task', onClick: () => setShowTaskForm(true) }} />
+                    ) : (
+                      <>
+                        {overdue.length > 0 && <><SectionHead label="Overdue" count={overdue.length} />{overdue.map(t => <TaskCard key={t.id} task={t} />)}</>}
+                        {today.length > 0 && <><SectionHead label="Today" count={today.length} />{today.map(t => <TaskCard key={t.id} task={t} />)}</>}
+                        {upcoming.length > 0 && <><SectionHead label="Upcoming" count={upcoming.length} />{upcoming.map(t => <TaskCard key={t.id} task={t} />)}</>}
+                        {done.length > 0 && <><SectionHead label="Completed" count={done.length} />{done.map(t => <TaskCard key={t.id} task={t} />)}</>}
+                        {cancelled.length > 0 && <><SectionHead label="Cancelled" count={cancelled.length} />{cancelled.map(t => <TaskCard key={t.id} task={t} />)}</>}
+                        {tasks.length > 0 && overdue.length === 0 && today.length === 0 && upcoming.length === 0 && done.length === 0 && cancelled.length === 0 && (
+                          <EmptyState icon={Calendar} title="No tasks yet" sub="Add a task to get started" action={{ label: 'Add Task', onClick: () => setShowTaskForm(true) }} />
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
           </div>
 
           {/* ══════════════════════════════════════════════════
@@ -819,29 +1014,7 @@ export default function LeadDetailPage() {
           ══════════════════════════════════════════════════ */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-            {/* Intent Score */}
-            <SideCard>
-              <SideCardHeader title="Intent Score" icon={TrendingUp} />
-              <div style={{ padding: '12px 14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span style={{ fontSize: 12, color: ss.color, fontWeight: 700 }}>{ss.label}</span>
-                  <span style={{ fontSize: 22, fontWeight: 800, color: ss.color, letterSpacing: '-0.5px' }}>{score}</span>
-                </div>
-                <div style={{ height: 7, background: '#F1F5F9', borderRadius: 4, marginBottom: 12 }}>
-                  <div style={{ width: `${score}%`, height: '100%', background: `linear-gradient(90deg, ${ss.ring}99, ${ss.ring})`, borderRadius: 4 }} />
-                </div>
-                {bdown.map((item, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: i < bdown.length - 1 ? 6 : 0 }}>
-                    <span style={{ fontSize: 11, color: MUTED }}>{item.label}</span>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: item.pos ? EMERALD : '#94A3B8' }}>
-                      {item.pos ? '✓' : '✗'} {item.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </SideCard>
-
-            {/* Lead Lifecycle */}
+            {/* Lead Lifecycle — shown first */}
             <SideCard>
               <SideCardHeader title="Lead Lifecycle" icon={TrendingUp} />
               <div style={{ padding: '14px 12px' }}>
@@ -850,8 +1023,8 @@ export default function LeadDetailPage() {
                   const STAGE_CFG: Record<string, { color: string; emoji: string; desc: string }> = {
                     New:          { color: '#64748B', emoji: '📋', desc: 'Unworked' },
                     Cold:         { color: '#2563EB', emoji: '❄️', desc: 'Calls / WA only' },
-                    Warm:         { color: '#be2ed6', emoji: '🌡️', desc: 'VM / OBM / SV done' },
-                    Hot:          { color: '#a000c8', emoji: '🔥', desc: 'EOI received' },
+                    Warm:         { color: '#F59E0B', emoji: '🌡️', desc: 'VM / OBM / SV done' },
+                    Hot:          { color: '#FF7043', emoji: '🔥', desc: 'EOI received' },
                     Closed:       { color: '#059669', emoji: '✅', desc: 'Deal closed' },
                     Disqualified: { color: '#94A3B8', emoji: '✗',  desc: 'Not proceeding' },
                   }
@@ -960,23 +1133,6 @@ export default function LeadDetailPage() {
             <PropertyMatcher lead={{ name, city: lead.city ?? null, budgetMin: lead.budgetMin ?? null, budgetMax: lead.budgetMax ?? null, propertyType: lead.propertyType ?? null, timeline: lead.timeline ?? null, localities: lead.localities ?? null, phone: phone || null }} />
             <FollowUpWriter lead={{ leadId, name, city: lead.city ?? null, budget: formatBudget(lead.budgetMin, lead.budgetMax) !== '—' ? formatBudget(lead.budgetMin, lead.budgetMax) : null, propertyType: lead.propertyType?.join(', ') ?? null, timeline: lead.timeline ?? null, score, lastActivity: activities[0]?.type ?? null, status: lead.status ?? null, phone: phone || null }} />
 
-            {/* Lead Details */}
-            <SideCard>
-              <SideCardHeader title="Lead Details" icon={Tag} />
-              <div style={{ padding: '4px 14px 10px' }}>
-                {[
-                  { label: 'Lead ID',      value: lead.leadPortalId ?? undefined },
-                  { label: 'Source',       value: lead.sourcePortal },
-                  { label: 'Added',        value: formatDate(lead.createdAt) },
-                  { label: 'Last updated', value: formatDate(lead.updatedAt) },
-                ].map((row, i, arr) => (
-                  <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '7px 0', borderBottom: i < arr.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
-                    <span style={{ fontSize: 11, color: MUTED, flexShrink: 0 }}>{row.label}</span>
-                    <span style={{ fontSize: 11, color: row.value ? MUTED2 : MUTED, textAlign: 'right' }}>{row.value || '—'}</span>
-                  </div>
-                ))}
-              </div>
-            </SideCard>
           </div>
         </div>
       </div>
@@ -984,6 +1140,7 @@ export default function LeadDetailPage() {
       {/* ── Modals ── */}
       <LogActivityModal
         leadId={leadId}
+        leadName={`${lead.name.firstName} ${lead.name.lastName}`.trim()}
         isOpen={showActivityModal}
         onClose={() => setShowActivityModal(false)}
         currentStatus={lead.status ?? 'New'}
@@ -991,7 +1148,7 @@ export default function LeadDetailPage() {
         onActivityLogged={(result) => {
           setShowActivityModal(false)
           if (result?.statusAdvancedTo) setLead(p => p ? { ...p, status: result.statusAdvancedTo! } : p)
-          fetchLead()
+          fetchLead(); fetchTasks()
         }}
       />
       <WhatsAppModal isOpen={showWhatsAppModal} onClose={() => { setShowWhatsAppModal(false); fetchLead() }} leadId={leadId} leadName={`${lead.name.firstName} ${lead.name.lastName}`.trim()} leadPhone={lead.phones.primaryPhoneNumber ?? ''} city={lead.city ?? ''} />

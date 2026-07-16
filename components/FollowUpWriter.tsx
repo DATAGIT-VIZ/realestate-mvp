@@ -5,15 +5,15 @@ import { Sparkles, Copy, MessageCircle, Mail, RefreshCw, Check, AlertCircle, Che
 
 const C = {
   panel:   '#FFFFFF',
-  border:  '#E2E8F0',
-  text:    '#0F172A',
-  muted:   '#64748B',
-  label:   '#94A3B8',
-  violet:  '#a000c8',
-  blue:    '#a000c8',
+  border:  '#E8ECF0',
+  text:    '#263238',
+  muted:   '#78889B',
+  label:   '#A4B1BE',
+  violet:  '#FF7043',
+  blue:    '#FF7043',
   emerald: '#059669',
   red:     '#EF4444',
-  amber:   '#be2ed6',
+  amber:   '#F59E0B',
 }
 
 type OutputType = 'whatsapp' | 'email'
@@ -175,7 +175,7 @@ export function FollowUpWriter({ lead }: Props) {
             disabled={loading || !agentContext.trim()}
             style={{
               width: '100%', marginTop: 10, padding: '10px 0',
-              background: loading || !agentContext.trim() ? '#E2E8F0' : `linear-gradient(135deg, #a000c8, #7600bc)`,
+              background: loading || !agentContext.trim() ? '#E2E8F0' : `linear-gradient(135deg, #FF7043, #FF8A65)`,
               border: 'none', borderRadius: 10, color: loading || !agentContext.trim() ? C.label : '#fff',
               fontSize: 12, fontWeight: 700, cursor: loading || !agentContext.trim() ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
