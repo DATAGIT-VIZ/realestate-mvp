@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo, useRef } from 'react'
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import {
   Users, TrendingUp, IndianRupee, Flame,
@@ -88,7 +88,7 @@ function KPICard({ label, value, sub, icon: Icon, accent, trend }: {
   icon: React.ElementType; accent: string; trend?: { up: boolean; label: string }
 }) {
   return (
-    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+    <div style={{ background: 'rgba(255,255,255,0.35)', border: `1px solid rgba(255,255,255,0.60)`, borderRadius: 16, padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div style={{ width: 40, height: 40, borderRadius: 12, background: `${accent}14`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Icon style={{ width: 18, height: 18, color: accent }} />
@@ -331,6 +331,7 @@ function RevenueAnalytics({ leads }: { leads: CRMLead[] }) {
   const [openMenu, setOpenMenu]         = useState<'metric' | 'period' | null>(null)
   const [metric, setMetric]             = useState<MetricKey>('pipeline')
   const [period, setPeriod]             = useState<PeriodKey>('year')
+  const [showReasoning, setShowReasoning] = useState(false)
   const menuRef     = useRef<HTMLDivElement>(null)
   const year        = new Date().getFullYear()
   const curMonthIdx = new Date().getMonth()
@@ -368,17 +369,19 @@ function RevenueAnalytics({ leads }: { leads: CRMLead[] }) {
   }), [leads, year])
 
   // AI projection: velocity from data months → project forward with 3.5% monthly growth
-  const { projPipeline, projCount } = useMemo(() => {
-    const daysInCur  = new Date(year, curMonthIdx + 1, 0).getDate()
-    const fraction   = Math.max(curDay / daysInCur, 0.01)
-    const withData   = months.filter((m, i) => m.value > 0 && i <= curMonthIdx)
-    const avgPipe    = withData.length > 0 ? withData.reduce((s, m) => s + m.value, 0) / withData.length : 0
-    const avgCnt     = withData.length > 0 ? withData.reduce((s, m) => s + m.count, 0) / withData.length : 0
-    const pipeBase   = months[curMonthIdx].value / fraction * 0.6 + avgPipe * 0.4
-    const cntBase    = months[curMonthIdx].count / fraction * 0.6 + avgCnt  * 0.4
+  const { projPipeline, projCount, reasoning } = useMemo(() => {
+    const daysInCur      = new Date(year, curMonthIdx + 1, 0).getDate()
+    const fraction       = Math.max(curDay / daysInCur, 0.01)
+    const withData       = months.filter((m, i) => m.value > 0 && i <= curMonthIdx)
+    const avgPipe        = withData.length > 0 ? withData.reduce((s, m) => s + m.value, 0) / withData.length : 0
+    const avgCnt         = withData.length > 0 ? withData.reduce((s, m) => s + m.count, 0) / withData.length : 0
+    const curMonthPace   = months[curMonthIdx].value / fraction
+    const pipeBase       = curMonthPace * 0.6 + avgPipe * 0.4
+    const cntBase        = months[curMonthIdx].count / fraction * 0.6 + avgCnt  * 0.4
     return {
       projPipeline: Array.from({ length: 12 }, (_, m) => m <= curMonthIdx ? 0 : Math.round(pipeBase * Math.pow(1.035, m - curMonthIdx))),
       projCount:    Array.from({ length: 12 }, (_, m) => m <= curMonthIdx ? 0 : Math.round(cntBase  * Math.pow(1.03,  m - curMonthIdx))),
+      reasoning: { avgPipe, avgCnt: Math.round(avgCnt), curMonthPace, pipeBase, fraction, daysInCur, monthsWithData: withData.length },
     }
   }, [months, curMonthIdx, curDay, year])
 
@@ -556,21 +559,24 @@ function RevenueAnalytics({ leads }: { leads: CRMLead[] }) {
                 )
               })}
 
-              {/* Pip label above active column */}
+              {/* Pip label — flip below dot when near top edge to avoid clipping */}
               {isActive && val > 0 && (() => {
-                const topY = CHART_H - filled * ROW_H - DOT_R
-                const txt  = isProj ? `~${formatVal(val)}` : formatVal(val)
-                const lblW = txt.length * 7.5 + 16
-                const lblX = Math.min(Math.max(cx - lblW / 2, 2), CHART_W - lblW - 2)
+                const topY   = CHART_H - filled * ROW_H - DOT_R
+                const flip   = topY < 34
+                const rectY  = flip ? topY + DOT_R + 4 : topY - 26
+                const textY  = flip ? topY + DOT_R + 17 : topY - 12
+                const txt    = isProj ? `~${formatVal(val)}` : formatVal(val)
+                const lblW   = txt.length * 7.5 + 16
+                const lblX   = Math.min(Math.max(cx - lblW / 2, 2), CHART_W - lblW - 2)
                 return (
                   <>
-                    <rect x={lblX} y={topY - 26} width={lblW} height={22} rx={6}
+                    <rect x={lblX} y={rectY} width={lblW} height={22} rx={6}
                       fill={isProj ? 'none' : qColor}
                       stroke={isProj ? qColor : 'none'}
                       strokeWidth={isProj ? 1.5 : 0}
                       strokeDasharray={isProj ? '4 2' : 'none'}
                     />
-                    <text x={lblX + lblW / 2} y={topY - 12} textAnchor="middle"
+                    <text x={lblX + lblW / 2} y={textY} textAnchor="middle"
                       fontSize="11" fontWeight="700" fill={isProj ? qColor : 'white'}>
                       {txt}
                     </text>
@@ -618,27 +624,95 @@ function RevenueAnalytics({ leads }: { leads: CRMLead[] }) {
 
       {/* AI Projection banner */}
       {yearEnd > 0 && (
-        <div style={{ marginTop: 16, background: `${ORANGE}07`, border: `1px solid ${ORANGE}1E`, borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 9, background: ORANGE_GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <TrendingUp style={{ width: 15, height: 15, color: '#fff' }} />
+        <div style={{ marginTop: 16, background: `${ORANGE}07`, border: `1px solid ${ORANGE}1E`, borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 9, background: ORANGE_GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <TrendingUp style={{ width: 15, height: 15, color: '#fff' }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: TEXT }}>AI Year-End Projection</div>
+                <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>Based on current pipeline velocity &amp; stage conversion rates</div>
+              </div>
             </div>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: TEXT }}>AI Year-End Projection</div>
-              <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>Based on current pipeline velocity &amp; stage conversion rates</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ display: 'flex', gap: 28 }}>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: ORANGE, letterSpacing: '-0.03em', lineHeight: 1 }}>{formatPipeline(yearEnd)}</div>
+                  <div style={{ fontSize: 10, color: MUTED, marginTop: 3 }}>Projected pipeline</div>
+                </div>
+                <div style={{ width: 1, background: BORDER }} />
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: EMERALD, letterSpacing: '-0.03em', lineHeight: 1 }}>{projClosures} deals</div>
+                  <div style={{ fontSize: 10, color: MUTED, marginTop: 3 }}>Est. closures · {formatPipeline(projCloseVal)}</div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowReasoning(r => !r)}
+                style={{ padding: '6px 11px', borderRadius: 8, border: `1px solid ${ORANGE}40`, background: showReasoning ? `${ORANGE}14` : 'transparent', color: ORANGE, fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ fontSize: 13 }}>✦</span>
+                {showReasoning ? 'Hide reasoning' : 'How is this calculated?'}
+              </button>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 28 }}>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: ORANGE, letterSpacing: '-0.03em', lineHeight: 1 }}>{formatPipeline(yearEnd)}</div>
-              <div style={{ fontSize: 10, color: MUTED, marginTop: 3 }}>Projected pipeline</div>
-            </div>
-            <div style={{ width: 1, background: BORDER }} />
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: EMERALD, letterSpacing: '-0.03em', lineHeight: 1 }}>{projClosures} deals</div>
-              <div style={{ fontSize: 10, color: MUTED, marginTop: 3 }}>Est. closures · {formatPipeline(projCloseVal)}</div>
-            </div>
-          </div>
+
+          {/* AI Reasoning breakdown */}
+          {showReasoning && (() => {
+            const daysLeft  = reasoning.daysInCur - Math.floor(reasoning.fraction * reasoning.daysInCur)
+            const hotCount  = hotLeads.length
+            const cr        = Math.max(closeRate, 0.15)
+            return (
+              <div style={{ borderTop: `1px solid ${ORANGE}1A`, padding: '14px 18px', background: `${ORANGE}04` }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: ORANGE, marginBottom: 10, letterSpacing: '0.06em' }}>HOW AI ARRIVES AT THIS NUMBER</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
+                  {[
+                    {
+                      label: 'Current month pace',
+                      value: formatPipeline(reasoning.curMonthPace),
+                      note: `${Math.round(reasoning.fraction * 100)}% of the month elapsed — extrapolated to full month`,
+                    },
+                    {
+                      label: 'Historical monthly avg',
+                      value: formatPipeline(reasoning.avgPipe),
+                      note: `Average across ${reasoning.monthsWithData} month${reasoning.monthsWithData !== 1 ? 's' : ''} with actual data`,
+                    },
+                    {
+                      label: 'Blended base (60/40)',
+                      value: formatPipeline(reasoning.pipeBase),
+                      note: '60% current month pace + 40% historical avg — reduces recency bias',
+                    },
+                    {
+                      label: 'Monthly growth applied',
+                      value: '+3.5% / month',
+                      note: `${daysLeft} days left this month · projected ${11 - curMonthIdx} more month${11 - curMonthIdx !== 1 ? 's' : ''} compounding`,
+                    },
+                    {
+                      label: 'Hot leads in pipeline',
+                      value: `${hotCount} lead${hotCount !== 1 ? 's' : ''}`,
+                      note: 'Leads with intent score ≥ 70 — used for closure estimate',
+                    },
+                    {
+                      label: 'Estimated close rate',
+                      value: `${Math.round(cr * 100)}%`,
+                      note: closeRate < 0.15
+                        ? `Historical rate ${Math.round(closeRate * 100)}% — floored at 15% minimum`
+                        : `Based on your historical ${Math.round(closeRate * 100)}% close rate`,
+                    },
+                  ].map(row => (
+                    <div key={row.label} style={{ background: `${ORANGE}06`, border: `1px solid ${ORANGE}18`, borderRadius: 8, padding: '10px 12px' }}>
+                      <div style={{ fontSize: 10, color: MUTED, fontWeight: 500, marginBottom: 3 }}>{row.label}</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: TEXT, letterSpacing: '-0.02em' }}>{row.value}</div>
+                      <div style={{ fontSize: 10, color: MUTED, marginTop: 4, lineHeight: 1.4 }}>{row.note}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: 10, fontSize: 10, color: MUTED, lineHeight: 1.5 }}>
+                  <span style={{ color: ORANGE, fontWeight: 600 }}>Formula: </span>
+                  Blended base × (1.035)^months remaining + actual pipeline to date = <span style={{ fontWeight: 700, color: TEXT }}>{formatPipeline(yearEnd)}</span>
+                </div>
+              </div>
+            )
+          })()}
         </div>
       )}
     </div>
@@ -707,6 +781,123 @@ function WeekSparkline({ days }: { days: Array<{ label: string; count: number }>
   )
 }
 
+// ─── Lead Age chart ───────────────────────────────────────────────────────────
+const AGE_BUCKETS = [
+  { label: 'Fresh',   min: 0,  max: 1,   color: '#059669', bg: 'rgba(5,150,105,0.10)',   desc: 'Today'       },
+  { label: 'Recent',  min: 1,  max: 7,   color: '#F59E0B', bg: 'rgba(245,158,11,0.10)',  desc: '1–7 days'    },
+  { label: 'Ageing',  min: 7,  max: 30,  color: '#FF7043', bg: 'rgba(255,112,67,0.10)',  desc: '8–30 days'   },
+  { label: 'Stale',   min: 30, max: 90,  color: '#EF4444', bg: 'rgba(239,68,68,0.10)',   desc: '31–90 days'  },
+  { label: 'Cold',    min: 90, max: Infinity, color: '#9CA3AF', bg: 'rgba(156,163,175,0.10)', desc: '90+ days' },
+]
+
+function useCountUp(target: number, duration = 900, delay = 0) {
+  const [val, setVal] = useState(0)
+  useEffect(() => {
+    let raf: number
+    let start: number | null = null
+    const timeout = setTimeout(() => {
+      const step = (ts: number) => {
+        if (!start) start = ts
+        const p = Math.min((ts - start) / duration, 1)
+        const ease = 1 - Math.pow(1 - p, 3) // ease-out cubic
+        setVal(Math.round(ease * target))
+        if (p < 1) raf = requestAnimationFrame(step)
+      }
+      raf = requestAnimationFrame(step)
+    }, delay)
+    return () => { clearTimeout(timeout); cancelAnimationFrame(raf) }
+  }, [target, duration, delay])
+  return val
+}
+
+function LeadAge({ leads }: { leads: CRMLead[] }) {
+  const [animated, setAnimated] = useState(false)
+  const now = Date.now()
+
+  useEffect(() => { const t = setTimeout(() => setAnimated(true), 80); return () => clearTimeout(t) }, [])
+
+  const buckets = useMemo(() => AGE_BUCKETS.map(b => {
+    const items = leads.filter(l => {
+      const days = (now - new Date(l.createdAt).getTime()) / 86_400_000
+      return days >= b.min && days < b.max && l.status !== 'Closed'
+    })
+    const pipe = items.reduce((s, l) => s + (l.budgetMax ?? l.budgetMin ?? 0), 0)
+    return { ...b, count: items.length, pipe }
+  }), [leads])
+
+  const total    = buckets.reduce((s, b) => s + b.count, 0)
+  const maxCount = Math.max(...buckets.map(b => b.count), 1)
+  const allLeads = leads.filter(l => l.status !== 'Closed')
+  const avgAge   = allLeads.length
+    ? Math.round(allLeads.reduce((s, l) => s + (now - new Date(l.createdAt).getTime()) / 86_400_000, 0) / allLeads.length)
+    : 0
+
+  const avgAgeAnim = useCountUp(avgAge, 800, 100)
+
+  return (
+    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, padding: '20px 22px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+        <div>
+          <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>Lead Age</span>
+          <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>How long leads have been in pipeline</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: avgAge > 30 ? '#EF4444' : avgAge > 7 ? ORANGE : EMERALD, letterSpacing: '-0.03em', transition: 'color 0.4s' }}>
+            {avgAgeAnim}d
+          </div>
+          <div style={{ fontSize: 10, color: MUTED }}>avg age</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+        {buckets.map((b, i) => {
+          const targetW = b.count > 0 ? (b.count / maxCount) * 100 : 0
+          return (
+            <div key={b.label} style={{ opacity: animated ? 1 : 0, transform: animated ? 'translateX(0)' : 'translateX(-8px)', transition: `opacity 0.35s ease ${i * 0.07}s, transform 0.35s ease ${i * 0.07}s` }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: b.color, flexShrink: 0,
+                    boxShadow: b.count > 0 ? `0 0 0 3px ${b.color}25` : 'none',
+                    transition: `box-shadow 0.3s ease ${i * 0.07 + 0.2}s` }} />
+                  <span style={{ fontSize: 12, fontWeight: 600, color: TEXT }}>{b.label}</span>
+                  <span style={{ fontSize: 10, color: MUTED }}>{b.desc}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {b.pipe > 0 && <span style={{ fontSize: 10, color: MUTED }}>{formatPipeline(b.pipe)}</span>}
+                  <span style={{ fontSize: 11, fontWeight: 700,
+                    color: b.count > 0 ? b.color : MUTED,
+                    background: b.count > 0 ? b.bg : 'transparent',
+                    padding: '1px 7px', borderRadius: 99, minWidth: 22, textAlign: 'center',
+                    transition: `transform 0.2s ease ${i * 0.07 + 0.3}s`,
+                    transform: animated && b.count > 0 ? 'scale(1)' : 'scale(0.7)',
+                  }}>
+                    {b.count}
+                  </span>
+                </div>
+              </div>
+              {/* Bar track */}
+              <div style={{ height: 6, background: '#F0F2F5', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 4,
+                  background: `linear-gradient(90deg, ${b.color}cc, ${b.color})`,
+                  width: animated ? `${targetW}%` : '0%',
+                  transition: `width 0.75s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.09 + 0.15}s`,
+                  boxShadow: b.count > 0 ? `0 1px 4px ${b.color}50` : 'none',
+                }} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${BORDER}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 11, color: MUTED }}>{total} open leads tracked</span>
+        <Link href="/dashboard/leads" style={{ fontSize: 11, fontWeight: 600, color: ORANGE, textDecoration: 'none' }}>View all →</Link>
+      </div>
+    </div>
+  )
+}
+
 // ─── Market Pulse strip ───────────────────────────────────────────────────────
 interface NewsItem { title: string; link: string; pubDate: string; tag: string | null; source: string }
 
@@ -721,18 +912,36 @@ const TAG_CFG: Record<string, { label: string; color: string; bg: string; border
   micro_market:   { label: 'Micro Market Trend', color: '#FF7043', bg: 'rgba(255,112,67,0.07)',  border: 'rgba(255,112,67,0.2)',  Icon: MapPin     },
 }
 
-function MarketPulse() {
-  const [items, setItems]   = useState<NewsItem[]>([])
-  const [idx, setIdx]       = useState(0)
-  const [fade, setFade]     = useState(true)
-  const [hovered, setHovered] = useState(false)
+const REFRESH_MS = 3 * 60 * 60 * 1000 // 3 hours
 
-  useEffect(() => {
-    fetch('/api/market-news').then(r => r.json()).then((d: NewsItem[]) => {
+function MarketPulse() {
+  const [items, setItems]     = useState<NewsItem[]>([])
+  const [idx, setIdx]         = useState(0)
+  const [fade, setFade]       = useState(true)
+  const [hovered, setHovered] = useState(false)
+  const [lastFetched, setLastFetched] = useState<Date | null>(null)
+  const [refreshing, setRefreshing]   = useState(false)
+
+  const loadNews = useCallback(async (silent = false) => {
+    if (!silent) setRefreshing(true)
+    try {
+      const d: NewsItem[] = await fetch('/api/market-news', { cache: 'no-store' }).then(r => r.json())
       setItems(d)
       setIdx(0)
-    }).catch(() => {})
+      setLastFetched(new Date())
+    } catch { /* keep existing items */ } finally {
+      setRefreshing(false)
+    }
   }, [])
+
+  // Initial load
+  useEffect(() => { loadNews() }, [loadNews])
+
+  // Auto-refresh every 3 hours
+  useEffect(() => {
+    const t = setInterval(() => loadNews(true), REFRESH_MS)
+    return () => clearInterval(t)
+  }, [loadNews])
 
   // Auto-cycle every 6s, pause on hover
   useEffect(() => {
@@ -764,8 +973,19 @@ function MarketPulse() {
 
       {/* Label */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
-        <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#EF4444', boxShadow: '0 0 0 3px rgba(239,68,68,0.25)', animation: 'pulse-dot 2s ease infinite' }} />
+        <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#EF4444', boxShadow: '0 0 0 3px rgba(239,68,68,0.25)', animation: refreshing ? 'none' : 'pulse-dot 2s ease infinite' }} />
         <span style={{ fontSize: 10, fontWeight: 800, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Market Pulse</span>
+        {lastFetched && (
+          <span style={{ fontSize: 9, color: LABEL, fontWeight: 500 }}>
+            · {lastFetched.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        )}
+        <button
+          onClick={() => loadNews()}
+          title="Refresh news"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '1px 3px', color: MUTED, display: 'flex', borderRadius: 4, opacity: refreshing ? 0.4 : 0.7 }}>
+          <Newspaper style={{ width: 11, height: 11, animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
+        </button>
       </div>
 
       {/* Divider */}
@@ -1015,19 +1235,39 @@ export default function DashboardPage() {
         <MarketPulse />
 
         {/* ── KPI Row ─────────────────────────────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}
-          className="grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
-          <KPICard icon={Users}       label="Total Leads"     value={metrics.total}  sub={`+${metrics.thisWk} this week`}          accent={ACCENT}  trend={metrics.thisWk > 0 ? { up: true, label: `+${metrics.thisWk} this wk` } : undefined} />
-          <KPICard icon={Flame}       label="Hot Leads"       value={metrics.hot}    sub="Intent score 70+"                         accent={ORANGE}  trend={metrics.hot > 0 ? { up: true, label: 'High priority' } : undefined} />
-          <KPICard icon={IndianRupee} label="Pipeline Value"  value={formatPipeline(metrics.pipe)} sub="Combined budgets"           accent={EMERALD} />
-          <KPICard icon={TrendingUp}  label="Deals"    value={metrics.closed} sub={`${metrics.thisMo} leads this month`}     accent={AMBER}   trend={metrics.closed > 0 ? { up: true, label: `${metrics.closed} won` } : undefined} />
+        <div style={{
+          borderRadius: 20, border: '1px solid #E8ECF0', padding: '20px', marginBottom: 24,
+          background: [
+            'radial-gradient(ellipse 55% 80% at 95% 10%, rgba(255,200,180,0.55) 0%, transparent 70%)',
+            'radial-gradient(ellipse 50% 70% at 5%  90%, rgba(255,230,160,0.50) 0%, transparent 70%)',
+            'radial-gradient(ellipse 55% 70% at 50% 50%, rgba(190,215,255,0.65) 0%, transparent 70%)',
+            'radial-gradient(ellipse 40% 55% at 75% 95%, rgba(170,230,210,0.40) 0%, transparent 65%)',
+            '#ffffff',
+          ].join(', '),
+        }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}
+            className="grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
+            <KPICard icon={Users}       label="Total Leads"     value={metrics.total}  sub={`+${metrics.thisWk} this week`}          accent={ACCENT}  trend={metrics.thisWk > 0 ? { up: true, label: `+${metrics.thisWk} this wk` } : undefined} />
+            <KPICard icon={Flame}       label="Hot Leads"       value={metrics.hot}    sub="Intent score 70+"                         accent={ORANGE}  trend={metrics.hot > 0 ? { up: true, label: 'High priority' } : undefined} />
+            <KPICard icon={IndianRupee} label="Pipeline Value"  value={formatPipeline(metrics.pipe)} sub="Combined budgets"           accent={EMERALD} />
+            <KPICard icon={TrendingUp}  label="Deals"    value={metrics.closed} sub={`${metrics.thisMo} leads this month`}     accent={AMBER}   trend={metrics.closed > 0 ? { up: true, label: `${metrics.closed} won` } : undefined} />
+          </div>
         </div>
 
         {/* ── Sales Pipeline Funnel ───────────────────────────────────────────── */}
-        <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, padding: '22px 24px', marginBottom: 20 }}>
+        <div style={{
+          borderRadius: 16, border: '1px solid #E8ECF0', padding: '22px 24px', marginBottom: 20,
+          background: [
+            'radial-gradient(ellipse 50% 90% at 0%   0%,  rgba(255,200,180,0.50) 0%, transparent 70%)',
+            'radial-gradient(ellipse 45% 80% at 100% 100%, rgba(170,230,210,0.45) 0%, transparent 70%)',
+            'radial-gradient(ellipse 40% 70% at 60%  0%,  rgba(190,215,255,0.40) 0%, transparent 65%)',
+            'radial-gradient(ellipse 35% 60% at 20%  100%, rgba(255,230,160,0.40) 0%, transparent 65%)',
+            '#ffffff',
+          ].join(', '),
+        }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>Sales Pipeline</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>Pipeline Funnel</div>
               <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{leads.length} leads across all stages</div>
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -1093,38 +1333,7 @@ export default function DashboardPage() {
           {/* Right column — Quick Actions + Today's Priority */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-            {/* Recent leads */}
-            <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, padding: '20px 22px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>Recent Leads</span>
-                <Link href="/dashboard/leads" style={{ fontSize: 12, color: ORANGE, fontWeight: 600, textDecoration: 'none' }}>See all</Link>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {recent.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px 0', color: LABEL, fontSize: 12 }}>No leads yet</div>
-                ) : recent.map(lead => {
-                  const av = avatarColor(getName(lead))
-                  return (
-                    <Link key={lead.id} href={`/dashboard/leads/${lead.id}`} style={{ textDecoration: 'none' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 8px', borderRadius: 10, cursor: 'pointer', transition: 'background 0.12s' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = BG)}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                        <div style={{ width: 34, height: 34, borderRadius: 10, background: av.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: av.fg }}>{getInitials(lead)}</span>
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{getName(lead)}</div>
-                          <div style={{ fontSize: 11, color: MUTED }}>{sourceLabel(lead.sourcePortal)} · {timeAgo(lead.createdAt)}</div>
-                        </div>
-                        {getScore(lead) >= 70 && (
-                          <span style={{ fontSize: 10, fontWeight: 700, color: ORANGE, background: ORANGE_DIM, padding: '2px 7px', borderRadius: 99, whiteSpace: 'nowrap' }}>Hot</span>
-                        )}
-                      </div>
-                    </Link>
-                  )
-                })}
-              </div>
-            </div>
+            <LeadAge leads={leads} />
           </div>
         </div>
 

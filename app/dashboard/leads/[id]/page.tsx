@@ -76,6 +76,14 @@ const getPhone       = (l: CRMLead) => l.phones.primaryPhoneNumber ?? ''
 const getEmail       = (l: CRMLead) => l.emails.primaryEmail ?? ''
 const getScore       = (l: CRMLead) => l.intentScore ?? 0
 
+// Demo avatar map — CS ID → public image path (add more as needed)
+const AVATAR_MAP: Record<string, string> = {
+  'CS01689': '/avatars/adi.png',
+}
+function getAvatarImg(csId: string): string | null {
+  return AVATAR_MAP[csId] ?? null
+}
+
 function formatBudget(min: number | null, max: number | null): string {
   const fmt = (n: number) => n >= 10_000_000 ? `${+(n / 10_000_000).toFixed(1)}Cr` : `${+(n / 100_000).toFixed(1)}L`
   if (min && max) return `₹${fmt(min)} – ₹${fmt(max)}`
@@ -137,7 +145,7 @@ const STAGES = [
   { id: 'Cold',         label: 'Cold',         color: '#2563EB', desc: 'Calls / WhatsApp only, no engagement', terminal: false },
   { id: 'Warm',         label: 'Warm',         color: '#F59E0B', desc: 'VM / OBM / SV done or docs requested', terminal: false },
   { id: 'Hot',          label: 'Hot',          color: '#FF7043', desc: 'EOI received — high intent to book',   terminal: false },
-  { id: 'Closed',       label: 'Closed',       color: '#059669', desc: 'Deal closed — EOI paid',               terminal: true  },
+  { id: 'Closed',       label: 'Closed',       color: '#059669', desc: 'Deals — EOI paid',               terminal: true  },
   { id: 'Disqualified', label: 'Disqualified', color: '#94A3B8', desc: 'Not proceeding — NC or rejected',      terminal: true  },
 ]
 const BUCKETS = [
@@ -269,6 +277,13 @@ export default function LeadDetailPage() {
   const [copied, setCopied]         = useState(false)
   const [nudgeDismissed, setNudgeDismissed] = useState(false)
 
+  // ── Email compose state ────────────────────────────────────────────────────
+  const [showEmailModal, setShowEmailModal] = useState(false)
+  const [emailForm, setEmailForm] = useState({ subject: '', body: '' })
+  const [sendingEmail, setSendingEmail] = useState(false)
+  const [emailSent, setEmailSent]     = useState(false)
+  const [emailError, setEmailError]   = useState<string | null>(null)
+
   // ── Tasks state ────────────────────────────────────────────────────────────
   const [tasks,       setTasks]       = useState<LeadTask[]>([])
   const [showTaskForm, setShowTaskForm] = useState(false)
@@ -324,6 +339,33 @@ export default function LeadDetailPage() {
     setCallAttempts([]); setShowNCSuggest(false)
     try { localStorage.removeItem(`call_attempts_${leadId}`) } catch {}
   }
+  const handleSendEmail = async () => {
+    if (!emailForm.subject.trim() || !emailForm.body.trim() || sendingEmail) return
+    setSendingEmail(true); setEmailError(null)
+    try {
+      const res = await fetch('/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email, toName: name,
+          subject: emailForm.subject.trim(),
+          body: emailForm.body.trim(),
+          leadId,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok || json.error) throw new Error(json.error ?? 'Send failed')
+      setEmailSent(true)
+      setTimeout(() => {
+        setShowEmailModal(false); setEmailSent(false)
+        setEmailForm({ subject: '', body: '' })
+        fetchLead()
+      }, 1800)
+    } catch (e) {
+      setEmailError(e instanceof Error ? e.message : 'Could not send email')
+    } finally { setSendingEmail(false) }
+  }
+
   const saveQuickNote = async () => {
     if (!quickNote.trim() || savingNote) return
     setSavingNote(true)
@@ -463,27 +505,44 @@ export default function LeadDetailPage() {
           ══════════════════════════════════════════════════ */}
           <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
 
-            {/* Avatar + Identity */}
-            <div style={{ padding: '28px 20px 20px', textAlign: 'center', borderBottom: `1px solid ${BORDER}` }}>
-              {/* Large avatar */}
-              <div style={{ width: 84, height: 84, borderRadius: '50%', background: ss.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                <span style={{ fontSize: 30, fontWeight: 800, color: ss.color, letterSpacing: '-1px' }}>{initials}</span>
-              </div>
+            {/* Avatar + Identity — iPhone Contacts style */}
+            <div style={{ padding: '28px 20px 22px', textAlign: 'center', borderBottom: `1px solid ${BORDER}` }}>
 
-              {/* Name + source */}
-              <h2 style={{ fontSize: 17, fontWeight: 700, color: TEXT, margin: '0 0 4px', letterSpacing: '-0.02em' }}>{name}</h2>
-              <p style={{ fontSize: 12, color: MUTED, margin: '0 0 12px' }}>
+              {/* Avatar — halo style for photo, plain initials otherwise */}
+              {(() => {
+                const avatarImg = getAvatarImg(getCsId(lead))
+                return avatarImg ? (
+                  <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+                    <div style={{ position: 'absolute', inset: -10, borderRadius: '50%', background: `radial-gradient(circle, ${ss.color}22 0%, transparent 70%)` }} />
+                    <div style={{ position: 'absolute', inset: -4, borderRadius: '50%', border: `1.5px solid ${ss.color}28` }} />
+                    <div style={{ width: 90, height: 90, borderRadius: '50%', overflow: 'hidden', boxShadow: `0 10px 28px ${ss.color}30, 0 2px 8px rgba(0,0,0,0.06)`, position: 'relative' }}>
+                      <img src={avatarImg} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18,
+                    width: 72, height: 72, borderRadius: '50%', background: ss.bg, border: `2px solid ${ss.color}30` }}>
+                    <span style={{ fontSize: 26, fontWeight: 800, color: ss.color, letterSpacing: '-1px' }}>{initials}</span>
+                  </div>
+                )
+              })()}
+
+              {/* Name */}
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: TEXT, margin: '0 0 4px', letterSpacing: '-0.04em' }}>{name}</h2>
+
+              {/* Source */}
+              <p style={{ fontSize: 12, color: MUTED, margin: '0 0 10px' }}>
                 {lead.sourcePortal ? lead.sourcePortal.replace('OPT99ACRES','99acres').replace('MAGICBRICKS','MagicBricks').replace('HOUSING_COM','Housing.com').replace('FACEBOOK','Facebook') : 'Direct'}
               </p>
 
               {/* CS ID */}
               <button onClick={copyCsId}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: copied ? EMERALD : MUTED, background: copied ? '#ECFDF5' : BG, border: `1px solid ${copied ? '#A7F3D0' : BORDER}`, padding: '4px 12px', borderRadius: 99, fontFamily: 'monospace', cursor: 'pointer', marginBottom: 14, transition: 'all 0.15s' }}>
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: copied ? EMERALD : MUTED, background: copied ? '#ECFDF5' : BG, border: `1px solid ${copied ? '#A7F3D0' : BORDER}`, padding: '4px 12px', borderRadius: 99, fontFamily: 'monospace', cursor: 'pointer', marginBottom: 13, transition: 'all 0.2s' }}>
                 {copied ? '✓ Copied' : <>{getCsId(lead)} <Copy style={{ width: 9, height: 9, opacity: 0.5 }} /></>}
               </button>
 
               {/* Status + milestone badges */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: ss.color, background: ss.bg, padding: '4px 12px', borderRadius: 99 }}>{ss.label}</span>
                 {achievedStage && (
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: MILESTONE_COLOR[achievedStage] ?? MUTED, background: `${MILESTONE_COLOR[achievedStage] ?? MUTED}12`, border: `1px solid ${MILESTONE_COLOR[achievedStage] ?? MUTED}28`, padding: '4px 10px', borderRadius: 99 }}>
@@ -492,30 +551,56 @@ export default function LeadDetailPage() {
                 )}
               </div>
 
+              {/* iOS-style circular action buttons */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 18, marginBottom: 20 }}>
+
+                {phone && (
+                  <button onClick={() => setShowCallModal(true)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                    <div style={{ width: 54, height: 54, borderRadius: '50%', background: 'linear-gradient(145deg,#34C759,#28a745)', boxShadow: '0 6px 16px rgba(52,199,89,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.1s' }}
+                      onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
+                      onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
+                      <Phone style={{ width: 22, height: 22, color: '#fff' }} />
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: MUTED }}>call</span>
+                  </button>
+                )}
+
+                {phone && (
+                  <button onClick={() => setShowWhatsAppModal(true)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                    <div style={{ width: 54, height: 54, borderRadius: '50%', background: 'linear-gradient(145deg,#25D366,#1da851)', boxShadow: '0 6px 16px rgba(37,211,102,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.1s' }}
+                      onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
+                      onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
+                      <MessageCircle style={{ width: 22, height: 22, color: '#fff' }} />
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: MUTED }}>whatsapp</span>
+                  </button>
+                )}
+
+                {email && (
+                  <button onClick={() => { setShowEmailModal(true); setEmailSent(false); setEmailError(null) }}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                    <div style={{ width: 54, height: 54, borderRadius: '50%', background: 'linear-gradient(145deg,#FF7043,#e8622e)', boxShadow: '0 6px 16px rgba(255,112,67,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.1s' }}
+                      onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
+                      onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
+                      <Mail style={{ width: 22, height: 22, color: '#fff' }} />
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: MUTED }}>mail</span>
+                  </button>
+                )}
+
+              </div>
+
               {/* Meta stats row */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 0 }}>
-                <div style={{ textAlign: 'center', padding: '0 16px', borderRight: `1px solid ${BORDER}` }}>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <div style={{ textAlign: 'center', padding: '0 20px', borderRight: `1px solid ${BORDER}` }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{lastAct ? timeAgo(lastAct.createdAt) : '—'}</div>
                   <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>Last contact</div>
                 </div>
-                <div style={{ textAlign: 'center', padding: '0 16px' }}>
+                <div style={{ textAlign: 'center', padding: '0 20px' }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{daysInPipe > 0 ? `${daysInPipe}d` : 'Today'}</div>
                   <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>In pipeline</div>
                 </div>
               </div>
-            </div>
-
-            {/* Action buttons */}
-            <div style={{ padding: '16px', borderBottom: `1px solid ${BORDER}` }}>
-              {/* Primary CTA */}
-              {phone && (
-                <button onClick={() => setShowCallModal(true)}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px', background: 'linear-gradient(135deg,#059669,#047857)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 3px 10px rgba(5,150,105,0.28)' }}>
-                  <Phone style={{ width: 14, height: 14 }} />
-                  Call {lead.name.firstName || 'Lead'}
-                  <span style={{ fontSize: 11, opacity: 0.72, fontWeight: 400, marginLeft: 2 }}>{phone}</span>
-                </button>
-              )}
             </div>
 
             {/* Info tabs */}
@@ -604,7 +689,7 @@ export default function LeadDetailPage() {
           {/* ══════════════════════════════════════════════════
               CENTER — Activity Feed (Kirrivan style)
           ══════════════════════════════════════════════════ */}
-          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', minHeight: 560 }}>
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column' }}>
 
             {/* ── Tab bar ── */}
             <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, background: '#FAFBFC', flexShrink: 0, overflowX: 'auto' }}>
@@ -722,29 +807,27 @@ export default function LeadDetailPage() {
 
             {/* ── QUICK NOTES tab ── */}
             {activeTab === 'notes' && (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <p style={{ fontSize: 12, color: MUTED, margin: 0 }}>Type a quick note — it will appear in the Log Activities feed.</p>
-                  <textarea value={quickNote} onChange={e => setQuickNote(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveQuickNote() }}
-                    placeholder="Write a note… (⌘+Enter to save)"
-                    rows={5}
-                    style={{ width: '100%', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '10px 13px', fontSize: 13, color: TEXT, background: BG, resize: 'none', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <button onClick={saveQuickNote} disabled={!quickNote.trim() || savingNote}
-                      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 18px', background: BLUE, border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, cursor: (!quickNote.trim() || savingNote) ? 'not-allowed' : 'pointer', opacity: (!quickNote.trim() || savingNote) ? 0.5 : 1 }}>
-                      {savingNote ? <Loader2 style={{ width: 12, height: 12, animation: 'spin 1s linear infinite' }} /> : <Send style={{ width: 12, height: 12 }} />}
-                      {savingNote ? 'Saving…' : 'Save Note'}
-                    </button>
-                  </div>
+              <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <p style={{ fontSize: 12, color: MUTED, margin: 0 }}>Type a quick note — it will appear in the Log Activities feed.</p>
+                <textarea value={quickNote} onChange={e => setQuickNote(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveQuickNote() }}
+                  placeholder="Write a note… (⌘+Enter to save)"
+                  rows={4}
+                  style={{ width: '100%', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '10px 13px', fontSize: 13, color: TEXT, background: BG, resize: 'none', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button onClick={saveQuickNote} disabled={!quickNote.trim() || savingNote}
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 18px', background: BLUE, border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, cursor: (!quickNote.trim() || savingNote) ? 'not-allowed' : 'pointer', opacity: (!quickNote.trim() || savingNote) ? 0.5 : 1 }}>
+                    {savingNote ? <Loader2 style={{ width: 12, height: 12, animation: 'spin 1s linear infinite' }} /> : <Send style={{ width: 12, height: 12 }} />}
+                    {savingNote ? 'Saving…' : 'Save Note'}
+                  </button>
                 </div>
               </div>
             )}
 
             {/* ── CALLS tab ── */}
             {activeTab === 'calls' && (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', flexShrink: 0 }}>
+              <div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)' }}>
                   {[
                     { label: 'Total',     value: callStats.total,      color: MUTED2  },
                     { label: 'Connected', value: callStats.connected,  color: EMERALD },
@@ -771,10 +854,6 @@ export default function LeadDetailPage() {
                     <div style={{ fontSize: 13, fontWeight: 700, color: MUTED2 }}>{name}</div>
                     <div style={{ fontSize: 11, color: WA_GRN }}>{phone || 'No phone number'}</div>
                   </div>
-                  <button onClick={() => setShowWhatsAppModal(true)} disabled={!phone}
-                    style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', background: WA_GRN, border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 700, cursor: phone ? 'pointer' : 'not-allowed', opacity: phone ? 1 : 0.5 }}>
-                    <Send style={{ width: 12, height: 12 }} />Send WhatsApp
-                  </button>
                 </div>
                 <div style={{ flex: 1, padding: '16px', overflowY: 'auto', background: '#F7FDF9', display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {waActs.length === 0 ? (
@@ -795,14 +874,6 @@ export default function LeadDetailPage() {
                     )
                   })}
                 </div>
-                {phone && (
-                  <div style={{ padding: '10px 16px', borderTop: `1px solid ${BORDER}`, background: PANEL, flexShrink: 0 }}>
-                    <button onClick={() => setShowWhatsAppModal(true)}
-                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '11px', background: WA_GRN, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                      <MessageCircle style={{ width: 15, height: 15 }} />Send a WhatsApp Message
-                    </button>
-                  </div>
-                )}
               </div>
             )}
 
@@ -904,7 +975,7 @@ export default function LeadDetailPage() {
               )
 
               return (
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {/* Add Task button */}
                   <div style={{ padding: '12px 16px 0', display: 'flex', justifyContent: 'flex-end' }}>
                     <button onClick={() => { setShowTaskForm(v => !v); setTaskForm(f => ({ ...f, title: TYPE_DEFAULTS['Follow Up'] })) }}
@@ -1014,116 +1085,149 @@ export default function LeadDetailPage() {
           ══════════════════════════════════════════════════ */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-            {/* Lead Lifecycle — shown first */}
+            {/* Lead Lifecycle */}
             <SideCard>
               <SideCardHeader title="Lead Lifecycle" icon={TrendingUp} />
               <div style={{ padding: '14px 12px' }}>
                 {(() => {
                   const PIPELINE = ['New', 'Cold', 'Warm', 'Hot', 'Closed'] as const
                   const STAGE_CFG: Record<string, { color: string; emoji: string; desc: string }> = {
-                    New:          { color: '#64748B', emoji: '📋', desc: 'Unworked' },
+                    New:          { color: '#64748B', emoji: '📋', desc: 'Unworked — just assigned' },
                     Cold:         { color: '#2563EB', emoji: '❄️', desc: 'Calls / WA only' },
                     Warm:         { color: '#F59E0B', emoji: '🌡️', desc: 'VM / OBM / SV done' },
                     Hot:          { color: '#FF7043', emoji: '🔥', desc: 'EOI received' },
-                    Closed:       { color: '#059669', emoji: '✅', desc: 'Deal closed' },
-                    Disqualified: { color: '#94A3B8', emoji: '✗',  desc: 'Not proceeding' },
+                    Closed:       { color: '#059669', emoji: '✅', desc: 'Deals' },
+                    Disqualified: { color: '#94A3B8', emoji: '✗',  desc: 'NC / not proceeding' },
+                  }
+                  // Which activity type drives each stage
+                  const STAGE_TRIGGER: Record<string, string[]> = {
+                    Cold:   ['Call Made', 'Call Missed', 'WhatsApp Sent', 'WhatsApp Received', 'Email Sent'],
+                    Warm:   ['VM Done', 'OBM Done', 'Site Visit Done', 'Site Visit Scheduled'],
+                    Hot:    ['EOI Received'],
+                    Closed: ['Deal Closed'],
                   }
 
-                  const currentStatus = lead.status ?? 'New'
+                  const currentStatus  = lead.status ?? 'New'
                   const isDisqualified = currentStatus === 'Disqualified'
                   const currentIdx     = PIPELINE.indexOf(currentStatus as typeof PIPELINE[number])
-                  const isTerminal     = currentStatus === 'Closed' || isDisqualified
+
+                  // Build stage history from activities — what activity first reached each stage
+                  const stageHistory: Record<string, { type: string; date: string }> = {}
+                  const chrono = [...activities].reverse()
+                  for (const act of chrono) {
+                    for (const [stage, triggers] of Object.entries(STAGE_TRIGGER)) {
+                      if (triggers.includes(act.type) && !stageHistory[stage]) {
+                        stageHistory[stage] = { type: act.type, date: act.createdAt }
+                      }
+                    }
+                  }
+
+                  const curCfg = STAGE_CFG[currentStatus] ?? STAGE_CFG['New']
 
                   return (
                     <div>
-                      {/* Pipeline steps */}
+                      <style>{`
+                        @keyframes lc-ripple {
+                          0%   { box-shadow: 0 0 0 0 ${curCfg.color}70, 0 0 0 0 ${curCfg.color}35; }
+                          70%  { box-shadow: 0 0 0 8px ${curCfg.color}00, 0 0 0 16px ${curCfg.color}00; }
+                          100% { box-shadow: 0 0 0 0 ${curCfg.color}00, 0 0 0 0  ${curCfg.color}00; }
+                        }
+                        @keyframes lc-shine {
+                          0%   { background-position: -220% center; }
+                          100% { background-position: 220% center; }
+                        }
+                        @keyframes lc-flow {
+                          0%, 100% { opacity: 0.45; }
+                          50%       { opacity: 1; }
+                        }
+                      `}</style>
+
                       {PIPELINE.map((stage, idx) => {
-                        const cfg     = STAGE_CFG[stage]
-                        const isDone  = !isDisqualified && currentIdx > idx
-                        const isCur   = currentStatus === stage
-                        const isFuture = !isDisqualified && currentIdx < idx && !isTerminal
-                        const canClick = !isTerminal && idx > currentIdx
+                        const cfg      = STAGE_CFG[stage]
+                        const isDone   = !isDisqualified && currentIdx > idx
+                        const isCur    = currentStatus === stage
+                        const isFuture = currentIdx < idx
+                        const hist     = stageHistory[stage]
 
                         return (
                           <div key={stage}>
-                            <button
-                              onClick={() => canClick && handleStageChange(stage)}
-                              disabled={!canClick && !isCur}
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                                padding: '9px 10px', borderRadius: 10, border: 'none', textAlign: 'left',
-                                background: isCur ? `${cfg.color}12` : 'transparent',
-                                cursor: canClick ? 'pointer' : 'default',
-                                outline: isCur ? `2px solid ${cfg.color}40` : 'none',
-                                transition: 'background 0.15s',
-                              }}
-                            >
-                              {/* Step indicator */}
+                            <div style={{
+                              display: 'flex', alignItems: 'center', gap: 10,
+                              padding: '9px 10px', borderRadius: 10,
+                              // shimmer sweep on current stage
+                              background: isCur
+                                ? `linear-gradient(105deg, ${cfg.color}0e 20%, ${cfg.color}28 50%, ${cfg.color}0e 80%)`
+                                : 'transparent',
+                              backgroundSize: isCur ? '250% 100%' : undefined,
+                              animation: isCur ? 'lc-shine 3.5s ease-in-out infinite' : 'none',
+                              outline: isCur ? `1.5px solid ${cfg.color}30` : 'none',
+                            }}>
+                              {/* Circle — ripple on current */}
                               <div style={{
                                 width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                                background: isDone ? cfg.color : isCur ? cfg.color : '#F1F5F9',
+                                background: isDone
+                                  ? `linear-gradient(145deg, ${cfg.color}, ${cfg.color}cc)`
+                                  : isCur ? `linear-gradient(145deg, ${cfg.color}, ${cfg.color}dd)` : '#F1F5F9',
                                 border: `2px solid ${isDone || isCur ? cfg.color : '#E2E8F0'}`,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: isDone ? 14 : 13,
+                                animation: isCur ? 'lc-ripple 2.4s ease-out infinite' : 'none',
+                                position: 'relative',
                               }}>
                                 {isDone
                                   ? <span style={{ color: '#fff', fontWeight: 700, fontSize: 13 }}>✓</span>
-                                  : <span style={{ filter: isFuture ? 'grayscale(1) opacity(0.3)' : 'none' }}>{cfg.emoji}</span>}
+                                  : <span style={{ filter: isFuture ? 'grayscale(1) opacity(0.25)' : 'none', fontSize: 13 }}>{cfg.emoji}</span>}
                               </div>
 
-                              {/* Label */}
-                              <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: 13, fontWeight: isCur ? 700 : isDone ? 600 : 400, color: isCur ? cfg.color : isDone ? cfg.color : isFuture ? '#CBD5E1' : '#94A3B8' }}>
+                              {/* Text */}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 13, fontWeight: isCur ? 700 : isDone ? 600 : 400, color: isCur ? cfg.color : isDone ? cfg.color : isFuture ? '#CBD5E1' : '#94A3B8', display: 'flex', alignItems: 'center', gap: 5 }}>
                                   {stage}
-                                  {isCur && <span style={{ fontSize: 10, fontWeight: 700, background: `${cfg.color}20`, color: cfg.color, padding: '1px 6px', borderRadius: 99, marginLeft: 6 }}>Current</span>}
+                                  {isCur && <span style={{ fontSize: 10, fontWeight: 700, background: `${cfg.color}20`, color: cfg.color, padding: '1px 6px', borderRadius: 99 }}>Current</span>}
                                 </div>
-                                <div style={{ fontSize: 10, color: isFuture ? '#CBD5E1' : '#94A3B8', marginTop: 1 }}>{cfg.desc}</div>
+                                {hist && !isCur ? (
+                                  <div style={{ fontSize: 10, color: isDone ? cfg.color : MUTED, marginTop: 1, opacity: 0.8 }}>
+                                    {hist.type} · {formatShortDate(hist.date)}
+                                  </div>
+                                ) : (
+                                  <div style={{ fontSize: 10, color: isFuture ? '#CBD5E1' : MUTED, marginTop: 1 }}>{cfg.desc}</div>
+                                )}
                               </div>
+                            </div>
 
-                              {/* Move-to hint */}
-                              {canClick && (
-                                <span style={{ fontSize: 10, color: cfg.color, fontWeight: 600, opacity: 0.7 }}>Move →</span>
-                              )}
-                            </button>
-
-                            {/* Connector line */}
+                            {/* Connector — liquid pulse on done segments */}
                             {idx < PIPELINE.length - 1 && (
-                              <div style={{ marginLeft: 25, width: 2, height: 10, background: isDone ? cfg.color : '#E2E8F0', borderRadius: 1 }} />
+                              <div style={{
+                                marginLeft: 25, width: 2, height: 10, borderRadius: 1,
+                                background: isDone ? cfg.color : '#E2E8F0',
+                                animation: isDone ? 'lc-flow 2s ease-in-out infinite' : 'none',
+                              }} />
                             )}
                           </div>
                         )
                       })}
 
-                      {/* Disqualified — separate terminal */}
+                      {/* Disqualified */}
                       <div style={{ marginTop: 10, borderTop: `1px dashed ${BORDER}`, paddingTop: 10 }}>
-                        <button
-                          onClick={() => !isTerminal && handleStageChange('Disqualified')}
-                          disabled={isTerminal}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                            padding: '8px 10px', borderRadius: 9, border: 'none', textAlign: 'left',
-                            background: isDisqualified ? 'rgba(148,163,184,0.12)' : 'transparent',
-                            cursor: isTerminal ? 'default' : 'pointer',
-                            outline: isDisqualified ? '2px solid rgba(148,163,184,0.3)' : 'none',
-                          }}
-                        >
-                          <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: isDisqualified ? '#94A3B8' : '#F1F5F9', border: `2px solid ${isDisqualified ? '#94A3B8' : '#E2E8F0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, filter: !isDisqualified && !isTerminal ? 'grayscale(0.3)' : 'none' }}>
-                            {isDisqualified ? <span style={{ color: '#fff', fontWeight: 700, fontSize: 12 }}>✗</span> : <span style={{ opacity: 0.4 }}>✗</span>}
+                        <div style={{
+                          display: 'flex', alignItems: 'center', gap: 10,
+                          padding: '8px 10px', borderRadius: 9,
+                          background: isDisqualified ? 'rgba(148,163,184,0.12)' : 'transparent',
+                          outline: isDisqualified ? '2px solid rgba(148,163,184,0.3)' : 'none',
+                        }}>
+                          <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: isDisqualified ? '#94A3B8' : '#F1F5F9', border: `2px solid ${isDisqualified ? '#94A3B8' : '#E2E8F0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {isDisqualified
+                              ? <span style={{ color: '#fff', fontWeight: 700, fontSize: 12 }}>✗</span>
+                              : <span style={{ opacity: 0.3, fontSize: 13 }}>✗</span>}
                           </div>
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 13, fontWeight: isDisqualified ? 700 : 400, color: isDisqualified ? '#94A3B8' : '#CBD5E1' }}>
+                            <div style={{ fontSize: 13, fontWeight: isDisqualified ? 700 : 400, color: isDisqualified ? '#94A3B8' : '#CBD5E1', display: 'flex', alignItems: 'center', gap: 5 }}>
                               Disqualified
-                              {isDisqualified && <span style={{ fontSize: 10, fontWeight: 700, background: 'rgba(148,163,184,0.2)', color: '#94A3B8', padding: '1px 6px', borderRadius: 99, marginLeft: 6 }}>Current</span>}
+                              {isDisqualified && <span style={{ fontSize: 10, fontWeight: 700, background: 'rgba(148,163,184,0.2)', color: '#94A3B8', padding: '1px 6px', borderRadius: 99 }}>Current</span>}
                             </div>
                             <div style={{ fontSize: 10, color: '#CBD5E1', marginTop: 1 }}>NC / not proceeding</div>
                           </div>
-                          {!isTerminal && <span style={{ fontSize: 10, color: '#94A3B8', fontWeight: 600, opacity: 0.5 }}>Mark →</span>}
-                        </button>
+                        </div>
                       </div>
-
-                      {stageChanging && (
-                        <div style={{ marginTop: 8, fontSize: 12, color: MUTED, textAlign: 'center' }}>Updating…</div>
-                      )}
                     </div>
                   )
                 })()}
@@ -1154,6 +1258,89 @@ export default function LeadDetailPage() {
       <WhatsAppModal isOpen={showWhatsAppModal} onClose={() => { setShowWhatsAppModal(false); fetchLead() }} leadId={leadId} leadName={`${lead.name.firstName} ${lead.name.lastName}`.trim()} leadPhone={lead.phones.primaryPhoneNumber ?? ''} city={lead.city ?? ''} />
       <CallModal isOpen={showCallModal} onClose={() => setShowCallModal(false)} leadId={leadId} leadName={`${lead.name.firstName} ${lead.name.lastName}`.trim()} leadPhone={lead.phones.primaryPhoneNumber ?? ''} onLogged={fetchLead} />
 
+      {/* ── Email Compose Modal ── */}
+      {showEmailModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          onClick={e => e.target === e.currentTarget && !sendingEmail && setShowEmailModal(false)}>
+          <div style={{ background: PANEL, borderRadius: 20, width: '100%', maxWidth: 520, boxShadow: '0 24px 64px rgba(0,0,0,0.18)', overflow: 'hidden' }}>
+            {/* Header */}
+            <div style={{ padding: '18px 22px 14px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: PRIMARY_DIM, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Mail style={{ width: 16, height: 16, color: BLUE }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>New Email</div>
+                  <div style={{ fontSize: 11, color: MUTED }}>To: {name} &lt;{email}&gt;</div>
+                </div>
+              </div>
+              <button onClick={() => !sendingEmail && setShowEmailModal(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED, fontSize: 18, lineHeight: 1, padding: 4 }}>✕</button>
+            </div>
+
+            {/* Body */}
+            {emailSent ? (
+              <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+                <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+                  <CheckCircle style={{ width: 26, height: 26, color: EMERALD }} />
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: TEXT, marginBottom: 6 }}>Email sent!</div>
+                <div style={{ fontSize: 13, color: MUTED }}>Activity logged on this lead's timeline.</div>
+              </div>
+            ) : (
+              <div style={{ padding: '16px 22px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {/* Subject */}
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 5 }}>SUBJECT</label>
+                  <input
+                    value={emailForm.subject}
+                    onChange={e => setEmailForm(f => ({ ...f, subject: e.target.value }))}
+                    placeholder="e.g. Following up on your enquiry"
+                    style={{ width: '100%', padding: '9px 12px', fontSize: 13, border: `1.5px solid ${BORDER}`, borderRadius: 10, outline: 'none', color: TEXT, background: '#FAFBFC', boxSizing: 'border-box' }}
+                    onFocus={e => (e.currentTarget.style.borderColor = BLUE)}
+                    onBlur={e => (e.currentTarget.style.borderColor = BORDER)}
+                  />
+                </div>
+                {/* Body */}
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 5 }}>MESSAGE</label>
+                  <textarea
+                    value={emailForm.body}
+                    onChange={e => setEmailForm(f => ({ ...f, body: e.target.value }))}
+                    placeholder={`Hi ${lead.name.firstName},\n\nThank you for your interest in…`}
+                    rows={8}
+                    style={{ width: '100%', padding: '10px 12px', fontSize: 13, border: `1.5px solid ${BORDER}`, borderRadius: 10, outline: 'none', color: TEXT, background: '#FAFBFC', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6, boxSizing: 'border-box' }}
+                    onFocus={e => (e.currentTarget.style.borderColor = BLUE)}
+                    onBlur={e => (e.currentTarget.style.borderColor = BORDER)}
+                  />
+                </div>
+
+                {emailError && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 9 }}>
+                    <AlertCircle style={{ width: 14, height: 14, color: RED, flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, color: RED }}>{emailError}</span>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                  <button onClick={() => setShowEmailModal(false)}
+                    style={{ flex: 1, padding: '10px 0', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 10, color: MUTED, fontSize: 13, cursor: 'pointer' }}>
+                    Cancel
+                  </button>
+                  <button onClick={handleSendEmail} disabled={sendingEmail || !emailForm.subject.trim() || !emailForm.body.trim()}
+                    style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 0', background: sendingEmail ? '#ccc' : PRIMARY_GRAD, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: sendingEmail ? 'not-allowed' : 'pointer', opacity: (!emailForm.subject.trim() || !emailForm.body.trim()) ? 0.5 : 1, transition: 'opacity 0.2s' }}>
+                    {sendingEmail
+                      ? <><Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> Sending…</>
+                      : <><Send style={{ width: 14, height: 14 }} /> Send Email</>}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {showDeleteConfirm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
           onClick={e => e.target === e.currentTarget && setShowDeleteConfirm(false)}>
@@ -1181,7 +1368,7 @@ export default function LeadDetailPage() {
 // ─── Shared empty state ───────────────────────────────────────────────────────
 function EmptyState({ icon: Icon, title, sub, action, waStyle }: { icon: React.ElementType; title: string; sub: string; action?: { label: string; onClick: () => void }; waStyle?: boolean }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 20px', textAlign: 'center', background: waStyle ? 'transparent' : undefined }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '28px 20px', textAlign: 'center', background: waStyle ? 'transparent' : undefined }}>
       <div style={{ width: 48, height: 48, borderRadius: 14, background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
         <Icon style={{ width: 22, height: 22, color: '#94A3B8' }} />
       </div>

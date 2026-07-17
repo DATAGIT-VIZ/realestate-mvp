@@ -49,7 +49,7 @@ const TYPE_CONFIG: TypeConfig[] = [
   { value: 'OBM Done',           label: 'OBM Done',           Icon: Building2,    advances: 'Warm', milestone: true, group: 'Milestone' },
   { value: 'Site Visit Done',    label: 'Site Visit Done',    Icon: Eye,          advances: 'Warm', milestone: true, group: 'Milestone' },
   { value: 'EOI Received',       label: 'EOI Received',       Icon: Handshake,    advances: 'Hot',  milestone: true, group: 'Milestone' },
-  { value: 'Deal Closed',        label: 'Deal Closed',        Icon: TrendingUp,   advances: 'Closed', milestone: true, group: 'Milestone' },
+  { value: 'Deal Closed',        label: 'Deals',              Icon: TrendingUp,   advances: 'Closed', milestone: true, group: 'Milestone' },
   // Admin
   { value: 'Site Visit Scheduled', label: 'SV Scheduled',    Icon: Calendar,     group: 'Admin' },
   { value: 'Follow Up Set',      label: 'Follow Up Set',      Icon: Bell,         group: 'Admin' },

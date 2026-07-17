@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Building2, Plus, Search, Loader2, Edit2, Trash2, X, Check, MapPin, RefreshCw, Sparkles } from 'lucide-react'
+import { Building2, Plus, Search, Loader2, Edit2, Trash2, X, Check, MapPin, RefreshCw, Sparkles, FileText, Upload, ExternalLink } from 'lucide-react'
 import type { Property } from '@/app/api/crm/properties/route'
+
+type Brochure = { id: string; name: string; project_name: string | null; file_url: string; file_type: string; file_name: string | null; file_size: number | null; created_at: string }
 
 const C = {
   bg:      '#F8FAFC',
@@ -151,6 +153,56 @@ export default function PropertiesPage() {
   const [saving, setSaving]         = useState(false)
   const [deleteId, setDeleteId]     = useState<string | null>(null)
   const [seeding, setSeeding]       = useState(false)
+  const [activeTab, setActiveTab]   = useState<'properties' | 'brochures'>('properties')
+  const [brochures, setBrochures]   = useState<Brochure[]>([])
+  const [bLoading, setBLoading]     = useState(false)
+  const [bSeeding, setBSeeding]     = useState(false)
+  const [uploadName, setUploadName] = useState('')
+  const [uploadProject, setUploadProject] = useState('')
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [uploading, setUploading]   = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+
+  const fetchBrochures = useCallback(async () => {
+    setBLoading(true)
+    try {
+      const res = await fetch('/api/brochures')
+      const json = await res.json()
+      setBrochures(json.brochures ?? [])
+    } catch (e) { console.error(e) }
+    finally { setBLoading(false) }
+  }, [])
+
+  const handleUpload = async () => {
+    if (!uploadFile || !uploadName.trim()) { setUploadError('Name and file are required'); return }
+    setUploading(true); setUploadError(null)
+    try {
+      const fd = new FormData()
+      fd.append('file', uploadFile)
+      fd.append('name', uploadName.trim())
+      fd.append('project_name', uploadProject.trim())
+      const res = await fetch('/api/brochures', { method: 'POST', body: fd })
+      const json = await res.json()
+      if (json.error) throw new Error(json.error)
+      setUploadName(''); setUploadProject(''); setUploadFile(null)
+      fetchBrochures()
+    } catch (e) { setUploadError(e instanceof Error ? e.message : 'Upload failed') }
+    finally { setUploading(false) }
+  }
+
+  const handleDeleteBrochure = async (id: string) => {
+    await fetch(`/api/brochures/${id}`, { method: 'DELETE' })
+    fetchBrochures()
+  }
+
+  const handleSeedBrochures = async () => {
+    setBSeeding(true)
+    try {
+      await fetch('/api/seed/brochures', { method: 'POST' })
+      await fetchBrochures()
+    } catch (e) { console.error(e) }
+    finally { setBSeeding(false) }
+  }
 
   const fetchData = useCallback(async () => {
     try {
@@ -162,6 +214,7 @@ export default function PropertiesPage() {
   }, [])
 
   useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => { if (activeTab === 'brochures') fetchBrochures() }, [activeTab, fetchBrochures])
 
   const handleSave = async (form: FormData) => {
     setSaving(true)
@@ -241,8 +294,18 @@ export default function PropertiesPage() {
           </div>
         </div>
 
-        {/* Filters */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: 4, background: '#F1F5F9', borderRadius: 10, padding: 4, marginBottom: 20, width: 'fit-content' }}>
+          {(['properties', 'brochures'] as const).map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)}
+              style={{ padding: '7px 18px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', background: activeTab === tab ? '#fff' : 'transparent', color: activeTab === tab ? C.text : C.muted, boxShadow: activeTab === tab ? '0 1px 4px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.15s', textTransform: 'capitalize' }}>
+              {tab === 'brochures' ? '📎 Brochures' : '🏢 Properties'}
+            </button>
+          ))}
+        </div>
+
+        {/* Filters — properties tab only */}
+        {activeTab === 'properties' && <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 200, display: 'flex', alignItems: 'center', gap: 8, background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: '8px 14px' }}>
             <Search style={{ width: 14, height: 14, color: C.label, flexShrink: 0 }} />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by title, city, locality…"
@@ -256,7 +319,10 @@ export default function PropertiesPage() {
               </button>
             ))}
           </div>
-        </div>
+        </div>}
+
+        {/* ── Properties tab ── */}
+        {activeTab === 'properties' && (<>
 
         {/* Empty state */}
         {filtered.length === 0 && (
@@ -291,6 +357,7 @@ export default function PropertiesPage() {
         {/* Property grid */}
         {filtered.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+
             {filtered.map(p => {
               const sm = STATUS_META[p.status] ?? STATUS_META.Available
               return (
@@ -354,6 +421,94 @@ export default function PropertiesPage() {
             })}
           </div>
         )}
+
+        </>)}
+
+        {/* ── Brochures tab ── */}
+        {activeTab === 'brochures' && (
+          <div>
+            {/* Upload card */}
+            <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '20px 24px', marginBottom: 16 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: C.text, margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: 7 }}>
+                <Upload style={{ width: 15, height: 15, color: '#FF7043' }} />Upload Brochure
+              </h3>
+              {uploadError && <p style={{ fontSize: 12, color: C.red, margin: '0 0 10px' }}>{uploadError}</p>}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Brochure Name *</label>
+                  <input value={uploadName} onChange={e => setUploadName(e.target.value)} placeholder="e.g. Lodha Palava 2BHK"
+                    style={{ width: '100%', padding: '8px 11px', background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 13, color: C.text, outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: C.muted, display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Project Name</label>
+                  <input value={uploadProject} onChange={e => setUploadProject(e.target.value)} placeholder="e.g. Lodha Palava"
+                    style={{ width: '100%', padding: '8px 11px', background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 13, color: C.text, outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <label style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: C.bg, border: `1px solid ${uploadFile ? '#FF7043' : C.border}`, borderRadius: 8, cursor: 'pointer' }}>
+                  <FileText style={{ width: 14, height: 14, color: uploadFile ? '#FF7043' : C.muted, flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, color: uploadFile ? C.text : C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {uploadFile ? uploadFile.name : 'Choose PDF or image…'}
+                  </span>
+                  <input type="file" accept=".pdf,image/*" style={{ display: 'none' }}
+                    onChange={e => setUploadFile(e.target.files?.[0] ?? null)} />
+                </label>
+                <button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadName.trim()}
+                  style={{ padding: '9px 20px', background: uploading ? 'rgba(255,112,67,0.4)' : '#FF7043', border: 'none', borderRadius: 9, color: '#fff', fontSize: 13, fontWeight: 600, cursor: uploading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  {uploading ? <Loader2 style={{ width: 13, height: 13, animation: 'spin 1s linear infinite' }} /> : <Upload style={{ width: 13, height: 13 }} />}
+                  {uploading ? 'Uploading…' : 'Upload'}
+                </button>
+              </div>
+            </div>
+
+            {/* Brochures list */}
+            {bLoading ? (
+              <div style={{ textAlign: 'center', padding: 40 }}>
+                <Loader2 style={{ width: 20, height: 20, color: '#FF7043', animation: 'spin 1s linear infinite' }} />
+              </div>
+            ) : brochures.length === 0 ? (
+              <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '48px 24px', textAlign: 'center' }}>
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(255,112,67,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+                  <FileText style={{ width: 24, height: 24, color: '#FF7043' }} />
+                </div>
+                <p style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: '0 0 6px' }}>No brochures yet</p>
+                <p style={{ fontSize: 13, color: C.muted, margin: '0 0 20px' }}>Upload property PDFs above — agents can send them directly from WhatsApp</p>
+                <button onClick={handleSeedBrochures} disabled={bSeeding}
+                  style={{ padding: '10px 22px', background: bSeeding ? 'rgba(255,112,67,0.4)' : 'linear-gradient(135deg, #FF7043 0%, #FF8A65 100%)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: bSeeding ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                  {bSeeding ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Sparkles style={{ width: 14, height: 14 }} />}
+                  {bSeeding ? 'Loading…' : 'Load Demo Brochures'}
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {brochures.map(b => (
+                  <div key={b.id} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,112,67,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <FileText style={{ width: 18, height: 18, color: '#FF7043' }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>{b.name}</p>
+                      <p style={{ fontSize: 11, color: C.muted, margin: '2px 0 0' }}>
+                        {b.project_name ?? 'No project'} · {b.file_type.toUpperCase()}
+                        {b.file_size ? ` · ${(b.file_size / 1024).toFixed(0)} KB` : ''}
+                      </p>
+                    </div>
+                    <a href={b.file_url} target="_blank" rel="noopener noreferrer"
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontWeight: 600, color: C.muted, textDecoration: 'none' }}>
+                      <ExternalLink style={{ width: 11, height: 11 }} />View
+                    </a>
+                    <button onClick={() => handleDeleteBrochure(b.id)}
+                      style={{ padding: '6px 10px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: 8, color: C.red, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                      <Trash2 style={{ width: 13, height: 13 }} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* Form modal */}

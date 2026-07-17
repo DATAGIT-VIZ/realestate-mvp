@@ -12,7 +12,7 @@ import { LogActivityModal } from '@/components/LogActivityModal'
 import {
   Search, Plus, Filter, Eye, Loader2, UserPlus, Clock,
   ChevronDown, LayoutGrid, List, UploadCloud, MailPlus, Phone, Mail, Copy,
-  Activity, Shuffle,
+  Activity, Shuffle, MessageCircle,
 } from 'lucide-react'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -60,6 +60,16 @@ const FILTER_LABELS: Record<ScoreFilter, string> = {
   all: 'All Leads', hot: 'Hot (70+)', warm: 'Warm (40–69)', cold: 'Cold (<40)',
 }
 
+type SortBy = 'score' | 'newest' | 'oldest' | 'budget_high' | 'budget_low' | 'name'
+const SORT_LABELS: Record<SortBy, string> = {
+  score:       'Intent Score',
+  newest:      'Newest First',
+  oldest:      'Oldest First',
+  budget_high: 'Budget: High → Low',
+  budget_low:  'Budget: Low → High',
+  name:        'Name A–Z',
+}
+
 const getDisplayName = (l: CRMLead) => `${l.name.firstName} ${l.name.lastName}`.trim() || 'Unnamed'
 const getPhone = (l: CRMLead) => l.phones.primaryPhoneNumber ?? ''
 const getEmail = (l: CRMLead) => l.emails.primaryEmail ?? null
@@ -100,6 +110,18 @@ function timeAgo(dateStr: string): string {
   return 'Just now'
 }
 
+function touchedStyle(dateStr: string) {
+  const days = (Date.now() - new Date(dateStr).getTime()) / 86_400_000
+  if (days < 3)  return { dot: '#059669', color: '#059669', bg: '#ECFDF5' } // green
+  if (days < 7)  return { dot: '#F59E0B', color: '#B45309', bg: '#FFFBEB' } // amber
+  return              { dot: '#EF4444', color: '#B91C1C', bg: '#FEF2F2' }   // red
+}
+
+function waLink(phone: string) {
+  const digits = phone.replace(/\D/g, '').replace(/^(91|0)/, '')
+  return `https://wa.me/91${digits}`
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function LeadsPage() {
   const [leads, setLeads] = useState<CRMLead[]>([])
@@ -119,6 +141,11 @@ export default function LeadsPage() {
   const [quickLogLeadId, setQuickLogLeadId] = useState<string | null>(null)
   const [showDupsOnly, setShowDupsOnly] = useState(false)
   const [importStatus, setImportStatus] = useState<{ total: number; done: number; label: string } | null>(null)
+  const [sortBy, setSortBy]             = useState<SortBy>('score')
+  const [showSortMenu, setShowSortMenu] = useState(false)
+  const [sourceFilter, setSourceFilter] = useState('all')
+  const [showSourceMenu, setShowSourceMenu] = useState(false)
+  const [showStuck, setShowStuck]       = useState(false)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   // De-dup detection — group leads by normalised phone number
@@ -140,6 +167,35 @@ export default function LeadsPage() {
     () => showDupsOnly ? leads.filter(l => dupLeadIds.has(l.id)) : leads,
     [leads, showDupsOnly, dupLeadIds]
   )
+
+  // Unique sources for dropdown
+  const uniqueSources = useMemo(() => {
+    const s = new Set(leads.map(l => l.sourcePortal).filter(Boolean) as string[])
+    return Array.from(s).sort()
+  }, [leads])
+
+  // Client-side source filter + stuck filter + sort
+  const filteredSortedLeads = useMemo(() => {
+    const STUCK_DAYS = 7
+    let list = [...displayLeads]
+    if (sourceFilter !== 'all') list = list.filter(l => l.sourcePortal === sourceFilter)
+    if (showStuck) {
+      const cutoff = Date.now() - STUCK_DAYS * 86_400_000
+      list = list.filter(l => !['Closed', 'Disqualified'].includes(l.status ?? '') && new Date(l.updatedAt ?? l.createdAt).getTime() < cutoff)
+    }
+    list.sort((a, b) => {
+      switch (sortBy) {
+        case 'score':       return (b.intentScore ?? 0) - (a.intentScore ?? 0)
+        case 'newest':      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        case 'oldest':      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        case 'budget_high': return (b.budgetMax ?? b.budgetMin ?? 0) - (a.budgetMax ?? a.budgetMin ?? 0)
+        case 'budget_low':  return (a.budgetMin ?? a.budgetMax ?? 0) - (b.budgetMin ?? b.budgetMax ?? 0)
+        case 'name':        return getDisplayName(a).localeCompare(getDisplayName(b))
+        default:            return 0
+      }
+    })
+    return list
+  }, [displayLeads, sourceFilter, showStuck, sortBy])
 
   const fetchUnassigned = useCallback(async () => {
     try {
@@ -220,7 +276,7 @@ export default function LeadsPage() {
         </div>
       )}
 
-      <div className="max-w-[1320px] mx-auto px-4 pb-24 lg:px-8">
+      <div className="max-w-[1320px] mx-auto px-4 pb-8 lg:px-8">
 
         {/* ── Page heading ── */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 0 20px', flexWrap: 'wrap', gap: 12 }}>
@@ -284,10 +340,10 @@ export default function LeadsPage() {
             })
           })()}
 
-          {/* Score filter */}
-          <div style={{ position: 'relative', marginLeft: 4 }}>
-            <button onClick={() => setShowFilterMenu(v => !v)}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 13px', background: scoreFilter !== 'all' ? PRIMARY_DIM : PANEL, border: `1px solid ${scoreFilter !== 'all' ? PRIMARY_BORDER : BORDER}`, borderRadius: 99, color: scoreFilter !== 'all' ? PRIMARY : MUTED, fontSize: 13, cursor: 'pointer' }}>
+          {/* Intent score filter */}
+          <div style={{ position: 'relative' }}>
+            <button onClick={() => { setShowFilterMenu(v => !v); setShowSortMenu(false); setShowSourceMenu(false) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 13px', background: scoreFilter !== 'all' ? PRIMARY_DIM : PANEL, border: `1px solid ${scoreFilter !== 'all' ? PRIMARY_BORDER : BORDER}`, borderRadius: 99, color: scoreFilter !== 'all' ? PRIMARY : MUTED, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
               <Filter style={{ width: 12, height: 12 }} />
               {scoreFilter !== 'all' ? FILTER_LABELS[scoreFilter] : 'Intent score'}
               <ChevronDown style={{ width: 11, height: 11 }} />
@@ -304,8 +360,63 @@ export default function LeadsPage() {
             )}
           </div>
 
+          {/* Source filter */}
+          {uniqueSources.length > 0 && (
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => { setShowSourceMenu(v => !v); setShowFilterMenu(false); setShowSortMenu(false) }}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 13px', background: sourceFilter !== 'all' ? PRIMARY_DIM : PANEL, border: `1px solid ${sourceFilter !== 'all' ? PRIMARY_BORDER : BORDER}`, borderRadius: 99, color: sourceFilter !== 'all' ? PRIMARY : MUTED, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                <Eye style={{ width: 12, height: 12 }} />
+                {sourceFilter !== 'all'
+                  ? sourceFilter.replace('OPT99ACRES','99acres').replace('MAGICBRICKS','MagicBricks').replace('HOUSING_COM','Housing.com').replace('FACEBOOK','Facebook').replace('MARKETING','Marketing')
+                  : 'Source'}
+                <ChevronDown style={{ width: 11, height: 11 }} />
+              </button>
+              {showSourceMenu && (
+                <div style={{ position: 'absolute', top: '110%', left: 0, minWidth: 190, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 12, zIndex: 30, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}>
+                  {['all', ...uniqueSources].map(s => {
+                    const label = s === 'all' ? 'All Sources'
+                      : s.replace('OPT99ACRES','99acres').replace('MAGICBRICKS','MagicBricks').replace('HOUSING_COM','Housing.com').replace('FACEBOOK','Facebook').replace('MARKETING','Marketing')
+                    return (
+                      <button key={s} onClick={() => { setSourceFilter(s); setShowSourceMenu(false) }}
+                        style={{ display: 'block', width: '100%', padding: '9px 14px', background: sourceFilter === s ? PRIMARY_DIM : 'transparent', color: sourceFilter === s ? PRIMARY : TEXT, fontSize: 13, border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                        {label}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Stuck filter chip */}
+          <button onClick={() => setShowStuck(v => !v)}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 13px', borderRadius: 99, border: `1px solid ${showStuck ? '#F59E0B' : BORDER}`, background: showStuck ? 'rgba(245,158,11,0.1)' : PANEL, color: showStuck ? '#B45309' : MUTED, fontSize: 13, fontWeight: showStuck ? 600 : 400, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.12s' }}>
+            <Clock style={{ width: 12, height: 12 }} />
+            Stuck 7d+
+          </button>
+
           {/* Right side controls */}
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Sort */}
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => { setShowSortMenu(v => !v); setShowFilterMenu(false); setShowSourceMenu(false) }}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 13px', background: sortBy !== 'score' ? PRIMARY_DIM : PANEL, border: `1px solid ${sortBy !== 'score' ? PRIMARY_BORDER : BORDER}`, borderRadius: 8, color: sortBy !== 'score' ? PRIMARY : MUTED, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                <Activity style={{ width: 12, height: 12 }} />
+                {SORT_LABELS[sortBy]}
+                <ChevronDown style={{ width: 11, height: 11 }} />
+              </button>
+              {showSortMenu && (
+                <div style={{ position: 'absolute', top: '110%', right: 0, minWidth: 200, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 12, zIndex: 30, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}>
+                  {(Object.keys(SORT_LABELS) as SortBy[]).map(s => (
+                    <button key={s} onClick={() => { setSortBy(s); setShowSortMenu(false) }}
+                      style={{ display: 'block', width: '100%', padding: '9px 14px', background: sortBy === s ? PRIMARY_DIM : 'transparent', color: sortBy === s ? PRIMARY : TEXT, fontSize: 13, border: 'none', cursor: 'pointer', textAlign: 'left', fontWeight: sortBy === s ? 600 : 400 }}>
+                      {SORT_LABELS[s]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Search */}
             <div style={{ position: 'relative' }}>
               <Search style={{ width: 13, height: 13, color: LABEL, position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)' }} />
@@ -352,8 +463,8 @@ export default function LeadsPage() {
         {viewMode === 'board' && <KanbanBoard leads={leads} onLeadUpdate={handleLeadUpdate} />}
 
         {/* ── Empty state ── */}
-        {viewMode === 'list' && !loading && displayLeads.length === 0 && (
-          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, padding: '64px 24px', textAlign: 'center' }}>
+        {viewMode === 'list' && !loading && filteredSortedLeads.length === 0 && (
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, padding: '36px 24px', textAlign: 'center' }}>
             <div style={{ width: 52, height: 52, borderRadius: 14, background: PRIMARY_DIM, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
               <UserPlus style={{ width: 22, height: 22, color: PRIMARY }} />
             </div>
@@ -373,22 +484,22 @@ export default function LeadsPage() {
         )}
 
         {/* ── Table ── */}
-        {viewMode === 'list' && displayLeads.length > 0 && (
+        {viewMode === 'list' && filteredSortedLeads.length > 0 && (
           <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
-                  {(['Lead name','Contact','Lead source','Lead status','Budget',''] as const).map((h, i) => (
+                  {(['Lead name','Contact','Lead source','Lead status','Budget','Last touched',''] as const).map((h, i) => (
                     <th key={i}
-                      className={i === 1 ? 'hidden sm:table-cell' : i === 2 ? 'hidden md:table-cell' : i === 4 ? 'hidden lg:table-cell' : ''}
-                      style={{ padding: `10px ${i === 0 || i === 5 ? '20px' : '16px'}`, fontSize: 11, fontWeight: 500, color: '#C1C7D0', textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left', background: '#FAFBFC', whiteSpace: 'nowrap' }}>
+                      className={i === 1 ? 'hidden sm:table-cell' : i === 2 ? 'hidden md:table-cell' : i === 4 ? 'hidden lg:table-cell' : i === 5 ? 'hidden md:table-cell' : ''}
+                      style={{ padding: `10px ${i === 0 || i === 6 ? '20px' : '16px'}`, fontSize: 11, fontWeight: 500, color: '#C1C7D0', textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left', background: '#FAFBFC', whiteSpace: 'nowrap' }}>
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {displayLeads.map((lead, idx) => {
+                {filteredSortedLeads.map((lead, idx) => {
                   const name    = getDisplayName(lead)
                   const av      = avatarColor(name)
                   const initial = name.charAt(0).toUpperCase()
@@ -397,9 +508,10 @@ export default function LeadsPage() {
                   const isDup   = dupLeadIds.has(lead.id)
                   const email   = getEmail(lead)
                   const phone   = getPhone(lead)
+                  const ts      = touchedStyle(lead.updatedAt ?? lead.createdAt)
                   return (
                     <tr key={lead.id}
-                      style={{ borderBottom: idx < displayLeads.length - 1 ? `1px solid ${BORDER}` : 'none', transition: 'background 0.1s' }}
+                      style={{ borderBottom: idx < filteredSortedLeads.length - 1 ? `1px solid ${BORDER}` : 'none', transition: 'background 0.1s' }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#FAFBFD')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
@@ -453,18 +565,50 @@ export default function LeadsPage() {
                         <span style={{ fontSize: 12, color: MUTED }}>{formatBudget(lead.budgetMin, lead.budgetMax)}</span>
                       </td>
 
+                      {/* Last touched */}
+                      <td className="hidden md:table-cell" style={{ padding: '16px 16px' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 99, background: ts.bg }}>
+                          <div style={{ width: 5, height: 5, borderRadius: '50%', background: ts.dot, flexShrink: 0 }} />
+                          <span style={{ fontSize: 11, fontWeight: 600, color: ts.color, whiteSpace: 'nowrap' }}>
+                            {timeAgo(lead.updatedAt ?? lead.createdAt)}
+                          </span>
+                        </div>
+                      </td>
+
                       {/* Actions */}
                       <td style={{ padding: '16px 20px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 5 }}>
+                          {/* Call */}
+                          {phone && (
+                            <a href={`tel:${phone}`} onClick={e => e.stopPropagation()}
+                              title={`Call ${phone}`}
+                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 8, background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#059669', textDecoration: 'none', flexShrink: 0, transition: 'all 0.12s' }}
+                              onMouseEnter={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.background = '#059669'; a.style.color = '#fff'; a.style.borderColor = '#059669' }}
+                              onMouseLeave={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.background = '#ECFDF5'; a.style.color = '#059669'; a.style.borderColor = '#A7F3D0' }}>
+                              <Phone style={{ width: 12, height: 12 }} />
+                            </a>
+                          )}
+                          {/* WhatsApp */}
+                          {phone && (
+                            <a href={waLink(phone)} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
+                              title="Open WhatsApp"
+                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 8, background: '#F0FDF4', border: '1px solid #86EFAC', color: '#16A34A', textDecoration: 'none', flexShrink: 0, transition: 'all 0.12s' }}
+                              onMouseEnter={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.background = '#25D366'; a.style.color = '#fff'; a.style.borderColor = '#25D366' }}
+                              onMouseLeave={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.background = '#F0FDF4'; a.style.color = '#16A34A'; a.style.borderColor = '#86EFAC' }}>
+                              <MessageCircle style={{ width: 12, height: 12 }} />
+                            </a>
+                          )}
+                          {/* Log */}
                           <button onClick={e => { e.stopPropagation(); e.preventDefault(); setQuickLogLeadId(lead.id) }}
                             className="hidden sm:inline-flex"
-                            style={{ alignItems: 'center', gap: 4, padding: '5px 10px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 7, color: LABEL, fontSize: 12, fontWeight: 400, cursor: 'pointer' }}
+                            style={{ alignItems: 'center', gap: 4, padding: '5px 10px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 7, color: LABEL, fontSize: 12, cursor: 'pointer', transition: 'all 0.12s' }}
                             onMouseEnter={e => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = '#86EFAC'; b.style.color = '#15803D'; b.style.background = '#F0FDF4' }}
                             onMouseLeave={e => { const b = e.currentTarget as HTMLButtonElement; b.style.borderColor = BORDER; b.style.color = LABEL; b.style.background = 'transparent' }}>
                             <Activity style={{ width: 11, height: 11 }} />Log
                           </button>
+                          {/* View */}
                           <Link href={`/dashboard/leads/${lead.id}`} onClick={e => e.stopPropagation()}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 12px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 7, color: LABEL, fontSize: 12, fontWeight: 400, textDecoration: 'none' }}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 12px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 7, color: LABEL, fontSize: 12, textDecoration: 'none', transition: 'all 0.12s' }}
                             onMouseEnter={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.borderColor = PRIMARY_BORDER; a.style.color = PRIMARY; a.style.background = PRIMARY_DIM }}
                             onMouseLeave={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.borderColor = BORDER; a.style.color = LABEL; a.style.background = 'transparent' }}>
                             <Eye style={{ width: 11, height: 11 }} />View
@@ -481,7 +625,7 @@ export default function LeadsPage() {
 
         {leads.length > 0 && (
           <p style={{ fontSize: 12, color: LABEL, textAlign: 'center', marginTop: 16 }}>
-            {loading ? 'Refreshing…' : `Showing ${displayLeads.length} of ${totalCount} leads`}
+            {loading ? 'Refreshing…' : `Showing ${filteredSortedLeads.length} of ${totalCount} leads`}
           </p>
         )}
       </div>

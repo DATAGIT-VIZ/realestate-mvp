@@ -211,66 +211,42 @@ export function WhatsAppModal({ isOpen, onClose, leadId, leadName = '', leadPhon
 
         <div style={{ padding: '18px 22px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-          {/* ── Step 1: Template picker ── */}
+          {/* ── Step 1: Template picker + brochure ── */}
           {step === 'pick' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {TEMPLATES.map(tpl => (
-                <button key={tpl.name} onClick={() => selectTemplate(tpl)}
-                  style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '13px 16px', background: BG, border: `1px solid ${BORDER}`, borderRadius: 12, cursor: 'pointer', textAlign: 'left', transition: 'all 0.12s' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = PRIMARY; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(160,0,200,0.03)' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = BORDER; (e.currentTarget as HTMLButtonElement).style.background = BG }}
-                >
-                  <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{tpl.label}</span>
-                  <span style={{ fontSize: 12, color: MUTED }}>{tpl.description}</span>
-                </button>
-              ))}
-            </div>
-          )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* Templates */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>Choose Template</p>
+                {TEMPLATES.map(tpl => (
+                  <button key={tpl.name} onClick={() => selectTemplate(tpl)}
+                    style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '13px 16px', background: BG, border: `1px solid ${BORDER}`, borderRadius: 12, cursor: 'pointer', textAlign: 'left', transition: 'all 0.12s' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = PRIMARY; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,112,67,0.03)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = BORDER; (e.currentTarget as HTMLButtonElement).style.background = BG }}
+                  >
+                    <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{tpl.label}</span>
+                    <span style={{ fontSize: 12, color: MUTED }}>{tpl.description}</span>
+                  </button>
+                ))}
+              </div>
 
-          {/* ── Step 2: Fill variables + preview ── */}
-          {step === 'fill' && selectedTpl && (
-            <>
-              {error && (
-                <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '9px 12px' }}>
-                  <p style={{ color: '#EF4444', fontSize: 13, margin: 0 }}>{error}</p>
-                </div>
-              )}
-
-              {/* Variable inputs */}
-              {selectedTpl.variables.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <p style={{ fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>Fill in Variables</p>
-                  {selectedTpl.variables.map(v => (
-                    <div key={v.key}>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 5 }}>{v.label}</label>
-                      <input
-                        type="text"
-                        placeholder={v.placeholder}
-                        value={values[v.key] ?? ''}
-                        onChange={e => setValues(prev => ({ ...prev, [v.key]: e.target.value }))}
-                        style={inputStyle}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Brochure picker */}
+              {/* Brochure picker — shown in step 1 so agent can select before picking template */}
               {brochures.length > 0 && (
-                <div>
-                  <p style={{ fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Attach Brochure <span style={{ fontWeight: 400, textTransform: 'none' }}>— optional</span></p>
+                <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 14 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Paperclip style={{ width: 11, height: 11 }} />Attach Brochure
+                    <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>— optional</span>
+                  </p>
                   <div style={{ position: 'relative' }}>
-                    <button type="button"
-                      onClick={() => setBrochureOpen(o => !o)}
-                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: selectedBrochure ? 'rgba(255,112,67,0.05)' : BG, border: `1px solid ${selectedBrochure ? PRIMARY : BORDER}`, borderRadius: 9, cursor: 'pointer', textAlign: 'left' }}
+                    <button type="button" onClick={() => setBrochureOpen(o => !o)}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: selectedBrochure ? 'rgba(255,112,67,0.05)' : BG, border: `1px solid ${selectedBrochure ? PRIMARY : BORDER}`, borderRadius: 9, cursor: 'pointer' }}
                     >
-                      <Paperclip style={{ width: 13, height: 13, color: selectedBrochure ? PRIMARY : MUTED, flexShrink: 0 }} />
-                      <span style={{ flex: 1, fontSize: 13, color: selectedBrochure ? TEXT : MUTED }}>
-                        {selectedBrochure ? selectedBrochure.name : 'Select a brochure…'}
+                      <FileText style={{ width: 13, height: 13, color: selectedBrochure ? PRIMARY : MUTED, flexShrink: 0 }} />
+                      <span style={{ flex: 1, textAlign: 'left', fontSize: 13, color: selectedBrochure ? TEXT : MUTED }}>
+                        {selectedBrochure ? selectedBrochure.name : 'Select a brochure to send…'}
                       </span>
                       {selectedBrochure && (
                         <span onClick={e => { e.stopPropagation(); setSelectedBrochure(null) }}
-                          style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(255,112,67,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                          style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(255,112,67,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
                           <X style={{ width: 9, height: 9, color: PRIMARY }} />
                         </span>
                       )}
@@ -296,10 +272,49 @@ export function WhatsAppModal({ isOpen, onClose, leadId, leadName = '', leadPhon
                     )}
                   </div>
                   {selectedBrochure && (
-                    <p style={{ fontSize: 11, color: PRIMARY, margin: '6px 0 0', fontWeight: 500 }}>
-                      📎 Brochure will be sent as a separate document after the message
+                    <p style={{ fontSize: 11, color: PRIMARY, margin: '6px 0 0', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Paperclip style={{ width: 10, height: 10 }} />
+                      Will be sent alongside the template message
                     </p>
                   )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Step 2: Fill variables + preview ── */}
+          {step === 'fill' && selectedTpl && (
+            <>
+              {selectedBrochure && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', background: 'rgba(255,112,67,0.07)', border: '1px solid rgba(255,112,67,0.2)', borderRadius: 8 }}>
+                  <Paperclip style={{ width: 12, height: 12, color: PRIMARY, flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: PRIMARY, fontWeight: 600, flex: 1 }}>📎 {selectedBrochure.name}</span>
+                  <button type="button" onClick={() => setSelectedBrochure(null)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: PRIMARY, fontSize: 11 }}>Remove</button>
+                </div>
+              )}
+              {error && (
+                <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '9px 12px' }}>
+                  <p style={{ color: '#EF4444', fontSize: 13, margin: 0 }}>{error}</p>
+                </div>
+              )}
+
+              {/* Variable inputs */}
+              {selectedTpl.variables.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>Fill in Variables</p>
+                  {selectedTpl.variables.map(v => (
+                    <div key={v.key}>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 5 }}>{v.label}</label>
+                      <input
+                        type="text"
+                        placeholder={v.placeholder}
+                        value={values[v.key] ?? ''}
+                        onChange={e => setValues(prev => ({ ...prev, [v.key]: e.target.value }))}
+                        style={inputStyle}
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
 

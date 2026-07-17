@@ -55,21 +55,21 @@
   --destructive:                   oklch(0.577 0.245 27.325);
   --border:                        oklch(0.922 0 0);
   --input:                         oklch(0.922 0 0);
-  --ring:                          oklch(0.42 0.22 309);
+  --ring:                          oklch(0.65 0.19 33);
   --radius:                        0.625rem;
-  --chart-1:                       oklch(0.42 0.22 309);
+  --chart-1:                       oklch(0.65 0.19 33);
   --chart-2:                       oklch(0.556 0 0);
   --chart-3:                       oklch(0.439 0 0);
   --chart-4:                       oklch(0.371 0 0);
   --chart-5:                       oklch(0.269 0 0);
   --sidebar:                       oklch(1 0 0);
   --sidebar-foreground:            oklch(0.145 0 0);
-  --sidebar-primary:               oklch(0.42 0.22 309);
+  --sidebar-primary:               oklch(0.65 0.19 33);
   --sidebar-primary-foreground:    oklch(0.985 0 0);
   --sidebar-accent:                oklch(0.97 0 0);
   --sidebar-accent-foreground:     oklch(0.205 0 0);
   --sidebar-border:                oklch(0.922 0 0);
-  --sidebar-ring:                  oklch(0.42 0.22 309);
+  --sidebar-ring:                  oklch(0.65 0.19 33);
 }
 
 @theme inline {
