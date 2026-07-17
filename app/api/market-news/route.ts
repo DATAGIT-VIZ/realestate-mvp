@@ -68,7 +68,7 @@ export interface NewsItem {
 }
 
 let cache: { items: NewsItem[]; ts: number } | null = null
-const TTL = 30 * 60 * 1000
+const TTL = 3 * 60 * 60 * 1000 // 3 hours — matches client refresh interval
 
 function isRealEstate(title: string): boolean {
   const lower = title.toLowerCase()
@@ -114,7 +114,7 @@ export async function GET() {
     cache = { items, ts: Date.now() }
     return NextResponse.json(items)
   } catch {
-    cache = { items: FALLBACK, ts: Date.now() - TTL + 5 * 60 * 1000 }
+    cache = { items: FALLBACK, ts: Date.now() - TTL + 30 * 60 * 1000 } // retry in 30 min
     return NextResponse.json(FALLBACK)
   }
 }

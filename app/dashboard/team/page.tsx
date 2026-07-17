@@ -8,15 +8,17 @@ import {
 } from 'lucide-react'
 
 const C = {
-  bg: '#F8FAFC', panel: '#FFFFFF', border: '#E2E8F0',
-  text: '#0F172A', muted: '#64748B', label: '#94A3B8',
-  blue: '#a000c8', emerald: '#059669', amber: '#be2ed6',
-  red: '#EF4444', violet: '#a000c8',
+  bg: '#F5F6FA', panel: '#FFFFFF', border: '#E8ECF0',
+  text: '#263238', muted: '#78889B', label: '#A4B1BE',
+  blue: '#FF7043', emerald: '#059669', amber: '#F59E0B',
+  red: '#EF4444', violet: '#FF7043',
 }
+const ORANGE_DIM = 'rgba(255,112,67,0.08)'
+const ORANGE_BRD = 'rgba(255,112,67,0.22)'
 
 const ROLES      = ['agent', 'senior_agent', 'manager']
 const ROLE_LABEL: Record<string, string> = { agent: 'Agent', senior_agent: 'Sr. Agent', manager: 'Manager' }
-const ROLE_COLOR: Record<string, string> = { agent: C.blue, senior_agent: C.violet, manager: C.emerald }
+const ROLE_COLOR: Record<string, string> = { agent: '#FF7043', senior_agent: '#F59E0B', manager: '#059669' }
 
 const CITIES     = ['Mumbai', 'Delhi', 'Bangalore', 'Pune', 'Hyderabad', 'Chennai', 'Ahmedabad', 'Kolkata', 'Surat', 'Jaipur']
 const PROP_TYPES = ['1BHK', '2BHK', '3BHK', '4BHK+', 'Villa', 'Plot', 'Commercial']
@@ -83,7 +85,7 @@ function AgentModal({ member, onClose, onSave }: {
   const inp: React.CSSProperties = {
     width: '100%', padding: '9px 12px', border: `1px solid ${C.border}`,
     borderRadius: 9, fontSize: 13, color: C.text, outline: 'none',
-    background: '#FAFBFC', boxSizing: 'border-box',
+    background: '#F5F6FA', boxSizing: 'border-box',
   }
   const lbl: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5, display: 'block' }
 
@@ -144,7 +146,7 @@ function AgentModal({ member, onClose, onSave }: {
               {CITIES.map(c => {
                 const on = (form.specialty_cities ?? []).includes(c)
                 return <button key={c} type="button" onClick={() => tog('specialty_cities', c)}
-                  style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, border: `1px solid ${on ? C.blue : C.border}`, background: on ? 'rgba(160,0,200,0.07)' : '#F8FAFC', color: on ? C.blue : C.muted, cursor: 'pointer' }}>
+                  style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, border: `1px solid ${on ? C.blue : C.border}`, background: on ? 'rgba(255,112,67,0.08)' : '#F5F6FA', color: on ? C.blue : C.muted, cursor: 'pointer' }}>
                   {c}
                 </button>
               })}
@@ -157,7 +159,7 @@ function AgentModal({ member, onClose, onSave }: {
               {PROP_TYPES.map(t => {
                 const on = (form.specialty_types ?? []).includes(t)
                 return <button key={t} type="button" onClick={() => tog('specialty_types', t)}
-                  style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, border: `1px solid ${on ? C.violet : C.border}`, background: on ? 'rgba(160,0,200,0.07)' : '#F8FAFC', color: on ? C.violet : C.muted, cursor: 'pointer' }}>
+                  style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, border: `1px solid ${on ? C.violet : C.border}`, background: on ? 'rgba(255,112,67,0.08)' : '#F5F6FA', color: on ? C.violet : C.muted, cursor: 'pointer' }}>
                   {t}
                 </button>
               })}
@@ -172,7 +174,7 @@ function AgentModal({ member, onClose, onSave }: {
           {error && <div style={{ background: 'rgba(239,68,68,0.06)', border: `1px solid rgba(239,68,68,0.2)`, borderRadius: 9, padding: '9px 12px', fontSize: 13, color: C.red }}>{error}</div>}
 
           <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-            <button onClick={onClose} style={{ flex: 1, padding: '11px 0', border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 14, fontWeight: 600, color: C.muted, background: '#F8FAFC', cursor: 'pointer' }}>Cancel</button>
+            <button onClick={onClose} style={{ flex: 1, padding: '11px 0', border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 14, fontWeight: 600, color: C.muted, background: '#F5F6FA', cursor: 'pointer' }}>Cancel</button>
             <button onClick={handleSave} disabled={saving} style={{ flex: 2, padding: '11px 0', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#fff', background: saving ? '#E2E8F0' : C.blue, cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
               {saving ? <><Loader2 style={{ width: 15, height: 15, animation: 'spin 1s linear infinite' }} /> Saving…</> : (member ? 'Save Changes' : 'Add Agent')}
             </button>
@@ -253,9 +255,9 @@ export default function TeamPage() {
 
   const rankBadge = (i: number) => {
     const medals = [
-      { label: '1', bg: 'rgba(190,46,214,0.08)', color: '#be2ed6', border: 'rgba(190,46,214,0.25)' },
-      { label: '2', bg: '#F1F5F9', color: '#64748B', border: '#CBD5E1' },
-      { label: '3', bg: 'rgba(190,46,214,0.08)', color: '#8a00c2', border: 'rgba(190,46,214,0.25)' },
+      { label: '🥇', bg: 'rgba(255,112,67,0.10)', color: '#FF7043', border: 'rgba(255,112,67,0.28)' },
+      { label: '🥈', bg: '#F1F5F9',               color: '#64748B', border: '#CBD5E1'               },
+      { label: '🥉', bg: 'rgba(245,158,11,0.10)', color: '#F59E0B', border: 'rgba(245,158,11,0.28)' },
     ]
     const m = medals[i]
     if (m) return (
@@ -282,7 +284,7 @@ export default function TeamPage() {
           <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>Manage agents, track performance, view leaderboard</p>
         </div>
         <button onClick={() => setModal('new')}
-          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: C.blue, border: 'none', borderRadius: 12, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(160,0,200,0.25)' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: C.blue, border: 'none', borderRadius: 12, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(255,112,67,0.28)' }}>
           <Plus style={{ width: 15, height: 15 }} /> Add Agent
         </button>
       </div>
@@ -342,7 +344,7 @@ export default function TeamPage() {
               </thead>
               <tbody>
                 {agentStats.map((a, i) => (
-                  <tr key={a.name} style={{ borderBottom: `1px solid ${C.border}`, background: i === 0 ? 'rgba(190,46,214,0.07)' : 'transparent' }}>
+                  <tr key={a.name} style={{ borderBottom: `1px solid ${C.border}`, background: i === 0 ? 'rgba(255,112,67,0.06)' : 'transparent' }}>
                     <td style={{ padding: '12px 16px' }}>{rankBadge(i)}</td>
                     <td style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -411,7 +413,7 @@ export default function TeamPage() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <button onClick={() => setModal(m)} style={{ padding: '5px 7px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#F8FAFC', color: C.muted, cursor: 'pointer' }}><Edit2 style={{ width: 13, height: 13 }} /></button>
+                    <button onClick={() => setModal(m)} style={{ padding: '5px 7px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#F5F6FA', color: C.muted, cursor: 'pointer' }}><Edit2 style={{ width: 13, height: 13 }} /></button>
                     <button onClick={() => setDeleting(m.id)} style={{ padding: '5px 7px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#FFF1F2', color: C.red, cursor: 'pointer' }}><Trash2 style={{ width: 13, height: 13 }} /></button>
                   </div>
                 </div>
@@ -425,8 +427,8 @@ export default function TeamPage() {
 
                 {(m.specialty_cities.length > 0 || m.specialty_types.length > 0) && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 12 }}>
-                    {m.specialty_cities.map(c => <span key={c} style={{ fontSize: 10, fontWeight: 600, background: 'rgba(160,0,200,0.07)', color: C.blue, borderRadius: 20, padding: '2px 8px' }}>{c}</span>)}
-                    {m.specialty_types.map(t => <span key={t} style={{ fontSize: 10, fontWeight: 600, background: 'rgba(160,0,200,0.07)', color: C.violet, borderRadius: 20, padding: '2px 8px' }}>{t}</span>)}
+                    {m.specialty_cities.map(c => <span key={c} style={{ fontSize: 10, fontWeight: 600, background: 'rgba(255,112,67,0.08)', color: C.blue, borderRadius: 20, padding: '2px 8px' }}>{c}</span>)}
+                    {m.specialty_types.map(t => <span key={t} style={{ fontSize: 10, fontWeight: 600, background: 'rgba(255,112,67,0.08)', color: C.violet, borderRadius: 20, padding: '2px 8px' }}>{t}</span>)}
                   </div>
                 )}
 
@@ -459,7 +461,7 @@ export default function TeamPage() {
             <p style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Remove this agent?</p>
             <p style={{ fontSize: 13, color: C.muted, margin: '0 0 20px' }}>Their deal assignments will not be affected.</p>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setDeleting(null)} style={{ flex: 1, padding: '10px 0', border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 13, fontWeight: 600, color: C.muted, background: '#F8FAFC', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => setDeleting(null)} style={{ flex: 1, padding: '10px 0', border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 13, fontWeight: 600, color: C.muted, background: '#F5F6FA', cursor: 'pointer' }}>Cancel</button>
               <button onClick={() => handleDelete(deleting)} style={{ flex: 1, padding: '10px 0', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, color: '#fff', background: C.red, cursor: 'pointer' }}>Remove</button>
             </div>
           </div>
