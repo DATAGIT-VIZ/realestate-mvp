@@ -3,7 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { createBrowserClient } from '@supabase/auth-helpers-nextjs'
+
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 import { Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react'
 import { Suspense } from 'react'
 
