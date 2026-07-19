@@ -59,8 +59,8 @@ export async function GET(req: NextRequest) {
       .order('intent_score', { ascending: false, nullsFirst: false })
       .limit(limit)
 
-    // Show leads owned by this user OR unassigned (agent_id IS NULL = shared pool)
-    if (!isDevBypass) q = q.or(`agent_id.is.null,agent_id.eq.${userId}`)
+    // Strict workspace isolation — each user sees only their own leads
+    if (!isDevBypass) q = q.eq('agent_id', userId)
 
     if (status) q = q.eq('status', status)
     if (source) q = q.eq('source', source)
