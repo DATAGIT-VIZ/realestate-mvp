@@ -608,7 +608,7 @@ export default function LeadDetailPage() {
               {(['info', 'requirements'] as LeftTab[]).map(tab => (
                 <button key={tab} onClick={() => setLeftTab(tab)}
                   style={{ flex: 1, padding: '10px 0', fontSize: 12, fontWeight: 600, color: leftTab === tab ? BLUE : MUTED, background: leftTab === tab ? PRIMARY_DIM : 'transparent', border: 'none', borderBottom: leftTab === tab ? `2px solid ${BLUE}` : '2px solid transparent', cursor: 'pointer' }}>
-                  {tab === 'info' ? 'Lead Info' : 'Properties Assigned'}
+                  {tab === 'info' ? 'Lead Info' : 'Requirement Info'}
                 </button>
               ))}
             </div>
@@ -656,7 +656,7 @@ export default function LeadDetailPage() {
               <div style={{ padding: '12px 16px' }}>
                 {lead.propertyType && lead.propertyType.length > 0 && (
                   <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: 10, color: '#94A3B8', marginBottom: 6 }}>Property Type</div>
+                    <div style={{ fontSize: 10, color: '#94A3B8', marginBottom: 6 }}>Property Assigned</div>
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                       {lead.propertyType.map(pt => <span key={pt} style={{ fontSize: 11, fontWeight: 700, color: '#E64A19', background: 'rgba(245,158,11,0.09)', border: '1px solid rgba(255,112,67,0.22)', padding: '3px 9px', borderRadius: 6 }}>{pt}</span>)}
                     </div>
