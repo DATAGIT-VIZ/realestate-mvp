@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import {
   X, Phone, Mail, MessageCircle, Eye, Calendar, FileText,
-  Loader2, Clock, CheckCircle, XCircle, MinusCircle, HelpCircle,
-  Video, Building2, Handshake, TrendingUp, Bell,
+  Loader2, Clock, Video, Building2, Handshake, TrendingUp, Bell,
   ChevronLeft, ChevronRight, ChevronDown,
 } from 'lucide-react'
 import { type ActivityType } from '@/app/api/crm/leads/[id]/activities/route'
@@ -39,11 +38,8 @@ type TypeConfig = {
 const TYPE_CONFIG: TypeConfig[] = [
   // Contact attempts
   { value: 'Call Made',          label: 'Call Made',          Icon: Phone,        advances: 'Cold', group: 'Contact' },
-  { value: 'Call Missed',        label: 'Call Missed',        Icon: Phone,        advances: 'Cold', group: 'Contact' },
   { value: 'WhatsApp Sent',      label: 'WhatsApp Sent',      Icon: MessageCircle,advances: 'Cold', group: 'Contact' },
-  { value: 'WhatsApp Received',  label: 'WhatsApp Received',  Icon: MessageCircle,advances: 'Cold', group: 'Contact' },
   { value: 'Email Sent',         label: 'Email Sent',         Icon: Mail,         advances: 'Cold', group: 'Contact' },
-  { value: 'Email Received',     label: 'Email Received',     Icon: Mail,         advances: 'Cold', group: 'Contact' },
   // Milestones
   { value: 'VM Done',            label: 'VM Done',            Icon: Video,        advances: 'Warm', milestone: true, group: 'Milestone' },
   { value: 'OBM Done',           label: 'OBM Done',           Icon: Building2,    advances: 'Warm', milestone: true, group: 'Milestone' },
@@ -57,13 +53,6 @@ const TYPE_CONFIG: TypeConfig[] = [
 ]
 
 const GROUPS = ['Contact', 'Milestone', 'Admin']
-
-const OUTCOMES = [
-  { value: 'Positive',    Icon: CheckCircle,  color: '#059669', label: 'Positive' },
-  { value: 'Neutral',     Icon: MinusCircle,  color: '#94A3B8', label: 'Neutral' },
-  { value: 'No Response', Icon: HelpCircle,   color: '#D97706', label: 'No Response' },
-  { value: 'Negative',    Icon: XCircle,      color: '#EF4444', label: 'Negative' },
-]
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const BG_MODAL   = '#FFFFFF'
@@ -90,7 +79,6 @@ const STATUS_COLOR: Record<string, string> = {
 
 export function LogActivityModal({ leadId, leadName, isOpen, onClose, onActivityLogged, currentStatus = 'New', existingActivityTypes = [] }: Props) {
   const [type, setType]             = useState<ActivityType>('Call Made')
-  const [outcome, setOutcome]       = useState('')
   const [notes, setNotes]           = useState('')
   const [manualStage, setManualStage] = useState(currentStatus)
   const [nextDate, setNextDate]     = useState('')
@@ -104,7 +92,7 @@ export function LogActivityModal({ leadId, leadName, isOpen, onClose, onActivity
   if (!isOpen) return null
 
   const reset = () => {
-    setType('Call Made'); setOutcome(''); setNotes('')
+    setType('Call Made'); setNotes('')
     setManualStage(currentStatus); setNextDate(''); setNextTime('10:00')
     setCalOpen(false); setError(null)
   }
@@ -112,7 +100,6 @@ export function LogActivityModal({ leadId, leadName, isOpen, onClose, onActivity
   const close = () => { reset(); onClose() }
 
   const selected    = TYPE_CONFIG.find(t => t.value === type)!
-  const isCall      = type === 'Call Made' || type === 'Call Missed'
   const isBlocked   = selected?.milestone && existingActivityTypes.includes(type)
   const advancesTo  = selected?.advances
   const currentIdx  = STATUS_ORDER.indexOf(currentStatus)
@@ -131,7 +118,6 @@ export function LogActivityModal({ leadId, leadName, isOpen, onClose, onActivity
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type,
-          outcome:        outcome      || undefined,
           notes:          notes.trim() || undefined,
           nextActionDate: followUpISO,
         }),
@@ -259,26 +245,6 @@ export function LogActivityModal({ leadId, leadName, isOpen, onClose, onActivity
               </p>
             </div>
           )}
-
-          {/* Outcome */}
-          <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>Outcome</label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 7 }}>
-              {OUTCOMES.map(({ value, Icon, color, label }) => (
-                <button key={value} type="button" onClick={() => setOutcome(outcome === value ? '' : value)}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '8px 4px', borderRadius: 10, border: `1px solid ${outcome === value ? color : BORDER}`, background: outcome === value ? `${color}12` : 'transparent', cursor: 'pointer', transition: 'all 0.15s' }}
-                >
-                  <Icon style={{ width: 14, height: 14, color: outcome === value ? color : MUTED }} />
-                  <span style={{ fontSize: 10, fontWeight: 600, color: outcome === value ? color : MUTED }}>{label}</span>
-                </button>
-              ))}
-            </div>
-            {outcome === 'No Response' && isCall && (
-              <p style={{ fontSize: 11, color: '#D97706', margin: '6px 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
-                ⚠ Failed contact attempt — auto-disqualifies after 5
-              </p>
-            )}
-          </div>
 
           {/* Move to Stage */}
           <div>

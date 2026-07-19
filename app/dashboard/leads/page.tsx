@@ -11,8 +11,8 @@ import { DistributeModal } from '@/components/crm/DistributeModal'
 import { LogActivityModal } from '@/components/LogActivityModal'
 import {
   Search, Plus, Filter, Eye, Loader2, UserPlus, Clock,
-  ChevronDown, LayoutGrid, List, UploadCloud, MailPlus, Phone, Mail, Copy,
-  Activity, Shuffle, MessageCircle,
+  ChevronDown, LayoutGrid, List, UploadCloud, MailPlus, Mail, Copy,
+  Activity, Shuffle, Home,
 } from 'lucide-react'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -110,17 +110,7 @@ function timeAgo(dateStr: string): string {
   return 'Just now'
 }
 
-function touchedStyle(dateStr: string) {
-  const days = (Date.now() - new Date(dateStr).getTime()) / 86_400_000
-  if (days < 3)  return { dot: '#059669', color: '#059669', bg: '#ECFDF5' } // green
-  if (days < 7)  return { dot: '#F59E0B', color: '#B45309', bg: '#FFFBEB' } // amber
-  return              { dot: '#EF4444', color: '#B91C1C', bg: '#FEF2F2' }   // red
-}
 
-function waLink(phone: string) {
-  const digits = phone.replace(/\D/g, '').replace(/^(91|0)/, '')
-  return `https://wa.me/91${digits}`
-}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function LeadsPage() {
@@ -489,7 +479,7 @@ export default function LeadsPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
-                  {(['Lead name','Contact','Lead source','Lead status','Budget','Last touched',''] as const).map((h, i) => (
+                  {(['Lead name','Contact','Lead source','Lead status','Budget','Properties Assigned',''] as const).map((h, i) => (
                     <th key={i}
                       className={i === 1 ? 'hidden sm:table-cell' : i === 2 ? 'hidden md:table-cell' : i === 4 ? 'hidden lg:table-cell' : i === 5 ? 'hidden md:table-cell' : ''}
                       style={{ padding: `10px ${i === 0 || i === 6 ? '20px' : '16px'}`, fontSize: 11, fontWeight: 500, color: '#C1C7D0', textTransform: 'uppercase', letterSpacing: '0.07em', textAlign: 'left', background: '#FAFBFC', whiteSpace: 'nowrap' }}>
@@ -508,7 +498,6 @@ export default function LeadsPage() {
                   const isDup   = dupLeadIds.has(lead.id)
                   const email   = getEmail(lead)
                   const phone   = getPhone(lead)
-                  const ts      = touchedStyle(lead.updatedAt ?? lead.createdAt)
                   return (
                     <tr key={lead.id}
                       style={{ borderBottom: idx < filteredSortedLeads.length - 1 ? `1px solid ${BORDER}` : 'none', transition: 'background 0.1s' }}
@@ -565,39 +554,25 @@ export default function LeadsPage() {
                         <span style={{ fontSize: 12, color: MUTED }}>{formatBudget(lead.budgetMin, lead.budgetMax)}</span>
                       </td>
 
-                      {/* Last touched */}
+                      {/* Properties Assigned — what the lead is looking for */}
                       <td className="hidden md:table-cell" style={{ padding: '16px 16px' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 99, background: ts.bg }}>
-                          <div style={{ width: 5, height: 5, borderRadius: '50%', background: ts.dot, flexShrink: 0 }} />
-                          <span style={{ fontSize: 11, fontWeight: 600, color: ts.color, whiteSpace: 'nowrap' }}>
-                            {timeAgo(lead.updatedAt ?? lead.createdAt)}
-                          </span>
-                        </div>
+                        {lead.propertyType && lead.propertyType.length > 0 ? (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                            {lead.propertyType.map(pt => (
+                              <span key={pt} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 99, background: 'rgba(255,112,67,0.07)', border: '1px solid rgba(255,112,67,0.18)', fontSize: 11, fontWeight: 600, color: PRIMARY, whiteSpace: 'nowrap' }}>
+                                <Home style={{ width: 9, height: 9 }} />
+                                {pt}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: 12, color: LABEL }}>—</span>
+                        )}
                       </td>
 
                       {/* Actions */}
                       <td style={{ padding: '16px 20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 5 }}>
-                          {/* Call */}
-                          {phone && (
-                            <a href={`tel:${phone}`} onClick={e => e.stopPropagation()}
-                              title={`Call ${phone}`}
-                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 8, background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#059669', textDecoration: 'none', flexShrink: 0, transition: 'all 0.12s' }}
-                              onMouseEnter={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.background = '#059669'; a.style.color = '#fff'; a.style.borderColor = '#059669' }}
-                              onMouseLeave={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.background = '#ECFDF5'; a.style.color = '#059669'; a.style.borderColor = '#A7F3D0' }}>
-                              <Phone style={{ width: 12, height: 12 }} />
-                            </a>
-                          )}
-                          {/* WhatsApp */}
-                          {phone && (
-                            <a href={waLink(phone)} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
-                              title="Open WhatsApp"
-                              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 8, background: '#F0FDF4', border: '1px solid #86EFAC', color: '#16A34A', textDecoration: 'none', flexShrink: 0, transition: 'all 0.12s' }}
-                              onMouseEnter={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.background = '#25D366'; a.style.color = '#fff'; a.style.borderColor = '#25D366' }}
-                              onMouseLeave={e => { const a = e.currentTarget as HTMLAnchorElement; a.style.background = '#F0FDF4'; a.style.color = '#16A34A'; a.style.borderColor = '#86EFAC' }}>
-                              <MessageCircle style={{ width: 12, height: 12 }} />
-                            </a>
-                          )}
                           {/* Log */}
                           <button onClick={e => { e.stopPropagation(); e.preventDefault(); setQuickLogLeadId(lead.id) }}
                             className="hidden sm:inline-flex"

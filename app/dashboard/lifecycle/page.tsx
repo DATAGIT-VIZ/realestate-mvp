@@ -168,7 +168,9 @@ function LeadCard({
       ref={setNodeRef}
       style={{
         background: PANEL,
-        border: `1px solid ${isDragging ? bucket.color : highlighted ? bucket.color : BORDER}`,
+        borderTop: `1px solid ${isDragging ? bucket.color : highlighted ? bucket.color : BORDER}`,
+        borderRight: `1px solid ${isDragging ? bucket.color : highlighted ? bucket.color : BORDER}`,
+        borderBottom: `1px solid ${isDragging ? bucket.color : highlighted ? bucket.color : BORDER}`,
         borderLeft: isStuck ? `3px solid ${stuckColor}` : `3px solid ${highlighted ? bucket.color : 'transparent'}`,
         borderRadius: 12,
         padding: compact ? '8px 10px' : '13px 14px 11px',
@@ -308,7 +310,10 @@ function BucketColumn({
 
       {/* Column header */}
       <div style={{
-        background: PANEL, border: `1px solid ${BORDER}`,
+        background: PANEL,
+        borderTop: `1px solid ${BORDER}`,
+        borderRight: `1px solid ${BORDER}`,
+        borderBottom: `1px solid ${BORDER}`,
         borderLeft: `3px solid ${bucket.color}`,
         borderRadius: '12px 12px 0 0',
         padding: compact ? '8px 10px' : '12px 16px',

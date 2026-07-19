@@ -608,7 +608,7 @@ export default function LeadDetailPage() {
               {(['info', 'requirements'] as LeftTab[]).map(tab => (
                 <button key={tab} onClick={() => setLeftTab(tab)}
                   style={{ flex: 1, padding: '10px 0', fontSize: 12, fontWeight: 600, color: leftTab === tab ? BLUE : MUTED, background: leftTab === tab ? PRIMARY_DIM : 'transparent', border: 'none', borderBottom: leftTab === tab ? `2px solid ${BLUE}` : '2px solid transparent', cursor: 'pointer' }}>
-                  {tab === 'info' ? 'Lead Info' : 'Requirements'}
+                  {tab === 'info' ? 'Lead Info' : 'Properties Assigned'}
                 </button>
               ))}
             </div>
