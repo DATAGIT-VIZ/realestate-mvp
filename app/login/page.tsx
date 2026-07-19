@@ -56,8 +56,7 @@ function LoginForm() {
     }
 
     if (data.session) {
-      router.push(redirectTo)
-      router.refresh()
+      window.location.href = redirectTo
     }
   }
 
