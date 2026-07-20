@@ -310,6 +310,7 @@ export default function LeadDetailPage() {
   }, [leadId])
 
   useEffect(() => { fetchLead(); fetchTasks() }, [fetchLead, fetchTasks])
+  useEffect(() => { window.scrollTo(0, 0) }, [])
 
   const handleStageChange = async (stage: string) => {
     if (!lead) return
