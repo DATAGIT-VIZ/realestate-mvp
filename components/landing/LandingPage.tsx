@@ -10,6 +10,7 @@ import {
 import {
   AreaChart, Area, ResponsiveContainer, Tooltip, XAxis,
 } from 'recharts'
+import FloatingDashboard from './FloatingDashboard'
 
 /* ─── Scroll-reveal hook ──────────────────────────────────────────────────── */
 function useScrollReveal() {
@@ -1299,6 +1300,7 @@ export default function LandingPage() {
       <Stats />
       <HowItWorks />
       <Testimonial />
+      <FloatingDashboard />
       <CTASection />
       <Footer />
     </div>
