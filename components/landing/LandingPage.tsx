@@ -7,6 +7,9 @@ import {
   ArrowRight, CheckCircle, Menu, X, Star, Users, TrendingUp,
   PhoneCall, Clock, Target, Sparkles,
 } from 'lucide-react'
+import {
+  AreaChart, Area, ResponsiveContainer, Tooltip, XAxis,
+} from 'recharts'
 
 /* ─── Scroll-reveal hook ──────────────────────────────────────────────────── */
 function useScrollReveal() {
@@ -465,6 +468,268 @@ function Hero() {
   )
 }
 
+/* ─── KPI Dashboard ──────────────────────────────────────────────────────── */
+const WEEKLY_DATA = [
+  { day: 'Mon', leads: 8  },
+  { day: 'Tue', leads: 14 },
+  { day: 'Wed', leads: 11 },
+  { day: 'Thu', leads: 19 },
+  { day: 'Fri', leads: 16 },
+  { day: 'Sat', leads: 22 },
+  { day: 'Sun', leads: 17 },
+]
+
+const RECENT_LEADS = [
+  { name: 'Rajesh Sharma', budget: '₹1.2 Cr', source: 'MagicBricks', status: 'Hot',  time: '2m ago'  },
+  { name: 'Priya Mehta',   budget: '₹85 L',   source: '99acres',      status: 'Warm', time: '14m ago' },
+  { name: 'Vikram Singh',  budget: '₹2.1 Cr', source: 'Housing.com',  status: 'Hot',  time: '1h ago'  },
+]
+
+function DonutRing({ pct }: { pct: number }) {
+  const r = 42, cx = 54, cy = 54, size = 108
+  const circ = 2 * Math.PI * r
+  const dash = (pct / 100) * circ
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <defs>
+        <linearGradient id="kpi-donut" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FF7043" />
+          <stop offset="100%" stopColor="#E64A19" />
+        </linearGradient>
+      </defs>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F0F3F7" strokeWidth="10" />
+      <circle
+        cx={cx} cy={cy} r={r}
+        fill="none"
+        stroke="url(#kpi-donut)"
+        strokeWidth="10"
+        strokeDasharray={`${dash} ${circ - dash}`}
+        strokeLinecap="round"
+        transform={`rotate(-90 ${cx} ${cy})`}
+      />
+      <text x={cx} y={cy - 5} textAnchor="middle" fill="#1A1F27" fontSize="18" fontWeight="800" fontFamily="var(--font-jakarta),sans-serif">
+        {pct}%
+      </text>
+      <text x={cx} y={cy + 11} textAnchor="middle" fill="#A4B1BE" fontSize="8" fontFamily="var(--font-jakarta),sans-serif">
+        CONVERTED
+      </text>
+    </svg>
+  )
+}
+
+function KPIDashboard() {
+  const [tab, setTab] = useState<'overview' | 'pipeline' | 'activity'>('overview')
+  const ref = useScrollReveal()
+
+  return (
+    <section ref={ref} className="py-16 px-6" style={{ background: 'white' }}>
+      <div className="max-w-5xl mx-auto">
+        {/* Section label */}
+        <div className="lp-in lp-in-delay-1 text-center mb-8">
+          <p className="text-[12px] font-semibold text-[#A4B1BE] uppercase tracking-[0.15em]">
+            Real-time visibility across your entire team
+          </p>
+        </div>
+
+        {/* Dashboard card */}
+        <div
+          className="lp-in lp-in-delay-2 rounded-3xl overflow-hidden"
+          style={{
+            border: '1px solid #E8ECF0',
+            boxShadow: '0 32px 80px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04)',
+            background: 'white',
+          }}
+        >
+          {/* Header bar */}
+          <div
+            className="px-6 py-4 flex items-center justify-between flex-wrap gap-3"
+            style={{ borderBottom: '1px solid #F0F3F7', background: '#FAFBFC' }}
+          >
+            <div className="flex items-center gap-4">
+              <div>
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Live</span>
+                </div>
+                <div className="text-[14px] font-bold text-[#1A1F27]">Lead Performance</div>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex gap-0.5 rounded-lg p-1" style={{ background: '#EFEFEF' }}>
+                {(['overview', 'pipeline', 'activity'] as const).map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setTab(t)}
+                    className="px-3 py-1 rounded-md text-[11px] font-semibold capitalize transition-all duration-200"
+                    style={
+                      tab === t
+                        ? { background: 'white', color: '#1A1F27', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }
+                        : { color: '#78889B' }
+                    }
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium text-[#78889B]"
+              style={{ border: '1px solid #E8ECF0', background: 'white' }}
+            >
+              <Clock className="w-3 h-3" />
+              Last 7 days
+            </div>
+          </div>
+
+          {/* 3-column body */}
+          <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-[#F0F3F7]">
+
+            {/* ── Col 1: Conversion donut ── */}
+            <div className="p-6 flex flex-col gap-4">
+              <div className="text-[10px] font-bold text-[#A4B1BE] uppercase tracking-widest">Conversion Rate</div>
+
+              <div className="flex items-center gap-4">
+                <DonutRing pct={34} />
+                <div className="flex flex-col gap-2.5">
+                  {[
+                    { label: 'Hot leads',  count: 12, color: '#FF7043' },
+                    { label: 'Warm',       count: 18, color: '#F59E0B' },
+                    { label: 'Cold',       count: 9,  color: '#CBD5E1' },
+                  ].map(s => (
+                    <div key={s.label} className="flex items-center gap-2 text-[11px]">
+                      <div className="w-2 h-2 rounded-full shrink-0" style={{ background: s.color }} />
+                      <span className="text-[#78889B] flex-1">{s.label}</span>
+                      <span className="font-bold text-[#1A1F27]">{s.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px]"
+                style={{ background: 'rgba(5,150,105,0.06)', border: '1px solid rgba(5,150,105,0.14)' }}
+              >
+                <TrendingUp className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span className="text-emerald-700 font-semibold">+21% vs last month</span>
+              </div>
+            </div>
+
+            {/* ── Col 2: Area chart + leads ── */}
+            <div className="p-6 flex flex-col gap-4">
+              <div className="text-[10px] font-bold text-[#A4B1BE] uppercase tracking-widest">Lead Inflow · 7 days</div>
+
+              <div style={{ height: 88 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={WEEKLY_DATA} margin={{ top: 2, right: 2, left: -24, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="area-fill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor="#FF7043" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#FF7043" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="day" tick={{ fontSize: 9, fill: '#A4B1BE' }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{ background: '#1A1F27', border: 'none', borderRadius: 8, fontSize: 11, color: 'white', padding: '6px 10px' }}
+                      cursor={{ stroke: '#FF7043', strokeWidth: 1, strokeDasharray: '4 2' }}
+                      formatter={(v: number) => [`${v} leads`, '']}
+                    />
+                    <Area type="monotone" dataKey="leads" stroke="#FF7043" strokeWidth={2} fill="url(#area-fill)" dot={false} activeDot={{ r: 4, fill: '#FF7043', stroke: 'white', strokeWidth: 2 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="text-[10px] font-bold text-[#A4B1BE] uppercase tracking-widest">Recent leads</div>
+
+              <div className="flex flex-col gap-3">
+                {RECENT_LEADS.map((lead, i) => (
+                  <div key={i} className="flex items-center gap-2.5">
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0"
+                      style={{ background: 'linear-gradient(135deg, #FF7043, #2E66F6)' }}
+                    >
+                      {lead.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[12px] font-semibold text-[#263238] truncate">{lead.name}</div>
+                      <div className="text-[10px] text-[#A4B1BE]">{lead.source} · {lead.time}</div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[12px] font-bold text-[#1A1F27]">{lead.budget}</span>
+                      <span
+                        className="px-2 py-0.5 rounded-full text-[9px] font-bold"
+                        style={lead.status === 'Hot'
+                          ? { background: 'rgba(255,112,67,0.1)', color: '#FF7043' }
+                          : { background: 'rgba(245,158,11,0.1)', color: '#D97706' }}
+                      >
+                        {lead.status === 'Hot' ? '🔥' : '🌡'} {lead.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── Col 3: Pipeline + portals ── */}
+            <div className="p-6 flex flex-col gap-5">
+              <div className="text-[10px] font-bold text-[#A4B1BE] uppercase tracking-widest">Monthly Pipeline</div>
+
+              <div>
+                <div className="text-[34px] font-extrabold text-[#1A1F27] leading-none tracking-tight">₹8.4 Cr</div>
+                <div className="text-[11px] text-[#78889B] mt-1.5 mb-3">of ₹12 Cr target</div>
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: '#F0F3F7' }}>
+                  <div
+                    className="h-full rounded-full"
+                    style={{ width: '70%', background: 'linear-gradient(90deg, #FF7043, #E64A19)' }}
+                  />
+                </div>
+                <div className="flex justify-between mt-1.5 text-[10px] text-[#A4B1BE]">
+                  <span>₹0</span>
+                  <span className="font-semibold text-[#FF7043]">70%</span>
+                  <span>₹12 Cr</span>
+                </div>
+              </div>
+
+              {/* Mini stats */}
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Avg deal size', val: '₹94 L' },
+                  { label: 'Deals this month', val: '9' },
+                  { label: 'Avg close time', val: '11 days' },
+                  { label: 'Follow-ups sent', val: '143' },
+                ].map(s => (
+                  <div key={s.label} className="p-3 rounded-xl" style={{ background: '#F5F6FA' }}>
+                    <div className="text-[14px] font-extrabold text-[#1A1F27]">{s.val}</div>
+                    <div className="text-[10px] text-[#A4B1BE] mt-0.5">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Portals */}
+              <div className="pt-2" style={{ borderTop: '1px solid #F0F3F7' }}>
+                <div className="text-[10px] font-bold text-[#A4B1BE] uppercase tracking-widest mb-3">Portals connected</div>
+                <div className="flex flex-wrap gap-2">
+                  {['99acres', 'MagicBricks', 'Housing.com', 'NoBroker', 'Sq.Yards', 'CommonFloor'].map(p => (
+                    <div
+                      key={p}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold"
+                      style={{ background: 'rgba(5,150,105,0.07)', border: '1px solid rgba(5,150,105,0.18)', color: '#059669' }}
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      {p}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 /* ─── Portal marquee ──────────────────────────────────────────────────────── */
 const PORTALS = [
   { name: '99acres',      mark: '99',  weight: 800 },
@@ -800,6 +1065,7 @@ export default function LandingPage() {
     <div className="min-h-screen" style={{ background: '#F5F6FA', fontFamily: 'var(--font-jakarta), system-ui, sans-serif' }}>
       <Nav />
       <Hero />
+      <KPIDashboard />
       <PortalStrip />
       <Features />
       <Stats />
