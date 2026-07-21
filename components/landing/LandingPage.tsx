@@ -465,20 +465,55 @@ function Hero() {
   )
 }
 
-/* ─── Portal strip ────────────────────────────────────────────────────────── */
+/* ─── Portal marquee ──────────────────────────────────────────────────────── */
+const PORTALS = [
+  { name: '99acres',      mark: '99',  weight: 800 },
+  { name: 'MagicBricks',  mark: '◆',   weight: 700 },
+  { name: 'Housing.com',  mark: '⌂',   weight: 600 },
+  { name: 'NoBroker',     mark: '◯',   weight: 800 },
+  { name: 'Square Yards', mark: '⬜',  weight: 700 },
+  { name: 'CommonFloor',  mark: '≡',   weight: 600 },
+  { name: 'PropTiger',    mark: '▶',   weight: 700 },
+  { name: 'Makaan',       mark: '⬔',   weight: 600 },
+]
+
 function PortalStrip() {
-  const portals = ['99acres', 'MagicBricks', 'Housing.com', 'NoBroker', 'CommonFloor', 'Square Yards']
+  // duplicate so the seam is invisible
+  const doubled = [...PORTALS, ...PORTALS]
+
   return (
-    <section className="py-10 border-y border-[#E8ECF0]" style={{ background: 'rgba(255,255,255,0.6)' }}>
-      <div className="max-w-5xl mx-auto px-6">
-        <p className="text-center text-[12px] font-semibold text-[#A4B1BE] uppercase tracking-widest mb-6">
-          Auto-syncs leads from all major Indian portals
-        </p>
-        <div className="flex flex-wrap justify-center gap-4 md:gap-8">
-          {portals.map(p => (
-            <div key={p} className="px-5 py-2.5 rounded-full text-[13px] font-semibold text-[#78889B]"
-              style={{ background: '#F5F6FA', border: '1px solid #E8ECF0' }}>
-              {p}
+    <section className="border-y border-[#E8ECF0]" style={{ background: 'rgba(255,255,255,0.65)' }}>
+      <p className="text-center text-[11px] font-semibold text-[#B8C4CE] uppercase tracking-[0.18em] pt-8 pb-5">
+        Leads auto-synced from India&apos;s top portals
+      </p>
+
+      {/* Track with edge fades */}
+      <div
+        className="relative overflow-hidden pb-8"
+        style={{
+          maskImage: 'linear-gradient(90deg, transparent 0%, black 7%, black 93%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, black 7%, black 93%, transparent 100%)',
+        }}
+      >
+        <div className="lp-marquee-track flex w-max gap-16 items-center">
+          {doubled.map((p, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-2.5 whitespace-nowrap select-none"
+              style={{ color: '#C4CDD8' }}
+            >
+              <span
+                className="text-[13px]"
+                style={{ fontWeight: p.weight, lineHeight: 1 }}
+              >
+                {p.mark}
+              </span>
+              <span
+                className="text-[17px] tracking-tight"
+                style={{ fontWeight: p.weight, color: '#C4CDD8' }}
+              >
+                {p.name}
+              </span>
             </div>
           ))}
         </div>

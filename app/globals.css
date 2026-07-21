@@ -155,6 +155,12 @@
 .lp-in-delay-3       { transition-delay: 0.3s; }
 .lp-in-delay-4       { transition-delay: 0.4s; }
 
+@keyframes lp-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.lp-marquee-track { animation: lp-marquee 36s linear infinite; }
+
 /* ─── Base ──────────────────────────────────────────────────────────────────── */
 body {
   background: var(--bg);
