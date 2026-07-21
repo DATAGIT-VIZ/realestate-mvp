@@ -896,63 +896,291 @@ function Stats() {
 }
 
 /* ─── How it works ────────────────────────────────────────────────────────── */
-const STEPS = [
-  {
-    icon: <PhoneCall className="w-5 h-5" />,
-    color: '#FF7043',
-    title: 'Connect your portals',
-    desc: 'Paste your portal credentials once. Vya Pulse starts pulling leads automatically — 24/7, no human needed.',
-  },
-  {
-    icon: <Users className="w-5 h-5" />,
-    color: '#2E66F6',
-    title: 'Leads auto-assign',
-    desc: 'New leads route to the right agent based on your rules. Each agent gets their own private workspace — no overlap.',
-  },
-  {
-    icon: <TrendingUp className="w-5 h-5" />,
-    color: '#059669',
-    title: 'Close more with AI',
-    desc: 'The AI scores intent, triggers follow-up reminders, and flags deals that need your attention. You just close.',
-  },
-]
+/* ─── How it works — animated step cards ─────────────────────────────────── */
+const seq = (ms: number) => new Promise<void>(r => setTimeout(r, ms))
+
+function PortalSyncCard() {
+  const portals = [
+    { name: '99acres',     abbr: '99', color: '#FF6B35' },
+    { name: 'MagicBricks', abbr: 'MB', color: '#E63946' },
+    { name: 'Housing.com', abbr: 'HC', color: '#2D9B6F' },
+    { name: 'NoBroker',    abbr: 'NB', color: '#7B2FBE' },
+  ]
+  const [connected, setConnected] = useState<number[]>([])
+  const [pulse, setPulse] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      while (alive) {
+        setConnected([]); setPulse(true)
+        await seq(500)
+        for (let i = 0; i < portals.length; i++) {
+          if (!alive) return
+          await seq(620)
+          setConnected(prev => [...prev, i])
+        }
+        setPulse(false)
+        await seq(2400)
+      }
+    })()
+    return () => { alive = false }
+  }, [])
+
+  const allDone = connected.length === portals.length
+
+  return (
+    <div className="flex flex-col items-center gap-4 py-2">
+      <div className="relative">
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl"
+          style={{ background: 'linear-gradient(135deg,#FF7043,#E64A19)' }}>
+          <Building2 className="w-7 h-7 text-white" />
+        </div>
+        {pulse && <div className="absolute inset-0 rounded-2xl border-2 border-[#FF7043] animate-ping opacity-40" />}
+      </div>
+
+      <div className="w-full flex flex-col gap-2">
+        {portals.map((p, i) => {
+          const done = connected.includes(i)
+          return (
+            <div key={p.name} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all duration-500"
+              style={{
+                background: done ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${done ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                transform: done ? 'translateX(4px)' : 'translateX(0)',
+              }}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-[10px] font-extrabold shrink-0"
+                style={{ background: p.color }}>{p.abbr}</div>
+              <span className="text-[12px] font-semibold flex-1" style={{ color: 'rgba(255,255,255,0.8)' }}>{p.name}</span>
+              <div className="w-5 h-5 rounded-full flex items-center justify-center transition-all duration-300 shrink-0"
+                style={{ background: done ? '#10B981' : 'rgba(255,255,255,0.08)' }}>
+                {done && <span className="text-white text-[10px] font-bold">✓</span>}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-semibold transition-all duration-700"
+        style={allDone
+          ? { background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#10B981' }
+          : { background: 'rgba(255,112,67,0.12)', border: '1px solid rgba(255,112,67,0.25)', color: '#FF7043' }}>
+        <div className="w-1.5 h-1.5 rounded-full animate-pulse"
+          style={{ background: allDone ? '#10B981' : '#FF7043' }} />
+        {allDone ? 'All portals live · syncing' : 'Connecting portals…'}
+      </div>
+    </div>
+  )
+}
+
+function LeadRoutingCard() {
+  const [phase, setPhase] = useState<'idle'|'in'|'routing'|'assigned'>('idle')
+
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      while (alive) {
+        setPhase('idle');  await seq(700)
+        setPhase('in');    await seq(1100)
+        setPhase('routing'); await seq(900)
+        setPhase('assigned'); await seq(2800)
+      }
+    })()
+    return () => { alive = false }
+  }, [])
+
+  return (
+    <div className="flex flex-col gap-3 py-1">
+      {/* Incoming */}
+      <div className="rounded-xl p-3.5 transition-all duration-600"
+        style={{
+          background: 'rgba(255,255,255,0.08)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          opacity: phase === 'idle' ? 0 : 1,
+          transform: phase === 'idle' ? 'translateY(-10px) scale(0.96)' : 'translateY(0) scale(1)',
+        }}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+            style={{ background: 'linear-gradient(135deg,#FF7043,#2E66F6)' }}>RS</div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[12px] font-semibold text-white">New lead · MagicBricks</div>
+            <div className="text-[10px] truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>Rajesh Sharma · ₹1.2 Cr · 3BHK</div>
+          </div>
+          <div className="px-2 py-0.5 rounded-full text-[9px] font-bold shrink-0"
+            style={{ background: 'rgba(255,112,67,0.2)', color: '#FF7043' }}>🔥 Hot</div>
+        </div>
+      </div>
+
+      {/* Arrow */}
+      <div className="flex items-center gap-2 text-[11px] font-semibold transition-all duration-500"
+        style={{ color: '#6B8EF7', opacity: phase === 'routing' || phase === 'assigned' ? 1 : 0 }}>
+        <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg,transparent,#2E66F6)' }} />
+        <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+        <span className="shrink-0">Auto-assigning</span>
+        <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+        <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg,#2E66F6,transparent)' }} />
+      </div>
+
+      {/* Agent */}
+      <div className="rounded-xl p-3.5 transition-all duration-600"
+        style={{
+          background: phase === 'assigned' ? 'rgba(46,102,246,0.12)' : 'rgba(255,255,255,0.04)',
+          border: `1px solid ${phase === 'assigned' ? 'rgba(46,102,246,0.3)' : 'rgba(255,255,255,0.07)'}`,
+          opacity: phase === 'routing' || phase === 'assigned' ? 1 : 0,
+          transform: phase === 'assigned' ? 'scale(1.02)' : 'scale(1)',
+        }}>
+        <div className="flex items-center gap-2.5">
+          <div className="relative shrink-0">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px] font-bold"
+              style={{ background: 'linear-gradient(135deg,#2E66F6,#7C3AED)' }}>A</div>
+            {phase === 'assigned' && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center text-white text-[8px] font-bold">1</div>
+            )}
+          </div>
+          <div className="flex-1">
+            <div className="text-[12px] font-semibold text-white">Arjun Nair</div>
+            <div className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>Senior Agent · Whitefield zone</div>
+          </div>
+          {phase === 'assigned' && <span className="text-[10px] font-bold text-emerald-400 shrink-0">Assigned ✓</span>}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 mt-1">
+        {[{ l: 'Response', v: '< 2 min' }, { l: 'Overlap', v: 'Zero' }, { l: 'Privacy', v: '100%' }].map(s => (
+          <div key={s.l} className="text-center p-2 rounded-lg" style={{ background: 'rgba(255,255,255,0.05)' }}>
+            <div className="text-[13px] font-extrabold text-white">{s.v}</div>
+            <div className="text-[9px] mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>{s.l}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function AICloseCard() {
+  const [score, setScore] = useState(0)
+  const [phase, setPhase] = useState<'idle'|'scoring'|'hot'|'closed'>('idle')
+
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      while (alive) {
+        setScore(0); setPhase('idle'); await seq(600)
+        setPhase('scoring')
+        for (let s = 0; s <= 94; s += 3) {
+          if (!alive) return
+          setScore(s); await seq(28)
+        }
+        setScore(94); await seq(350)
+        setPhase('hot');    await seq(1200)
+        setPhase('closed'); await seq(2800)
+      }
+    })()
+    return () => { alive = false }
+  }, [])
+
+  return (
+    <div className="flex flex-col gap-3 py-1">
+      <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>AI Intent Score</span>
+          <span className="text-[10px] font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>Rajesh Sharma</span>
+        </div>
+        <div className="flex items-end gap-3 mb-3">
+          <div className="text-[44px] font-extrabold leading-none transition-colors duration-300"
+            style={{ color: score >= 80 ? '#FF7043' : score >= 50 ? '#F59E0B' : 'white' }}>
+            {score}
+          </div>
+          <div className="text-[18px] font-bold pb-1.5" style={{ color: 'rgba(255,255,255,0.25)' }}>/100</div>
+          {(phase === 'hot' || phase === 'closed') && (
+            <div className="ml-auto px-3 py-1.5 rounded-full text-[11px] font-extrabold lp-fade-up"
+              style={{ background: 'rgba(255,112,67,0.2)', color: '#FF7043', border: '1px solid rgba(255,112,67,0.4)' }}>
+              🔥 Hot Lead
+            </div>
+          )}
+        </div>
+        <div className="h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+          <div className="h-full rounded-full transition-all duration-75"
+            style={{ width: `${score}%`, background: score >= 80 ? 'linear-gradient(90deg,#FF7043,#E64A19)' : score >= 50 ? '#F59E0B' : '#2E66F6' }} />
+        </div>
+        <div className="flex justify-between mt-1.5 text-[9px]" style={{ color: 'rgba(255,255,255,0.25)' }}>
+          <span>Low intent</span><span>High intent</span>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {[
+          { l: 'Portal activity',   v: 'High',       done: score > 20 },
+          { l: 'Budget confirmed',  v: '✓ ₹1.2 Cr',  done: score > 50 },
+          { l: 'Called twice',      v: 'Engaged',    done: score > 75 },
+        ].map(f => (
+          <div key={f.l} className="flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-500"
+            style={{
+              background: f.done ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${f.done ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.06)'}`,
+            }}>
+            <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: f.done ? '#10B981' : 'rgba(255,255,255,0.18)' }} />
+            <span className="text-[11px] flex-1" style={{ color: 'rgba(255,255,255,0.55)' }}>{f.l}</span>
+            <span className="text-[11px] font-semibold shrink-0" style={{ color: f.done ? '#10B981' : 'rgba(255,255,255,0.25)' }}>{f.v}</span>
+          </div>
+        ))}
+      </div>
+
+      {phase === 'closed' && (
+        <div className="rounded-xl p-4 text-center lp-fade-up"
+          style={{ background: 'linear-gradient(135deg,rgba(255,112,67,0.15),rgba(230,74,25,0.08))', border: '1px solid rgba(255,112,67,0.3)' }}>
+          <div className="text-[22px] mb-1">🎉</div>
+          <div className="text-[15px] font-extrabold text-white">Deal closed!</div>
+          <div className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.5)' }}>₹1.2 Cr · 8 days from first enquiry</div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 function HowItWorks() {
   const ref = useScrollReveal()
+  const steps = [
+    { num: '01', color: '#FF7043', icon: <PhoneCall className="w-5 h-5" />, title: 'Connect your portals', desc: 'Paste credentials once. Leads pull in automatically 24/7 — no human in the loop.', card: <PortalSyncCard /> },
+    { num: '02', color: '#2E66F6', icon: <Users className="w-5 h-5" />,    title: 'Leads auto-assign',   desc: 'New leads route instantly to the right agent. Private workspace — zero overlap ever.', card: <LeadRoutingCard /> },
+    { num: '03', color: '#059669', icon: <TrendingUp className="w-5 h-5" />, title: 'Close more with AI', desc: 'AI scores intent in real time, triggers follow-ups, flags hot deals. You just close.', card: <AICloseCard /> },
+  ]
+
   return (
-    <section id="how-it-works" ref={ref} className="py-28" style={{ background: '#FAFBFC' }}>
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="text-center mb-16">
+    <section id="how-it-works" ref={ref} className="py-28" style={{ background: '#111318' }}>
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="text-center mb-14">
           <div className="lp-in lp-in-delay-1 inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold mb-5"
-            style={{ background: 'rgba(46,102,246,0.07)', border: '1px solid rgba(46,102,246,0.2)', color: '#2E66F6' }}>
+            style={{ background: 'rgba(107,142,247,0.1)', border: '1px solid rgba(107,142,247,0.25)', color: '#6B8EF7' }}>
             <Clock className="w-3.5 h-3.5" /> Up and running in minutes
           </div>
-          <h2 className="lp-in lp-in-delay-2 text-[38px] md:text-[46px] font-extrabold text-[#1A1F27] leading-tight tracking-tight">
+          <h2 className="lp-in lp-in-delay-2 text-[38px] md:text-[48px] font-extrabold text-white leading-tight tracking-tight">
             Three steps from signup<br className="hidden md:block" /> to closing deals
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-          <div className="hidden md:block absolute top-10 left-[calc(16.66%+1.5rem)] right-[calc(16.66%+1.5rem)] h-px opacity-20"
-            style={{ background: 'linear-gradient(90deg, #FF7043, #2E66F6)' }} />
-
-          {STEPS.map((step, i) => (
-            <div key={step.title} className={`lp-in lp-in-delay-${i + 1} flex flex-col gap-4`}>
-              <div className="relative self-start">
-                <div
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg"
-                  style={{ background: step.color }}
-                >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {steps.map((step, i) => (
+            <div key={step.num}
+              className={`lp-in lp-in-delay-${i + 1} rounded-2xl p-5 flex flex-col gap-5`}
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              {/* Header row */}
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg"
+                  style={{ background: step.color }}>
                   {step.icon}
                 </div>
-                <div className="absolute -top-2 -right-2 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
-                  style={{ background: '#1A1F27' }}>
-                  {i + 1}
-                </div>
+                <div className="text-[32px] font-extrabold" style={{ color: 'rgba(255,255,255,0.07)' }}>{step.num}</div>
               </div>
+              {/* Animated area */}
+              <div className="rounded-xl p-4 flex-1"
+                style={{ background: 'rgba(0,0,0,0.28)', border: '1px solid rgba(255,255,255,0.06)', minHeight: 300 }}>
+                {step.card}
+              </div>
+              {/* Text */}
               <div>
-                <h3 className="text-[17px] font-bold text-[#1A1F27] mb-2">{step.title}</h3>
-                <p className="text-[14px] text-[#78889B] leading-relaxed">{step.desc}</p>
+                <h3 className="text-[16px] font-bold text-white mb-1.5">{step.title}</h3>
+                <p className="text-[13px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>{step.desc}</p>
               </div>
             </div>
           ))}
