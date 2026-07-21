@@ -8,6 +8,7 @@ import {
   Phone, BarChart3, BarChart2, Calculator, Settings,
   ChevronLeft, ChevronRight, LogOut, Loader2, Activity,
   MessageCircle, CreditCard, UserCheck, GitBranch, Sparkles, Plug, Layers, HelpCircle,
+  CheckSquare,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
@@ -23,7 +24,7 @@ const NAV_SECTIONS = [
     items: [
       { name: 'Leads',          href: '/dashboard/leads',            icon: Users,         exact: false },
       { name: 'Lifecycle',      href: '/dashboard/lifecycle',        icon: Layers,        exact: false },
-      { name: 'Inventory',      href: '/dashboard/properties',       icon: Building2,     exact: false, teamsOnly: true },
+      { name: 'Tasks',           href: '/dashboard/tasks',            icon: CheckSquare,   exact: false },
       { name: 'Team',           href: '/dashboard/team',             icon: UserCheck,     exact: false, teamsOnly: true },
     ],
   },

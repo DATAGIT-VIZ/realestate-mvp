@@ -24,6 +24,8 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/settings': 'Settings',
   '/dashboard/settings/billing': 'Billing & Plan',
   '/dashboard/settings/routing': 'Lead Routing',
+  '/dashboard/lifecycle': 'Lead Lifecycle',
+  '/dashboard/tasks': 'Tasks',
   '/dashboard/team': 'Team',
   '/dashboard/reports':  'Reports',
   '/dashboard/advisor':  'AI Advisor',
