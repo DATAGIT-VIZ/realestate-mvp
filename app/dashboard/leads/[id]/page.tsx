@@ -21,10 +21,10 @@ import {
 const BG      = '#F5F6FA'
 const PANEL   = '#FFFFFF'
 const BORDER  = '#E8ECF0'
-const BLUE         = '#FF7043'
-const PRIMARY_DIM  = 'rgba(255,112,67,0.08)'
-const PRIMARY_BORDER = 'rgba(255,112,67,0.22)'
-const PRIMARY_GRAD = 'linear-gradient(135deg, #FF7043 0%, #FF8A65 100%)'
+const BLUE         = '#1D4ED8'
+const PRIMARY_DIM  = 'rgba(29,78,216,0.08)'
+const PRIMARY_BORDER = 'rgba(29,78,216,0.22)'
+const PRIMARY_GRAD = 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)'
 const EMERALD = '#059669'
 const RED     = '#DC2626'
 const AMBER   = '#F59E0B'
@@ -38,13 +38,13 @@ const ACT_COLORS: Record<string, { icon: string; bg: string; accent: string }> =
   'Call Missed':          { icon: '#DC2626', bg: '#FEF2F2', accent: '#DC2626' },
   'WhatsApp Sent':        { icon: WA_GRN,   bg: '#F0FDF4', accent: WA_GRN    },
   'WhatsApp Received':    { icon: WA_GRN,   bg: '#F0FDF4', accent: WA_GRN    },
-  'Email Sent':           { icon: '#FF7043', bg: PRIMARY_DIM, accent: '#FF7043' },
-  'Email Received':       { icon: '#FF7043', bg: PRIMARY_DIM, accent: '#FF7043' },
+  'Email Sent':           { icon: '#1D4ED8', bg: PRIMARY_DIM, accent: '#1D4ED8' },
+  'Email Received':       { icon: '#1D4ED8', bg: PRIMARY_DIM, accent: '#1D4ED8' },
   'Site Visit Scheduled': { icon: '#F59E0B', bg: 'rgba(245,158,11,0.09)', accent: '#F59E0B' },
-  'Site Visit Done':      { icon: '#FF7043', bg: 'rgba(255,112,67,0.08)', accent: '#FF7043' },
+  'Site Visit Done':      { icon: '#1D4ED8', bg: 'rgba(29,78,216,0.08)',  accent: '#1D4ED8' },
   'Follow Up Set':        { icon: '#F59E0B', bg: 'rgba(245,158,11,0.09)', accent: '#F59E0B' },
   'Note':                 { icon: BLUE,      bg: PRIMARY_DIM, accent: BLUE    },
-  'Status Changed':       { icon: '#FF7043', bg: PRIMARY_DIM, accent: '#FF7043' },
+  'Status Changed':       { icon: '#1D4ED8', bg: PRIMARY_DIM, accent: '#1D4ED8' },
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -104,7 +104,7 @@ function formatShortDate(s: string) {
   return new Date(s).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 }
 function scoreStyle(score: number) {
-  if (score >= 70) return { label: 'High Intent', color: '#FF7043', ring: '#FF7043', bg: 'rgba(255,112,67,0.08)' }
+  if (score >= 70) return { label: 'High Intent', color: '#1D4ED8', ring: '#1D4ED8', bg: 'rgba(29,78,216,0.08)' }
   if (score >= 40) return { label: 'Medium',      color: '#F59E0B', ring: '#F59E0B', bg: 'rgba(245,158,11,0.09)' }
   return               { label: 'Low',            color: '#78889B', ring: '#CBD5E1', bg: '#F0F2F5' }
 }
@@ -131,7 +131,7 @@ const OUTCOME_CFG: Record<string, { Icon: React.ElementType; color: string; bg: 
   'Positive':    { Icon: CheckCircle, color: '#059669', bg: '#ECFDF5' },
   'Neutral':     { Icon: MinusCircle, color: '#64748B', bg: '#F1F5F9' },
   'Negative':    { Icon: XCircle,     color: '#DC2626', bg: '#FEF2F2' },
-  'No Response': { Icon: HelpCircle,  color: '#FF7043', bg: 'rgba(245,158,11,0.09)' },
+  'No Response': { Icon: HelpCircle,  color: '#1D4ED8', bg: 'rgba(29,78,216,0.08)' },
 }
 const ACT_ICON: Record<string, React.ElementType> = {
   'Call Made': Phone, 'Call Missed': Phone, 'WhatsApp Sent': MessageCircle,
@@ -469,17 +469,17 @@ export default function LeadDetailPage() {
   if (!nudgeDismissed) {
     if (futureFU) {
       const daysUntil = Math.ceil((new Date(futureFU).getTime() - Date.now()) / 86_400_000)
-      if (daysUntil <= 2) nudge = { icon: Bell, color: AMBER, bg: 'rgba(245,158,11,0.09)', border: 'rgba(255,112,67,0.22)', text: `Follow-up ${daysUntil === 0 ? 'today' : daysUntil === 1 ? 'tomorrow' : 'in 2 days'}`, sub: `Scheduled on ${formatShortDate(futureFU)} — log the outcome when done`, actionLabel: 'Log Outcome', onAction: () => setShowActivityModal(true) }
+      if (daysUntil <= 2) nudge = { icon: Bell, color: AMBER, bg: 'rgba(245,158,11,0.09)', border: 'rgba(29,78,216,0.22)', text: `Follow-up ${daysUntil === 0 ? 'today' : daysUntil === 1 ? 'tomorrow' : 'in 2 days'}`, sub: `Scheduled on ${formatShortDate(futureFU)} — log the outcome when done`, actionLabel: 'Log Outcome', onAction: () => setShowActivityModal(true) }
     } else if (activities.length === 0) {
       nudge = { icon: Zap, color: BLUE, bg: PRIMARY_DIM, border: PRIMARY_BORDER, text: 'Make your first move', sub: 'This lead hasn\'t been contacted yet — a quick call increases conversion by 3×', actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
     } else if (score >= 70 && ['New', 'Cold'].includes(lead.status || 'New')) {
-      nudge = { icon: Zap, color: '#FF7043', bg: 'rgba(255,112,67,0.08)', border: 'rgba(160,0,200,0.2)', text: 'High intent — move fast', sub: `Score ${score}/100 but still in early stage. Don't let a hot lead go cold`, actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
+      nudge = { icon: Zap, color: '#1D4ED8', bg: 'rgba(29,78,216,0.08)', border: 'rgba(29,78,216,0.22)', text: 'High intent — move fast', sub: `Score ${score}/100 but still in early stage. Don't let a hot lead go cold`, actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
     } else if (callAttempts.length >= 2 && lastAct?.type.includes('Call') && lastAct?.outcome === 'No Response') {
       nudge = { icon: MessageCircle, color: WA_GRN, bg: '#F0FDF4', border: '#BBF7D0', text: 'Switch to WhatsApp', sub: `${callAttempts.length} calls with no answer — leads respond 4× faster to messages`, actionLabel: 'Send WA', onAction: () => setShowWhatsAppModal(true) }
     } else if (daysSince !== null && daysSince >= 7) {
       nudge = { icon: AlertCircle, color: RED, bg: '#FEF2F2', border: '#FECACA', text: `No contact in ${daysSince} days`, sub: 'Lead is going cold — reach out now before they look elsewhere', actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
     } else if (daysSince !== null && daysSince >= 3) {
-      nudge = { icon: Bell, color: AMBER, bg: 'rgba(245,158,11,0.09)', border: 'rgba(255,112,67,0.22)', text: `${daysSince} days since last contact`, sub: 'A quick touchpoint now keeps the lead warm and moving', actionLabel: 'Log Activity', onAction: () => setShowActivityModal(true) }
+      nudge = { icon: Bell, color: AMBER, bg: 'rgba(245,158,11,0.09)', border: 'rgba(29,78,216,0.22)', text: `${daysSince} days since last contact`, sub: 'A quick touchpoint now keeps the lead warm and moving', actionLabel: 'Log Activity', onAction: () => setShowActivityModal(true) }
     }
   }
 
@@ -580,7 +580,7 @@ export default function LeadDetailPage() {
                 {email && (
                   <button onClick={() => { setShowEmailModal(true); setEmailSent(false); setEmailError(null) }}
                     style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                    <div style={{ width: 54, height: 54, borderRadius: '50%', background: 'linear-gradient(145deg,#FF7043,#e8622e)', boxShadow: '0 6px 16px rgba(255,112,67,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.1s' }}
+                    <div style={{ width: 54, height: 54, borderRadius: '50%', background: 'linear-gradient(145deg,#1D4ED8,#3B82F6)', boxShadow: '0 6px 16px rgba(29,78,216,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.1s' }}
                       onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
                       onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
                       <Mail style={{ width: 22, height: 22, color: '#fff' }} />
@@ -644,7 +644,7 @@ export default function LeadDetailPage() {
                     <div>
                       <div style={{ fontSize: 10, color: '#94A3B8', marginBottom: 5 }}>Localities</div>
                       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                        {lead.localities.map(l => <span key={l} style={{ fontSize: 10, fontWeight: 600, color: '#FF7043', background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, padding: '2px 7px', borderRadius: 5 }}>{l}</span>)}
+                        {lead.localities.map(l => <span key={l} style={{ fontSize: 10, fontWeight: 600, color: BLUE, background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, padding: '2px 7px', borderRadius: 5 }}>{l}</span>)}
                       </div>
                     </div>
                   </div>
@@ -659,7 +659,7 @@ export default function LeadDetailPage() {
                   <div style={{ marginBottom: 12 }}>
                     <div style={{ fontSize: 10, color: '#94A3B8', marginBottom: 6 }}>Property Assigned</div>
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                      {lead.propertyType.map(pt => <span key={pt} style={{ fontSize: 11, fontWeight: 700, color: '#E64A19', background: 'rgba(245,158,11,0.09)', border: '1px solid rgba(255,112,67,0.22)', padding: '3px 9px', borderRadius: 6 }}>{pt}</span>)}
+                      {lead.propertyType.map(pt => <span key={pt} style={{ fontSize: 11, fontWeight: 700, color: BLUE, background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, padding: '3px 9px', borderRadius: 6 }}>{pt}</span>)}
                     </div>
                   </div>
                 )}
@@ -679,7 +679,7 @@ export default function LeadDetailPage() {
                   <div style={{ marginTop: 10 }}>
                     <div style={{ fontSize: 10, color: '#94A3B8', marginBottom: 6 }}>Preferred Areas</div>
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                      {lead.localities.map(l => <span key={l} style={{ fontSize: 10, fontWeight: 600, color: '#FF7043', background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, padding: '2px 7px', borderRadius: 5 }}>{l}</span>)}
+                      {lead.localities.map(l => <span key={l} style={{ fontSize: 10, fontWeight: 600, color: BLUE, background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, padding: '2px 7px', borderRadius: 5 }}>{l}</span>)}
                     </div>
                   </div>
                 )}
@@ -980,7 +980,7 @@ export default function LeadDetailPage() {
                   {/* Add Task button */}
                   <div style={{ padding: '12px 16px 0', display: 'flex', justifyContent: 'flex-end' }}>
                     <button onClick={() => { setShowTaskForm(v => !v); setTaskForm(f => ({ ...f, title: TYPE_DEFAULTS['Follow Up'] })) }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: '#fff', background: PRIMARY_GRAD, border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(255,112,67,0.28)' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: '#fff', background: PRIMARY_GRAD, border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(29,78,216,0.28)' }}>
                       <Plus style={{ width: 13, height: 13 }} /> Add Task
                     </button>
                   </div>
@@ -1013,13 +1013,13 @@ export default function LeadDetailPage() {
                           <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 5 }}>Due Date</label>
                           <input type="date" value={taskForm.date} min={todayStr}
                             onChange={e => setTaskForm(f => ({ ...f, date: e.target.value }))}
-                            style={{ width: '100%', fontSize: 13, color: TEXT, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '8px 10px', outline: 'none', boxSizing: 'border-box', colorScheme: 'light', accentColor: '#FF7043' }} />
+                            style={{ width: '100%', fontSize: 13, color: TEXT, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '8px 10px', outline: 'none', boxSizing: 'border-box', colorScheme: 'light', accentColor: '#1D4ED8' }} />
                         </div>
                         <div>
                           <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 5 }}>Time</label>
                           <input type="time" value={taskForm.time}
                             onChange={e => setTaskForm(f => ({ ...f, time: e.target.value }))}
-                            style={{ width: '100%', fontSize: 13, color: TEXT, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '8px 10px', outline: 'none', boxSizing: 'border-box', colorScheme: 'light', accentColor: '#FF7043' }} />
+                            style={{ width: '100%', fontSize: 13, color: TEXT, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '8px 10px', outline: 'none', boxSizing: 'border-box', colorScheme: 'light', accentColor: '#1D4ED8' }} />
                         </div>
                       </div>
                       {/* Priority */}

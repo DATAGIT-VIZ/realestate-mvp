@@ -22,10 +22,10 @@ const BORDER  = '#E8ECF0'
 const TEXT    = '#263238'
 const MUTED   = '#78889B'
 const LABEL   = '#A4B1BE'
-const PRIMARY = '#FF7043'
-const PRIMARY_DIM = 'rgba(255,112,67,0.09)'
-const PRIMARY_BORDER = 'rgba(255,112,67,0.22)'
-const PRIMARY_GRAD = 'linear-gradient(135deg, #FF7043 0%, #FF8A65 100%)'
+const PRIMARY = '#1D4ED8'
+const PRIMARY_DIM = 'rgba(29,78,216,0.09)'
+const PRIMARY_BORDER = 'rgba(29,78,216,0.22)'
+const PRIMARY_GRAD = 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)'
 
 // Warm avatar palette — cycles deterministically by name
 const AVATAR_PALETTE = [
@@ -76,7 +76,7 @@ const getEmail = (l: CRMLead) => l.emails.primaryEmail ?? null
 const getScore = (l: CRMLead) => l.intentScore ?? 0
 
 function getScoreStyle(score: number) {
-  if (score >= 70) return { label: 'High Intent', color: '#FF7043', bg: 'rgba(255,112,67,0.09)', dot: '#FF7043' }
+  if (score >= 70) return { label: 'High Intent', color: '#1D4ED8', bg: 'rgba(29,78,216,0.09)', dot: '#1D4ED8' }
   if (score >= 40) return { label: 'Medium',      color: '#F59E0B', bg: 'rgba(245,158,11,0.09)', dot: '#F59E0B' }
   return               { label: 'Low',            color: '#78889B', bg: '#F0F2F5',               dot: '#A4B1BE' }
 }
@@ -559,7 +559,7 @@ export default function LeadsPage() {
                         {lead.propertyType && lead.propertyType.length > 0 ? (
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                             {lead.propertyType.map(pt => (
-                              <span key={pt} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 99, background: 'rgba(255,112,67,0.07)', border: '1px solid rgba(255,112,67,0.18)', fontSize: 11, fontWeight: 600, color: PRIMARY, whiteSpace: 'nowrap' }}>
+                              <span key={pt} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 99, background: 'rgba(29,78,216,0.07)', border: '1px solid rgba(29,78,216,0.18)', fontSize: 11, fontWeight: 600, color: PRIMARY, whiteSpace: 'nowrap' }}>
                                 <Home style={{ width: 9, height: 9 }} />
                                 {pt}
                               </span>

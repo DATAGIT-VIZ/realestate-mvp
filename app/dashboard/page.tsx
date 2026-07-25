@@ -8,17 +8,17 @@ import {
   Newspaper, MapPin, Receipt, Landmark, Home, ChevronRight, ChevronLeft, ExternalLink,
 } from 'lucide-react'
 
-// ─── Design tokens (Vya Pulse palette) ────────────────────────────────────────
-const BG      = '#F5F6FA'
+// ─── Design tokens (Lead Gap CRM palette) ────────────────────────────────────────
+const BG      = '#FFFFFF'
 const PANEL   = '#FFFFFF'
 const BORDER  = '#E8ECF0'
 const TEXT    = '#263238'
 const MUTED   = '#78889B'
 const LABEL   = '#A4B1BE'
-const ORANGE  = '#FF7043'
-const ORANGE_DIM   = 'rgba(255,112,67,0.09)'
-const ORANGE_GRAD  = 'linear-gradient(135deg, #FF7043 0%, #FF8A65 100%)'
-const ACCENT  = '#2E66F6'
+const ORANGE  = '#1D4ED8'
+const ORANGE_DIM   = 'rgba(29,78,216,0.09)'
+const ORANGE_GRAD  = 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)'
+const ACCENT  = '#0038A8'
 const EMERALD = '#059669'
 const AMBER   = '#F59E0B'
 const RED     = '#EF4444'
@@ -88,7 +88,7 @@ function KPICard({ label, value, sub, icon: Icon, accent, trend }: {
   icon: React.ElementType; accent: string; trend?: { up: boolean; label: string }
 }) {
   return (
-    <div style={{ background: 'rgba(255,255,255,0.35)', border: `1px solid rgba(255,255,255,0.60)`, borderRadius: 16, padding: '22px 24px', display: 'flex', flexDirection: 'column', gap: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+    <div style={{ background: '#FAFAFA', border: `1px solid ${BORDER}`, borderRadius: 12, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <div style={{ width: 40, height: 40, borderRadius: 12, background: `${accent}14`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Icon style={{ width: 18, height: 18, color: accent }} />
@@ -178,11 +178,11 @@ function LeadSourceDonut({ data }: { data: Array<{ name: string; value: number }
 }
 
 const FUNNEL_CFG: Record<string, { top: string; bot: string; order: number }> = {
-  New:    { top: '#7C3AED', bot: '#5B21B6', order: 0 },
-  Cold:   { top: '#818CF8', bot: '#6366F1', order: 1 },
-  Warm:   { top: '#A78BFA', bot: '#7C3AED', order: 2 },
-  Hot:    { top: '#C4B5FD', bot: '#A78BFA', order: 3 },
-  Closed: { top: '#6EE7B7', bot: '#10B981', order: 4 },
+  New:    { top: '#BFDBFE', bot: '#93C5FD', order: 0 },
+  Cold:   { top: '#60A5FA', bot: '#3B82F6', order: 1 },
+  Warm:   { top: '#FBBF24', bot: '#F59E0B', order: 2 },
+  Hot:    { top: '#FB923C', bot: '#FF7043', order: 3 },
+  Closed: { top: '#34D399', bot: '#10B981', order: 4 },
 }
 
 function PipelineFunnelChart({ stages }: {
@@ -315,7 +315,7 @@ function PipelineFunnelChart({ stages }: {
 }
 
 // ─── Revenue Analytics (quarterly dot-matrix + AI projection) ─────────────────
-const Q_COLORS = [ORANGE, AMBER, EMERALD, '#8B5CF6']
+const Q_COLORS = [ORANGE, AMBER, EMERALD, '#60A5FA']
 
 type MetricKey = 'pipeline' | 'count' | 'avg'
 type PeriodKey = 'year' | 'q1' | 'q2' | 'q3' | 'q4'
@@ -909,7 +909,7 @@ const TAG_CFG: Record<string, { label: string; color: string; bg: string; border
   sales_jump:     { label: 'Sales Jump',         color: '#059669', bg: 'rgba(5,150,105,0.07)',   border: 'rgba(5,150,105,0.2)',   Icon: TrendingUp },
   demand_surge:   { label: 'Enquiries Spike',    color: '#F59E0B', bg: 'rgba(245,158,11,0.07)',  border: 'rgba(245,158,11,0.2)',  Icon: TrendingUp },
   new_launch:     { label: 'New Project Launch', color: '#8B5CF6', bg: 'rgba(139,92,246,0.07)',  border: 'rgba(139,92,246,0.2)',  Icon: MapPin     },
-  micro_market:   { label: 'Micro Market Trend', color: '#FF7043', bg: 'rgba(255,112,67,0.07)',  border: 'rgba(255,112,67,0.2)',  Icon: MapPin     },
+  micro_market:   { label: 'Micro Market Trend', color: '#1D4ED8', bg: 'rgba(29,78,216,0.07)',   border: 'rgba(29,78,216,0.2)',   Icon: MapPin     },
 }
 
 const REFRESH_MS = 3 * 60 * 60 * 1000 // 3 hours
@@ -1235,16 +1235,7 @@ export default function DashboardPage() {
         <MarketPulse />
 
         {/* ── KPI Row ─────────────────────────────────────────────────────────── */}
-        <div style={{
-          borderRadius: 20, border: '1px solid #E8ECF0', padding: '20px', marginBottom: 24,
-          background: [
-            'radial-gradient(ellipse 55% 80% at 95% 10%, rgba(255,200,180,0.55) 0%, transparent 70%)',
-            'radial-gradient(ellipse 50% 70% at 5%  90%, rgba(255,230,160,0.50) 0%, transparent 70%)',
-            'radial-gradient(ellipse 55% 70% at 50% 50%, rgba(190,215,255,0.65) 0%, transparent 70%)',
-            'radial-gradient(ellipse 40% 55% at 75% 95%, rgba(170,230,210,0.40) 0%, transparent 65%)',
-            '#ffffff',
-          ].join(', '),
-        }}>
+        <div style={{ borderRadius: 16, border: `1px solid ${BORDER}`, padding: '20px', marginBottom: 24, background: '#FFFFFF' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}
             className="grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
             <KPICard icon={Users}       label="Total Leads"     value={metrics.total}  sub={`+${metrics.thisWk} this week`}          accent={ACCENT}  trend={metrics.thisWk > 0 ? { up: true, label: `+${metrics.thisWk} this wk` } : undefined} />
@@ -1255,16 +1246,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Sales Pipeline Funnel ───────────────────────────────────────────── */}
-        <div style={{
-          borderRadius: 16, border: '1px solid #E8ECF0', padding: '22px 24px', marginBottom: 20,
-          background: [
-            'radial-gradient(ellipse 50% 90% at 0%   0%,  rgba(255,200,180,0.50) 0%, transparent 70%)',
-            'radial-gradient(ellipse 45% 80% at 100% 100%, rgba(170,230,210,0.45) 0%, transparent 70%)',
-            'radial-gradient(ellipse 40% 70% at 60%  0%,  rgba(190,215,255,0.40) 0%, transparent 65%)',
-            'radial-gradient(ellipse 35% 60% at 20%  100%, rgba(255,230,160,0.40) 0%, transparent 65%)',
-            '#ffffff',
-          ].join(', '),
-        }}>
+        <div style={{ borderRadius: 16, border: `1px solid ${BORDER}`, padding: '22px 24px', marginBottom: 20, background: '#FFFFFF' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>Pipeline Funnel</div>
@@ -1379,7 +1361,7 @@ export default function DashboardPage() {
               return (
                 <Link key={lead.id} href={`/dashboard/leads/${lead.id}`} style={{ textDecoration: 'none' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 100px 120px', gap: 0, padding: '14px 24px', borderBottom: i < hotLeads.length - 1 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer', transition: 'background 0.12s' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = BG)}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#F8F9FA')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                     {/* Name */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
