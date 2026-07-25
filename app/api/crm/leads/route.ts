@@ -21,7 +21,8 @@ function rowToCrm(r: Record<string, unknown>): CRMLead {
     budgetMax:    (r.budget_max as number) ?? null,
     propertyType: (r.property_type as string) ? [(r.property_type as string)] : null,
     timeline:     (r.timeline as string) ?? null,
-    localities:   (r.locations as string[]) ?? null,
+    localities:             (r.locations as string[]) ?? null,
+    failedContactAttempts:  (r.failed_contact_attempts as number) ?? 0,
     createdAt:    r.created_at as string,
     updatedAt:    r.updated_at as string,
   }

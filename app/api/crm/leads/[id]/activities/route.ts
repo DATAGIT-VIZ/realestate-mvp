@@ -26,6 +26,17 @@ export type ActivityPayload = {
   outcome?: string
   duration?: number
   nextActionDate?: string
+  // Structured call logging (new)
+  callOutcome?: 'connected' | 'nca' | 'invalid_number' | null
+  disposition?: string | null
+  ncaAttempt?: number | null
+  checklist?: {
+    contactMade?: boolean
+    requirements?: boolean
+    brochure?: boolean
+    propertyAssigned?: boolean
+    svBooked?: boolean
+  } | null
   metadata?: Record<string, unknown>
 }
 
@@ -123,7 +134,7 @@ export async function GET(
     const { id } = await params
 
     let leadQ = sb.from('leads').select('id').eq('id', id)
-    if (!isDevBypass) leadQ = leadQ.or(`agent_id.is.null,agent_id.eq.${userId}`)
+    if (!isDevBypass) leadQ = leadQ.eq('agent_id', userId!)
     const { data: lead, error: leadErr } = await leadQ.single()
     if (leadErr || !lead) {
       return NextResponse.json({ data: null, error: 'Lead not found' }, { status: 404 })
@@ -184,7 +195,7 @@ export async function POST(
       .from('leads')
       .select('id, status, failed_contact_attempts')
       .eq('id', id)
-    if (!isDevBypass) leadQ = leadQ.or(`agent_id.is.null,agent_id.eq.${userId}`)
+    if (!isDevBypass) leadQ = leadQ.eq('agent_id', userId!)
     const { data: lead, error: leadErr } = await leadQ.single()
     if (leadErr || !lead) {
       return NextResponse.json({ data: null, error: 'Lead not found' }, { status: 404 })
@@ -220,6 +231,11 @@ export async function POST(
           outcome:        body.outcome        ?? null,
           duration:       body.duration       ?? null,
           nextActionDate: body.nextActionDate ?? null,
+          // Structured call logging
+          callOutcome:   body.callOutcome    ?? null,
+          disposition:   body.disposition    ?? null,
+          ncaAttempt:    body.ncaAttempt     ?? null,
+          checklist:     body.checklist      ?? null,
           ...(body.metadata ?? {}),
         },
       })
@@ -233,8 +249,11 @@ export async function POST(
 
     // Apply status/counter updates from lifecycle engine
     const leadUpdate: Record<string, unknown> = {}
-    if (newStatus)         leadUpdate.status                  = newStatus
-    if (newFailedAttempts !== null) leadUpdate.failed_contact_attempts = newFailedAttempts
+    if (newStatus)                  leadUpdate.status                   = newStatus
+    if (newFailedAttempts !== null) leadUpdate.failed_contact_attempts  = newFailedAttempts
+    // Persist latest call disposition for analytics
+    if (body.disposition)           leadUpdate.last_disposition         = body.disposition
+    if (body.callOutcome)           leadUpdate.last_call_outcome        = body.callOutcome
 
     if (Object.keys(leadUpdate).length > 0) {
       await sb.from('leads').update(leadUpdate).eq('id', id)

@@ -59,6 +59,7 @@ export type CRMLead = {
   timeline: string | null
   status: string | null
   localities: string[] | null
+  failedContactAttempts?: number
   createdAt: string
   updatedAt: string
 }

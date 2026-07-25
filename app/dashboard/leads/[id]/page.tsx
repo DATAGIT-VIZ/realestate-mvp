@@ -1246,9 +1246,11 @@ export default function LeadDetailPage() {
       <LogActivityModal
         leadId={leadId}
         leadName={`${lead.name.firstName} ${lead.name.lastName}`.trim()}
+        leadEmail={lead.emails.primaryEmail || undefined}
         isOpen={showActivityModal}
         onClose={() => setShowActivityModal(false)}
         currentStatus={lead.status ?? 'New'}
+        failedContactAttempts={lead.failedContactAttempts ?? 0}
         existingActivityTypes={activities.map(a => a.type)}
         onActivityLogged={(result) => {
           setShowActivityModal(false)

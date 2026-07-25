@@ -50,7 +50,7 @@ export async function GET(_req: NextRequest, { params }: RouteCtx) {
     const { id } = await params
 
     let leadQ = sb.from('leads').select('*').eq('id', id)
-    if (!isDevBypass) leadQ = leadQ.or(`agent_id.is.null,agent_id.eq.${userId}`)
+    if (!isDevBypass) leadQ = leadQ.eq('agent_id', userId!)
     const { data: lead, error: leadErr } = await leadQ.single()
 
     if (leadErr || !lead) {
@@ -100,18 +100,11 @@ export async function PATCH(req: NextRequest, { params }: RouteCtx) {
     // Build Supabase update object from incoming fields
     const update: Record<string, unknown> = {}
 
-    // Block status regression — status can only move forward (or to Disqualified)
+    // Validate status is a known value; allow movement in any direction (bi-directional)
     if (body.status !== undefined) {
-      const STATUS_ORDER = ['New', 'Cold', 'Warm', 'Hot', 'Closed']
-      const { data: cur } = await sb.from('leads').select('status').eq('id', id).single()
-      const currentStatus = (cur?.status as string) ?? 'New'
-      const currentIdx    = STATUS_ORDER.indexOf(currentStatus)
-      const targetIdx     = STATUS_ORDER.indexOf(body.status as string)
-      if (
-        currentStatus === 'Closed' ||
-        (currentStatus !== 'Disqualified' && targetIdx !== -1 && targetIdx < currentIdx)
-      ) {
-        return NextResponse.json({ data: null, error: `Cannot move lead from ${currentStatus} back to ${body.status}. Lifecycle only moves forward.` }, { status: 422 })
+      const VALID_STATUSES = ['New', 'Cold', 'Warm', 'Hot', 'Closed', 'Disqualified']
+      if (!VALID_STATUSES.includes(body.status as string)) {
+        return NextResponse.json({ data: null, error: `Invalid status: ${body.status}` }, { status: 422 })
       }
     }
 
@@ -154,7 +147,7 @@ export async function PATCH(req: NextRequest, { params }: RouteCtx) {
     }
 
     let updateQ = sb.from('leads').update(update).eq('id', id)
-    if (!isDevBypass) updateQ = updateQ.or(`agent_id.is.null,agent_id.eq.${userId}`)
+    if (!isDevBypass) updateQ = updateQ.eq('agent_id', userId!)
     const { data: updated, error: updateErr } = await updateQ.select().single()
 
     if (updateErr) return NextResponse.json({ data: null, error: updateErr.message }, { status: 400 })
@@ -179,7 +172,7 @@ export async function DELETE(_req: NextRequest, { params }: RouteCtx) {
   try {
     const { id } = await params
     let delQ = sb.from('leads').delete().eq('id', id)
-    if (!isDevBypass) delQ = delQ.or(`agent_id.is.null,agent_id.eq.${userId}`)
+    if (!isDevBypass) delQ = delQ.eq('agent_id', userId!)
     const { error } = await delQ
     if (error) return NextResponse.json({ data: null, error: error.message }, { status: 400 })
     return NextResponse.json({ data: { id }, error: null })

@@ -161,6 +161,65 @@
 }
 .lp-marquee-track { animation: lp-marquee 36s linear infinite; }
 
+@keyframes lp-marquee-rev {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+.lp-marquee-track-rev { animation: lp-marquee-rev 28s linear infinite; }
+
+@keyframes lp-marquee-v {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-50%); }
+}
+.lp-marquee-track-v { animation: lp-marquee-v 18s linear infinite; }
+
+@keyframes lp-marquee-v-rev {
+  from { transform: translateY(-50%); }
+  to   { transform: translateY(0); }
+}
+.lp-marquee-track-v-rev { animation: lp-marquee-v-rev 18s linear infinite; }
+
+/* ─── Bento shape animations — linear continuous spin like teak ──────────── */
+@keyframes bento-cw {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes bento-ccw {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+@keyframes bento-bob {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-22px); }
+}
+@keyframes bento-bob-fast {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(-14px) scale(1.08); }
+}
+@keyframes bento-chip-glow {
+  0%, 100% { box-shadow: 0 0 0 0px rgba(220,38,38,0.7), 0 2px 8px rgba(220,38,38,0.2); }
+  50%       { box-shadow: 0 0 0 7px rgba(220,38,38,0), 0 2px 8px rgba(220,38,38,0.1); }
+}
+@keyframes bento-row-in {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes bento-timer-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+@keyframes lp-beam {
+  from { stroke-dashoffset: 200; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes lp-slide-in {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.lp-slide-in { animation: lp-slide-in 0.35s ease-out forwards; }
+
 /* ─── Base ──────────────────────────────────────────────────────────────────── */
 body {
   background: var(--bg);
