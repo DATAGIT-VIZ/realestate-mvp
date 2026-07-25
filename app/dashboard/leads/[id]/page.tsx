@@ -16,6 +16,9 @@ import {
   MinusCircle, HelpCircle, ChevronDown, User, PhoneOff, Copy, Send,
   Zap, Bell, Award,
 } from 'lucide-react'
+import {
+  ClipboardText, Moon, SunDim, Flame, Check as PhCheck, X as PhX,
+} from '@phosphor-icons/react'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const BG      = '#F5F6FA'
@@ -1092,13 +1095,13 @@ export default function LeadDetailPage() {
               <div style={{ padding: '14px 12px' }}>
                 {(() => {
                   const PIPELINE = ['New', 'Cold', 'Warm', 'Hot', 'Closed'] as const
-                  const STAGE_CFG: Record<string, { color: string; emoji: string; desc: string }> = {
-                    New:          { color: '#64748B', emoji: '📋', desc: 'Unworked — just assigned' },
-                    Cold:         { color: '#2563EB', emoji: '❄️', desc: 'Calls / WA only' },
-                    Warm:         { color: '#F59E0B', emoji: '🌡️', desc: 'VM / OBM / SV done' },
-                    Hot:          { color: '#FF7043', emoji: '🔥', desc: 'EOI received' },
-                    Closed:       { color: '#059669', emoji: '✅', desc: 'Deals' },
-                    Disqualified: { color: '#94A3B8', emoji: '✗',  desc: 'NC / not proceeding' },
+                  const STAGE_CFG: Record<string, { color: string; Icon: React.ElementType; desc: string }> = {
+                    New:          { color: '#64748B', Icon: ClipboardText, desc: 'Unworked — just assigned' },
+                    Cold:         { color: '#2563EB', Icon: Moon,          desc: 'Calls / WA only' },
+                    Warm:         { color: '#F59E0B', Icon: SunDim,        desc: 'VM / OBM / SV done' },
+                    Hot:          { color: '#FF7043', Icon: Flame,         desc: 'EOI received' },
+                    Closed:       { color: '#059669', Icon: PhCheck,       desc: 'Deals' },
+                    Disqualified: { color: '#94A3B8', Icon: PhX,           desc: 'NC / not proceeding' },
                   }
                   // Which activity type drives each stage
                   const STAGE_TRIGGER: Record<string, string[]> = {
@@ -1175,8 +1178,8 @@ export default function LeadDetailPage() {
                                 position: 'relative',
                               }}>
                                 {isDone
-                                  ? <span style={{ color: '#fff', fontWeight: 700, fontSize: 13 }}>✓</span>
-                                  : <span style={{ filter: isFuture ? 'grayscale(1) opacity(0.25)' : 'none', fontSize: 13 }}>{cfg.emoji}</span>}
+                                  ? <PhCheck weight="light" size={15} color="#fff" />
+                                  : <cfg.Icon weight="light" size={15} color={isCur ? '#fff' : isFuture ? '#CBD5E1' : cfg.color} />}
                               </div>
 
                               {/* Text */}
@@ -1217,8 +1220,8 @@ export default function LeadDetailPage() {
                         }}>
                           <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: isDisqualified ? '#94A3B8' : '#F1F5F9', border: `2px solid ${isDisqualified ? '#94A3B8' : '#E2E8F0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             {isDisqualified
-                              ? <span style={{ color: '#fff', fontWeight: 700, fontSize: 12 }}>✗</span>
-                              : <span style={{ opacity: 0.3, fontSize: 13 }}>✗</span>}
+                              ? <PhX weight="light" size={14} color="#fff" />
+                              : <PhX weight="light" size={14} color="#94A3B8" style={{ opacity: 0.3 }} />}
                           </div>
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 13, fontWeight: isDisqualified ? 700 : 400, color: isDisqualified ? '#94A3B8' : '#CBD5E1', display: 'flex', alignItems: 'center', gap: 5 }}>

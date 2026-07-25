@@ -49,7 +49,7 @@ const STATUS_PILL: Record<string, { bg: string; color: string; label: string }> 
   New:          { bg: '#EEF2FF', color: '#4338CA',  label: '+ New' },
   Cold:         { bg: '#E0F2FE', color: '#0369A1',  label: '+ Cold' },
   Warm:         { bg: '#FFF3E0', color: '#E65100',  label: '+ Warm' },
-  Hot:          { bg: '#FFEDE8', color: '#C2410C',  label: '+ Hot 🔥' },
+  Hot:          { bg: '#FFEDE8', color: '#C2410C',  label: '+ Hot' },
   Closed:       { bg: '#ECFDF5', color: '#059669',  label: '+ Closed' },
   Disqualified: { bg: '#F3F4F6', color: '#78889B',  label: '+ Disqualified' },
 }
@@ -310,7 +310,7 @@ export default function LeadsPage() {
               { id: 'New',          label: 'New' },
               { id: 'Cold',         label: 'Cold' },
               { id: 'Warm',         label: 'Warm' },
-              { id: 'Hot',          label: 'Hot 🔥' },
+              { id: 'Hot',          label: 'Hot' },
               { id: 'Closed',       label: 'Closed' },
               { id: 'Disqualified', label: 'Disqualified' },
             ]
