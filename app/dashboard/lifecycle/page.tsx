@@ -11,7 +11,7 @@ import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import { Loader2, Search, X, Phone, MessageCircle, AlertTriangle, Clock } from 'lucide-react'
 
-// ─── Design tokens (Vya Pulse) ────────────────────────────────────────────────
+// ─── Design tokens (Lead Gap CRM) ────────────────────────────────────────────────
 const BG      = '#F5F6FA'
 const PANEL   = '#FFFFFF'
 const BORDER  = '#E8ECF0'

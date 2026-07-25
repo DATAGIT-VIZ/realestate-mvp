@@ -42,7 +42,7 @@ function formatDuration(secs: number) {
   return `${m}:${s}`
 }
 
-const AGENT_PHONE_KEY = 'vyapulse_agent_phone'
+const AGENT_PHONE_KEY = 'leadgap_agent_phone'
 
 export function CallModal({ isOpen, onClose, leadId, leadName, leadPhone, onLogged }: Props) {
   const [stage, setStage]             = useState<Stage>('setup')

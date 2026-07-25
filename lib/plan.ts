@@ -5,8 +5,8 @@
 export type Plan = 'solo' | 'teams'
 export type Role = 'admin' | 'agent'
 
-const PLAN_KEY = 'vyapulse-plan'
-const ROLE_KEY = 'vyapulse-role'
+const PLAN_KEY = 'leadgap-plan'
+const ROLE_KEY = 'leadgap-role'
 
 export function getPlan(): Plan {
   if (typeof window === 'undefined') return 'solo'

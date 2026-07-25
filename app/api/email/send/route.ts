@@ -13,8 +13,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'RESEND_API_KEY not configured' }, { status: 503 })
   }
 
-  const fromEmail = process.env.RESEND_FROM_EMAIL ?? 'noreply@vyapulse.com'
-  const fromName  = process.env.RESEND_FROM_NAME  ?? 'Vya Pulse CRM'
+  const fromEmail = process.env.RESEND_FROM_EMAIL ?? 'noreply@leadgap.com'
+  const fromName  = process.env.RESEND_FROM_NAME  ?? 'Lead Gap CRM CRM'
 
   let resendId: string | null = null
   try {

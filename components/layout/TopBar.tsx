@@ -37,7 +37,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.match(/^\/dashboard\/leads\/.+/)) return 'Lead Detail'
   if (pathname.match(/^\/dashboard\/properties\/.+/)) return 'Property Detail'
   if (pathname.match(/^\/dashboard\/deals\/.+/)) return 'Deal Detail'
-  return 'Vya Pulse'
+  return 'Lead Gap CRM'
 }
 
 export function TopBar({

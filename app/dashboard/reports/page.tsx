@@ -159,7 +159,7 @@ function buildPrintHTML(
   const header = `
     <div class="rpt-header">
       <div>
-        <div class="rpt-brand">Vya Pulse CRM</div>
+        <div class="rpt-brand">Lead Gap CRM CRM</div>
         <div class="rpt-title">${titleLabel[reportType]}</div>
       </div>
       <div class="rpt-gen">
@@ -178,7 +178,7 @@ function buildPrintHTML(
 
   const footer = `
     <div class="rpt-footer">
-      <span class="footer-txt">© ${new Date().getFullYear()} Vya Pulse CRM</span>
+      <span class="footer-txt">© ${new Date().getFullYear()} Lead Gap CRM CRM</span>
       <span class="footer-txt">Confidential — For internal use only</span>
     </div>`
 
@@ -497,7 +497,7 @@ function buildPrintHTML(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>${titleLabel[reportType]} — ${agentName} — Vya Pulse CRM</title>
+  <title>${titleLabel[reportType]} — ${agentName} — Lead Gap CRM CRM</title>
   <style>${CSS}</style>
 </head>
 <body>
@@ -600,9 +600,9 @@ const DEMO_DEALS: Deal[] = [
   {id:'dd6',lead_name:'Vikram Singh', deal_value: 5_800_000,stage:'lost',       city:'Hyderabad',created_at:new Date(_n-20*_d).toISOString()},
 ]
 const DEMO_MEMBERS: TeamMember[] = [
-  {id:'dm1',name:'Rahul Mehta',  role:'senior_agent',is_active:true,email:'rahul@vyapulse.in'},
-  {id:'dm2',name:'Priya Sharma', role:'agent',       is_active:true,email:'priya@vyapulse.in'},
-  {id:'dm3',name:'Aditya Joshi', role:'agent',       is_active:true,email:'aditya@vyapulse.in'},
+  {id:'dm1',name:'Rahul Mehta',  role:'senior_agent',is_active:true,email:'rahul@leadgap.in'},
+  {id:'dm2',name:'Priya Sharma', role:'agent',       is_active:true,email:'priya@leadgap.in'},
+  {id:'dm3',name:'Aditya Joshi', role:'agent',       is_active:true,email:'aditya@leadgap.in'},
 ]
 
 // ─── Small helpers ─────────────────────────────────────────────────────────────
@@ -1013,7 +1013,7 @@ function ReportDoc({agentName,agentRole,range,reportType,isDemo,data,children}:{
 
   const shareEmail = () => {
     const subject = encodeURIComponent(`${typeLabel[reportType]} — ${agentName} — ${rangeLabel(range)}`)
-    const body    = encodeURIComponent(`${typeLabel[reportType]}\nAgent: ${agentName}\nPeriod: ${rangeLabel(range)}\nGenerated: ${today}\n\nPlease find the report attached (or view in Vya Pulse CRM).\n\nSent via Vya Pulse CRM`)
+    const body    = encodeURIComponent(`${typeLabel[reportType]}\nAgent: ${agentName}\nPeriod: ${rangeLabel(range)}\nGenerated: ${today}\n\nPlease find the report attached (or view in Lead Gap CRM CRM).\n\nSent via Lead Gap CRM CRM`)
     window.open(`mailto:?subject=${subject}&body=${body}`)
   }
 
@@ -1038,7 +1038,7 @@ function ReportDoc({agentName,agentRole,range,reportType,isDemo,data,children}:{
       <div style={{background:PANEL,border:`1px solid ${BORDER}`,borderRadius:14,padding:'18px 20px',marginBottom:14}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap',gap:8}}>
           <div>
-            <div style={{fontSize:10,fontWeight:700,color:BLUE,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:4}}>Vya Pulse CRM</div>
+            <div style={{fontSize:10,fontWeight:700,color:BLUE,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:4}}>Lead Gap CRM CRM</div>
             <div style={{fontSize:20,fontWeight:800,color:TEXT,letterSpacing:'-0.01em'}}>{typeLabel[reportType]}</div>
             <div style={{fontSize:13,color:MUTED,marginTop:4}}>
               <strong style={{color:TEXT}}>{agentName}</strong>

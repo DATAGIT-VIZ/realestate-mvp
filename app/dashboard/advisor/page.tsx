@@ -31,7 +31,7 @@ const C = {
   red:          '#EF4444',
 }
 
-// ─── Vya Pulse icon (inline SVG — same as favicon) ───────────────────────────
+// ─── Lead Gap CRM icon (inline SVG — same as favicon) ───────────────────────────
 function VyaIcon({ size = 18, radius = 10 }: { size?: number; radius?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -452,7 +452,7 @@ export default function AdvisorPage() {
               <div style={{ fontSize: 13.5, fontWeight: 800, color: C.text }}>AI Business Advisor</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.emerald }} />
-                <span style={{ fontSize: 10.5, color: C.emerald, fontWeight: 600 }}>Vya Pulse AI</span>
+                <span style={{ fontSize: 10.5, color: C.emerald, fontWeight: 600 }}>Lead Gap CRM AI</span>
               </div>
             </div>
           </div>
@@ -637,7 +637,7 @@ export default function AdvisorPage() {
             </button>
           </div>
           <p style={{ fontSize: 11, color: C.label, textAlign: 'center', margin: '8px 0 0' }}>
-            Vya Pulse AI · Live pipeline context · ↵ to send, ⇧↵ for newline
+            Lead Gap CRM AI · Live pipeline context · ↵ to send, ⇧↵ for newline
           </p>
         </div>
       </div>

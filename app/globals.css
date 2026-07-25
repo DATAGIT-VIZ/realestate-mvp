@@ -4,75 +4,80 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ─── Vya Pulse — Design System ────────────────────────────────────────────── */
+/* ─── Lead Gap CRM — Design System ─────────────────────────────────────────── */
 :root {
-  /* ── Brand palette */
-  --orange:       #FF7043;   /* PRIMARY */
-  --orange-dim:   rgba(255, 112, 67, 0.08);
-  --orange-border:rgba(255, 112, 67, 0.22);
-  --orange-dark:  #E64A19;
-  --orange-light: #FF8A65;
-
-  --accent:       #2E66F6;   /* ACCENT BLUE */
-  --accent-dim:   rgba(46, 102, 246, 0.08);
-  --accent-border:rgba(46, 102, 246, 0.22);
+  /* ── Cobalt brand scale */
+  --cobalt-50:    #F4F8FD;
+  --cobalt-100:   #E8EFFA;
+  --cobalt-300:   #4D7FD0;
+  --cobalt-500:   #0047AB;
+  --cobalt-700:   #0038A8;
+  --cobalt-900:   #002966;
 
   /* ── App-level tokens */
-  --bg:           #F5F6FA;
+  --bg:           #FFFFFF;
   --panel:        #FFFFFF;
-  --border-clr:   #E8ECF0;
-  --text:         #263238;
-  --text-muted:   #78889B;
-  --text-label:   #A4B1BE;
+  --border-clr:   #E2E8F0;
+  --text:         #0F172A;
+  --text-muted:   #64748B;
+  --text-label:   #94A3B8;
 
-  /* legacy alias — keep so existing components don't break */
-  --blue:         #2E66F6;
-  --blue-dim:     rgba(46, 102, 246, 0.08);
+  /* legacy alias — mapped to cobalt so existing components keep working */
+  --blue:         #0047AB;
+  --blue-dim:     rgba(0, 71, 171, 0.08);
 
-  --amber:        #F59E0B;
-  --amber-dim:    rgba(245, 158, 11, 0.10);
   --emerald:      #059669;
   --danger:       #EF4444;
+
+  /* Status badge colors — keep unchanged per spec */
   --status-hot:   #FF7043;
   --status-warm:  #F59E0B;
   --status-cold:  #78889B;
 
-  /* shadcn/ui light-mode tokens — primary = orange */
-  --background:                    oklch(1 0 0);
-  --foreground:                    oklch(0.19 0.025 230);
-  --card:                          oklch(1 0 0);
-  --card-foreground:               oklch(0.19 0.025 230);
-  --popover:                       oklch(1 0 0);
-  --popover-foreground:            oklch(0.19 0.025 230);
-  --primary:                       oklch(0.65 0.19 33);    /* #FF7043 in oklch */
-  --primary-foreground:            oklch(1 0 0);
+  /* shadcn/ui light-mode tokens — primary = cobalt-700 */
+  --background:                    #FFFFFF;
+  --foreground:                    oklch(0.09 0.02 230);
+  --card:                          #FFFFFF;
+  --card-foreground:               oklch(0.09 0.02 230);
+  --popover:                       #FFFFFF;
+  --popover-foreground:            oklch(0.09 0.02 230);
+  --primary:                       #0038A8;               /* cobalt-700 */
+  --primary-foreground:            #FFFFFF;
   --secondary:                     oklch(0.97 0 0);
   --secondary-foreground:          oklch(0.205 0 0);
   --muted:                         oklch(0.97 0 0);
   --muted-foreground:              oklch(0.556 0 0);
-  --accent:                        oklch(0.97 0 0);
-  --accent-foreground:             oklch(0.205 0 0);
+  --accent:                        #E8EFFA;               /* cobalt-100 */
+  --accent-foreground:             #0038A8;               /* cobalt-700 */
   --destructive:                   oklch(0.577 0.245 27.325);
-  --border:                        oklch(0.922 0 0);
-  --input:                         oklch(0.922 0 0);
-  --ring:                          oklch(0.65 0.19 33);
-  --radius:                        0.625rem;
-  --chart-1:                       oklch(0.65 0.19 33);
-  --chart-2:                       oklch(0.556 0 0);
+  --border:                        #E2E8F0;
+  --input:                         #E2E8F0;
+  --ring:                          #4D7FD0;               /* cobalt-300 */
+  --radius:                        0rem;                  /* sharp corners */
+  --chart-1:                       #0038A8;
+  --chart-2:                       #4D7FD0;
   --chart-3:                       oklch(0.439 0 0);
   --chart-4:                       oklch(0.371 0 0);
   --chart-5:                       oklch(0.269 0 0);
-  --sidebar:                       oklch(1 0 0);
-  --sidebar-foreground:            oklch(0.145 0 0);
-  --sidebar-primary:               oklch(0.65 0.19 33);
-  --sidebar-primary-foreground:    oklch(0.985 0 0);
-  --sidebar-accent:                oklch(0.97 0 0);
-  --sidebar-accent-foreground:     oklch(0.205 0 0);
-  --sidebar-border:                oklch(0.922 0 0);
-  --sidebar-ring:                  oklch(0.65 0.19 33);
+  --sidebar:                       #002966;               /* cobalt-900 */
+  --sidebar-foreground:            #FFFFFF;
+  --sidebar-primary:               #0038A8;               /* cobalt-700 */
+  --sidebar-primary-foreground:    #FFFFFF;
+  --sidebar-accent:                rgba(255,255,255,0.10);
+  --sidebar-accent-foreground:     #FFFFFF;
+  --sidebar-border:                rgba(255,255,255,0.08);
+  --sidebar-ring:                  #4D7FD0;
 }
 
 @theme inline {
+  /* Cobalt scale available as Tailwind utilities */
+  --color-cobalt-50:    var(--cobalt-50);
+  --color-cobalt-100:   var(--cobalt-100);
+  --color-cobalt-300:   var(--cobalt-300);
+  --color-cobalt-500:   var(--cobalt-500);
+  --color-cobalt-700:   var(--cobalt-700);
+  --color-cobalt-900:   var(--cobalt-900);
+
   --color-background:                var(--background);
   --color-foreground:                var(--foreground);
   --font-sans:                       var(--font-jakarta);

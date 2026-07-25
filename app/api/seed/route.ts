@@ -74,7 +74,7 @@ const ACTIVITIES: ActivityRow[] = [
   { name_key: 'Preethi Subramaniam',  type: 'Note',             notes: 'Prefers ground or first floor. Husband NRI — decision pending his visit next month.',                  outcome: null,          duration: null, next_action_date: null, created_at: d(4)  },
 
   { name_key: 'Rahul Deshmukh',       type: 'Call Made',        notes: 'No answer.',                                                                                            outcome: 'No Response', duration: 0,   next_action_date: null,  created_at: d(7)  },
-  { name_key: 'Rahul Deshmukh',       type: 'WhatsApp Sent',    notes: 'Hi Rahul, calling from Vya Pulse. Tried reaching you — please share a good time to connect.',         outcome: null,          duration: null, next_action_date: null, created_at: d(6)  },
+  { name_key: 'Rahul Deshmukh',       type: 'WhatsApp Sent',    notes: 'Hi Rahul, calling from Lead Gap CRM. Tried reaching you — please share a good time to connect.',         outcome: null,          duration: null, next_action_date: null, created_at: d(6)  },
   { name_key: 'Rahul Deshmukh',       type: 'Call Made',        notes: 'Connected briefly — wants Hinjewadi projects near Infosys gate. Will send options.',                  outcome: 'Neutral',     duration: 60,  next_action_date: null,  created_at: d(5)  },
 
   { name_key: 'Sonia Kapoor',         type: 'Call Made',        notes: 'Long call — looking for 4BHK in Golf Links/Jor Bagh area. Husband is a senior executive.',            outcome: 'Positive',    duration: 312, next_action_date: null,  created_at: d(7)  },

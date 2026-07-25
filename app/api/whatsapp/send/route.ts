@@ -40,7 +40,7 @@ async function sendViaInterakt(to: string, templateName: string, variables: stri
   const body: Record<string, unknown> = {
     countryCode: '+91',
     phoneNumber: phone,
-    callbackData: 'vyapulse-crm',
+    callbackData: 'leadgap-crm',
     type: 'Template',
     template: {
       name: templateName,

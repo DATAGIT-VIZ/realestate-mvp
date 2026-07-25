@@ -103,7 +103,7 @@ export async function GET() {
 
   try {
     const res = await fetch('https://realty.economictimes.indiatimes.com/rss/topstories', {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; VyaPulse/1.0)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Lead Gap CRM/1.0)' },
       signal: AbortSignal.timeout(6000),
       cache: 'no-store',
     })

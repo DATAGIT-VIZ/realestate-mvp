@@ -10,7 +10,7 @@ const jakarta = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'Vya Pulse CRM — Close more. Stress less.',
+  title: 'Lead Gap CRM — Close more. Stress less.',
   description:
     'AI-powered real estate CRM for Indian agents. Capture leads from MagicBricks, 99acres, Housing.com. Auto follow-up. Close more deals.',
 }

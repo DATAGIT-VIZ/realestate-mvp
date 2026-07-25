@@ -857,7 +857,7 @@ export default function CalculatorsPage() {
   const [shareError, setShareError]       = useState<string | null>(null)
   const [agentName, setAgentName]         = useState('')
   const [agentPhone, setAgentPhone]       = useState('')
-  const [companyName, setCompanyName]     = useState('Vya Pulse')
+  const [companyName, setCompanyName]     = useState('Lead Gap CRM')
   const [clientPhone, setClientPhone]     = useState('')
   const [copied, setCopied]               = useState(false)
 
