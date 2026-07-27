@@ -225,6 +225,60 @@
 }
 .lp-slide-in { animation: lp-slide-in 0.35s ease-out forwards; }
 
+/* ─── Core features: icon draw loop ────────────────────────────────────────── */
+@keyframes lp-icon-draw {
+  0%   { stroke-dashoffset: 120; opacity: 0.25; }
+  35%  { stroke-dashoffset: 0;   opacity: 1;    }
+  65%  { stroke-dashoffset: 0;   opacity: 1;    }
+  100% { stroke-dashoffset: 120; opacity: 0.25; }
+}
+.lp-icon-draw svg path,
+.lp-icon-draw svg circle,
+.lp-icon-draw svg line,
+.lp-icon-draw svg polyline,
+.lp-icon-draw svg rect,
+.lp-icon-draw svg ellipse {
+  stroke-dasharray: 120;
+  animation: lp-icon-draw 3s ease-in-out infinite;
+  animation-delay: var(--icon-delay, 0s);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-icon-draw svg path,
+  .lp-icon-draw svg circle,
+  .lp-icon-draw svg line,
+  .lp-icon-draw svg polyline,
+  .lp-icon-draw svg rect,
+  .lp-icon-draw svg ellipse {
+    animation: none;
+    stroke-dasharray: unset;
+  }
+}
+
+/* ─── Core features: grid shimmer border ───────────────────────────────────── */
+@keyframes lp-grid-shimmer {
+  0%   { background-position: 0%   0%;   }
+  50%  { background-position: 100% 100%; }
+  100% { background-position: 0%   0%;   }
+}
+.lp-shimmer-grid {
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,0.05) 0%,
+    rgba(77,127,208,0.45)  30%,
+    rgba(255,255,255,0.05) 50%,
+    rgba(77,127,208,0.45)  80%,
+    rgba(255,255,255,0.05) 100%
+  );
+  background-size: 400% 400%;
+  animation: lp-grid-shimmer 7s ease infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-shimmer-grid {
+    animation: none;
+    background: rgba(255,255,255,0.07);
+  }
+}
+
 /* ─── Base ──────────────────────────────────────────────────────────────────── */
 body {
   background: var(--bg);
