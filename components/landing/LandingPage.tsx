@@ -19,6 +19,15 @@ import FloatingDashboard from './FloatingDashboard'
 import WorkspaceBento from './WorkspaceBento'
 import { AnimatedDock } from '@/components/ui/animated-dock'
 import CardSwap, { Card as SwapCard } from '@/components/ui/CardSwap'
+import dynamic from 'next/dynamic'
+const DotLottieReact = dynamic(
+  () => import('@lottiefiles/dotlottie-react').then(async (m) => {
+    m.setWasmUrl('/lottie/dotlottie-player.wasm')
+    return m.DotLottieReact
+  }),
+  { ssr: false, loading: () => <div className="w-full h-full" /> }
+)
+const Lottie = dynamic(() => import('lottie-react'), { ssr: false })
 import { motion, AnimatePresence, useReducedMotion, useMotionValue, useTransform } from 'motion/react'
 import { Lock, Robot } from '@phosphor-icons/react'
 import { ContainerScroll } from '@/components/ui/container-scroll-animation'
@@ -590,7 +599,7 @@ const DASH_LEADS = [
 
 function HeroDashboardMock() {
   return (
-    <div className="w-full select-none" style={{
+    <div className="w-full h-full flex flex-col select-none" style={{
       borderRadius: 12,
       overflow: 'hidden',
       border: '1px solid rgba(0,71,171,0.14)',
@@ -614,10 +623,10 @@ function HeroDashboardMock() {
       </div>
 
       {/* App shell */}
-      <div className="flex" style={{ height: 530, background: '#FFFFFF' }}>
+      <div className="flex flex-1 overflow-hidden" style={{ background: '#FFFFFF' }}>
 
-        {/* Sidebar */}
-        <div className="shrink-0 flex flex-col py-3 gap-0.5" style={{ width: 156, background: '#080D18', borderRight: '1px solid rgba(255,255,255,0.04)' }}>
+        {/* Sidebar — hidden on mobile, visible md+ */}
+        <div className="hidden md:flex shrink-0 flex-col py-3 gap-0.5" style={{ width: 156, background: '#080D18', borderRight: '1px solid rgba(255,255,255,0.04)' }}>
           <div className="flex items-center gap-2 px-3 py-2 mb-2">
             <div className="size-6 rounded flex items-center justify-center font-black text-white" style={{ background: '#0047AB', fontSize: 8 }}>RE</div>
             <span className="font-semibold tracking-tight" style={{ fontSize: 11, color: 'rgba(255,255,255,0.68)' }}>Lead Gap CRM</span>
@@ -810,7 +819,7 @@ function HeroDashboardMock() {
 /* ─── Hero — centered text block ─────────────────────────────────────────── */
 function Hero() {
   return (
-    <section id="lp-hero" className="relative" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '100dvh' }}>
+    <section id="lp-hero" className="relative flex flex-col justify-center min-h-dvh pt-14">
       {/* Cobalt blue gradient blobs */}
       <div className="absolute inset-0 pointer-events-none select-none overflow-hidden" style={{ zIndex: 0 }}>
         <div className="absolute" style={{
@@ -830,10 +839,10 @@ function Hero() {
         }} />
       </div>
 
-      <div className="relative flex flex-col items-center text-center px-6 pt-24 pb-4 max-w-[720px] mx-auto" style={{ zIndex: 1 }}>
+      <div className="relative flex flex-col items-center text-center px-6 py-8 max-w-[720px] mx-auto" style={{ zIndex: 1 }}>
         {/* Announcement pill */}
         <div
-          className="lp-fade-up inline-flex items-center gap-2 px-4 py-1.5 rounded-full font-semibold mb-7"
+          className="lp-fade-up inline-flex items-center gap-2 px-4 py-1.5 rounded-full font-semibold mb-4 md:mb-7"
           style={{ fontSize: 12, opacity: 0, animationDelay: '0.05s', background: 'rgba(0,71,171,0.06)', border: '1px solid rgba(0,71,171,0.16)', color: '#0047AB' }}
         >
           <span className="size-1.5 rounded-full bg-[#0047AB]" style={{ animation: 'bento-timer-pulse 2s ease-in-out infinite' }} />
@@ -842,8 +851,8 @@ function Hero() {
 
         {/* Headline */}
         <h1
-          className="lp-fade-up font-extrabold leading-[1.06] tracking-tight text-[#1A1F27] mb-6 text-balance"
-          style={{ fontSize: 'clamp(42px, 6vw, 68px)', opacity: 0, animationDelay: '0.14s' }}
+          className="lp-fade-up font-extrabold leading-[1.06] tracking-tight text-[#1A1F27] mb-3 md:mb-6 text-balance"
+          style={{ fontSize: 'clamp(36px, 6vw, 68px)', opacity: 0, animationDelay: '0.14s' }}
         >
           The CRM that turns<br />
           leads into{' '}
@@ -852,25 +861,25 @@ function Hero() {
 
         {/* Sub */}
         <p
-          className="lp-fade-up leading-relaxed mb-9 text-pretty"
-          style={{ fontSize: 17, color: '#78889B', maxWidth: 460, opacity: 0, animationDelay: '0.26s' }}
+          className="lp-fade-up leading-relaxed mb-6 md:mb-9 text-pretty"
+          style={{ fontSize: 15, color: '#78889B', maxWidth: 420, opacity: 0, animationDelay: '0.26s' }}
         >
           Auto-capture from 99acres, MagicBricks &amp; Housing.com.
           AI follow-ups. Real-time pipeline. Built for Indian real estate.
         </p>
 
         {/* CTAs */}
-        <div className="lp-fade-up flex flex-wrap justify-center gap-3 mb-5" style={{ opacity: 0, animationDelay: '0.38s' }}>
+        <div className="lp-fade-up flex flex-col sm:flex-row justify-center gap-3 w-full sm:w-auto mb-4 md:mb-5" style={{ opacity: 0, animationDelay: '0.38s' }}>
           <Link
             href="/signup"
-            className="flex items-center gap-2 px-7 py-3.5 rounded-full font-semibold text-white transition-all duration-200 hover:scale-[1.04] active:scale-[0.97]"
+            className="flex items-center justify-center gap-2 px-7 py-3 rounded-full font-semibold text-white transition-all duration-200 hover:scale-[1.04] active:scale-[0.97]"
             style={{ fontSize: 15, background: '#0047AB', boxShadow: '0 8px 28px rgba(0,71,171,0.30)' }}
           >
             Start free — no card needed <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
             href="/login"
-            className="flex items-center gap-2 px-7 py-3.5 rounded-full font-semibold transition-all duration-200 hover:bg-white hover:shadow-sm"
+            className="flex items-center justify-center gap-2 px-7 py-3 rounded-full font-semibold transition-all duration-200 hover:bg-white hover:shadow-sm"
             style={{ fontSize: 15, border: '1.5px solid #E8ECF0', background: 'rgba(255,255,255,0.65)', color: '#263238' }}
           >
             Book a demo <ChevronRight className="w-4 h-4 text-[#78889B]" />
@@ -878,7 +887,7 @@ function Hero() {
         </div>
 
         {/* Trust line */}
-        <p className="lp-fade-up" style={{ fontSize: 12, color: '#A4B1BE', opacity: 0, animationDelay: '0.50s' }}>
+        <p className="lp-fade-up" style={{ fontSize: 11, color: '#A4B1BE', opacity: 0, animationDelay: '0.50s' }}>
           No credit card required &middot; Free 14-day trial &middot; Setup in 5 minutes
         </p>
       </div>
@@ -1214,335 +1223,204 @@ function PortalStrip() {
   )
 }
 
-/* ─── Bento Features (Magic UI bento-grid style) ─────────────────────────── */
+/* ─── Bento Features (Dribbble minimal style) ─────────────────────────────── */
 
-/* BentoGrid + BentoCard ---------------------------------------------------- */
 function BentoGrid({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid w-full grid-cols-3 gap-4" style={{ gridAutoRows: '22rem' }}>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {children}
     </div>
   )
 }
 
 function BentoCard({
-  Icon, name, description, background, className = '', href = '#', cta = 'Learn more',
+  name, description, preview, className = '',
 }: {
-  Icon: React.ElementType
   name: string
   description: string
-  background?: React.ReactNode
+  preview: React.ReactNode
   className?: string
-  href?: string
-  cta?: string
 }) {
   return (
-    <div
-      className={`group relative col-span-3 overflow-hidden rounded-2xl bg-white ${className}`}
-      style={{ border: '1px solid #E8ECF0' }}
-    >
-      {/* Background visualization fills the whole card */}
-      <div className="pointer-events-none absolute inset-0">{background}</div>
-
-      {/* Gradient wash — covers bottom 160px so label is always on clean white */}
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-[5]"
-        style={{ height: 160, background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.97) 38%, white 62%)' }} />
-
-      {/* Static label — no slide animation */}
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 flex flex-col gap-1 px-6 pb-5 pt-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-1 bg-white"
-          style={{ border: '1px solid #E8ECF0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-          <Icon className="w-4.5 h-4.5 text-[#263238]" />
-        </div>
-        <h3 className="text-[16px] font-bold text-[#1A1F27]">{name}</h3>
-        <p className="text-[12px] text-[#78889B] leading-relaxed max-w-xs">{description}</p>
-        <a href={href} className="pointer-events-auto mt-1 flex items-center gap-1 text-[12px] font-semibold text-[#0047AB] hover:underline transition-colors w-fit">
-          {cta} <ArrowRight className="w-3 h-3" />
-        </a>
+    <div className={`rounded-2xl overflow-hidden bg-white ${className}`}
+      style={{ border: '1px solid #E8ECF0' }}>
+      <div className="relative overflow-hidden" style={{ background: '#F6F7F9', height: 196 }}>
+        {preview}
+      </div>
+      <div className="px-5 py-4 border-t" style={{ borderColor: '#F0F2F5' }}>
+        <h3 className="text-[14px] font-bold text-[#1A1F27] mb-1">{name}</h3>
+        <p className="text-[12px] leading-relaxed" style={{ color: '#78889B' }}>{description}</p>
       </div>
     </div>
   )
 }
 
-/* Marquee lead cards (Cell 1 background) ------------------------------------ */
-const LEAD_CARDS_BENTO = [
-  { source: '99acres',     name: 'Rajesh Sharma', budget: '₹1.2 Cr', type: '3BHK Whitefield' },
-  { source: 'MagicBricks', name: 'Priya Mehta',   budget: '₹85 L',   type: '2BHK Koramangala' },
-  { source: 'Housing.com', name: 'Vikram Singh',  budget: '₹2.1 Cr', type: '4BHK Jubilee Hills' },
-  { source: 'NoBroker',    name: 'Anita Reddy',   budget: '₹65 L',   type: '2BHK HSR Layout' },
-  { source: 'PropTiger',   name: 'Rohit Kumar',   budget: '₹1.8 Cr', type: '3BHK Banjara Hills' },
-]
-const LEAD_ROW2 = [
-  { source: 'Square Yards', name: 'Deepa Nair',  budget: '₹92 L',   type: '2BHK Gurgaon'   },
-  { source: '99acres',      name: 'Amit Shah',   budget: '₹1.5 Cr', type: '3BHK Noida'      },
-  { source: 'Housing.com',  name: 'Smita Patel', budget: '₹76 L',   type: '2BHK Pune'       },
-  { source: 'NoBroker',     name: 'Karthik V.',  budget: '₹2.4 Cr', type: '4BHK Chennai'    },
-  { source: 'PropTiger',    name: 'Ritu Sharma', budget: '₹1.1 Cr', type: '3BHK Hyderabad'  },
-]
-const SOURCE_DOT_COLORS: Record<string, string> = {
-  '99acres': '#FF4800', 'MagicBricks': '#E53935', 'Housing.com': '#1565C0',
-  'NoBroker': '#FF6F00', 'PropTiger': '#2E7D32', 'Square Yards': '#7B1FA2',
-}
-
-
-function BentoLeadMarquee() {
-  const allCards = [...LEAD_CARDS_BENTO, ...LEAD_ROW2, ...LEAD_CARDS_BENTO, ...LEAD_ROW2]
-  return (
-    <div
-      className="absolute top-0 left-3 right-3 overflow-hidden"
-      style={{
-        height: 'calc(100% - 110px)',
-        maskImage: 'linear-gradient(to bottom, transparent 0%, #000 12%, #000 72%, transparent 100%)',
-        WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, #000 12%, #000 72%, transparent 100%)',
-      }}
-    >
-      <div className="lp-marquee-track-v flex flex-col gap-3" style={{ animationDuration: '22s' }}>
-        {allCards.map((c, i) => (
-          <div key={i} className="rounded-xl p-3.5 bg-white shadow-sm shrink-0"
-            style={{ border: '1px solid #E8ECF0' }}>
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <div className="w-1.5 h-1.5 rounded-full shrink-0"
-                style={{ background: SOURCE_DOT_COLORS[c.source] ?? '#0047AB' }} />
-              <span className="text-[9px] font-bold uppercase tracking-wide flex-1 truncate"
-                style={{ color: SOURCE_DOT_COLORS[c.source] ?? '#0047AB' }}>{c.source}</span>
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 animate-pulse" />
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <div className="text-[13px] font-bold text-[#1A1F27] truncate">{c.name}</div>
-              <div className="text-[12px] font-semibold shrink-0" style={{ color: '#0047AB' }}>{c.budget}</div>
-            </div>
-            <div className="text-[10px] text-[#A4B1BE] mt-0.5 truncate">{c.type}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/* Animated event feed (Cell 2 background) ----------------------------------- */
-const FEED_EVENTS = [
-  { Icon: Zap,          title: 'New lead synced',       sub: '99acres · Rajesh Sharma',    time: '2m ago',  color: '#2E66F6' },
-  { Icon: Bot,          title: 'AI score updated',       sub: 'Intent 94/100 · Hot lead',   time: '4m ago',  color: '#059669' },
-  { Icon: Trophy,       title: 'Deal closed',            sub: '₹1.2 Cr · Vikram Singh',     time: '11m ago', color: '#0047AB' },
-  { Icon: Calendar,     title: 'Site visit booked',      sub: 'Tomorrow 10AM · Sector 62',  time: '28m ago', color: '#9333EA' },
-  { Icon: PhoneCall,    title: 'Follow-up reminder',     sub: 'Priya Mehta · Call due',     time: '45m ago', color: '#F59E0B' },
-  { Icon: CheckCircle,  title: 'Booking received',       sub: '₹12L token · Anita R.',      time: '1h ago',  color: '#059669' },
-]
-
-function BentoActivityFeed({ className }: { className?: string }) {
-  const [items, setItems] = useState(FEED_EVENTS.slice(0, 3))
-  const idxRef = useRef(0)
-
+/* ── Bento preview: Auto Lead Sync — Lottie animation ───────────────────────── */
+function PreviewLeadSync() {
+  const [animData, setAnimData] = useState<object | null>(null)
   useEffect(() => {
-    const t = setInterval(() => {
-      idxRef.current = (idxRef.current + 1) % FEED_EVENTS.length
-      setItems(prev => [FEED_EVENTS[idxRef.current], ...prev.slice(0, 2)])
-    }, 2400)
-    return () => clearInterval(t)
+    fetch('/leads-g2g.json').then(r => r.json()).then(setAnimData)
   }, [])
-
   return (
-    <div
-      className={`flex flex-col gap-3 w-full ${className ?? ''}`}
-      style={{ maskImage: 'linear-gradient(to bottom, transparent 0%, #000 18%, #000 58%, transparent 82%)', WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, #000 18%, #000 58%, transparent 82%)' }}
-    >
-      {items.map((ev, i) => (
-        <div
-          key={`${ev.title}-${i}`}
-          className="flex items-center gap-3.5 px-4 py-3 rounded-2xl bg-white lp-slide-in"
-          style={{
-            border: '1px solid #E8ECF0',
-            borderLeft: `3px solid ${ev.color}`,
-            boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
-            animationDelay: i === 0 ? '0s' : '99s',
-          }}
+    <div className="absolute inset-0 overflow-hidden">
+      {animData && Lottie ? (
+        <Lottie
+          animationData={animData}
+          loop
+          autoplay
+          rendererSettings={{ preserveAspectRatio: 'xMidYMid meet' }}
+          style={{ width: '100%', height: '100%' }}
+        />
+      ) : (
+        <div className="w-full h-full" />
+      )}
+    </div>
+  )
+}
+
+/* ── Bento preview: Live Activity Feed ──────────────────────────────────────── */
+const PREVIEW_FEED = [
+  { title: 'Follow-up reminder', sub: 'Priya Mehta · Call due',        time: 'Now',     dot: '#F59E0B' },
+  { title: 'Site visit booked',  sub: 'Tomorrow 10AM · Sector 62',     time: '28m ago', dot: '#9333EA' },
+  { title: 'Deal closed',        sub: '₹1.2 Cr · Vikram Singh',        time: '1h ago',  dot: '#059669' },
+]
+
+function PreviewFeed() {
+  return (
+    <div className="absolute inset-0 flex flex-col justify-center gap-2.5 px-5">
+      {PREVIEW_FEED.map((ev, i) => (
+        <motion.div key={i}
+          initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.35, ease: [0.22,1,0.36,1] }}
+          className="flex items-center gap-3 bg-white rounded-xl px-3.5 py-2.5"
+          style={{ border: '1px solid #E8ECF0', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}
         >
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: `${ev.color}15`, border: `1.5px solid ${ev.color}30` }}
-          >
-            <ev.Icon className="w-4 h-4" style={{ color: ev.color }} />
-          </div>
+          <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: ev.dot }} />
           <div className="flex-1 min-w-0">
-            <div className="text-[13px] font-semibold text-[#1A1F27] truncate">{ev.title}</div>
-            <div className="text-[11px] text-[#78889B] truncate mt-0.5">{ev.sub}</div>
+            <div className="text-[12px] font-semibold text-[#1A1F27] truncate">{ev.title}</div>
+            <div className="text-[10px] truncate mt-0.5" style={{ color: '#A4B1BE' }}>{ev.sub}</div>
           </div>
-          <div className="flex flex-col items-end gap-1.5 shrink-0">
-            <span className="text-[10px] text-[#A4B1BE] whitespace-nowrap">{ev.time}</span>
-            <div className="w-2 h-2 rounded-full" style={{ background: ev.color }} />
-          </div>
-        </div>
+          <span className="text-[9px] shrink-0" style={{ color: '#C5CDD8' }}>{ev.time}</span>
+          {i === 0 && <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-orange-400" style={{ animation: 'bento-timer-pulse 1.2s ease-in-out infinite' }} />}
+        </motion.div>
       ))}
     </div>
   )
 }
 
-/* Animated portal beam (Cell 3 background) ---------------------------------- */
-const BEAM_PORTALS = [
-  { label: '99', name: '99acres',     color: '#FF4800', y: 15  },
-  { label: 'MB', name: 'MagicBricks', color: '#E53935', y: 30  },
-  { label: 'HO', name: 'Housing',     color: '#1565C0', y: 45  },
-  { label: 'NB', name: 'NoBroker',    color: '#FF6F00', y: 60  },
-  { label: 'PT', name: 'PropTiger',   color: '#2E7D32', y: 75  },
+/* ── Bento preview: Portal Integrations ─────────────────────────────────────── */
+const BENTO_PORTALS = [
+  { name: '99acres',     favicon: '/portals/99acres.png',     color: '#E8173B' },
+  { name: 'MagicBricks', favicon: '/portals/magicbricks.png', color: '#E87722' },
+  { name: 'Housing',     favicon: '/portals/housing.png',     color: '#0071BC' },
+  { name: 'NoBroker',    favicon: '/portals/nobroker.png',    color: '#7C3AED' },
+  { name: 'CommonFloor', favicon: '/portals/commonfloor.png', color: '#059669' },
 ]
 
-function BentoPortalBeam({ className }: { className?: string }) {
+function PreviewPortals() {
+  const left  = BENTO_PORTALS.slice(0, 3)
+  const right = BENTO_PORTALS.slice(3)
   return (
-    <div
-      className={`absolute inset-0 flex items-center gap-0 overflow-hidden ${className ?? ''}`}
-      style={{ padding: '20px 20px 90px 20px' }}
-    >
-      {/* Left: portal pills */}
-      <div className="flex flex-col gap-2 shrink-0 z-10">
-        {BEAM_PORTALS.map((p, i) => (
-          <div
-            key={p.label}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-white shadow-sm"
-            style={{ border: `1.5px solid ${p.color}40`, color: p.color }}
+    <div className="absolute inset-0 flex items-center px-6 gap-3">
+      {/* Left column */}
+      <div className="flex flex-col gap-2 flex-1">
+        {left.map((p, i) => (
+          <motion.div key={p.name}
+            initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }} transition={{ delay: i * 0.08, duration: 0.3 }}
+            className="flex items-center gap-2 bg-white rounded-xl px-3 py-2"
+            style={{ border: '1px solid #E8ECF0', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
           >
-            <div className="w-2 h-2 rounded-full shrink-0 animate-pulse" style={{ background: p.color, animationDelay: `${i * 0.3}s` }} />
-            {p.name}
-          </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={p.favicon} alt={p.name} width={13} height={13} style={{ borderRadius: 2, flexShrink: 0 }} />
+            <span className="text-[10px] font-semibold text-[#1A1F27] flex-1 truncate">{p.name}</span>
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: p.color }} />
+          </motion.div>
         ))}
       </div>
 
-      {/* Middle: SVG beams spanning the flex gap — `none` ratio so x=0..300 maps to container width */}
-      <div className="flex-1 relative self-stretch mx-2">
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 200" preserveAspectRatio="none">
-          <defs>
-            {BEAM_PORTALS.map((p) => (
-              <linearGradient key={p.label} id={`bg2-${p.label}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor={p.color} stopOpacity="0.9" />
-                <stop offset="65%" stopColor={p.color} stopOpacity="0.4" />
-                <stop offset="100%" stopColor={p.color} stopOpacity="0.05" />
-              </linearGradient>
-            ))}
-          </defs>
-          {BEAM_PORTALS.map((p, i) => {
-            const y = 22 + i * 39
-            const pathD = `M 0,${y} C 100,${y} 180,100 280,100`
-            return (
-              <g key={p.label}>
-                <path d={pathD} fill="none" stroke={`url(#bg2-${p.label})`} strokeWidth="1.8" />
-                <circle r="3.5" fill={p.color} opacity="0.95">
-                  <animateMotion dur="1.9s" repeatCount="indefinite" begin={`${i * 0.36}s`} path={pathD} />
-                </circle>
-              </g>
-            )
-          })}
-        </svg>
+      {/* Centre hub */}
+      <div className="flex flex-col items-center gap-1 shrink-0">
+        <div className="w-11 h-11 rounded-full flex items-center justify-center font-black text-white text-[10px]"
+          style={{ background: '#0038A8', boxShadow: '0 0 0 4px rgba(0,56,168,0.12)' }}>LG</div>
+        <span className="text-[7px] font-semibold" style={{ color: '#9BA8B5' }}>CRM</span>
       </div>
 
-      {/* Right: Lead Gap CRM node + output pills */}
-      <div className="flex items-center gap-3 shrink-0 z-10">
-        <div className="flex flex-col items-center">
-          <div className="relative flex items-center justify-center">
-            <div className="absolute w-18 h-18 rounded-3xl border animate-ping opacity-20"
-              style={{ borderColor: '#0047AB', animationDuration: '2.2s', width: 72, height: 72 }} />
-            <div className="absolute -inset-2 rounded-3xl blur-xl opacity-35" style={{ background: '#0047AB' }} />
-            <div className="relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl z-10"
-              style={{ background: '#0038A8' }}>
-              <Building2 className="w-7 h-7 text-white" />
-            </div>
-          </div>
-          <div className="text-[9px] font-bold text-[#78889B] mt-2 text-center">Lead Gap CRM</div>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          {[
-            { Icon: Zap, label: 'Auto assign', color: '#2E66F6' },
-            { Icon: Bot, label: 'AI score',    color: '#059669' },
-          ].map(({ Icon, label, color }) => (
-            <div key={label}
-              className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-white shadow-sm text-[10px] font-semibold"
-              style={{ border: `1.5px solid ${color}30`, color }}>
-              <Icon className="w-3 h-3" /> {label}
-            </div>
-          ))}
-        </div>
+      {/* Right column */}
+      <div className="flex flex-col gap-2 flex-1">
+        {right.map((p, i) => (
+          <motion.div key={p.name}
+            initial={{ opacity: 0, x: 10 }} whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }} transition={{ delay: i * 0.1 + 0.2, duration: 0.3 }}
+            className="flex items-center gap-2 bg-white rounded-xl px-3 py-2"
+            style={{ border: '1px solid #E8ECF0', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={p.favicon} alt={p.name} width={13} height={13} style={{ borderRadius: 2, flexShrink: 0 }} />
+            <span className="text-[10px] font-semibold text-[#1A1F27] flex-1 truncate">{p.name}</span>
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: p.color }} />
+          </motion.div>
+        ))}
       </div>
     </div>
   )
 }
 
-/* Mini pipeline board (Cell 4 background) ----------------------------------- */
-function BentoPipelineBoard() {
-  const columns = [
-    {
-      label: 'New', color: '#2E66F6',
-      deals: [
-        { init: 'RS', name: 'Rajesh S.', budget: '₹1.2 Cr' },
-        { init: 'PM', name: 'Priya M.',  budget: '₹85 L'   },
-        { init: 'VK', name: 'Vikram K.', budget: '₹2.1 Cr' },
-      ],
-    },
-    {
-      label: 'Visiting', color: '#0047AB',
-      deals: [
-        { init: 'AR', name: 'Anita R.', budget: '₹65 L'   },
-        { init: 'RK', name: 'Rohit K.', budget: '₹1.8 Cr' },
-      ],
-    },
-    {
-      label: 'Closing', color: '#9333EA',
-      deals: [
-        { init: 'SK', name: 'Suresh K.', budget: '₹90 L'   },
-        { init: 'NG', name: 'Nisha G.',  budget: '₹1.5 Cr' },
-      ],
-    },
-    {
-      label: 'Closed', color: '#059669',
-      deals: [
-        { init: 'MG', name: 'Mohan G.', budget: '₹75 L'   },
-        { init: 'AK', name: 'Arun K.',  budget: '₹1.1 Cr' },
-      ],
-    },
-  ]
 
+/* ── Bento preview: Live Pipeline ───────────────────────────────────────────── */
+const PIPELINE_COLS = [
+  {
+    label: 'New', color: '#0038A8',
+    deals: [
+      { init: 'RS', name: 'Rajesh S.', budget: '₹1.2 Cr' },
+      { init: 'PM', name: 'Priya M.',  budget: '₹85 L'   },
+    ],
+  },
+  {
+    label: 'Visiting', color: '#B45309',
+    deals: [
+      { init: 'AR', name: 'Anita R.', budget: '₹65 L'   },
+      { init: 'RK', name: 'Rohit K.', budget: '₹1.8 Cr' },
+    ],
+  },
+  {
+    label: 'Closed', color: '#059669',
+    deals: [
+      { init: 'SK', name: 'Suresh K.', budget: '₹90 L' },
+    ],
+  },
+]
+
+function PreviewPipeline() {
   return (
-    <div
-      className="absolute top-5 inset-x-3"
-      style={{
-        maskImage: 'linear-gradient(to bottom, #000 55%, transparent 95%)',
-        WebkitMaskImage: 'linear-gradient(to bottom, #000 55%, transparent 95%)',
-      }}
-    >
-      <div className="grid grid-cols-4 gap-2">
-        {columns.map(col => (
-          <div key={col.label}>
-            <div className="flex items-center justify-between mb-2.5">
-              <span className="text-[8px] font-black uppercase tracking-wider" style={{ color: col.color }}>
-                {col.label}
-              </span>
-              <div
-                className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[7px] font-bold"
-                style={{ background: col.color }}
-              >
-                {col.deals.length}
-              </div>
+    <div className="absolute inset-0 px-4 pt-4 pb-2 flex flex-col">
+      <div className="grid grid-cols-3 gap-2 flex-1">
+        {PIPELINE_COLS.map((col, ci) => (
+          <div key={col.label} className="flex flex-col gap-1.5">
+            {/* Column header */}
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: col.color }}>{col.label}</span>
+              <div className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[6px] font-bold text-white"
+                style={{ background: col.color }}>{col.deals.length}</div>
             </div>
-            <div className="flex flex-col gap-1.5">
-              {col.deals.map((deal, i) => (
-                <div
-                  key={i}
-                  className="rounded-lg p-2"
-                  style={{ background: `${col.color}0d`, border: `1px solid ${col.color}22` }}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <div
-                      className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[6px] font-bold shrink-0"
-                      style={{ background: col.color }}
-                    >
-                      {deal.init}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[8px] font-semibold text-[#263238] truncate">{deal.name}</div>
-                      <div className="text-[7px] font-bold" style={{ color: col.color }}>{deal.budget}</div>
-                    </div>
+            {/* Deal cards */}
+            {col.deals.map((deal, i) => (
+              <motion.div key={i}
+                initial={{ opacity: 0, y: 6 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: ci * 0.08 + i * 0.06, duration: 0.3 }}
+                className="rounded-xl p-2 bg-white"
+                style={{ border: '1px solid #E8ECF0', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
+              >
+                <div className="flex items-center gap-1.5">
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[6px] font-bold shrink-0"
+                    style={{ background: col.color }}>{deal.init}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[8px] font-semibold text-[#1A1F27] truncate">{deal.name}</div>
+                    <div className="text-[7px] font-semibold mt-px" style={{ color: col.color }}>{deal.budget}</div>
                   </div>
                 </div>
-              ))}
-            </div>
+              </motion.div>
+            ))}
           </div>
         ))}
       </div>
@@ -2138,52 +2016,34 @@ function Features() {
         </div>
 
         <BentoGrid>
-          {/* Cell 1: Auto Lead Sync — 1 col, lead card marquee */}
+          {/* Cell 1: Auto Lead Sync */}
           <BentoCard
-            Icon={Zap}
             name="Auto Lead Sync"
             description="Leads flow in from every portal the moment they are posted — zero manual copy-paste."
-            className="lg:col-span-1"
-            href="#"
-            cta="See how it works"
-            background={<BentoLeadMarquee />}
+            preview={<PreviewLeadSync />}
           />
 
-          {/* Cell 2: Live Activity Feed — 2 cols, animated notification list */}
+          {/* Cell 2: Live Activity Feed — spans 2 cols */}
           <BentoCard
-            Icon={TrendingUp}
             name="Live Activity Feed"
             description="Every lead event — synced, scored, assigned, closed — appears in real time."
-            className="lg:col-span-2"
-            href="#"
-            cta="View pipeline"
-            background={
-              <BentoActivityFeed className="absolute top-6 right-4 left-4" />
-            }
+            className="md:col-span-2"
+            preview={<PreviewFeed />}
           />
 
-          {/* Cell 3: Portal Integrations — 2 cols, animated beam */}
+          {/* Cell 3: Portal Integrations — spans 2 cols */}
           <BentoCard
-            Icon={Share2Icon}
             name="Portal Integrations"
             description="Connect 99acres, MagicBricks, Housing.com, NoBroker and more — leads routed automatically."
-            className="lg:col-span-2"
-            href="#"
-            cta="See all integrations"
-            background={
-              <BentoPortalBeam className="absolute inset-0" />
-            }
+            className="md:col-span-2"
+            preview={<PreviewPortals />}
           />
 
-          {/* Cell 4: Pipeline Board — 1 col, mini kanban */}
+          {/* Cell 4: Live Pipeline */}
           <BentoCard
-            Icon={BarChart3}
             name="Live Pipeline"
             description="Every deal stage, visible at a glance. Know exactly what to close next."
-            className="lg:col-span-1"
-            href="#"
-            cta="Open pipeline"
-            background={<BentoPipelineBoard />}
+            preview={<PreviewPipeline />}
           />
         </BentoGrid>
       </div>
@@ -2825,146 +2685,144 @@ function ProblemSection() {
           </div>
         </div>
 
-        {/* Right — CardSwap */}
-        <div className="lp-in lp-in-delay-3 flex-shrink-0 relative" style={{ width: 500, height: 420 }}>
+        {/* Right — CardSwap desktop mockups */}
+        <div className="lp-in lp-in-delay-3 flex-shrink-0 relative" style={{ width: 520, height: 440 }}>
           <CardSwap
-            width={420}
-            height={360}
-            cardDistance={40}
-            verticalDistance={44}
-            delay={3500}
+            width={460}
+            height={390}
+            cardDistance={38}
+            verticalDistance={42}
+            delay={4000}
             pauseOnHover={false}
             skewAmount={3}
             easing="elastic"
           >
 
-            {/* ── Card 1 — Portal Chaos ── */}
+            {/* ── Desktop 1 — 5+ Portal Integration ── */}
             <SwapCard>
-              <div className="flex flex-col h-full overflow-hidden">
-                {/* coloured header band */}
-                <div className="px-5 pt-5 pb-4" style={{ background: 'linear-gradient(135deg,#EFF6FF 0%,#DBEAFE 100%)', borderBottom: '1px solid #BFDBFE' }}>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-3"
-                    style={{ background: 'white', color: '#1D4ED8', border: '1px solid #BFDBFE' }}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                    01 — Portals
-                  </span>
-                  <h3 className="text-[20px] font-extrabold leading-tight" style={{ color: '#0F172A' }}>
-                    Your leads live<br />in 5 different tabs.
-                  </h3>
-                </div>
-                {/* portal rows */}
-                <div className="flex-1 px-5 py-4 flex flex-col gap-2.5">
-                  {[
-                    { clr: '#DC2626', bg: '#FEF2F2', src: '99acres',     count: 12, bar: 90 },
-                    { clr: '#B91C1C', bg: '#FFF7ED', src: 'MagicBricks', count: 8,  bar: 70 },
-                    { clr: '#1D4ED8', bg: '#EFF6FF', src: 'Housing.com', count: 5,  bar: 50 },
-                    { clr: '#047857', bg: '#F0FDF4', src: 'NoBroker',    count: 3,  bar: 30 },
-                    { clr: '#7C3AED', bg: '#F5F3FF', src: 'PropTiger',   count: 2,  bar: 20 },
-                  ].map((p, i) => (
-                    <div key={i} className="flex items-center gap-2.5">
-                      <div className="w-2 h-2 rounded-full shrink-0" style={{ background: p.clr }} />
-                      <span className="text-[12px] font-semibold w-24 shrink-0" style={{ color: '#334155' }}>{p.src}</span>
-                      <div className="flex-1 h-1.5 rounded-full" style={{ background: '#F1F5F9' }}>
-                        <div className="h-full rounded-full" style={{ width: `${p.bar}%`, background: p.clr, opacity: 0.7 }} />
-                      </div>
-                      <span className="text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-full shrink-0"
-                        style={{ background: p.bg, color: p.clr }}>{p.count} new</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="px-5 py-3 flex items-center gap-2" style={{ borderTop: '1px solid #F1F5F9' }}>
-                  <span className="text-[11px] font-medium" style={{ color: '#94A3B8' }}>Total unread across all portals</span>
-                  <span className="ml-auto text-[14px] font-extrabold" style={{ color: '#DC2626' }}>30 leads</span>
-                </div>
-              </div>
-            </SwapCard>
-
-            {/* ── Card 2 — Response Time ── */}
-            <SwapCard>
-              <div className="flex flex-col h-full overflow-hidden">
-                {/* amber header */}
-                <div className="px-5 pt-5 pb-4" style={{ background: 'linear-gradient(135deg,#FFFBEB 0%,#FEF3C7 100%)', borderBottom: '1px solid #FDE68A' }}>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-3"
-                    style={{ background: 'white', color: '#92400E', border: '1px solid #FDE68A' }}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    02 — Response Time
-                  </span>
-                  <h3 className="text-[20px] font-extrabold leading-tight" style={{ color: '#0F172A' }}>
-                    The first broker wins.<br />Every single time.
-                  </h3>
-                </div>
-                <div className="flex-1 px-5 py-4 flex flex-col gap-3">
-                  {/* big live timer */}
-                  <div className="rounded-xl p-4 flex items-center gap-4" style={{ background: '#FFF7ED', border: '1px solid #FED7AA' }}>
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0"
-                      style={{ background: '#C2410C' }}>RS</div>
-                    <div className="flex-1">
-                      <div className="text-[12px] font-bold mb-1" style={{ color: '#0F172A' }}>Rajesh Sharma — ₹1.8 Cr</div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 animate-pulse" />
-                        <span className="text-[13px] font-extrabold tabular-nums" style={{ color: '#DC2626' }}>{timer}</span>
-                      </div>
-                      <div className="text-[10px] mt-0.5" style={{ color: '#94A3B8' }}>without a response</div>
-                    </div>
+              <div className="flex flex-col h-full overflow-hidden rounded-2xl">
+                {/* macOS browser chrome — light */}
+                <div className="flex items-center gap-2 px-4 py-2.5 shrink-0" style={{ background: '#F0EFEC', borderBottom: '1px solid #D8D5CE' }}>
+                  <span className="w-3 h-3 rounded-full bg-[#FF5F57]" />
+                  <span className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
+                  <span className="w-3 h-3 rounded-full bg-[#28C840]" />
+                  <div className="flex-1 mx-3 px-3 py-1 rounded text-[10px] font-medium text-center" style={{ background: '#E2DED8', color: '#5A5751' }}>
+                    app.leadgapcrm.in/portals
                   </div>
-                  {/* heat bar — going cold */}
+                </div>
+                {/* screen — dark with portal grid */}
+                <div className="flex-1 flex flex-col px-6 py-5 gap-4" style={{ background: '#0D1117' }}>
                   <div>
-                    <div className="flex justify-between text-[10px] font-semibold mb-1.5" style={{ color: '#94A3B8' }}>
-                      <span>Lead temperature</span><span style={{ color: '#64748B' }}>Going cold</span>
-                    </div>
-                    <div className="h-2.5 rounded-full overflow-hidden" style={{ background: '#F1F5F9' }}>
-                      <div className="h-full rounded-full" style={{ width: '22%', background: 'linear-gradient(90deg,#3B82F6,#60A5FA)' }} />
-                    </div>
-                    <div className="flex justify-between text-[9px] mt-1" style={{ color: '#CBD5E1' }}>
-                      <span>Cold</span><span>Warm</span><span>Hot 🔥</span>
-                    </div>
+                    <div className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: '#0047AB' }}>01 — Portals</div>
+                    <div className="text-[18px] font-extrabold leading-tight text-white">5+ Portal Integration</div>
+                    <div className="text-[11px] mt-1" style={{ color: '#6B7280' }}>Every lead, one inbox. Auto-synced in real time.</div>
                   </div>
-                  <div className="rounded-lg px-4 py-2.5 flex items-center gap-2" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
-                    <span className="text-[12px] font-semibold" style={{ color: '#DC2626' }}>Someone else just called this lead.</span>
+                  {/* portal logo grid */}
+                  <div className="grid grid-cols-4 gap-2.5">
+                    {[
+                      { name: '99acres',     clr: '#DC2626', abbr: '99' },
+                      { name: 'MagicBricks', clr: '#B91C1C', abbr: 'MB' },
+                      { name: 'Housing',     clr: '#1D4ED8', abbr: 'HC' },
+                      { name: 'NoBroker',   clr: '#047857', abbr: 'NB' },
+                      { name: 'PropTiger',  clr: '#C2410C', abbr: 'PT' },
+                      { name: 'Makaan',     clr: '#0369A1', abbr: 'MK' },
+                      { name: 'Sq.Yards',   clr: '#0047AB', abbr: 'SY' },
+                      { name: 'CommonFlr',  clr: '#7C3AED', abbr: 'CF' },
+                    ].map((p, i) => (
+                      <div key={i} className="flex flex-col items-center gap-1.5">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-[11px] font-extrabold"
+                          style={{ background: p.clr, boxShadow: `0 0 12px ${p.clr}55` }}>
+                          {p.abbr}
+                        </div>
+                        <span className="text-[8px] font-medium text-center leading-tight" style={{ color: '#6B7280' }}>{p.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {/* live sync indicator */}
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: '#0F2027', border: '1px solid #1a3a4a' }}>
+                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
+                    <span className="text-[11px] font-medium" style={{ color: '#4ADE80' }}>Live sync active — 30 new leads today</span>
                   </div>
                 </div>
               </div>
             </SwapCard>
 
-            {/* ── Card 3 — Visibility ── */}
+            {/* ── Desktop 2 — Response Time ── */}
             <SwapCard>
-              <div className="flex flex-col h-full overflow-hidden">
-                {/* violet header */}
-                <div className="px-5 pt-5 pb-4" style={{ background: 'linear-gradient(135deg,#F5F3FF 0%,#EDE9FE 100%)', borderBottom: '1px solid #DDD6FE' }}>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-3"
-                    style={{ background: 'white', color: '#6D28D9', border: '1px solid #DDD6FE' }}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
-                    03 — Visibility
-                  </span>
-                  <h3 className="text-[20px] font-extrabold leading-tight" style={{ color: '#0F172A' }}>
-                    Nobody knows<br />who owns what.
-                  </h3>
+              <div className="flex flex-col h-full overflow-hidden rounded-2xl">
+                {/* macOS browser chrome — light */}
+                <div className="flex items-center gap-2 px-4 py-2.5 shrink-0" style={{ background: '#F0EFEC', borderBottom: '1px solid #D8D5CE' }}>
+                  <span className="w-3 h-3 rounded-full bg-[#FF5F57]" />
+                  <span className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
+                  <span className="w-3 h-3 rounded-full bg-[#28C840]" />
+                  <div className="flex-1 mx-3 px-3 py-1 rounded text-[10px] font-medium text-center" style={{ background: '#E2DED8', color: '#5A5751' }}>
+                    app.leadgapcrm.in/response
+                  </div>
                 </div>
-                <div className="flex-1 px-5 py-4 flex flex-col gap-2">
-                  {/* lead rows with chaotic ownership */}
-                  {[
-                    { name: 'Priya Mehta',   val: '₹2.4 Cr', avatar: 'PM', ac: '#7C3AED', owner: 'No owner',     oc: '#EF4444' },
-                    { name: 'Vikram Singh',  val: '₹1.1 Cr', avatar: 'VS', ac: '#1D4ED8', owner: 'Ask Priya?',   oc: '#F59E0B' },
-                    { name: 'Anjali M.',     val: '₹85L',    avatar: 'AM', ac: '#047857', owner: 'Unassigned',   oc: '#EF4444' },
-                    { name: 'Rohan Gupta',   val: '₹3.2 Cr', avatar: 'RG', ac: '#C2410C', owner: '…nobody',      oc: '#94A3B8' },
-                  ].map((row, i) => (
-                    <div key={i} className="flex items-center gap-2.5 rounded-lg px-3 py-2" style={{ background: '#FAFAFA', border: '1px solid #F1F5F9' }}>
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[9px] font-bold shrink-0"
-                        style={{ background: row.ac }}>{row.avatar}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[12px] font-semibold truncate" style={{ color: '#0F172A' }}>{row.name}</div>
-                        <div className="text-[10px]" style={{ color: '#94A3B8' }}>{row.val}</div>
-                      </div>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
-                        style={{ background: `${row.oc}15`, color: row.oc, border: `1px solid ${row.oc}30` }}>
-                        {row.owner}
-                      </span>
+                {/* screen */}
+                <div className="flex-1 flex flex-col min-h-0" style={{ background: '#0D1117' }}>
+                  <div className="px-6 pt-4 pb-2 shrink-0">
+                    <div className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: '#F59E0B' }}>02 — Response Time</div>
+                    <div className="text-[16px] font-extrabold leading-tight text-white">First caller wins.</div>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                      <span className="text-[12px] font-bold tabular-nums" style={{ color: '#EF4444' }}>{timer} unresponded</span>
                     </div>
-                  ))}
+                  </div>
+                  {/* Lottie animation fills remaining space */}
+                  <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden p-2">
+                    <DotLottieReact
+                      src="/lottie/dashboard-developer.lottie"
+                      loop
+                      autoplay
+                      style={{ width: '100%', height: '100%', maxHeight: '100%' }}
+                    />
+                  </div>
                 </div>
-                <div className="px-5 py-3 flex items-center gap-2" style={{ borderTop: '1px solid #F1F5F9' }}>
-                  <span className="text-[11px]" style={{ color: '#94A3B8' }}>Deals dying silently</span>
-                  <span className="ml-auto text-[13px] font-extrabold" style={{ color: '#7C3AED' }}>4 this week</span>
+              </div>
+            </SwapCard>
+
+            {/* ── Desktop 3 — AI Advisor ── */}
+            <SwapCard>
+              <div className="flex flex-col h-full overflow-hidden rounded-2xl">
+                {/* macOS browser chrome — light */}
+                <div className="flex items-center gap-2 px-4 py-2.5 shrink-0" style={{ background: '#F0EFEC', borderBottom: '1px solid #D8D5CE' }}>
+                  <span className="w-3 h-3 rounded-full bg-[#FF5F57]" />
+                  <span className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
+                  <span className="w-3 h-3 rounded-full bg-[#28C840]" />
+                  <div className="flex-1 mx-3 px-3 py-1 rounded text-[10px] font-medium text-center" style={{ background: '#E2DED8', color: '#5A5751' }}>
+                    app.leadgapcrm.in/ai-advisor
+                  </div>
+                </div>
+                {/* screen */}
+                <div className="flex-1 flex flex-col min-h-0" style={{ background: '#0D1117' }}>
+                  <div className="px-6 pt-4 pb-2 shrink-0">
+                    <div className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: '#7C3AED' }}>03 — AI Advisor</div>
+                    <div className="text-[16px] font-extrabold leading-tight text-white">Nobody owns what.</div>
+                    <div className="text-[11px] mt-1" style={{ color: '#6B7280' }}>AI assigns, follows up, and closes the gaps.</div>
+                  </div>
+                  {/* AI stat rows */}
+                  <div className="px-6 pb-2 flex flex-col gap-1.5 shrink-0">
+                    {[
+                      { label: 'Leads scored today',    value: '12',      clr: '#7C3AED' },
+                      { label: 'Follow-ups auto-sent',  value: '3',       clr: '#10B981' },
+                      { label: 'Pipeline monitored',    value: '₹4.2 Cr', clr: '#F59E0B' },
+                    ].map((s, i) => (
+                      <div key={i} className="flex items-center justify-between px-3 py-1.5 rounded" style={{ background: '#131A23', border: '1px solid #1E2A38' }}>
+                        <span className="text-[10px] font-medium" style={{ color: '#9CA3AF' }}>{s.label}</span>
+                        <span className="text-[11px] font-bold tabular-nums" style={{ color: s.clr }}>{s.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Dashboard Lottie */}
+                  <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden p-2">
+                    <DotLottieReact
+                      src="/lottie/dashboard-main.lottie"
+                      loop
+                      autoplay
+                      style={{ width: '100%', height: '100%', maxHeight: '100%' }}
+                    />
+                  </div>
                 </div>
               </div>
             </SwapCard>
