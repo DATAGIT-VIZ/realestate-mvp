@@ -16,6 +16,7 @@ import {
   LineChart, Line, YAxis,
 } from 'recharts'
 import FloatingDashboard from './FloatingDashboard'
+import { CinematicFooter } from './CinematicFooter'
 import WorkspaceBento from './WorkspaceBento'
 import { AnimatedDock } from '@/components/ui/animated-dock'
 import CardSwap, { Card as SwapCard } from '@/components/ui/CardSwap'
@@ -1227,7 +1228,7 @@ function PortalStrip() {
 
 function BentoGrid({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
       {children}
     </div>
   )
@@ -1244,7 +1245,7 @@ function BentoCard({
   return (
     <div className={`rounded-2xl overflow-hidden bg-white ${className}`}
       style={{ border: '1px solid #E8ECF0' }}>
-      <div className="relative overflow-hidden" style={{ background: '#F6F7F9', height: 196 }}>
+      <div className="relative overflow-hidden" style={{ background: '#F6F7F9', height: 260 }}>
         {preview}
       </div>
       <div className="px-5 py-4 border-t" style={{ borderColor: '#F0F2F5' }}>
@@ -1255,14 +1256,14 @@ function BentoCard({
   )
 }
 
-/* ── Bento preview: Auto Lead Sync — Lottie animation ───────────────────────── */
+/* ── Bento preview: Auto Lead Sync — Data Sharing Lottie ────────────────────── */
 function PreviewLeadSync() {
   const [animData, setAnimData] = useState<object | null>(null)
   useEffect(() => {
-    fetch('/leads-g2g.json').then(r => r.json()).then(setAnimData)
+    fetch('/lottie/data-sharing-service.json').then(r => r.json()).then(setAnimData)
   }, [])
   return (
-    <div className="absolute inset-0 overflow-hidden">
+    <div className="absolute inset-0 overflow-hidden flex items-center justify-center">
       {animData && Lottie ? (
         <Lottie
           animationData={animData}
@@ -1308,122 +1309,114 @@ function PreviewFeed() {
   )
 }
 
-/* ── Bento preview: Portal Integrations ─────────────────────────────────────── */
-const BENTO_PORTALS = [
-  { name: '99acres',     favicon: '/portals/99acres.png',     color: '#E8173B' },
-  { name: 'MagicBricks', favicon: '/portals/magicbricks.png', color: '#E87722' },
-  { name: 'Housing',     favicon: '/portals/housing.png',     color: '#0071BC' },
-  { name: 'NoBroker',    favicon: '/portals/nobroker.png',    color: '#7C3AED' },
-  { name: 'CommonFloor', favicon: '/portals/commonfloor.png', color: '#059669' },
-]
-
+/* ── Bento preview: Portal Integrations — lead sync lottie ──────────────────── */
 function PreviewPortals() {
-  const left  = BENTO_PORTALS.slice(0, 3)
-  const right = BENTO_PORTALS.slice(3)
+  const [animData, setAnimData] = useState<object | null>(null)
+  useEffect(() => {
+    fetch('/leads-g2g.json').then(r => r.json()).then(setAnimData)
+  }, [])
   return (
-    <div className="absolute inset-0 flex items-center px-6 gap-3">
-      {/* Left column */}
-      <div className="flex flex-col gap-2 flex-1">
-        {left.map((p, i) => (
-          <motion.div key={p.name}
-            initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }} transition={{ delay: i * 0.08, duration: 0.3 }}
-            className="flex items-center gap-2 bg-white rounded-xl px-3 py-2"
-            style={{ border: '1px solid #E8ECF0', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={p.favicon} alt={p.name} width={13} height={13} style={{ borderRadius: 2, flexShrink: 0 }} />
-            <span className="text-[10px] font-semibold text-[#1A1F27] flex-1 truncate">{p.name}</span>
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: p.color }} />
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Centre hub */}
-      <div className="flex flex-col items-center gap-1 shrink-0">
-        <div className="w-11 h-11 rounded-full flex items-center justify-center font-black text-white text-[10px]"
-          style={{ background: '#0038A8', boxShadow: '0 0 0 4px rgba(0,56,168,0.12)' }}>LG</div>
-        <span className="text-[7px] font-semibold" style={{ color: '#9BA8B5' }}>CRM</span>
-      </div>
-
-      {/* Right column */}
-      <div className="flex flex-col gap-2 flex-1">
-        {right.map((p, i) => (
-          <motion.div key={p.name}
-            initial={{ opacity: 0, x: 10 }} whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }} transition={{ delay: i * 0.1 + 0.2, duration: 0.3 }}
-            className="flex items-center gap-2 bg-white rounded-xl px-3 py-2"
-            style={{ border: '1px solid #E8ECF0', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={p.favicon} alt={p.name} width={13} height={13} style={{ borderRadius: 2, flexShrink: 0 }} />
-            <span className="text-[10px] font-semibold text-[#1A1F27] flex-1 truncate">{p.name}</span>
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: p.color }} />
-          </motion.div>
-        ))}
-      </div>
+    <div className="absolute inset-0 overflow-hidden flex items-center justify-center">
+      {animData && Lottie ? (
+        <Lottie
+          animationData={animData}
+          loop
+          autoplay
+          rendererSettings={{ preserveAspectRatio: 'xMidYMid meet' }}
+          style={{ width: '100%', height: '100%' }}
+        />
+      ) : (
+        <div className="w-full h-full" />
+      )}
     </div>
   )
 }
 
 
-/* ── Bento preview: Live Pipeline ───────────────────────────────────────────── */
-const PIPELINE_COLS = [
+/* ── Bento preview: Activity Log ─────────────────────────────────────────── */
+const ACTIVITY_LOG_ROWS = [
   {
-    label: 'New', color: '#0038A8',
-    deals: [
-      { init: 'RS', name: 'Rajesh S.', budget: '₹1.2 Cr' },
-      { init: 'PM', name: 'Priya M.',  budget: '₹85 L'   },
-    ],
+    init: 'RS', color: '#0047AB',
+    name: 'Rahul S.', action: 'called', target: 'Priya Mehta',
+    time: '2m ago',
+    tag: { label: 'Connected', clr: '#059669', bg: '#ECFDF5' },
   },
   {
-    label: 'Visiting', color: '#B45309',
-    deals: [
-      { init: 'AR', name: 'Anita R.', budget: '₹65 L'   },
-      { init: 'RK', name: 'Rohit K.', budget: '₹1.8 Cr' },
-    ],
+    init: 'AM', color: '#7C3AED',
+    name: 'Amit M.', action: 'added note on site visit', target: '',
+    time: '18m ago',
+    note: 'Client open to ₹1.5 Cr, wants 3BHK near Sector 62.',
   },
   {
-    label: 'Closed', color: '#059669',
-    deals: [
-      { init: 'SK', name: 'Suresh K.', budget: '₹90 L' },
-    ],
+    init: 'NK', color: '#B45309',
+    name: 'Neha K.', action: 'moved to', target: 'Negotiation',
+    time: '45m ago',
+    tag: { label: 'Negotiation', clr: '#B45309', bg: '#FEF3C7' },
+  },
+  {
+    init: 'VR', color: '#059669',
+    name: 'Vikram R.', action: 'closed deal —', target: 'Suresh K.',
+    time: '1h ago',
+    tag: { label: '₹1.2 Cr won', clr: '#059669', bg: '#ECFDF5' },
   },
 ]
 
 function PreviewPipeline() {
   return (
-    <div className="absolute inset-0 px-4 pt-4 pb-2 flex flex-col">
-      <div className="grid grid-cols-3 gap-2 flex-1">
-        {PIPELINE_COLS.map((col, ci) => (
-          <div key={col.label} className="flex flex-col gap-1.5">
-            {/* Column header */}
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[8px] font-bold uppercase tracking-wider" style={{ color: col.color }}>{col.label}</span>
-              <div className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[6px] font-bold text-white"
-                style={{ background: col.color }}>{col.deals.length}</div>
-            </div>
-            {/* Deal cards */}
-            {col.deals.map((deal, i) => (
-              <motion.div key={i}
-                initial={{ opacity: 0, y: 6 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: ci * 0.08 + i * 0.06, duration: 0.3 }}
-                className="rounded-xl p-2 bg-white"
-                style={{ border: '1px solid #E8ECF0', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
-              >
-                <div className="flex items-center gap-1.5">
-                  <div className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[6px] font-bold shrink-0"
-                    style={{ background: col.color }}>{deal.init}</div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[8px] font-semibold text-[#1A1F27] truncate">{deal.name}</div>
-                    <div className="text-[7px] font-semibold mt-px" style={{ color: col.color }}>{deal.budget}</div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        ))}
+    <div className="absolute inset-0 flex flex-col px-5 pt-4 pb-3 gap-2 overflow-hidden">
+      {/* header */}
+      <div className="flex items-center justify-between mb-1 shrink-0">
+        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#A4B1BE' }}>Activity log</span>
+        <div className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shrink-0" />
+          <span className="text-[10px] font-medium" style={{ color: '#78889B' }}>Live</span>
+        </div>
       </div>
+
+      {/* activity rows */}
+      {ACTIVITY_LOG_ROWS.slice(0, 3).map((row, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, y: 6 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: i * 0.1, duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+          className="bg-white rounded-lg overflow-hidden shrink-0"
+          style={{ border: '1px solid #EEF0F4', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}
+        >
+          <div className="flex items-center gap-3 px-4 py-2.5">
+            {/* avatar */}
+            <div
+              className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold shrink-0"
+              style={{ background: row.color, fontSize: 9 }}
+            >
+              {row.init}
+            </div>
+
+            {/* text */}
+            <div className="flex-1 min-w-0">
+              <p className="leading-snug text-[11px]">
+                <span className="font-semibold text-[#1A1F27]">{row.name} </span>
+                <span style={{ color: '#78889B' }}>{row.action}{row.target ? ` ${row.target}` : ''}</span>
+              </p>
+              {row.note && (
+                <p className="mt-0.5 truncate text-[10px]" style={{ color: '#A4B1BE' }}>{row.note}</p>
+              )}
+              {row.tag && (
+                <span
+                  className="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-semibold leading-none"
+                  style={{ background: row.tag.bg, color: row.tag.clr }}
+                >
+                  {row.tag.label}
+                </span>
+              )}
+            </div>
+
+            {/* time */}
+            <span className="shrink-0 tabular-nums text-[10px]" style={{ color: '#C5CDD8' }}>{row.time}</span>
+          </div>
+        </motion.div>
+      ))}
     </div>
   )
 }
@@ -2001,7 +1994,7 @@ function UniqueFeatures() {
 function Features() {
   return (
     <section id="features" className="py-28">
-      <div className="max-w-6xl mx-auto px-6">
+      <div className="max-w-[1360px] mx-auto px-8">
         <div className="text-center mb-14">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold mb-5"
             style={{ background: 'rgba(0,71,171,0.06)', border: '1px solid rgba(0,71,171,0.12)', color: '#0047AB' }}>
@@ -2039,10 +2032,10 @@ function Features() {
             preview={<PreviewPortals />}
           />
 
-          {/* Cell 4: Live Pipeline */}
+          {/* Cell 4: Activity Log */}
           <BentoCard
-            name="Live Pipeline"
-            description="Every deal stage, visible at a glance. Know exactly what to close next."
+            name="Live Activity Log"
+            description="Every call, note, and status change — logged automatically, visible to your whole team."
             preview={<PreviewPipeline />}
           />
         </BentoGrid>
@@ -3146,7 +3139,7 @@ export default function LandingPage() {
       <KPIDashboard />
       <Testimonial />
       <CTASection />
-      <Footer />
+      <CinematicFooter />
     </div>
   )
 }
