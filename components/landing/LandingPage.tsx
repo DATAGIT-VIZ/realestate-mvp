@@ -13,7 +13,7 @@ import {
 const Share2Icon = Share2
 import {
   AreaChart, Area, ResponsiveContainer, Tooltip, XAxis,
-  LineChart, Line, YAxis,
+  LineChart, Line, YAxis, BarChart, Bar, CartesianGrid,
 } from 'recharts'
 import FloatingDashboard from './FloatingDashboard'
 import { CinematicFooter } from './CinematicFooter'
@@ -30,7 +30,7 @@ const DotLottieReact = dynamic(
 )
 const Lottie = dynamic(() => import('lottie-react'), { ssr: false })
 import { motion, AnimatePresence, useReducedMotion, useMotionValue, useTransform } from 'motion/react'
-import { Lock, Robot } from '@phosphor-icons/react'
+import { Lock, Robot, ChartLine, ChartBar } from '@phosphor-icons/react'
 import { ContainerScroll } from '@/components/ui/container-scroll-animation'
 
 /* ─── Scroll-reveal hook ──────────────────────────────────────────────────── */
@@ -603,11 +603,10 @@ function HeroDashboardMock() {
     <div className="w-full h-full flex flex-col select-none" style={{
       borderRadius: 12,
       overflow: 'hidden',
-      border: '1px solid rgba(0,71,171,0.14)',
-      boxShadow: '0 48px 120px rgba(0,71,171,0.18), 0 12px 32px rgba(0,71,171,0.10)',
+      border: '1px solid rgba(0,0,0,0.18)',
     }}>
-      {/* Browser chrome */}
-      <div className="flex items-center gap-3 px-4" style={{ height: 30, background: '#F0F2F5', borderBottom: '1px solid #E8ECF0' }}>
+      {/* Browser chrome — dark/black */}
+      <div className="flex items-center gap-3 px-4" style={{ height: 32, background: '#1C1C1E', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="flex gap-1.5">
           {['#FC6C6C', '#FDBC40', '#34C759'].map(c => (
             <div key={c} className="size-2.5 rounded-full" style={{ background: c }} />
@@ -615,57 +614,38 @@ function HeroDashboardMock() {
         </div>
         <div className="flex-1 flex justify-center">
           <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full"
-            style={{ background: '#FFFFFF', border: '1px solid #E8ECF0', fontSize: 9, color: '#78889B', fontWeight: 500 }}>
-            <Shield className="size-2.5" style={{ color: '#0047AB' }} />
+            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.10)', fontSize: 9, color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>
+            <Shield className="size-2.5" style={{ color: 'rgba(255,255,255,0.35)' }} />
             app.leadgapcrm.in/analytics
           </div>
         </div>
         <div className="size-4" />
       </div>
 
-      {/* App shell */}
+      {/* App shell — all white */}
       <div className="flex flex-1 overflow-hidden" style={{ background: '#FFFFFF' }}>
 
-        {/* Sidebar — hidden on mobile, visible md+ */}
-        <div className="hidden md:flex shrink-0 flex-col py-3 gap-0.5" style={{ width: 156, background: '#080D18', borderRight: '1px solid rgba(255,255,255,0.04)' }}>
-          <div className="flex items-center gap-2 px-3 py-2 mb-2">
-            <div className="size-6 rounded flex items-center justify-center font-black text-white" style={{ background: '#0047AB', fontSize: 8 }}>RE</div>
-            <span className="font-semibold tracking-tight" style={{ fontSize: 11, color: 'rgba(255,255,255,0.68)' }}>Lead Gap CRM</span>
-          </div>
-          {DASH_NAV.map(({ Icon, label, active }) => (
-            <div key={label} className="flex items-center gap-2 px-3 py-1.5 mx-2 rounded"
-              style={{
-                fontSize: 10.5, fontWeight: active ? 600 : 400,
-                background: active ? 'rgba(0,71,171,0.26)' : 'transparent',
-                color: active ? '#FFFFFF' : 'rgba(255,255,255,0.36)',
-              }}>
-              <Icon className="size-3.5 shrink-0" />
-              {label}
+        {/* Main content — full width, no sidebar */}
+        <div className="flex-1 flex flex-col" style={{ background: '#FFFFFF', overflow: 'hidden' }}>
+
+          {/* Header bar with logo */}
+          <div className="flex items-center gap-3 px-4 shrink-0" style={{ height: 44, background: '#FFFFFF', borderBottom: '1px solid #EFEFEF' }}>
+            {/* Logo */}
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="size-6 rounded flex items-center justify-center font-black text-white" style={{ background: '#0047AB', fontSize: 8 }}>RE</div>
+              <span className="font-bold tracking-tight" style={{ fontSize: 12, color: '#1A1F27' }}>Lead Gap CRM</span>
             </div>
-          ))}
-          <div className="flex-1" />
-          <div className="flex items-center gap-2 px-3 py-1.5 mx-2 rounded" style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.26)' }}>
-            <Settings className="size-3.5 shrink-0" />
-            Settings
-          </div>
-        </div>
-
-        {/* Main content */}
-        <div className="flex-1 flex flex-col" style={{ background: '#FAFBFC', overflow: 'hidden' }}>
-
-          {/* Header bar */}
-          <div className="flex items-center gap-3 px-4 shrink-0" style={{ height: 44, background: '#FFFFFF', borderBottom: '1px solid #E8ECF0' }}>
-            <div className="flex items-center gap-1.5 px-2.5 rounded" style={{ width: 180, height: 26, background: '#F5F6FA', border: '1px solid #E8ECF0' }}>
+            <div className="flex-1" />
+            <div className="flex items-center gap-1.5 px-2.5 rounded" style={{ width: 160, height: 26, background: '#F5F6FA', border: '1px solid #EFEFEF' }}>
               <Search className="size-3 shrink-0" style={{ color: '#A4B1BE' }} />
               <span style={{ fontSize: 9.5, color: '#A4B1BE' }}>Search leads, contacts...</span>
             </div>
-            <div className="flex-1" />
-            <div className="size-7 rounded flex items-center justify-center" style={{ background: '#F5F6FA', border: '1px solid #E8ECF0' }}>
+            <div className="size-7 rounded flex items-center justify-center" style={{ background: '#F5F6FA', border: '1px solid #EFEFEF' }}>
               <Bell className="size-3.5" style={{ color: '#78889B' }} />
             </div>
-            <div className="flex items-center gap-2 pl-3" style={{ borderLeft: '1px solid #E8ECF0' }}>
+            <div className="flex items-center gap-2 pl-3" style={{ borderLeft: '1px solid #EFEFEF' }}>
               <div className="size-7 rounded-full flex items-center justify-center font-bold text-white shrink-0"
-                style={{ background: 'linear-gradient(135deg, #0047AB, #3B82F6)', fontSize: 9 }}>RS</div>
+                style={{ background: '#0047AB', fontSize: 9 }}>RS</div>
               <div>
                 <div className="font-semibold" style={{ fontSize: 10, color: '#263238' }}>Rahul Sharma</div>
                 <div style={{ fontSize: 8.5, color: '#78889B' }}>rahul@leadgapcrm.in</div>
@@ -674,7 +654,7 @@ function HeroDashboardMock() {
           </div>
 
           {/* Content area */}
-          <div className="flex-1 flex flex-col p-4 gap-3" style={{ overflow: 'hidden' }}>
+          <div className="flex-1 flex flex-col p-4 gap-3" style={{ overflow: 'hidden', background: '#F8F9FB' }}>
 
             {/* Page title row */}
             <div className="flex items-center justify-between shrink-0">
@@ -820,27 +800,28 @@ function HeroDashboardMock() {
 /* ─── Hero — centered text block ─────────────────────────────────────────── */
 function Hero() {
   return (
-    <section id="lp-hero" className="relative flex flex-col justify-center min-h-dvh pt-14">
+    <section id="lp-hero" className="relative flex flex-col justify-center min-h-[78vh] pt-14 overflow-hidden">
       {/* Cobalt blue gradient blobs */}
-      <div className="absolute inset-0 pointer-events-none select-none overflow-hidden" style={{ zIndex: 0 }}>
+      <div className="absolute inset-0 pointer-events-none select-none" style={{ zIndex: 0 }}>
         <div className="absolute" style={{
           top: '-12%', left: '-8%', width: 760, height: 760,
-          background: 'radial-gradient(ellipse at center, rgba(0,71,171,0.26) 0%, transparent 62%)',
+          background: 'radial-gradient(ellipse at center, rgba(0,71,171,0.22) 0%, transparent 62%)',
           filter: 'blur(52px)',
         }} />
         <div className="absolute" style={{
           top: '-16%', right: '-6%', width: 680, height: 680,
-          background: 'radial-gradient(ellipse at center, rgba(26,111,230,0.22) 0%, transparent 62%)',
+          background: 'radial-gradient(ellipse at center, rgba(26,111,230,0.18) 0%, transparent 62%)',
           filter: 'blur(52px)',
         }} />
         <div className="absolute" style={{
-          top: '40%', left: '25%', width: 560, height: 480,
-          background: 'radial-gradient(ellipse at center, rgba(0,163,255,0.10) 0%, transparent 65%)',
+          top: '42%', left: '22%', width: 560, height: 480,
+          background: 'radial-gradient(ellipse at center, rgba(0,163,255,0.08) 0%, transparent 65%)',
           filter: 'blur(64px)',
         }} />
       </div>
 
-      <div className="relative flex flex-col items-center text-center px-6 py-8 max-w-[720px] mx-auto" style={{ zIndex: 1 }}>
+
+      <div className="relative flex flex-col items-center text-center px-6 py-8 max-w-[720px] mx-auto" style={{ zIndex: 2 }}>
         {/* Announcement pill */}
         <div
           className="lp-fade-up inline-flex items-center gap-2 px-4 py-1.5 rounded-full font-semibold mb-4 md:mb-7"
@@ -891,6 +872,7 @@ function Hero() {
         <p className="lp-fade-up" style={{ fontSize: 11, color: '#A4B1BE', opacity: 0, animationDelay: '0.50s' }}>
           No credit card required &middot; Free 14-day trial &middot; Setup in 5 minutes
         </p>
+
       </div>
     </section>
   )
@@ -900,19 +882,7 @@ function Hero() {
 function HeroScrollDash() {
   return (
     <div style={{ background: '#F4F8FD' }}>
-      <ContainerScroll
-        titleComponent={
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#0047AB', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 12 }}>
-              Built for Indian real estate
-            </p>
-            <h2 className="font-bold text-balance" style={{ fontSize: 'clamp(26px, 3.5vw, 44px)', color: '#1A1F27', lineHeight: 1.12 }}>
-              Your pipeline. Your analytics.<br />
-              <em style={{ color: '#0038A8', fontStyle: 'italic' }}>One screen.</em>
-            </h2>
-          </div>
-        }
-      >
+      <ContainerScroll titleComponent={<></>}>
         <HeroDashboardMock />
       </ContainerScroll>
     </div>
@@ -1197,7 +1167,7 @@ function PortalStrip() {
   const doubled = [...PORTALS, ...PORTALS]
 
   return (
-    <section style={{ background: '#FFFFFF', borderTop: '1px solid #E8ECF0', borderBottom: '1px solid #E8ECF0' }}>
+    <section style={{ background: '#FAFAF8', borderTop: '1px solid #EDEAE3', borderBottom: '1px solid #EDEAE3' }}>
       <p className="text-center text-[11px] font-bold uppercase tracking-[0.2em] pt-7 pb-5" style={{ color: '#0047AB' }}>
         Leads auto-synced from India&apos;s top portals
       </p>
@@ -1209,11 +1179,12 @@ function PortalStrip() {
           WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)',
         }}
       >
-        <div className="lp-marquee-track flex w-max gap-14 items-center">
+        <div className="lp-marquee-track flex w-max gap-3 items-center">
           {doubled.map((p, i) => (
-            <div key={i} className="flex items-center gap-2 whitespace-nowrap select-none">
-              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: p.dot }} />
-              <span className="text-[15px] font-semibold tracking-tight" style={{ color: '#1E293B' }}>
+            <div key={i} className="flex items-center gap-2 px-3.5 py-1.5 whitespace-nowrap select-none"
+              style={{ background: `${p.dot}12`, border: `1px solid ${p.dot}28`, borderRadius: 6 }}>
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: p.dot }} />
+              <span className="text-[13px] font-semibold tracking-tight" style={{ color: p.dot }}>
                 {p.name}
               </span>
             </div>
@@ -1279,37 +1250,119 @@ function PreviewLeadSync() {
   )
 }
 
-/* ── Bento preview: Live Activity Feed ──────────────────────────────────────── */
-const PREVIEW_FEED = [
-  { title: 'Follow-up reminder', sub: 'Priya Mehta · Call due',        time: 'Now',     dot: '#F59E0B' },
-  { title: 'Site visit booked',  sub: 'Tomorrow 10AM · Sector 62',     time: '28m ago', dot: '#9333EA' },
-  { title: 'Deal closed',        sub: '₹1.2 Cr · Vikram Singh',        time: '1h ago',  dot: '#059669' },
-]
-
+/* ── Bento preview: Advanced Live Stats — interactive line/bar toggle ────────── */
 function PreviewFeed() {
+  const [chartType, setChartType] = useState<'line' | 'bar'>('line')
+  const peak = Math.max(...REVENUE_DATA.map(d => d.v))
+  const low  = Math.min(...REVENUE_DATA.map(d => d.v))
+  const avg  = (REVENUE_DATA.reduce((s, d) => s + d.v, 0) / REVENUE_DATA.length).toFixed(1)
+
+  const toggleStyle = (active: boolean): React.CSSProperties => ({
+    width: 28, height: 28, borderRadius: 4, border: 'none', cursor: 'pointer',
+    background: active ? '#0038A8' : 'transparent',
+    color: active ? '#fff' : '#9BA8B5',
+    boxShadow: active ? '0 2px 8px rgba(0,56,168,0.28)' : 'none',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    transition: 'all 0.18s ease',
+  })
+
+  const statItems = [
+    { label: 'Peak', value: `₹${peak} Cr`, color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0' },
+    { label: 'Low',  value: `₹${low} Cr`,  color: '#DC2626', bg: '#FEF2F2', border: '#FECACA' },
+    { label: 'Avg',  value: `₹${avg} Cr`,  color: '#0038A8', bg: '#EFF6FF', border: '#BFDBFE' },
+  ]
+
   return (
-    <div className="absolute inset-0 flex flex-col justify-center gap-2.5 px-5">
-      {PREVIEW_FEED.map((ev, i) => (
-        <motion.div key={i}
-          initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.35, ease: [0.22,1,0.36,1] }}
-          className="flex items-center gap-3 bg-white rounded-xl px-3.5 py-2.5"
-          style={{ border: '1px solid #E8ECF0', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}
-        >
-          <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: ev.dot }} />
-          <div className="flex-1 min-w-0">
-            <div className="text-[12px] font-semibold text-[#1A1F27] truncate">{ev.title}</div>
-            <div className="text-[10px] truncate mt-0.5" style={{ color: '#A4B1BE' }}>{ev.sub}</div>
+    <div className="absolute inset-0 flex flex-col" style={{ background: 'linear-gradient(160deg, #F8FAFF 0%, #FDFCFB 100%)' }}>
+      {/* Header */}
+      <div className="flex items-start justify-between px-4 pt-4 pb-1 shrink-0">
+        <div>
+          <p style={{ fontSize: 9, fontWeight: 700, color: '#9BA8B5', letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 3 }}>
+            Team Revenue · Jul
+          </p>
+          <div className="flex items-end gap-2">
+            <span style={{ fontSize: 30, fontWeight: 800, color: '#0D1117', lineHeight: 1, letterSpacing: '-0.03em' }}>
+              ₹2.2 Cr
+            </span>
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#16A34A', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 4, padding: '1px 6px' }}>
+                ↑ +16%
+              </span>
+              <span style={{ fontSize: 9, color: '#9BA8B5' }}>vs Jun</span>
+            </div>
           </div>
-          <span className="text-[9px] shrink-0" style={{ color: '#C5CDD8' }}>{ev.time}</span>
-          {i === 0 && <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-orange-400" style={{ animation: 'bento-timer-pulse 1.2s ease-in-out infinite' }} />}
-        </motion.div>
-      ))}
+        </div>
+        {/* Toggle */}
+        <div className="flex gap-1 mt-1 p-1 rounded-lg" style={{ background: '#F1F3F8' }}>
+          <button style={toggleStyle(chartType === 'line')} onClick={() => setChartType('line')}>
+            <ChartLine size={13} weight="light" />
+          </button>
+          <button style={toggleStyle(chartType === 'bar')} onClick={() => setChartType('bar')}>
+            <ChartBar size={13} weight="light" />
+          </button>
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div style={{ flex: '1 1 0', minHeight: 0 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          {chartType === 'line' ? (
+            <AreaChart data={REVENUE_DATA} margin={{ top: 6, right: 16, left: 16, bottom: 0 }}>
+              <defs>
+                <linearGradient id="pf-area" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"   stopColor="#0038A8" stopOpacity={0.22} />
+                  <stop offset="75%"  stopColor="#0038A8" stopOpacity={0.04} />
+                  <stop offset="100%" stopColor="#0038A8" stopOpacity={0}    />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} stroke="#EEF0F5" strokeDasharray="0" />
+              <XAxis dataKey="m" tick={{ fontSize: 8, fill: '#C5CDD8' }} axisLine={false} tickLine={false} />
+              <Tooltip
+                contentStyle={{ fontSize: 11, border: '1px solid #E8ECF0', borderRadius: 6, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', padding: '6px 12px', background: '#fff' }}
+                formatter={(v: number) => [`₹${v} Cr`, 'Revenue']}
+                labelStyle={{ color: '#9BA8B5', fontSize: 9, marginBottom: 2 }}
+                cursor={{ stroke: 'rgba(0,56,168,0.1)', strokeWidth: 1 }}
+              />
+              <Area type="monotone" dataKey="v" stroke="#0038A8" strokeWidth={2} fill="url(#pf-area)" dot={false}
+                activeDot={{ r: 4, fill: '#0038A8', stroke: '#fff', strokeWidth: 2 }} />
+            </AreaChart>
+          ) : (
+            <BarChart data={REVENUE_DATA} margin={{ top: 6, right: 16, left: 16, bottom: 0 }}>
+              <defs>
+                <linearGradient id="pf-bar" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"   stopColor="#0038A8" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="#0047AB" stopOpacity={0.6} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} stroke="#EEF0F5" strokeDasharray="0" />
+              <XAxis dataKey="m" tick={{ fontSize: 8, fill: '#C5CDD8' }} axisLine={false} tickLine={false} />
+              <Tooltip
+                contentStyle={{ fontSize: 11, border: '1px solid #E8ECF0', borderRadius: 6, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', padding: '6px 12px', background: '#fff' }}
+                formatter={(v: number) => [`₹${v} Cr`, 'Revenue']}
+                labelStyle={{ color: '#9BA8B5', fontSize: 9, marginBottom: 2 }}
+                cursor={{ fill: 'rgba(0,56,168,0.04)' }}
+              />
+              <Bar dataKey="v" fill="url(#pf-bar)" radius={[3, 3, 0, 0]} />
+            </BarChart>
+          )}
+        </ResponsiveContainer>
+      </div>
+
+      {/* Stats row — 3 color-coded boxes */}
+      <div className="grid grid-cols-3 gap-2 px-4 py-2.5 shrink-0" style={{ borderTop: '1px solid #EDEEF2' }}>
+        {statItems.map(s => (
+          <div key={s.label} className="flex flex-col items-center py-1.5 rounded-lg"
+            style={{ background: s.bg, border: `1px solid ${s.border}` }}>
+            <span style={{ fontSize: 7.5, fontWeight: 700, color: s.color, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 2 }}>{s.label}</span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: s.color, letterSpacing: '-0.02em' }}>{s.value}</span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
 
-/* ── Bento preview: Portal Integrations — lead sync lottie ──────────────────── */
+/* ── Bento preview: Portal flow lottie (used by Activity Log cell) ──────────── */
 function PreviewPortals() {
   const [animData, setAnimData] = useState<object | null>(null)
   useEffect(() => {
@@ -1330,6 +1383,11 @@ function PreviewPortals() {
       )}
     </div>
   )
+}
+
+/* ── Bento preview: Portal Integrations — empty placeholder ─────────────────── */
+function PreviewEmpty() {
+  return <div className="absolute inset-0" />
 }
 
 
@@ -1818,13 +1876,13 @@ function AgentNetworkMock() {
 
 /* ── Mock 4: Team revenue analytics — single area chart ─────────────────────── */
 const REVENUE_DATA = [
-  { m: 'Jan', v: 8.2  },
-  { m: 'Feb', v: 9.8  },
-  { m: 'Mar', v: 11.5 },
-  { m: 'Apr', v: 10.4 },
-  { m: 'May', v: 14.1 },
-  { m: 'Jun', v: 15.9 },
-  { m: 'Jul', v: 18.4 },
+  { m: 'Jan', v: 1.1 },
+  { m: 'Feb', v: 1.3 },
+  { m: 'Mar', v: 1.5 },
+  { m: 'Apr', v: 1.4 },
+  { m: 'May', v: 1.7 },
+  { m: 'Jun', v: 1.9 },
+  { m: 'Jul', v: 2.2 },
 ]
 
 const TEAM_AGENTS = [
@@ -1855,7 +1913,7 @@ function ImpactChartMock() {
             Team Revenue · Jul
           </p>
           <p style={{ fontSize: 30, fontWeight: 900, color: '#0D1117', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-            ₹18.4L
+            ₹2.2 Cr
           </p>
         </div>
         <div className="flex flex-col items-end gap-1 mt-1">
@@ -1882,7 +1940,7 @@ function ImpactChartMock() {
             />
             <Tooltip
               contentStyle={{ fontSize: 11, border: '1px solid #E8ECF0', borderRadius: 4, boxShadow: 'none', padding: '4px 10px' }}
-              formatter={(v: number) => [`₹${v}L`, 'Revenue']}
+              formatter={(v: number) => [`₹${v} Cr`, 'Revenue']}
               labelStyle={{ color: '#9BA8B5', fontSize: 9 }}
               cursor={{ stroke: 'rgba(0,56,168,0.12)', strokeWidth: 1 }}
             />
@@ -1952,7 +2010,7 @@ const UNIQUE_FEATURES = [
 function UniqueFeatures() {
   const ref = useScrollReveal()
   return (
-    <section ref={ref} id="unique-features" className="py-28" style={{ background: '#FFFFFF' }}>
+    <section ref={ref} id="unique-features" className="py-28" style={{ background: '#FAFAF8' }}>
       <div className="max-w-6xl mx-auto px-6">
         {/* Header — exact Alytics structure */}
         <div className="text-center mb-16">
@@ -2016,27 +2074,27 @@ function Features() {
             preview={<PreviewLeadSync />}
           />
 
-          {/* Cell 2: Live Activity Feed — spans 2 cols */}
+          {/* Cell 2: Advanced Live Stats — spans 2 cols */}
           <BentoCard
-            name="Live Activity Feed"
-            description="Every lead event — synced, scored, assigned, closed — appears in real time."
+            name="Advanced Live Stats"
+            description="Revenue, lead volume, response time — all tracked live in your team dashboard."
             className="md:col-span-2"
             preview={<PreviewFeed />}
           />
 
-          {/* Cell 3: Portal Integrations — spans 2 cols */}
+          {/* Cell 3: Portal Integrations — empty, coming soon */}
           <BentoCard
             name="Portal Integrations"
             description="Connect 99acres, MagicBricks, Housing.com, NoBroker and more — leads routed automatically."
             className="md:col-span-2"
-            preview={<PreviewPortals />}
+            preview={<PreviewEmpty />}
           />
 
-          {/* Cell 4: Activity Log */}
+          {/* Cell 4: Live Activity Log — portal flow lottie */}
           <BentoCard
             name="Live Activity Log"
             description="Every call, note, and status change — logged automatically, visible to your whole team."
-            preview={<PreviewPipeline />}
+            preview={<PreviewPortals />}
           />
         </BentoGrid>
       </div>
@@ -2694,47 +2752,47 @@ function ProblemSection() {
             {/* ── Desktop 1 — 5+ Portal Integration ── */}
             <SwapCard>
               <div className="flex flex-col h-full overflow-hidden rounded-2xl">
-                {/* macOS browser chrome — light */}
-                <div className="flex items-center gap-2 px-4 py-2.5 shrink-0" style={{ background: '#F0EFEC', borderBottom: '1px solid #D8D5CE' }}>
+                {/* macOS browser chrome — dark */}
+                <div className="flex items-center gap-2 px-4 py-2.5 shrink-0" style={{ background: '#1C1C1E', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                   <span className="w-3 h-3 rounded-full bg-[#FF5F57]" />
                   <span className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
                   <span className="w-3 h-3 rounded-full bg-[#28C840]" />
-                  <div className="flex-1 mx-3 px-3 py-1 rounded text-[10px] font-medium text-center" style={{ background: '#E2DED8', color: '#5A5751' }}>
+                  <div className="flex-1 mx-3 px-3 py-1 rounded text-[10px] font-medium text-center" style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.45)' }}>
                     app.leadgapcrm.in/portals
                   </div>
                 </div>
-                {/* screen — dark with portal grid */}
-                <div className="flex-1 flex flex-col px-6 py-5 gap-4" style={{ background: '#0D1117' }}>
+                {/* screen — white */}
+                <div className="flex-1 flex flex-col px-6 py-5 gap-4" style={{ background: '#FFFFFF' }}>
                   <div>
                     <div className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: '#0047AB' }}>01 — Portals</div>
-                    <div className="text-[18px] font-extrabold leading-tight text-white">5+ Portal Integration</div>
-                    <div className="text-[11px] mt-1" style={{ color: '#6B7280' }}>Every lead, one inbox. Auto-synced in real time.</div>
+                    <div className="text-[18px] font-extrabold leading-tight" style={{ color: '#1A1F27' }}>5+ Portal Integration</div>
+                    <div className="text-[11px] mt-1" style={{ color: '#78889B' }}>Every lead, one inbox. Auto-synced in real time.</div>
                   </div>
                   {/* portal logo grid */}
                   <div className="grid grid-cols-4 gap-2.5">
                     {[
-                      { name: '99acres',     clr: '#DC2626', abbr: '99' },
-                      { name: 'MagicBricks', clr: '#B91C1C', abbr: 'MB' },
-                      { name: 'Housing',     clr: '#1D4ED8', abbr: 'HC' },
-                      { name: 'NoBroker',   clr: '#047857', abbr: 'NB' },
-                      { name: 'PropTiger',  clr: '#C2410C', abbr: 'PT' },
-                      { name: 'Makaan',     clr: '#0369A1', abbr: 'MK' },
-                      { name: 'Sq.Yards',   clr: '#0047AB', abbr: 'SY' },
-                      { name: 'CommonFlr',  clr: '#7C3AED', abbr: 'CF' },
+                      { name: '99acres',     logo: '/portals/99acres.png'     },
+                      { name: 'MagicBricks', logo: '/portals/magicbricks.png' },
+                      { name: 'Housing',     logo: '/portals/housing.png'     },
+                      { name: 'NoBroker',    logo: '/portals/nobroker.png'    },
+                      { name: 'PropTiger',   logo: '/portals/proptiger.png'   },
+                      { name: 'Makaan',      logo: '/portals/makaan.png'      },
+                      { name: 'Sq.Yards',    logo: '/portals/squareyards.png' },
+                      { name: 'CommonFlr',   logo: '/portals/commonfloor.png' },
                     ].map((p, i) => (
                       <div key={i} className="flex flex-col items-center gap-1.5">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-[11px] font-extrabold"
-                          style={{ background: p.clr, boxShadow: `0 0 12px ${p.clr}55` }}>
-                          {p.abbr}
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden"
+                          style={{ background: '#F5F7FA', border: '1px solid #E8ECF0' }}>
+                          <img src={p.logo} alt={p.name} style={{ width: 28, height: 28, objectFit: 'contain' }} />
                         </div>
-                        <span className="text-[8px] font-medium text-center leading-tight" style={{ color: '#6B7280' }}>{p.name}</span>
+                        <span className="text-[8px] font-medium text-center leading-tight" style={{ color: '#78889B' }}>{p.name}</span>
                       </div>
                     ))}
                   </div>
                   {/* live sync indicator */}
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: '#0F2027', border: '1px solid #1a3a4a' }}>
-                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
-                    <span className="text-[11px] font-medium" style={{ color: '#4ADE80' }}>Live sync active — 30 new leads today</span>
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />
+                    <span className="text-[11px] font-medium" style={{ color: '#166534' }}>Live sync active — 30 new leads today</span>
                   </div>
                 </div>
               </div>
@@ -2743,20 +2801,20 @@ function ProblemSection() {
             {/* ── Desktop 2 — Response Time ── */}
             <SwapCard>
               <div className="flex flex-col h-full overflow-hidden rounded-2xl">
-                {/* macOS browser chrome — light */}
-                <div className="flex items-center gap-2 px-4 py-2.5 shrink-0" style={{ background: '#F0EFEC', borderBottom: '1px solid #D8D5CE' }}>
+                {/* macOS browser chrome — dark */}
+                <div className="flex items-center gap-2 px-4 py-2.5 shrink-0" style={{ background: '#1C1C1E', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                   <span className="w-3 h-3 rounded-full bg-[#FF5F57]" />
                   <span className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
                   <span className="w-3 h-3 rounded-full bg-[#28C840]" />
-                  <div className="flex-1 mx-3 px-3 py-1 rounded text-[10px] font-medium text-center" style={{ background: '#E2DED8', color: '#5A5751' }}>
+                  <div className="flex-1 mx-3 px-3 py-1 rounded text-[10px] font-medium text-center" style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.45)' }}>
                     app.leadgapcrm.in/response
                   </div>
                 </div>
-                {/* screen */}
-                <div className="flex-1 flex flex-col min-h-0" style={{ background: '#0D1117' }}>
+                {/* screen — white */}
+                <div className="flex-1 flex flex-col min-h-0" style={{ background: '#FFFFFF' }}>
                   <div className="px-6 pt-4 pb-2 shrink-0">
                     <div className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: '#F59E0B' }}>02 — Response Time</div>
-                    <div className="text-[16px] font-extrabold leading-tight text-white">First caller wins.</div>
+                    <div className="text-[16px] font-extrabold leading-tight" style={{ color: '#1A1F27' }}>First caller wins.</div>
                     <div className="flex items-center gap-2 mt-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
                       <span className="text-[12px] font-bold tabular-nums" style={{ color: '#EF4444' }}>{timer} unresponded</span>
@@ -2778,21 +2836,21 @@ function ProblemSection() {
             {/* ── Desktop 3 — AI Advisor ── */}
             <SwapCard>
               <div className="flex flex-col h-full overflow-hidden rounded-2xl">
-                {/* macOS browser chrome — light */}
-                <div className="flex items-center gap-2 px-4 py-2.5 shrink-0" style={{ background: '#F0EFEC', borderBottom: '1px solid #D8D5CE' }}>
+                {/* macOS browser chrome — dark */}
+                <div className="flex items-center gap-2 px-4 py-2.5 shrink-0" style={{ background: '#1C1C1E', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                   <span className="w-3 h-3 rounded-full bg-[#FF5F57]" />
                   <span className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
                   <span className="w-3 h-3 rounded-full bg-[#28C840]" />
-                  <div className="flex-1 mx-3 px-3 py-1 rounded text-[10px] font-medium text-center" style={{ background: '#E2DED8', color: '#5A5751' }}>
+                  <div className="flex-1 mx-3 px-3 py-1 rounded text-[10px] font-medium text-center" style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.45)' }}>
                     app.leadgapcrm.in/ai-advisor
                   </div>
                 </div>
-                {/* screen */}
-                <div className="flex-1 flex flex-col min-h-0" style={{ background: '#0D1117' }}>
+                {/* screen — white */}
+                <div className="flex-1 flex flex-col min-h-0" style={{ background: '#FFFFFF' }}>
                   <div className="px-6 pt-4 pb-2 shrink-0">
                     <div className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: '#7C3AED' }}>03 — AI Advisor</div>
-                    <div className="text-[16px] font-extrabold leading-tight text-white">Nobody owns what.</div>
-                    <div className="text-[11px] mt-1" style={{ color: '#6B7280' }}>AI assigns, follows up, and closes the gaps.</div>
+                    <div className="text-[16px] font-extrabold leading-tight" style={{ color: '#1A1F27' }}>Nobody owns what.</div>
+                    <div className="text-[11px] mt-1" style={{ color: '#78889B' }}>AI assigns, follows up, and closes the gaps.</div>
                   </div>
                   {/* AI stat rows */}
                   <div className="px-6 pb-2 flex flex-col gap-1.5 shrink-0">
@@ -2801,8 +2859,8 @@ function ProblemSection() {
                       { label: 'Follow-ups auto-sent',  value: '3',       clr: '#10B981' },
                       { label: 'Pipeline monitored',    value: '₹4.2 Cr', clr: '#F59E0B' },
                     ].map((s, i) => (
-                      <div key={i} className="flex items-center justify-between px-3 py-1.5 rounded" style={{ background: '#131A23', border: '1px solid #1E2A38' }}>
-                        <span className="text-[10px] font-medium" style={{ color: '#9CA3AF' }}>{s.label}</span>
+                      <div key={i} className="flex items-center justify-between px-3 py-1.5 rounded" style={{ background: '#F5F6FA', border: '1px solid #EFEFEF' }}>
+                        <span className="text-[10px] font-medium" style={{ color: '#5A6472' }}>{s.label}</span>
                         <span className="text-[11px] font-bold tabular-nums" style={{ color: s.clr }}>{s.value}</span>
                       </div>
                     ))}
@@ -2862,7 +2920,7 @@ const SOLUTIONS = [
 function SolutionSection() {
   const ref = useScrollReveal()
   return (
-    <section ref={ref} className="py-28 px-6" style={{ background: 'white' }}>
+    <section ref={ref} className="py-28 px-6" style={{ background: '#F5F7FF', position: 'relative', zIndex: 1 }}>
       <div className="max-w-5xl mx-auto">
         <p className="lp-in lp-in-delay-1 text-center text-[11px] font-bold uppercase tracking-[0.2em] mb-5" style={{ color: '#0047AB' }}>
           How Lead Gap CRM fixes it
@@ -2878,23 +2936,33 @@ function SolutionSection() {
           {SOLUTIONS.map((s, i) => (
             <div
               key={i}
-              className={`lp-in lp-in-delay-${i + 1} rounded-2xl p-8 flex flex-col md:flex-row gap-8 items-start`}
-              style={{ background: '#F8F9FB', border: '1px solid #E8ECF0' }}
+              className={`lp-in lp-in-delay-${i + 1} flex flex-col md:flex-row gap-8 items-start overflow-hidden`}
+              style={{ background: '#FFFFFF', border: '1px solid #E8ECF0', borderRadius: 16, boxShadow: '0 2px 20px rgba(0,0,0,0.04)', borderLeft: `3px solid ${s.color}` }}
             >
+              {/* Colored number */}
+              <div className="hidden md:flex items-center justify-center shrink-0 self-stretch px-6"
+                style={{ background: `${s.color}08`, borderRight: `1px solid ${s.color}18`, minWidth: 80 }}>
+                <span style={{ fontSize: 36, fontWeight: 900, color: `${s.color}30`, lineHeight: 1 }}>
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+              </div>
+
               {/* Left: icon + copy */}
-              <div className="flex flex-col gap-4 flex-1 min-w-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+              <div className="flex flex-col gap-4 flex-1 min-w-0 py-7 pl-0 md:pl-0 pr-0">
+                <div className="flex items-center gap-3 px-6 md:px-0">
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                     style={{ background: s.bg }}>
-                    <s.icon className="w-5 h-5" style={{ color: s.color }} />
+                    <s.icon className="w-4.5 h-4.5" style={{ color: s.color }} />
                   </div>
                   <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: s.color }}>{s.fix}</span>
                 </div>
-                <h3 className="text-[20px] font-bold text-[#1A1F27] leading-snug">{s.title}</h3>
-                <p className="text-[14px] text-[#78889B] leading-relaxed">{s.body}</p>
+                <h3 className="text-[20px] font-bold text-[#1A1F27] leading-snug px-6 md:px-0">{s.title}</h3>
+                <p className="text-[14px] text-[#78889B] leading-relaxed px-6 md:px-0">{s.body}</p>
               </div>
+
               {/* Right: bullet checklist */}
-              <div className="flex flex-col gap-3 shrink-0 md:w-64">
+              <div className="flex flex-col gap-3 shrink-0 md:w-60 py-7 px-6 md:pr-8"
+                style={{ borderTop: '1px solid #F0F2F5' }} >
                 {s.bullets.map((b, j) => (
                   <div key={j} className="flex items-start gap-2.5">
                     <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: s.color }} />

@@ -34,7 +34,7 @@ export const ContainerScroll = ({
       className="h-[44rem] md:h-[52rem] flex items-start justify-center relative px-4 md:px-20 pt-0 pb-0"
       ref={containerRef}
     >
-      <div className="pt-8 pb-0 md:pt-10 w-full relative" style={{ perspective: '1000px' }}>
+      <div className="pt-2 pb-0 md:pt-3 w-full relative" style={{ perspective: '1000px' }}>
         <Header translate={translate} titleComponent={titleComponent} />
         <Card rotate={rotate} scale={scale}>
           {children}
