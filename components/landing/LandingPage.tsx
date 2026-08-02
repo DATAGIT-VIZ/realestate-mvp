@@ -1385,9 +1385,18 @@ function PreviewPortals() {
   )
 }
 
-/* ── Bento preview: Portal Integrations — empty placeholder ─────────────────── */
-function PreviewEmpty() {
-  return <div className="absolute inset-0" />
+/* ── Bento preview: Live Feed — Omnichannel CRM lottie ──────────────────────── */
+function PreviewLiveFeed() {
+  return (
+    <div className="absolute inset-0 overflow-hidden flex items-center justify-center">
+      <DotLottieReact
+        src="/lottie/omnichannel-crm.lottie"
+        loop
+        autoplay
+        style={{ width: '100%', height: '100%' }}
+      />
+    </div>
+  )
 }
 
 
@@ -2082,18 +2091,18 @@ function Features() {
             preview={<PreviewFeed />}
           />
 
-          {/* Cell 3: Portal Integrations — empty, coming soon */}
+          {/* Cell 3: Live Feed — Omnichannel CRM lottie */}
+          <BentoCard
+            name="Live Feed"
+            description="Every call, note, and status change — logged automatically, visible to your whole team in real time."
+            className="md:col-span-2"
+            preview={<PreviewLiveFeed />}
+          />
+
+          {/* Cell 4: Portal Integrations — portal flow lottie */}
           <BentoCard
             name="Portal Integrations"
             description="Connect 99acres, MagicBricks, Housing.com, NoBroker and more — leads routed automatically."
-            className="md:col-span-2"
-            preview={<PreviewEmpty />}
-          />
-
-          {/* Cell 4: Live Activity Log — portal flow lottie */}
-          <BentoCard
-            name="Live Activity Log"
-            description="Every call, note, and status change — logged automatically, visible to your whole team."
             preview={<PreviewPortals />}
           />
         </BentoGrid>
