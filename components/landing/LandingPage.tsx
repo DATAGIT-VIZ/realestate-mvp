@@ -1389,8 +1389,8 @@ function PreviewPortals() {
 function PreviewLiveFeed() {
   return (
     <div className="absolute inset-0 overflow-hidden flex items-center">
-      {/* Left — Omnichannel CRM, current size */}
-      <div className="flex items-center justify-center shrink-0" style={{ width: '32%', height: '85%' }}>
+      {/* Left — Omnichannel CRM, enlarged */}
+      <div className="flex items-center justify-center shrink-0" style={{ width: '42%', height: '100%' }}>
         <DotLottieReact
           src="/lottie/omnichannel-crm.lottie"
           loop
