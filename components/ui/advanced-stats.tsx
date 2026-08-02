@@ -1,6 +1,6 @@
 'use client'
 import { cn } from '@/lib/utils'
-import React, { useRef } from 'react'
+import React from 'react'
 import { ClippedAreaChart } from '@/components/ui/advanced-stats-utils/charts'
 import { TimelineAnimation } from '@/components/ui/advanced-stats-utils/timeline-animation'
 
@@ -12,11 +12,8 @@ const kpis = [
 ]
 
 export default function AdvancedStats() {
-  const timelineRef = useRef<HTMLDivElement>(null)
-
   return (
     <section
-      ref={timelineRef}
       className="flex flex-col gap-8 py-4 bg-white min-h-screen justify-center px-5 md:px-0"
       style={{ fontFamily: 'Inter, sans-serif' }}
     >
@@ -25,8 +22,7 @@ export default function AdvancedStats() {
           {/* Main Chart */}
           <TimelineAnimation
             animationNum={1}
-            timelineRef={timelineRef}
-            className="lg:col-span-2 p-8 rounded-3xl bg-zinc-50 border border-zinc-200"
+                        className="lg:col-span-2 p-8 rounded-3xl bg-zinc-50 border border-zinc-200"
           >
             <ClippedAreaChart />
           </TimelineAnimation>
@@ -35,8 +31,7 @@ export default function AdvancedStats() {
           <div className="flex flex-col gap-4">
             <TimelineAnimation
               animationNum={2}
-              timelineRef={timelineRef}
-              className="p-6 rounded-3xl bg-zinc-900 text-white flex flex-col justify-between shadow-lg"
+                            className="p-6 rounded-3xl bg-zinc-900 text-white flex flex-col justify-between shadow-lg"
             >
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-2">
@@ -57,8 +52,7 @@ export default function AdvancedStats() {
 
             <TimelineAnimation
               animationNum={3}
-              timelineRef={timelineRef}
-              className="p-6 rounded-3xl bg-zinc-50 border border-zinc-200"
+                            className="p-6 rounded-3xl bg-zinc-50 border border-zinc-200"
             >
               <div className="flex items-center gap-3 mb-4">
                 <div className="size-8 rounded-lg bg-white flex items-center justify-center border border-zinc-100">
@@ -87,8 +81,7 @@ export default function AdvancedStats() {
           {kpis.map((kpi, index) => (
             <TimelineAnimation
               animationNum={4 + index}
-              timelineRef={timelineRef}
-              key={kpi.label}
+                            key={kpi.label}
               className={cn(
                 'p-6 rounded-2xl border bg-zinc-50 border-zinc-200 transition-colors',
                 kpi.status === 'up'

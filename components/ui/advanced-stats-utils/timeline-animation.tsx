@@ -6,7 +6,6 @@ interface TimelineAnimationProps {
   children: React.ReactNode
   className?: string
   animationNum?: number
-  timelineRef?: React.RefObject<HTMLDivElement>
 }
 
 export function TimelineAnimation({ children, className, animationNum = 1 }: TimelineAnimationProps) {
