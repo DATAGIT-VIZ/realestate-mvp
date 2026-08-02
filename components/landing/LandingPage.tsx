@@ -1385,25 +1385,36 @@ function PreviewPortals() {
   )
 }
 
-/* ── Bento preview: Live Feed — two lotties side by side ────────────────────── */
+/* ── Bento preview: Live Feed — three lotties, centre prominent ──────────────── */
 function PreviewLiveFeed() {
   return (
     <div className="absolute inset-0 overflow-hidden flex items-center justify-center">
-      <div className="flex w-full h-full">
-        <div className="flex-1 flex items-center justify-center min-w-0">
+      <div className="flex w-full h-full items-center">
+        {/* Left — slightly smaller, pushed outward */}
+        <div className="flex items-center justify-center" style={{ width: '28%', height: '80%', opacity: 0.82 }}>
           <DotLottieReact
             src="/lottie/omnichannel-crm.lottie"
             loop
             autoplay
-            style={{ width: '100%', height: '100%', maxHeight: '100%' }}
+            style={{ width: '100%', height: '100%' }}
           />
         </div>
-        <div className="flex-1 flex items-center justify-center min-w-0">
+        {/* Centre — larger, focal point */}
+        <div className="flex items-center justify-center" style={{ width: '44%', height: '100%', zIndex: 1 }}>
+          <DotLottieReact
+            src="/lottie/big-data-centre.lottie"
+            loop
+            autoplay
+            style={{ width: '100%', height: '100%' }}
+          />
+        </div>
+        {/* Right — slightly smaller, pushed outward */}
+        <div className="flex items-center justify-center" style={{ width: '28%', height: '80%', opacity: 0.82 }}>
           <DotLottieReact
             src="/lottie/track-growth.lottie"
             loop
             autoplay
-            style={{ width: '100%', height: '100%', maxHeight: '100%' }}
+            style={{ width: '100%', height: '100%' }}
           />
         </div>
       </div>
