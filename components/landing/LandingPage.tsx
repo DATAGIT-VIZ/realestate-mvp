@@ -1385,12 +1385,12 @@ function PreviewPortals() {
   )
 }
 
-/* ── Bento preview: Live Feed — Omnichannel CRM lottie ──────────────────────── */
+/* ── Bento preview: Live Feed — Track growth lottie ─────────────────────────── */
 function PreviewLiveFeed() {
   return (
     <div className="absolute inset-0 overflow-hidden flex items-center justify-center">
       <DotLottieReact
-        src="/lottie/omnichannel-crm.lottie"
+        src="/lottie/track-growth.lottie"
         loop
         autoplay
         style={{ width: '100%', height: '100%' }}
