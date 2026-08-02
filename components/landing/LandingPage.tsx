@@ -1398,8 +1398,8 @@ function PreviewLiveFeed() {
           style={{ width: '100%', height: '100%' }}
         />
       </div>
-      {/* Right — Big Data Centre, enlarged, extends to edge */}
-      <div className="flex items-center justify-center" style={{ flex: 1, height: '100%' }}>
+      {/* Right — Big Data Centre, enlarged, pulled left to close gap */}
+      <div className="flex items-center justify-center" style={{ flex: 1, height: '100%', marginLeft: '-6%' }}>
         <DotLottieReact
           src="/lottie/big-data-centre.lottie"
           loop
