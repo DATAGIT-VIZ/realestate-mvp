@@ -21,6 +21,10 @@ export const metadata: Metadata = {
   title: 'Lead Gap CRM — Close more. Stress less.',
   description:
     'AI-powered real estate CRM for Indian agents. Capture leads from MagicBricks, 99acres, Housing.com. Auto follow-up. Close more deals.',
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

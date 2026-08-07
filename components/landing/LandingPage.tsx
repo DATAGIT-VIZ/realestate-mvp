@@ -107,14 +107,9 @@ function Nav() {
       }}
     >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        <a href="#" className="flex items-center gap-2.5">
-          <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center shadow-sm"
-            style={{ background: '#0038A8' }}
-          >
-            <Building2 className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-bold text-[#263238] text-[15px] tracking-tight">Lead Gap CRM</span>
+        <a href="#" className="flex items-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Lead Gap CRM" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
         </a>
 
         <div className="hidden md:flex items-center gap-7">
@@ -632,8 +627,8 @@ function HeroDashboardMock() {
           <div className="flex items-center gap-3 px-4 shrink-0" style={{ height: 44, background: '#FFFFFF', borderBottom: '1px solid #EFEFEF' }}>
             {/* Logo */}
             <div className="flex items-center gap-2 shrink-0">
-              <div className="size-6 rounded flex items-center justify-center font-black text-white" style={{ background: '#0047AB', fontSize: 8 }}>RE</div>
-              <span className="font-bold tracking-tight" style={{ fontSize: 12, color: '#1A1F27' }}>Lead Gap CRM</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="Lead Gap CRM" style={{ height: 22, width: 'auto', objectFit: 'contain' }} />
             </div>
             <div className="flex-1" />
             <div className="flex items-center gap-1.5 px-2.5 rounded" style={{ width: 160, height: 26, background: '#F5F6FA', border: '1px solid #EFEFEF' }}>
