@@ -34,6 +34,7 @@ function rowToCrm(r: Record<string, unknown>): CRMLead {
     propertyType: (r.property_type as string) ? [(r.property_type as string)] : null,
     timeline:     (r.timeline as string)      ?? null,
     localities:   (r.locations as string[])   ?? null,
+    escalated:    (r.escalated as boolean)    ?? false,
     createdAt:    r.created_at as string,
     updatedAt:    r.updated_at as string,
   }

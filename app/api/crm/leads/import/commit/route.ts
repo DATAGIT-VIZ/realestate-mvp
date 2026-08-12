@@ -87,19 +87,20 @@ export async function POST(req: NextRequest) {
         sourcePortal: p.source     ?? '',
       })
       return {
-        name:         p.name,
-        phone:        p.phone,
-        email:        p.email,
-        city:         p.city,
-        source:       p.source,
-        budget_min:   p.budgetMin,
-        budget_max:   p.budgetMax,
-        timeline:     p.timeline,
-        status:       'New',
-        intent_score: score,
+        name:          p.name,
+        phone:         p.phone,
+        email:         p.email,
+        city:          p.city,
+        source:        p.source,
+        budget_min:    p.budgetMin,
+        budget_max:    p.budgetMax,
+        property_type: p.propertyType,
+        timeline:      p.timeline,
+        status:        'New',
+        intent_score:  score,
         import_batch_id: batchId,
         failed_contact_attempts: 0,
-        agent_id:     userId,
+        agent_id:      userId,
       }
     })
 
@@ -118,13 +119,14 @@ export async function POST(req: NextRequest) {
     const p = r.parsed
     const existingId = phoneToId.get(p.phone!)!
     const { error: upErr } = await sb.from('leads').update({
-      name:       p.name,
-      email:      p.email   ?? undefined,
-      city:       p.city    ?? undefined,
-      source:     p.source  ?? undefined,
-      budget_min: p.budgetMin ?? undefined,
-      budget_max: p.budgetMax ?? undefined,
-      timeline:   p.timeline  ?? undefined,
+      name:          p.name,
+      email:         p.email        ?? undefined,
+      city:          p.city         ?? undefined,
+      source:        p.source       ?? undefined,
+      budget_min:    p.budgetMin    ?? undefined,
+      budget_max:    p.budgetMax    ?? undefined,
+      property_type: p.propertyType ?? undefined,
+      timeline:      p.timeline     ?? undefined,
     }).eq('id', existingId)
     if (upErr) errors++
     else updated++

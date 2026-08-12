@@ -60,15 +60,15 @@ function Logo({ collapsed }: { collapsed: boolean }) {
   return (
     <Link href="/dashboard" className={cn('flex items-center gap-3 px-4 h-14 transition-colors', collapsed && 'justify-center px-0')}
       style={{ borderBottom: '1px solid rgba(0,41,102,0.08)' }}>
-      <div className="relative shrink-0 flex items-center justify-center w-8 h-8" style={{ background: '#0038A8' }}>
-        <span className="text-[11px] font-bold text-white tracking-tight">LG</span>
-      </div>
-      {!collapsed && (
-        <div className="flex flex-col leading-none">
-          <span className="text-[13px] font-bold tracking-[0.04em]" style={{ color: '#0038A8' }}>LEAD GAP</span>
-          <span className="text-[10px] font-medium" style={{ color: 'rgba(0,56,168,0.5)' }}>CRM</span>
-        </div>
-      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/logo.png"
+        alt="Lead Gap CRM"
+        style={collapsed
+          ? { height: 36, width: 36, objectFit: 'contain' }
+          : { height: 44, width: 'auto', objectFit: 'contain' }
+        }
+      />
     </Link>
   )
 }

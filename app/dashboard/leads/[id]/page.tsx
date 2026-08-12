@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { type CRMLead } from '@/lib/twenty'
 import { LogActivityModal } from '@/components/LogActivityModal'
 import { WhatsAppModal } from '@/components/WhatsAppModal'
@@ -17,7 +18,7 @@ import {
   Zap, Bell, Award,
 } from 'lucide-react'
 import {
-  ClipboardText, Moon, SunDim, Flame, Check as PhCheck, X as PhX,
+  ClipboardText, Moon, SunDim, Flame, Check as PhCheck, X as PhX, ArrowFatUp,
 } from '@phosphor-icons/react'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -48,6 +49,8 @@ const ACT_COLORS: Record<string, { icon: string; bg: string; accent: string }> =
   'Follow Up Set':        { icon: '#F59E0B', bg: 'rgba(245,158,11,0.09)', accent: '#F59E0B' },
   'Note':                 { icon: BLUE,      bg: PRIMARY_DIM, accent: BLUE    },
   'Status Changed':       { icon: '#1D4ED8', bg: PRIMARY_DIM, accent: '#1D4ED8' },
+  'Escalated':            { icon: '#D97706', bg: 'rgba(245,158,11,0.09)', accent: '#D97706' },
+  'Escalation Removed':   { icon: '#94A3B8', bg: '#F8FAFC', accent: '#94A3B8' },
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -287,6 +290,9 @@ export default function LeadDetailPage() {
   const [emailSent, setEmailSent]     = useState(false)
   const [emailError, setEmailError]   = useState<string | null>(null)
 
+  // ── Escalation state ───────────────────────────────────────────────────────
+  const [escalating, setEscalating] = useState(false)
+
   // ── Tasks state ────────────────────────────────────────────────────────────
   const [tasks,       setTasks]       = useState<LeadTask[]>([])
   const [showTaskForm, setShowTaskForm] = useState(false)
@@ -314,6 +320,28 @@ export default function LeadDetailPage() {
 
   useEffect(() => { fetchLead(); fetchTasks() }, [fetchLead, fetchTasks])
   useEffect(() => { window.scrollTo(0, 0) }, [])
+
+  const handleEscalate = async () => {
+    if (!lead || escalating) return
+    setEscalating(true)
+    const next = !lead.escalated
+    try {
+      const res = await fetch(`/api/crm/leads/${leadId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ escalated: next }),
+      })
+      const json = await res.json()
+      if (json.error) throw new Error(json.error)
+      // Refresh lead + activity log (escalation logs an activity server-side)
+      await fetchLead()
+      toast.success(next ? 'Lead escalated — visible in admin Priority Follow Up' : 'Escalation removed')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not update escalation')
+    } finally {
+      setEscalating(false)
+    }
+  }
 
   const handleStageChange = async (stage: string) => {
     if (!lead) return
@@ -556,41 +584,54 @@ export default function LeadDetailPage() {
               </div>
 
               {/* iOS-style circular action buttons */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 18, marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginBottom: 20, padding: '0 8px' }}>
 
                 {phone && (
-                  <button onClick={() => setShowCallModal(true)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                    <div style={{ width: 54, height: 54, borderRadius: '50%', background: 'linear-gradient(145deg,#34C759,#28a745)', boxShadow: '0 6px 16px rgba(52,199,89,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.1s' }}
+                  <button onClick={() => setShowCallModal(true)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', padding: 0, minWidth: 48 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(145deg,#34C759,#28a745)', boxShadow: '0 4px 12px rgba(52,199,89,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.1s' }}
                       onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
                       onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
-                      <Phone style={{ width: 22, height: 22, color: '#fff' }} />
+                      <Phone style={{ width: 18, height: 18, color: '#fff' }} />
                     </div>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: MUTED }}>call</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: MUTED }}>call</span>
                   </button>
                 )}
 
                 {phone && (
-                  <button onClick={() => setShowWhatsAppModal(true)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                    <div style={{ width: 54, height: 54, borderRadius: '50%', background: 'linear-gradient(145deg,#25D366,#1da851)', boxShadow: '0 6px 16px rgba(37,211,102,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.1s' }}
+                  <button onClick={() => setShowWhatsAppModal(true)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', padding: 0, minWidth: 48 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(145deg,#25D366,#1da851)', boxShadow: '0 4px 12px rgba(37,211,102,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.1s' }}
                       onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
                       onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
-                      <MessageCircle style={{ width: 22, height: 22, color: '#fff' }} />
+                      <MessageCircle style={{ width: 18, height: 18, color: '#fff' }} />
                     </div>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: MUTED }}>whatsapp</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: MUTED }}>whatsapp</span>
                   </button>
                 )}
 
                 {email && (
                   <button onClick={() => { setShowEmailModal(true); setEmailSent(false); setEmailError(null) }}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                    <div style={{ width: 54, height: 54, borderRadius: '50%', background: 'linear-gradient(145deg,#1D4ED8,#3B82F6)', boxShadow: '0 6px 16px rgba(29,78,216,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.1s' }}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', padding: 0, minWidth: 48 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(145deg,#1D4ED8,#3B82F6)', boxShadow: '0 4px 12px rgba(29,78,216,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.1s' }}
                       onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
                       onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
-                      <Mail style={{ width: 22, height: 22, color: '#fff' }} />
+                      <Mail style={{ width: 18, height: 18, color: '#fff' }} />
                     </div>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: MUTED }}>mail</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: MUTED }}>mail</span>
                   </button>
                 )}
+
+                {/* Escalate to admin */}
+                <button onClick={handleEscalate} disabled={escalating}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: escalating ? 'wait' : 'pointer', padding: 0, minWidth: 48 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: lead?.escalated ? 'linear-gradient(145deg,#F59E0B,#D97706)' : '#F1F5F9', boxShadow: lead?.escalated ? '0 4px 12px rgba(245,158,11,0.32)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', border: lead?.escalated ? 'none' : `1px solid ${BORDER}` }}
+                    onMouseEnter={e => { if (!lead?.escalated) (e.currentTarget as HTMLElement).style.background = '#E2E8F0' }}
+                    onMouseLeave={e => { if (!lead?.escalated) (e.currentTarget as HTMLElement).style.background = '#F1F5F9' }}>
+                    <ArrowFatUp weight={lead?.escalated ? 'fill' : 'light'} size={18} color={lead?.escalated ? '#fff' : MUTED} />
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: lead?.escalated ? '#D97706' : MUTED }}>
+                    {lead?.escalated ? 'escalated' : 'escalate'}
+                  </span>
+                </button>
 
               </div>
 

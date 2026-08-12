@@ -60,6 +60,7 @@ export type CRMLead = {
   status: string | null
   localities: string[] | null
   failedContactAttempts?: number
+  escalated: boolean
   createdAt: string
   updatedAt: string
 }

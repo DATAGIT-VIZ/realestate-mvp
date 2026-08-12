@@ -2,7 +2,7 @@
 // No server-only imports — safe to use in both API routes and client components.
 
 export const TEMPLATE_HEADERS = [
-  'Client Name', 'Phone', 'Email', 'Lead Source', 'Location', 'Budget', 'Timeline',
+  'Client Name', 'Phone', 'Email', 'Lead Source', 'Location', 'Budget', 'Property Type', 'Timeline', 'Notes',
 ] as const
 
 export type PreviewStatus = 'new' | 'duplicate_phone' | 'duplicate_name_email' | 'error'
@@ -15,7 +15,9 @@ export interface ParsedLead {
   city: string | null
   budgetMin: number | null
   budgetMax: number | null
+  propertyType: string | null
   timeline: string | null
+  notes: string | null
 }
 
 export interface PreviewRow {
@@ -95,13 +97,15 @@ export function parseRow(raw: Record<string, string>): { parsed: ParsedLead; err
   return {
     parsed: {
       name,
-      phone:     e164,
-      email:     emailRaw || null,
-      source:    raw['Lead Source']?.trim() || null,
-      city:      raw['Location']?.trim()   || null,
+      phone:        e164,
+      email:        emailRaw || null,
+      source:       raw['Lead Source']?.trim()    || null,
+      city:         raw['Location']?.trim()       || null,
       budgetMin,
       budgetMax,
-      timeline:  raw['Timeline']?.trim()   || null,
+      propertyType: raw['Property Type']?.trim()  || null,
+      timeline:     raw['Timeline']?.trim()       || null,
+      notes:        raw['Notes']?.trim()          || null,
     },
     errors,
   }

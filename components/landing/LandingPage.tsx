@@ -21,6 +21,7 @@ import WorkspaceBento from './WorkspaceBento'
 import { AnimatedDock } from '@/components/ui/animated-dock'
 import CardSwap, { Card as SwapCard } from '@/components/ui/CardSwap'
 import dynamic from 'next/dynamic'
+const Silk = dynamic(() => import('@/components/ui/Silk'), { ssr: false, loading: () => <div style={{ width: '100%', height: '100%', background: '#0B0F3B' }} /> })
 const DotLottieReact = dynamic(
   () => import('@lottiefiles/dotlottie-react').then(async (m) => {
     m.setWasmUrl('/lottie/dotlottie-player.wasm')
@@ -92,16 +93,20 @@ function Nav() {
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 24)
+    const fn = () => setScrolled(window.scrollY > 80)
+    fn()
     window.addEventListener('scroll', fn, { passive: true })
     return () => window.removeEventListener('scroll', fn)
   }, [])
+
+  const linkColor = scrolled ? '#4B5563' : 'rgba(255,255,255,0.72)'
+  const linkHover = scrolled ? '#111827' : '#ffffff'
 
   return (
     <nav
       className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
       style={{
-        background: scrolled ? 'rgba(245,246,250,0.92)' : 'transparent',
+        background: scrolled ? 'rgba(255,255,255,0.95)' : 'transparent',
         backdropFilter: scrolled ? 'blur(14px)' : 'none',
         borderBottom: scrolled ? '1px solid #E8ECF0' : '1px solid transparent',
       }}
@@ -109,45 +114,78 @@ function Nav() {
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <a href="#" className="flex items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Lead Gap CRM" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
+          <img
+            src="/logo.png"
+            alt="Lead Gap CRM"
+            style={{
+              height: 32,
+              width: 'auto',
+              objectFit: 'contain',
+              filter: scrolled ? 'none' : 'brightness(0) invert(1)',
+              transition: 'filter 0.3s',
+            }}
+          />
         </a>
 
         <div className="hidden md:flex items-center gap-7">
           {['Features', 'How it works', 'Pricing'].map(l => (
-            <a key={l} href={`#${l.toLowerCase().replace(' ', '-')}`}
-              className="text-[13px] font-medium text-[#78889B] hover:text-[#263238] transition-colors">
+            <a
+              key={l}
+              href={`#${l.toLowerCase().replace(/ /g, '-')}`}
+              className="text-[13px] font-medium transition-colors"
+              style={{ color: linkColor }}
+              onMouseEnter={e => (e.currentTarget.style.color = linkHover)}
+              onMouseLeave={e => (e.currentTarget.style.color = linkColor)}
+            >
               {l}
             </a>
           ))}
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          <Link href="/login" className="text-[13px] font-medium text-[#78889B] hover:text-[#263238] transition-colors px-4 py-2">
+          <Link
+            href="/login"
+            className="text-[13px] font-medium transition-colors px-4 py-2"
+            style={{ color: linkColor }}
+          >
             Log in
           </Link>
           <Link
             href="/signup"
-            className="text-[13px] font-semibold text-white px-5 py-2.5 rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] shadow-sm"
-            style={{ background: '#0038A8' }}
+            className="text-[13px] font-semibold px-5 py-2.5 rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
+            style={scrolled
+              ? { background: '#0038A8', color: '#fff' }
+              : { background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.30)' }
+            }
           >
             Get started free
           </Link>
         </div>
 
-        <button className="md:hidden p-2 rounded-lg hover:bg-black/5 transition-colors"
-          onClick={() => setOpen(v => !v)} aria-label="Toggle menu">
-          {open ? <X className="w-5 h-5 text-[#263238]" /> : <Menu className="w-5 h-5 text-[#263238]" />}
+        <button
+          className="md:hidden p-2 rounded-lg transition-colors"
+          onClick={() => setOpen(v => !v)}
+          aria-label="Toggle menu"
+        >
+          {open
+            ? <X className="w-5 h-5" style={{ color: scrolled ? '#263238' : '#fff' }} />
+            : <Menu className="w-5 h-5" style={{ color: scrolled ? '#263238' : '#fff' }} />
+          }
         </button>
       </div>
 
       {open && (
-        <div className="md:hidden bg-white border-t border-[#E8ECF0] px-6 py-5 flex flex-col gap-4 shadow-lg">
+        <div className="md:hidden border-t px-6 py-5 flex flex-col gap-4"
+          style={{ background: scrolled ? '#fff' : '#0E1247', borderColor: scrolled ? '#E8ECF0' : 'rgba(255,255,255,0.1)' }}>
           {['Features', 'How it works', 'Pricing'].map(l => (
-            <a key={l} href={`#${l.toLowerCase().replace(' ', '-')}`}
-              className="text-[14px] font-medium text-[#78889B]" onClick={() => setOpen(false)}>{l}</a>
+            <a key={l} href={`#${l.toLowerCase().replace(/ /g, '-')}`}
+              className="text-[14px] font-medium"
+              style={{ color: scrolled ? '#78889B' : 'rgba(255,255,255,0.72)' }}
+              onClick={() => setOpen(false)}>{l}</a>
           ))}
-          <div className="border-t border-[#E8ECF0] pt-4 flex flex-col gap-3">
-            <Link href="/login" className="text-[14px] font-medium text-[#78889B] text-center py-2">Log in</Link>
+          <div className="border-t pt-4 flex flex-col gap-3" style={{ borderColor: scrolled ? '#E8ECF0' : 'rgba(255,255,255,0.1)' }}>
+            <Link href="/login" className="text-[14px] font-medium text-center py-2"
+              style={{ color: scrolled ? '#78889B' : 'rgba(255,255,255,0.72)' }}>Log in</Link>
             <Link href="/signup"
               className="text-[14px] font-semibold text-white py-3 rounded-full text-center"
               style={{ background: '#0038A8' }}>
@@ -407,9 +445,8 @@ function TeakHeroCard() {
         {/* Static nav — never flips */}
         <div className="flex items-center justify-between px-4 py-2.5" style={{ background: '#080D18' }}>
           <div className="flex items-center gap-2">
-            <div className="size-5 rounded flex items-center justify-center text-white font-black"
-              style={{ background: H_BLUE, fontSize: 8 }}>RE</div>
-            <span className="font-semibold" style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>RealEdge CRM</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Lead Gap CRM" style={{ height: 18, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
           </div>
           <div className="flex items-center gap-1.5">
             <span className="size-1.5 rounded-full bg-emerald-400"
@@ -792,82 +829,115 @@ function HeroDashboardMock() {
   )
 }
 
-/* ─── Hero — centered text block ─────────────────────────────────────────── */
+/* ─── Hero ────────────────────────────────────────────────────────────────── */
 function Hero() {
+  const [email, setEmail] = useState('')
+
   return (
-    <section id="lp-hero" className="relative flex flex-col justify-center min-h-[78vh] pt-14 overflow-hidden">
-      {/* Cobalt blue gradient blobs */}
-      <div className="absolute inset-0 pointer-events-none select-none" style={{ zIndex: 0 }}>
-        <div className="absolute" style={{
-          top: '-12%', left: '-8%', width: 760, height: 760,
-          background: 'radial-gradient(ellipse at center, rgba(0,71,171,0.22) 0%, transparent 62%)',
-          filter: 'blur(52px)',
-        }} />
-        <div className="absolute" style={{
-          top: '-16%', right: '-6%', width: 680, height: 680,
-          background: 'radial-gradient(ellipse at center, rgba(26,111,230,0.18) 0%, transparent 62%)',
-          filter: 'blur(52px)',
-        }} />
-        <div className="absolute" style={{
-          top: '42%', left: '22%', width: 560, height: 480,
-          background: 'radial-gradient(ellipse at center, rgba(0,163,255,0.08) 0%, transparent 65%)',
-          filter: 'blur(64px)',
-        }} />
+    <section
+      id="lp-hero"
+      className="relative flex flex-col justify-center min-h-[86vh] pt-16 overflow-hidden"
+      style={{ background: '#0B0F3B' }}
+    >
+      {/* Silk WebGL background */}
+      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+        <Silk
+          speed={3}
+          scale={1.2}
+          color="#0a2fa8"
+          noiseIntensity={1.8}
+          rotation={0}
+          className="absolute inset-0"
+        />
       </div>
 
+      {/* Content */}
+      <div className="relative flex flex-col items-center text-center px-6 pb-8 max-w-[660px] mx-auto" style={{ zIndex: 2 }}>
 
-      <div className="relative flex flex-col items-center text-center px-6 py-8 max-w-[720px] mx-auto" style={{ zIndex: 2 }}>
-        {/* Announcement pill */}
+        {/* Badge */}
         <div
-          className="lp-fade-up inline-flex items-center gap-2 px-4 py-1.5 rounded-full font-semibold mb-4 md:mb-7"
-          style={{ fontSize: 12, opacity: 0, animationDelay: '0.05s', background: 'rgba(0,71,171,0.06)', border: '1px solid rgba(0,71,171,0.16)', color: '#0047AB' }}
+          className="lp-fade-up inline-flex items-center gap-2 px-4 py-1.5 mb-6 md:mb-8"
+          style={{
+            opacity: 0, animationDelay: '0.05s',
+            fontSize: 12, fontWeight: 500,
+            color: 'rgba(255,255,255,0.60)',
+            border: '1px solid rgba(255,255,255,0.14)',
+            borderRadius: 2,
+            letterSpacing: '0.03em',
+          }}
         >
-          <span className="size-1.5 rounded-full bg-[#0047AB]" style={{ animation: 'bento-timer-pulse 2s ease-in-out infinite' }} />
-          New &middot; AI-powered lead management is here
+          <span className="size-1.5 rounded-full" style={{ background: '#60A5FA', animation: 'bento-timer-pulse 2s ease-in-out infinite' }} />
+          New · AI-powered lead management is here
         </div>
 
         {/* Headline */}
         <h1
-          className="lp-fade-up font-extrabold leading-[1.06] tracking-tight text-[#1A1F27] mb-3 md:mb-6 text-balance"
-          style={{ fontSize: 'clamp(36px, 6vw, 68px)', opacity: 0, animationDelay: '0.14s' }}
+          className="lp-fade-up leading-[1.08] tracking-tight text-white mb-5 md:mb-7 text-balance"
+          style={{
+            fontSize: 'clamp(38px, 6vw, 72px)',
+            fontWeight: 800,
+            opacity: 0,
+            animationDelay: '0.14s',
+            fontFamily: 'var(--font-jakarta), system-ui, sans-serif',
+          }}
         >
           The CRM that turns<br />
           leads into{' '}
-          <em style={{ color: '#0038A8', fontStyle: 'italic' }}>closed deals.</em>
+          <em style={{
+            fontFamily: 'var(--font-playfair), Georgia, serif',
+            fontStyle: 'italic',
+            fontWeight: 700,
+            color: '#ffffff',
+          }}>
+            closed deals.
+          </em>
         </h1>
 
-        {/* Sub */}
+        {/* Subtitle */}
         <p
-          className="lp-fade-up leading-relaxed mb-6 md:mb-9 text-pretty"
-          style={{ fontSize: 15, color: '#78889B', maxWidth: 420, opacity: 0, animationDelay: '0.26s' }}
+          className="lp-fade-up leading-relaxed mb-8 text-pretty"
+          style={{ fontSize: 15, color: 'rgba(255,255,255,0.52)', maxWidth: 400, opacity: 0, animationDelay: '0.26s' }}
         >
           Auto-capture from 99acres, MagicBricks &amp; Housing.com.
           AI follow-ups. Real-time pipeline. Built for Indian real estate.
         </p>
 
-        {/* CTAs */}
-        <div className="lp-fade-up flex flex-col sm:flex-row justify-center gap-3 w-full sm:w-auto mb-4 md:mb-5" style={{ opacity: 0, animationDelay: '0.38s' }}>
-          <Link
-            href="/signup"
-            className="flex items-center justify-center gap-2 px-7 py-3 rounded-full font-semibold text-white transition-all duration-200 hover:scale-[1.04] active:scale-[0.97]"
-            style={{ fontSize: 15, background: '#0047AB', boxShadow: '0 8px 28px rgba(0,71,171,0.30)' }}
+        {/* Email CTA */}
+        <form
+          className="lp-fade-up w-full flex flex-col sm:flex-row gap-2 mb-4"
+          style={{ opacity: 0, animationDelay: '0.36s', maxWidth: 460 }}
+          onSubmit={e => { e.preventDefault(); window.location.href = `/signup${email ? `?email=${encodeURIComponent(email)}` : ''}` }}
+        >
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="Enter your email"
+            className="flex-1 px-4 py-3 text-[14px] text-white outline-none placeholder:text-white/35 transition-colors"
+            style={{
+              background: 'rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.16)',
+              borderRadius: 4,
+            }}
+            onFocus={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.40)')}
+            onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)')}
+          />
+          <button
+            type="submit"
+            className="flex items-center justify-center gap-2 px-6 py-3 font-semibold text-white text-[14px] transition-all duration-200 hover:brightness-110 active:scale-[0.98] whitespace-nowrap"
+            style={{ background: '#2563EB', borderRadius: 4 }}
           >
-            Start free — no card needed <ArrowRight className="w-4 h-4" />
-          </Link>
-          <Link
-            href="/login"
-            className="flex items-center justify-center gap-2 px-7 py-3 rounded-full font-semibold transition-all duration-200 hover:bg-white hover:shadow-sm"
-            style={{ fontSize: 15, border: '1.5px solid #E8ECF0', background: 'rgba(255,255,255,0.65)', color: '#263238' }}
-          >
-            Book a demo <ChevronRight className="w-4 h-4 text-[#78889B]" />
-          </Link>
-        </div>
+            Get early access <ArrowRight className="w-4 h-4" />
+          </button>
+        </form>
 
-        {/* Trust line */}
-        <p className="lp-fade-up" style={{ fontSize: 11, color: '#A4B1BE', opacity: 0, animationDelay: '0.50s' }}>
-          No credit card required &middot; Free 14-day trial &middot; Setup in 5 minutes
+        {/* Trust */}
+        <p
+          className="lp-fade-up"
+          style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', opacity: 0, animationDelay: '0.48s', letterSpacing: '0.01em' }}
+        >
+          Free early access &middot; No credit card &middot; Setup in 5 minutes
         </p>
-
       </div>
     </section>
   )
@@ -876,7 +946,7 @@ function Hero() {
 /* ─── Hero scroll reveal — 3D perspective tilt ───────────────────────────── */
 function HeroScrollDash() {
   return (
-    <div style={{ background: '#F4F8FD' }}>
+    <div style={{ background: 'linear-gradient(to bottom, #071580 0%, #FAFAF8 22%)' }}>
       <ContainerScroll titleComponent={<></>}>
         <HeroDashboardMock />
       </ContainerScroll>
@@ -3208,7 +3278,8 @@ function WorkspaceSection() {
 /* ─── Root ────────────────────────────────────────────────────────────────── */
 export default function LandingPage() {
   return (
-    <div className="min-h-screen" style={{ background: '#F4F8FD', fontFamily: 'var(--font-jakarta), system-ui, sans-serif' }}>
+    <div className="min-h-screen" style={{ background: '#FAFAF8', fontFamily: 'var(--font-jakarta), system-ui, sans-serif' }}>
+      <div className="grain-overlay" aria-hidden="true" />
       <Nav />
       <Hero />
       <HeroScrollDash />

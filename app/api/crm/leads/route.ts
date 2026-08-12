@@ -23,6 +23,7 @@ function rowToCrm(r: Record<string, unknown>): CRMLead {
     timeline:     (r.timeline as string) ?? null,
     localities:             (r.locations as string[]) ?? null,
     failedContactAttempts:  (r.failed_contact_attempts as number) ?? 0,
+    escalated:    (r.escalated as boolean) ?? false,
     createdAt:    r.created_at as string,
     updatedAt:    r.updated_at as string,
   }
@@ -49,19 +50,26 @@ export async function GET(req: NextRequest) {
 
   try {
     const { searchParams } = req.nextUrl
-    const search = searchParams.get('search')?.trim() ?? ''
-    const status = searchParams.get('status')
-    const score  = searchParams.get('score')
-    const source = searchParams.get('source')
-    const limit  = Math.min(Number(searchParams.get('limit') ?? '50'), 200)
+    const search           = searchParams.get('search')?.trim() ?? ''
+    const status           = searchParams.get('status')
+    const score            = searchParams.get('score')
+    const source           = searchParams.get('source')
+    const limit            = Math.min(Number(searchParams.get('limit') ?? '50'), 200)
+    const includeEscalated = searchParams.get('include_escalated') === 'true'
 
     let q = sb.from('leads').select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
       .order('intent_score', { ascending: false, nullsFirst: false })
       .limit(limit)
 
-    // Strict workspace isolation — each user sees only their own leads
-    if (!isDevBypass) q = q.eq('agent_id', userId)
+    // Workspace isolation: own leads + escalated leads (for admin view)
+    if (!isDevBypass) {
+      if (includeEscalated) {
+        q = q.or(`agent_id.eq.${userId!},escalated.is.true`)
+      } else {
+        q = q.eq('agent_id', userId)
+      }
+    }
 
     if (status) q = q.eq('status', status)
     if (source) q = q.eq('source', source)

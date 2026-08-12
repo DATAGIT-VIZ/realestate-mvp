@@ -29,6 +29,7 @@ function rowToCrm(r: Record<string, unknown>): CRMLead {
     propertyType: (r.property_type as string) ? [(r.property_type as string)] : null,
     timeline:     (r.timeline as string)    ?? null,
     localities:   (r.locations as string[]) ?? null,
+    escalated:    (r.escalated as boolean)  ?? false,
     createdAt:    r.created_at as string,
     updatedAt:    r.updated_at as string,
   }
@@ -50,7 +51,7 @@ export async function GET(_req: NextRequest, { params }: RouteCtx) {
     const { id } = await params
 
     let leadQ = sb.from('leads').select('*').eq('id', id)
-    if (!isDevBypass) leadQ = leadQ.eq('agent_id', userId!)
+    if (!isDevBypass) leadQ = leadQ.or(`agent_id.eq.${userId!},escalated.is.true`)
     const { data: lead, error: leadErr } = await leadQ.single()
 
     if (leadErr || !lead) {
@@ -128,6 +129,7 @@ export async function PATCH(req: NextRequest, { params }: RouteCtx) {
     if (body.localities   !== undefined) update.locations     = body.localities
     if (body.propertyType !== undefined) update.property_type = Array.isArray(body.propertyType) ? body.propertyType[0] : body.propertyType
     if (body.intentScore  !== undefined) update.intent_score  = body.intentScore
+    if (body.escalated    !== undefined) update.escalated     = Boolean(body.escalated)
 
     // Recalculate intent score when qualification fields change
     const scoreFields = ['phone','email','budgetMin','budgetMax','timeline','sourcePortal']
@@ -151,6 +153,20 @@ export async function PATCH(req: NextRequest, { params }: RouteCtx) {
     const { data: updated, error: updateErr } = await updateQ.select().single()
 
     if (updateErr) return NextResponse.json({ data: null, error: updateErr.message }, { status: 400 })
+
+    // Log escalation state change as an activity
+    if (body.escalated !== undefined) {
+      const actType = body.escalated ? 'Escalated' : 'Escalation Removed'
+      const actNote = body.escalated
+        ? 'Lead escalated to admin — flagged for Priority Follow Up'
+        : 'Escalation removed'
+      await sb.from('lead_activities').insert({
+        lead_id:       id,
+        agent_id:      userId,
+        activity_type: actType,
+        activity_data: { notes: actNote },
+      })
+    }
 
     return NextResponse.json({ data: rowToCrm(updated as Record<string, unknown>), error: null })
   } catch (err) {

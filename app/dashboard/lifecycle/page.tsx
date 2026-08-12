@@ -121,7 +121,7 @@ function scoreColor(s: number | null | undefined) {
 }
 
 // ─── Mock fallback ─────────────────────────────────────────────────────────────
-const NF = { sourceDetail: null, leadPortalId: null, propertyType: null, timeline: null, localities: null }
+const NF = { sourceDetail: null, leadPortalId: null, propertyType: null, timeline: null, localities: null, escalated: false }
 const P  = (n: string) => ({ primaryPhoneNumber: n, primaryPhoneCountryCode: 'IN' as const })
 const E  = (e: string) => ({ primaryEmail: e })
 
