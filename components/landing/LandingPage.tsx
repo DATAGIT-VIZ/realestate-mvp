@@ -19,6 +19,8 @@ import FloatingDashboard from './FloatingDashboard'
 import { CinematicFooter } from './CinematicFooter'
 import WorkspaceBento from './WorkspaceBento'
 import { AnimatedDock } from '@/components/ui/animated-dock'
+import MacOSDock, { type DockApp } from '@/components/ui/mac-os-dock'
+import { Marquee } from '@/components/ui/marquee'
 import CardSwap, { Card as SwapCard } from '@/components/ui/CardSwap'
 import dynamic from 'next/dynamic'
 const Silk = dynamic(() => import('@/components/ui/Silk'), { ssr: false, loading: () => <div style={{ width: '100%', height: '100%', background: '#0B0F3B' }} /> })
@@ -30,7 +32,7 @@ const DotLottieReact = dynamic(
   { ssr: false, loading: () => <div className="w-full h-full" /> }
 )
 const Lottie = dynamic(() => import('lottie-react'), { ssr: false })
-import { motion, AnimatePresence, useReducedMotion, useMotionValue, useTransform } from 'motion/react'
+import { motion, AnimatePresence, useReducedMotion, useMotionValue, useTransform, useScroll } from 'motion/react'
 import { Lock, Robot, ChartLine, ChartBar } from '@phosphor-icons/react'
 import { ContainerScroll } from '@/components/ui/container-scroll-animation'
 
@@ -115,14 +117,14 @@ function Nav() {
         <a href="#" className="flex items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/logo.png"
+            src="/lgc-logo.svg"
             alt="Lead Gap CRM"
             style={{
-              height: 32,
+              height: 48,
               width: 'auto',
               objectFit: 'contain',
               filter: scrolled ? 'none' : 'brightness(0) invert(1)',
-              transition: 'filter 0.3s',
+              transition: 'filter 0.35s ease',
             }}
           />
         </a>
@@ -446,7 +448,7 @@ function TeakHeroCard() {
         <div className="flex items-center justify-between px-4 py-2.5" style={{ background: '#080D18' }}>
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Lead Gap CRM" style={{ height: 18, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+            <img src="/lgc-logo.svg" alt="Lead Gap CRM" style={{ height: 24, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
           </div>
           <div className="flex items-center gap-1.5">
             <span className="size-1.5 rounded-full bg-emerald-400"
@@ -630,199 +632,609 @@ const DASH_LEADS = [
   { name: 'Vikram Singh',  company: 'Housing.com',   status: 'Active', sc: '#059669', val: '₹1.4Cr' },
 ]
 
-function HeroDashboardMock() {
+const MOCK_ALL_LEADS = [
+  { name: 'Arjun Kapoor',  source: 'MagicBricks', score: 88, status: 'Hot',  sc: '#DC2626', budget: '₹1.8Cr' },
+  { name: 'Priya Mehta',   source: '99acres',     score: 72, status: 'Hot',  sc: '#DC2626', budget: '₹85L'   },
+  { name: 'Sunita Verma',  source: 'Housing.com', score: 54, status: 'Warm', sc: '#F59E0B', budget: '₹65L'   },
+  { name: 'Rajesh Sharma', source: 'MagicBricks', score: 38, status: 'Cold', sc: '#94A3B8', budget: '₹2.1Cr' },
+]
+
+const MOCK_CALLS = [
+  { name: 'Arjun Kapoor',  time: '10:22 AM', dur: '5:14', outcome: 'Answered',  oc: '#059669' },
+  { name: 'Sunita Verma',  time: '11:05 AM', dur: '0:42', outcome: 'No Answer', oc: '#F59E0B' },
+  { name: 'Deepak Joshi',  time: '11:48 AM', dur: '8:31', outcome: 'Callback',  oc: '#2563EB' },
+  { name: 'Meena Reddy',   time: '2:15 PM',  dur: '3:07', outcome: 'Answered',  oc: '#059669' },
+]
+
+const MOCK_PIPELINE = [
+  { label: 'New',        count: 18, value: '₹24L',   color: '#94A3B8' },
+  { label: 'Contacted',  count: 12, value: '₹68L',   color: '#3B82F6' },
+  { label: 'Qualified',  count: 8,  value: '₹1.2Cr', color: '#F59E0B' },
+  { label: 'Site Visit', count: 5,  value: '₹2.1Cr', color: '#F97316' },
+  { label: 'Closed',     count: 3,  value: '₹3.4Cr', color: '#059669' },
+]
+
+const MOCK_PROPERTIES = [
+  { title: '3BHK, Baner',       price: '₹1.2 Cr', loc: 'Pune · 1,450 sqft',    status: 'Available',   sc: '#059669' },
+  { title: '2BHK, Hinjewadi',   price: '₹78 L',   loc: 'Pune · 980 sqft',      status: 'Under Offer', sc: '#F59E0B' },
+  { title: '4BHK, Koregaon Pk', price: '₹2.4 Cr', loc: 'Pune · 2,200 sqft',    status: 'Sold',        sc: '#94A3B8' },
+]
+
+const MOCK_TASKS = [
+  { text: 'Call Arjun re: weekend site visit', due: 'Today 3 PM',  priority: 'High',   done: false, pc: '#DC2626' },
+  { text: 'Send brochure to Sunita Verma',     due: 'Today 5 PM',  priority: 'Medium', done: false, pc: '#F59E0B' },
+  { text: 'Follow up Deepak — 2 missed calls', due: 'Tomorrow',    priority: 'Medium', done: false, pc: '#F59E0B' },
+  { text: 'Update Q3 pipeline report',         due: 'Aug 15',      priority: 'Low',    done: true,  pc: '#94A3B8' },
+]
+
+const MOCK_ACTIVITY = [
+  { icon: PhoneCall,     text: 'Called Arjun Kapoor · 5 min',    time: '10m ago', color: '#059669' },
+  { icon: Users,         text: 'New lead from MagicBricks',       time: '34m ago', color: '#2563EB' },
+  { icon: MessageCircle, text: 'WhatsApp sent to Priya Mehta',    time: '1h ago',  color: '#7C3AED' },
+  { icon: Target,        text: 'Deal moved to Qualified stage',   time: '2h ago',  color: '#F59E0B' },
+]
+
+// Shared card style
+const MC = { background: '#FFFFFF', boxShadow: '0 1px 3px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.04)' }
+const ML = { fontSize: 7, color: '#B0B8C8', fontWeight: 600 as const, textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 6 }
+
+/* ─── LGC CRM app icon — rendered as a proper squircle with the brand mark ── */
+const LGC_APP_ICON = '/lgc-icon.svg'
+
+/* ─── Real macOS/iOS quality app icons from the official icon CDN ──────── */
+const DOCK_APPS: DockApp[] = [
+  { id: 'lgc',       name: 'Lead Gap CRM', icon: LGC_APP_ICON },
+  { id: 'finder',    name: 'Finder',       icon: 'https://cdn.jim-nielsen.com/macos/1024/finder-2021-09-10.png?rf=1024' },
+  { id: 'safari',    name: 'Safari',       icon: 'https://cdn.jim-nielsen.com/macos/1024/safari-2021-06-02.png?rf=1024' },
+  { id: 'mail',      name: 'Mail',         icon: 'https://cdn.jim-nielsen.com/macos/1024/mail-2021-05-25.png?rf=1024' },
+  { id: 'news',      name: 'News',         icon: 'https://cdn.jim-nielsen.com/macos/1024/news-2021-05-25.png?rf=1024' },
+  { id: 'calendar',  name: 'Calendar',     icon: 'https://cdn.jim-nielsen.com/macos/1024/calendar-2021-04-29.png?rf=1024' },
+  { id: 'notes',     name: 'Notes',        icon: 'https://cdn.jim-nielsen.com/macos/1024/notes-2021-05-25.png?rf=1024' },
+  { id: 'photos',    name: 'Photos',       icon: 'https://cdn.jim-nielsen.com/macos/1024/photos-2021-05-28.png?rf=1024' },
+  { id: 'music',     name: 'Music',        icon: 'https://cdn.jim-nielsen.com/macos/1024/music-2021-05-25.png?rf=1024' },
+]
+
+function HeroDashboardMock({ activeView, onViewChange }: { activeView?: string; onViewChange?: (v: string) => void }) {
+  const [internalActive, setInternalActive] = useState('Dashboard')
+  const active = activeView ?? internalActive
+  const setActive = (v: string) => { setInternalActive(v); onViewChange?.(v) }
+
+  const url: Record<string, string> = {
+    Dashboard: 'dashboard', Leads: 'leads', Calls: 'calls',
+    Pipeline: 'pipeline', Properties: 'properties', Analytics: 'analytics', Tasks: 'tasks',
+  }
+
+  const viewSub: Record<string, string> = {
+    Dashboard: 'Welcome back, Rahul',
+    Leads: '46 contacts · 12 hot',
+    Calls: '12 calls today · 67% connect rate',
+    Pipeline: '5 stages · ₹3.4 Cr total',
+    Properties: '3 listings · 1 available',
+    Analytics: 'Aug 1 – Aug 13, 2026',
+    Tasks: '3 due today · 1 completed',
+  }
+
   return (
-    <div className="w-full h-full flex flex-col select-none" style={{
-      borderRadius: 12,
-      overflow: 'hidden',
-      border: '1px solid rgba(0,0,0,0.18)',
-    }}>
-      {/* Browser chrome — dark/black */}
-      <div className="flex items-center gap-3 px-4" style={{ height: 32, background: '#1C1C1E', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+    <div className="w-full h-full flex flex-col select-none" style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.22)' }}>
+
+      {/* Browser chrome */}
+      <div className="flex items-center gap-3 px-4" style={{ height: 32, background: '#161618', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="flex gap-1.5">
-          {['#FC6C6C', '#FDBC40', '#34C759'].map(c => (
-            <div key={c} className="size-2.5 rounded-full" style={{ background: c }} />
-          ))}
+          {['#FF5F57', '#FEBC2E', '#28C840'].map(c => <div key={c} className="size-2.5 rounded-full" style={{ background: c }} />)}
         </div>
         <div className="flex-1 flex justify-center">
-          <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full"
-            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.10)', fontSize: 9, color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>
-            <Shield className="size-2.5" style={{ color: 'rgba(255,255,255,0.35)' }} />
-            app.leadgapcrm.in/analytics
+          <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-md"
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)', fontSize: 9, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>
+            <Shield className="size-2.5" style={{ color: 'rgba(255,255,255,0.3)' }} />
+            app.leadgapcrm.in/{url[active]}
           </div>
         </div>
         <div className="size-4" />
       </div>
 
-      {/* App shell — all white */}
-      <div className="flex flex-1 overflow-hidden" style={{ background: '#FFFFFF' }}>
+      {/* App shell */}
+      <div className="flex flex-1 overflow-hidden">
 
-        {/* Main content — full width, no sidebar */}
-        <div className="flex-1 flex flex-col" style={{ background: '#FFFFFF', overflow: 'hidden' }}>
+        {/* Sidebar — dark navy */}
+        <div className="flex flex-col shrink-0" style={{ width: 76, background: '#0F172A' }}>
+          <div className="flex items-center justify-center" style={{ height: 46, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/lgc-logo.svg" alt="" style={{ height: 26, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.9 }} />
+          </div>
+          <div className="flex flex-col flex-1 pt-1.5 pb-1" style={{ padding: '6px 5px', gap: 2 }}>
+            {DASH_NAV.map(({ Icon, label }) => {
+              const isActive = label === active
+              return (
+                <div key={label} onClick={() => setActive(label)}
+                  className="relative flex flex-col items-center"
+                  style={{ gap: 2.5, padding: '6px 3px', borderRadius: 4, background: isActive ? 'rgba(96,165,250,0.1)' : 'transparent', cursor: 'pointer', transition: 'background 0.15s' }}>
+                  {isActive && (
+                    <div style={{ position: 'absolute', left: -5, top: '50%', transform: 'translateY(-50%)', width: 3, height: 18, background: '#60A5FA', borderRadius: '0 2px 2px 0' }} />
+                  )}
+                  <Icon className="size-3" style={{ color: isActive ? '#60A5FA' : 'rgba(255,255,255,0.25)' }} />
+                  <span style={{ fontSize: 6.5, fontWeight: isActive ? 700 : 400, color: isActive ? '#93C5FD' : 'rgba(255,255,255,0.22)', letterSpacing: '0.01em' }}>{label}</span>
+                </div>
+              )
+            })}
+          </div>
+          <div className="flex items-center justify-center" style={{ paddingBottom: 12, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            <div className="flex items-center justify-center font-bold text-white" style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg,#3B82F6,#60A5FA)', fontSize: 8, boxShadow: '0 0 0 2px rgba(96,165,250,0.25)' }}>RS</div>
+          </div>
+        </div>
 
-          {/* Header bar with logo */}
-          <div className="flex items-center gap-3 px-4 shrink-0" style={{ height: 44, background: '#FFFFFF', borderBottom: '1px solid #EFEFEF' }}>
-            {/* Logo */}
-            <div className="flex items-center gap-2 shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png" alt="Lead Gap CRM" style={{ height: 22, width: 'auto', objectFit: 'contain' }} />
+        {/* Main content */}
+        <div className="flex-1 flex flex-col" style={{ overflow: 'hidden', background: '#FAFAF8' }}>
+
+          {/* Top bar */}
+          <div className="flex items-center gap-2.5 px-3 shrink-0" style={{ height: 46, background: '#FFFFFF', borderBottom: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', letterSpacing: '-0.01em', lineHeight: 1 }}>{active}</div>
+              <div style={{ fontSize: 7.5, color: '#94A3B8', marginTop: 2 }}>{viewSub[active]}</div>
             </div>
-            <div className="flex-1" />
-            <div className="flex items-center gap-1.5 px-2.5 rounded" style={{ width: 160, height: 26, background: '#F5F6FA', border: '1px solid #EFEFEF' }}>
-              <Search className="size-3 shrink-0" style={{ color: '#A4B1BE' }} />
-              <span style={{ fontSize: 9.5, color: '#A4B1BE' }}>Search leads, contacts...</span>
+            <div className="flex items-center gap-1.5 px-2.5 rounded" style={{ height: 25, background: '#F8F7F5', border: '1px solid rgba(0,0,0,0.06)', minWidth: 100 }}>
+              <Search className="size-3 shrink-0" style={{ color: '#CBD5E1' }} />
+              <span style={{ fontSize: 9, color: '#CBD5E1' }}>Search...</span>
             </div>
-            <div className="size-7 rounded flex items-center justify-center" style={{ background: '#F5F6FA', border: '1px solid #EFEFEF' }}>
-              <Bell className="size-3.5" style={{ color: '#78889B' }} />
+            <div className="relative flex items-center justify-center" style={{ width: 26, height: 26, background: '#F8F7F5', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 4 }}>
+              <Bell className="size-3.5" style={{ color: '#CBD5E1' }} />
+              <div style={{ position: 'absolute', top: 4, right: 4, width: 5, height: 5, borderRadius: '50%', background: '#EF4444', border: '1.5px solid #fff' }} />
             </div>
-            <div className="flex items-center gap-2 pl-3" style={{ borderLeft: '1px solid #EFEFEF' }}>
-              <div className="size-7 rounded-full flex items-center justify-center font-bold text-white shrink-0"
-                style={{ background: '#0047AB', fontSize: 9 }}>RS</div>
+            <div className="flex items-center gap-2 pl-2.5" style={{ borderLeft: '1px solid rgba(0,0,0,0.06)' }}>
+              <div className="flex items-center justify-center font-bold text-white shrink-0" style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg,#3B82F6,#60A5FA)', fontSize: 8 }}>RS</div>
               <div>
-                <div className="font-semibold" style={{ fontSize: 10, color: '#263238' }}>Rahul Sharma</div>
-                <div style={{ fontSize: 8.5, color: '#78889B' }}>rahul@leadgapcrm.in</div>
+                <div style={{ fontSize: 9, fontWeight: 600, color: '#0F172A' }}>Rahul Sharma</div>
+                <div style={{ fontSize: 7, color: '#CBD5E1' }}>rahul@lgcrm.in</div>
               </div>
             </div>
           </div>
 
-          {/* Content area */}
-          <div className="flex-1 flex flex-col p-4 gap-3" style={{ overflow: 'hidden', background: '#F8F9FB' }}>
+          <AnimatePresence mode="wait">
+          <motion.div key={active} className="flex-1 flex flex-col" style={{ overflow: 'hidden' }}
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -7 }}
+            transition={{ duration: 0.14, ease: 'easeOut' }}>
 
-            {/* Page title row */}
-            <div className="flex items-center justify-between shrink-0">
-              <h2 className="font-bold" style={{ fontSize: 14, color: '#263238' }}>Analytics</h2>
-              <div className="flex items-center gap-2">
-                <div className="px-2.5 py-1 rounded" style={{ fontSize: 8.5, background: '#F5F6FA', border: '1px solid #E8ECF0', color: '#78889B' }}>
-                  Jul 27, 2026
+          {/* ── View: Dashboard ──────────────────────────────────────── */}
+          {active === 'Dashboard' && (
+            <div className="flex-1 flex flex-col" style={{ overflow: 'hidden', background: '#FAFAF8' }}>
+
+              {/* Greeting + alert badges */}
+              <div className="px-3 pt-2.5 pb-2 shrink-0" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-playfair), serif', fontStyle: 'italic', color: '#0F172A', letterSpacing: '-0.01em', lineHeight: 1.15 }}>
+                  Good morning, Rahul Sharma
                 </div>
-                <div className="flex items-center gap-1 px-2.5 py-1 rounded font-semibold text-white"
-                  style={{ fontSize: 8.5, background: '#0047AB' }}>
-                  <Zap className="size-2.5" /> AI Insights
+                <div style={{ fontSize: 7, color: '#94A3B8', marginTop: 2 }}>Friday, 14 August · Here&apos;s your pipeline overview</div>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
+                    <div className="size-1.5 rounded-full shrink-0" style={{ background: '#EF4444', animation: 'bento-timer-pulse 1.5s ease-in-out infinite' }} />
+                    <span style={{ fontSize: 6.5, fontWeight: 700, color: '#DC2626' }}>45 hot leads need follow-up</span>
+                  </div>
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full" style={{ background: '#F1F5F9', border: '1px solid #E2E8F0' }}>
+                    <div className="flex items-center justify-center font-bold" style={{ width: 12, height: 12, borderRadius: '50%', background: 'linear-gradient(135deg,#3B82F6,#60A5FA)', fontSize: 5, color: '#fff' }}>PS</div>
+                    <span style={{ fontSize: 6.5, fontWeight: 600, color: '#64748B' }}>Priya Sharma</span>
+                    <span style={{ fontSize: 6, color: '#94A3B8' }}>IS score · ₹2.0 Cr</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Two-column cards */}
-            <div className="flex gap-3 shrink-0">
-
-              {/* Left: Total revenue + area chart */}
-              <div className="flex-1 rounded p-3" style={{ background: '#FFFFFF', border: '1px solid #E8ECF0' }}>
-                <div className="font-semibold mb-1" style={{ fontSize: 8.5, color: '#78889B', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total revenue</div>
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="font-black tabular-nums" style={{ fontSize: 22, color: '#263238', lineHeight: 1 }}>₹46.5L</span>
-                  <span style={{ fontSize: 8.5, color: '#78889B' }}>Last month ₹49.2L</span>
-                  <span className="px-1.5 py-0.5 rounded font-bold" style={{ fontSize: 7.5, background: 'rgba(0,71,171,0.08)', color: '#0047AB' }}>+55%</span>
+              {/* Market Pulse ticker */}
+              <div className="flex items-center gap-2 px-3 py-1 shrink-0" style={{ background: '#FFFFFF', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className="size-1.5 rounded-full shrink-0" style={{ background: '#EF4444', display: 'inline-block', animation: 'bento-timer-pulse 1s ease-in-out infinite' }} />
+                  <span style={{ fontSize: 6.5, fontWeight: 800, color: '#0F172A', letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>MARKET PULSE</span>
+                  <span style={{ fontSize: 6.5, color: '#94A3B8', marginLeft: 2 }}>09:33 am</span>
                 </div>
-                {/* Progress bar */}
-                <div className="flex gap-0.5 rounded overflow-hidden mb-1" style={{ height: 5 }}>
-                  <div style={{ width: '62%', background: '#0047AB', borderRadius: 3 }} />
-                  <div style={{ width: '24%', background: '#3B82F6', borderRadius: 3 }} />
-                  <div style={{ width: '14%', background: '#93C5FD', borderRadius: 3 }} />
-                </div>
-                <div className="mb-2" style={{ fontSize: 7.5, color: '#78889B' }}>Next target ₹55.2L</div>
-                {/* Area chart */}
-                <ResponsiveContainer width="100%" height={68}>
-                  <AreaChart data={DASH_SALES_DATA} margin={{ top: 4, right: 2, left: -36, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="dash-rev-grad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%"  stopColor="#0047AB" stopOpacity={0.18} />
-                        <stop offset="95%" stopColor="#0047AB" stopOpacity={0}    />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="month" tick={{ fontSize: 7, fill: '#78889B' }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ fontSize: 8, border: 'none', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.10)', borderRadius: 4, padding: '3px 8px' }}
-                      formatter={(v: number) => [`₹${v}L`, 'Revenue']}
-                    />
-                    <Area type="monotone" dataKey="v" stroke="#0047AB" strokeWidth={1.5} fill="url(#dash-rev-grad)" dot={false} />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <span style={{ fontSize: 7, color: '#475569', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap' as const, textOverflow: 'ellipsis' }}>
+                  Mumbai: ₹1,351 crore bid for Century Mills plot to come up before BMC panel on August 12
+                </span>
+                <div className="px-1.5 py-0.5 rounded shrink-0" style={{ fontSize: 6, fontWeight: 700, background: 'rgba(37,99,235,0.08)', color: '#2563EB', whiteSpace: 'nowrap' as const }}>Policy Update</div>
               </div>
 
-              {/* Right: Sales overview + bars + returning visits */}
-              <div className="flex flex-col gap-2.5" style={{ width: 188 }}>
+              {/* KPI cards */}
+              <div className="grid px-3 pt-2 pb-1.5 gap-1.5 shrink-0" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
+                {[
+                  { label: 'Total Leads',    val: '105',        sub: '+0 this week',       Icon: Users,     color: '#6366F1', bg: '#EEF2FF' },
+                  { label: 'Hot Leads',      val: '52',         sub: 'Intent score 70+',   Icon: Target,    color: '#EF4444', bg: '#FEF2F2' },
+                  { label: 'Pipeline Value', val: '₹225.8 Cr',  sub: 'Combined budgets',   Icon: TrendingUp, color: '#10B981', bg: '#ECFDF5' },
+                  { label: 'Deals',          val: '7',          sub: '44 leads this month', Icon: CheckCircle, color: '#F59E0B', bg: '#FFFBEB' },
+                ].map(({ label, val, sub, Icon, color, bg }) => (
+                  <div key={label} className="rounded-lg p-2" style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="rounded flex items-center justify-center" style={{ width: 18, height: 18, background: bg }}>
+                        <Icon className="size-2.5" style={{ color }} />
+                      </div>
+                      <span className="rounded" style={{ fontSize: 5.5, fontWeight: 700, color, background: bg, padding: '1px 4px' }}>↗ 7 won</span>
+                    </div>
+                    <div style={{ fontSize: val.length > 4 ? 9 : 15, fontWeight: 800, color: '#0F172A', lineHeight: 1, letterSpacing: '-0.02em' }}>{val}</div>
+                    <div style={{ fontSize: 6.5, fontWeight: 600, color: '#94A3B8', marginTop: 2, lineHeight: 1.3 }}>{label}</div>
+                    <div style={{ fontSize: 6, color: color, fontWeight: 500, marginTop: 1 }}>{sub}</div>
+                  </div>
+                ))}
+              </div>
 
-                {/* Sales overview + bar chart */}
-                <div className="rounded p-3" style={{ background: '#FFFFFF', border: '1px solid #E8ECF0' }}>
-                  <div className="font-semibold mb-0.5" style={{ fontSize: 8.5, color: '#78889B', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Sales overview</div>
-                  <div className="flex items-baseline gap-2 mb-2">
-                    <span className="font-black tabular-nums" style={{ fontSize: 18, color: '#263238', lineHeight: 1.2 }}>₹18K</span>
-                    <span className="font-semibold" style={{ fontSize: 8.5, color: '#059669' }}>+28.09% ↗</span>
+              {/* Pipeline Funnel */}
+              <div className="mx-3 mb-2 rounded-lg flex-1" style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', overflow: 'hidden', minHeight: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <div className="px-3 py-1.5 flex items-center justify-between shrink-0" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                  <div>
+                    <div style={{ fontSize: 8.5, fontWeight: 700, color: '#0F172A' }}>Pipeline Funnel</div>
+                    <div style={{ fontSize: 6.5, color: '#94A3B8', marginTop: 1 }}>105 leads across all stages</div>
                   </div>
-                  {/* Grouped bars */}
-                  <div className="flex items-end gap-1.5" style={{ height: 52 }}>
-                    {DASH_BAR_DATA.map(({ label, p, q, w }) => (
-                      <div key={label} className="flex-1 flex flex-col items-center gap-0">
-                        <div className="flex items-end gap-px w-full" style={{ flex: 1 }}>
-                          <div style={{ flex: 1, height: `${p}%`, background: '#0047AB', borderRadius: '1px 1px 0 0', minHeight: 3 }} />
-                          <div style={{ flex: 1, height: `${q}%`, background: '#3B82F6', borderRadius: '1px 1px 0 0', minHeight: 3 }} />
-                          <div style={{ flex: 1, height: `${w}%`, background: '#93C5FD', borderRadius: '1px 1px 0 0', minHeight: 3 }} />
-                        </div>
-                        <div style={{ fontSize: 7, color: '#A4B1BE', marginTop: 2 }}>{label}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Legend */}
-                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-2">
-                    {[['#0047AB', 'Proposals'], ['#3B82F6', 'Qualified'], ['#93C5FD', 'Closed won']].map(([c, l]) => (
-                      <div key={l} className="flex items-center gap-1">
-                        <div className="size-1.5 rounded-sm shrink-0" style={{ background: c }} />
-                        <span style={{ fontSize: 7, color: '#78889B' }}>{l}</span>
-                      </div>
-                    ))}
+                  <div className="text-right">
+                    <div style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>₹225.8 Cr</div>
+                    <div style={{ fontSize: 6, color: '#94A3B8', marginTop: 1 }}>Total pipeline value · 105 leads</div>
                   </div>
                 </div>
-
-                {/* Returning visits */}
-                <div className="rounded p-3" style={{ background: '#FFFFFF', border: '1px solid #E8ECF0' }}>
-                  <div className="font-semibold mb-2" style={{ fontSize: 8.5, color: '#78889B', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Returning visits</div>
-                  {[{ label: 'July', pct: 45 }, { label: 'October', pct: 36 }].map(({ label, pct }) => (
-                    <div key={label} className="mb-2 last:mb-0">
-                      <div className="flex justify-between mb-1" style={{ fontSize: 9, color: '#455A64' }}>
-                        <span>{label}</span>
-                        <span className="font-bold tabular-nums">{pct}%</span>
-                      </div>
-                      <div className="rounded-full overflow-hidden" style={{ height: 5, background: '#F0F3F7' }}>
-                        <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #0047AB, #3B82F6)', borderRadius: 999 }} />
+                <div className="flex flex-col gap-1 px-3 py-2">
+                  {[
+                    { label: 'New Inquiry',  count: 40, pct: 100, color: '#3B82F6' },
+                    { label: 'Contacted',    count: 28, pct: 70,  color: '#8B5CF6' },
+                    { label: 'Site Visit',   count: 18, pct: 45,  color: '#10B981' },
+                    { label: 'Negotiating', count: 12, pct: 30,  color: '#F59E0B' },
+                    { label: 'Closed Won',   count: 7,  pct: 17,  color: '#EF4444' },
+                  ].map(({ label, count, pct, color }, fi) => (
+                    <div key={label} className="flex items-center gap-2">
+                      <div style={{ fontSize: 6.5, color: '#94A3B8', width: 54, textAlign: 'right' as const, flexShrink: 0 }}>{label}</div>
+                      <div style={{ flex: 1, height: 14, background: '#F8FAFC', borderRadius: 3, overflow: 'hidden' }}>
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.3 + fi * 0.07 }}
+                          style={{ height: '100%', background: color, borderRadius: 3, display: 'flex', alignItems: 'center', paddingLeft: 5 }}
+                        >
+                          <span style={{ fontSize: 6.5, fontWeight: 700, color: '#fff' }}>{count}</span>
+                        </motion.div>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Contacts table */}
-            <div className="rounded overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid #E8ECF0', flex: 1 }}>
-              <div className="px-4 py-2 font-semibold" style={{ fontSize: 9.5, color: '#263238', borderBottom: '1px solid #E8ECF0', background: '#F5F6FA' }}>
-                Manage your contacts
+          {/* ── View: Leads ───────────────────────────────────────────── */}
+          {active === 'Leads' && (
+            <div className="flex-1 flex flex-col p-3 gap-2.5" style={{ overflow: 'hidden', background: '#F5F2EE' }}>
+              {/* Filter tabs */}
+              <div className="flex items-center gap-2 shrink-0">
+                {[
+                  { label: 'All',  count: 46, active: true  },
+                  { label: 'Hot',  count: 12, active: false },
+                  { label: 'Warm', count: 18, active: false },
+                  { label: 'Cold', count: 16, active: false },
+                ].map(tab => (
+                  <div key={tab.label} className="flex items-center gap-1.5 px-2.5 py-1 rounded"
+                    style={{ background: tab.active ? '#2563EB' : '#FFFFFF', cursor: 'pointer', boxShadow: tab.active ? 'none' : '0 0 0 1px rgba(0,0,0,0.07)' }}>
+                    <span style={{ fontSize: 9, fontWeight: 600, color: tab.active ? '#FFFFFF' : '#64748B' }}>{tab.label}</span>
+                    <span className="px-1 rounded" style={{ fontSize: 7.5, fontWeight: 700, background: tab.active ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.06)', color: tab.active ? '#fff' : '#64748B' }}>{tab.count}</span>
+                  </div>
+                ))}
+                <div className="flex-1" />
+                <div className="px-2.5 py-1 rounded" style={{ fontSize: 8.5, fontWeight: 600, background: '#FFFFFF', color: '#2563EB', boxShadow: '0 0 0 1px rgba(37,99,235,0.3)', cursor: 'pointer' }}>+ Add Lead</div>
               </div>
-              <div className="grid px-4 py-1.5" style={{
-                gridTemplateColumns: '2fr 1.5fr 72px 72px',
-                borderBottom: '1px solid #F5F6FA',
-                fontSize: 8, fontWeight: 600, color: '#78889B', textTransform: 'uppercase', letterSpacing: '0.06em',
-              }}>
-                {['Name', 'Company', 'Status', 'Value'].map(h => <div key={h}>{h}</div>)}
+              {/* Table */}
+              <div className="rounded-lg overflow-hidden flex-1" style={MC}>
+                <div className="grid px-3 py-2" style={{ gridTemplateColumns: '2fr 1.2fr 80px 60px 72px', fontSize: 7, fontWeight: 700, color: '#CBD5E1', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid rgba(0,0,0,0.05)', background: '#FAFAF8' }}>
+                  {['Lead', 'Source', 'Score', 'Status', 'Budget'].map(h => <div key={h}>{h}</div>)}
+                </div>
+                {MOCK_ALL_LEADS.map(({ name, source, score, status, sc, budget }) => (
+                  <div key={name} className="grid px-3 py-2 items-center" style={{ gridTemplateColumns: '2fr 1.2fr 80px 60px 72px', borderBottom: '1px solid rgba(0,0,0,0.035)' }}>
+                    <div className="flex items-center gap-2">
+                      <div className="size-5 rounded-full flex items-center justify-center shrink-0" style={{ background: sc + '18', color: sc, fontSize: 7, fontWeight: 700 }}>
+                        {name.split(' ').map((n: string) => n[0]).join('')}
+                      </div>
+                      <span style={{ fontSize: 9.5, fontWeight: 600, color: '#1A1F36' }}>{name}</span>
+                    </div>
+                    <div style={{ fontSize: 9, color: '#94A3B8' }}>{source}</div>
+                    <div className="flex items-center gap-1.5">
+                      <div style={{ flex: 1, height: 4, background: '#F1F5F9', borderRadius: 99, overflow: 'hidden' }}>
+                        <div style={{ width: `${score}%`, height: '100%', background: score >= 70 ? '#DC2626' : score >= 50 ? '#F59E0B' : '#94A3B8', borderRadius: 99 }} />
+                      </div>
+                      <span style={{ fontSize: 8, fontWeight: 700, color: '#1A1F36', minWidth: 16 }}>{score}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="size-1.5 rounded-full" style={{ background: sc }} />
+                      <span style={{ fontSize: 9, fontWeight: 600, color: sc }}>{status}</span>
+                    </div>
+                    <div style={{ fontSize: 9.5, fontWeight: 700, color: '#1A1F36' }}>{budget}</div>
+                  </div>
+                ))}
               </div>
-              {DASH_LEADS.map(({ name, company, status, sc, val }) => (
-                <div key={name} className="grid px-4 py-2 items-center"
-                  style={{ gridTemplateColumns: '2fr 1.5fr 72px 72px', borderBottom: '1px solid #F5F6FA' }}>
-                  <div className="flex items-center gap-2">
-                    <div className="size-6 rounded-full flex items-center justify-center font-bold shrink-0"
-                      style={{ background: 'rgba(0,71,171,0.08)', color: '#0047AB', fontSize: 8 }}>
+            </div>
+          )}
+
+          {/* ── View: Calls ───────────────────────────────────────────── */}
+          {active === 'Calls' && (
+            <div className="flex-1 flex flex-col p-3 gap-2.5" style={{ overflow: 'hidden', background: '#F5F2EE' }}>
+              {/* Metrics */}
+              <div className="grid gap-2 shrink-0" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
+                {[
+                  { label: 'Calls Made',    val: '12',    note: 'Today',       color: '#2563EB' },
+                  { label: 'Connect Rate',  val: '67%',   note: '8 answered',  color: '#059669' },
+                  { label: 'Avg Duration',  val: '4.2m',  note: 'Per call',    color: '#D97706' },
+                ].map(({ label, val, note, color }) => (
+                  <div key={label} className="rounded-lg p-2.5" style={{ ...MC, borderTop: `2px solid ${color}` }}>
+                    <div style={{ ...ML, marginBottom: 4 }}>{label}</div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', lineHeight: 1, letterSpacing: '-0.02em', marginBottom: 2 }}>{val}</div>
+                    <div style={{ fontSize: 7.5, color, fontWeight: 600 }}>{note}</div>
+                  </div>
+                ))}
+              </div>
+              {/* Call log */}
+              <div className="rounded-lg overflow-hidden flex-1" style={MC}>
+                <div className="px-3 py-2 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', background: '#FAFAF8' }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: '#1A1F36' }}>Call Log — Today</span>
+                  <div className="px-2 py-0.5 rounded" style={{ fontSize: 7.5, fontWeight: 700, background: 'rgba(37,99,235,0.08)', color: '#2563EB', cursor: 'pointer' }}>+ New Call</div>
+                </div>
+                <div className="grid px-3 py-1.5" style={{ gridTemplateColumns: '2fr 1fr 60px 80px', fontSize: 7, fontWeight: 700, color: '#CBD5E1', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid rgba(0,0,0,0.04)', background: '#FAFAF8' }}>
+                  {['Lead', 'Time', 'Duration', 'Outcome'].map(h => <div key={h}>{h}</div>)}
+                </div>
+                {MOCK_CALLS.map(({ name, time, dur, outcome, oc }) => (
+                  <div key={name} className="grid px-3 py-2 items-center" style={{ gridTemplateColumns: '2fr 1fr 60px 80px', borderBottom: '1px solid rgba(0,0,0,0.035)' }}>
+                    <div className="flex items-center gap-2">
+                      <div className="size-5 rounded-full flex items-center justify-center shrink-0" style={{ background: '#F1F5F9', color: '#64748B', fontSize: 7, fontWeight: 700 }}>
+                        {name.split(' ').map((n: string) => n[0]).join('')}
+                      </div>
+                      <span style={{ fontSize: 9.5, fontWeight: 600, color: '#1A1F36' }}>{name}</span>
+                    </div>
+                    <div style={{ fontSize: 9, color: '#94A3B8' }}>{time}</div>
+                    <div style={{ fontSize: 9, color: '#64748B', fontWeight: 500 }}>{dur}</div>
+                    <div className="flex items-center gap-1">
+                      <div className="size-1.5 rounded-full" style={{ background: oc }} />
+                      <span style={{ fontSize: 9, fontWeight: 600, color: oc }}>{outcome}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── View: Pipeline ────────────────────────────────────────── */}
+          {active === 'Pipeline' && (
+            <div className="flex-1 flex flex-col p-3 gap-2.5" style={{ overflow: 'hidden', background: '#F5F2EE' }}>
+              {/* Stage summary strip */}
+              <div className="grid gap-2 shrink-0" style={{ gridTemplateColumns: 'repeat(5,1fr)' }}>
+                {MOCK_PIPELINE.map(({ label, count, value, color }) => (
+                  <div key={label} className="rounded-lg p-2.5 flex flex-col" style={MC}>
+                    <div className="size-4 rounded flex items-center justify-center mb-2" style={{ background: color + '18' }}>
+                      <div className="size-1.5 rounded-full" style={{ background: color }} />
+                    </div>
+                    <div style={{ fontSize: 7, color: '#B0B8C8', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.05em', marginBottom: 3 }}>{label}</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: '#1A1F36', letterSpacing: '-0.02em', lineHeight: 1 }}>{count}</div>
+                    <div style={{ fontSize: 7.5, color, fontWeight: 600, marginTop: 2 }}>{value}</div>
+                  </div>
+                ))}
+              </div>
+              {/* Flow diagram */}
+              <div className="flex items-center gap-1 shrink-0 px-1">
+                {MOCK_PIPELINE.map(({ label, count, color }, i) => (
+                  <div key={label} className="flex items-center" style={{ flex: 1 }}>
+                    <div className="flex-1 rounded px-2 py-1.5 text-center" style={{ background: color, opacity: 0.85 }}>
+                      <div style={{ fontSize: 8, fontWeight: 700, color: '#fff' }}>{count}</div>
+                      <div style={{ fontSize: 6.5, color: 'rgba(255,255,255,0.75)', marginTop: 1 }}>{label}</div>
+                    </div>
+                    {i < MOCK_PIPELINE.length - 1 && (
+                      <ChevronRight className="size-3 shrink-0" style={{ color: '#CBD5E1' }} />
+                    )}
+                  </div>
+                ))}
+              </div>
+              {/* Deals table */}
+              <div className="rounded-lg overflow-hidden flex-1" style={MC}>
+                <div className="px-3 py-2" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', background: '#FAFAF8' }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: '#1A1F36' }}>Active Deals</span>
+                </div>
+                {MOCK_ALL_LEADS.map(({ name, source, status, sc, budget }) => (
+                  <div key={name} className="flex items-center gap-3 px-3 py-2" style={{ borderBottom: '1px solid rgba(0,0,0,0.035)' }}>
+                    <div className="size-5 rounded-full flex items-center justify-center shrink-0" style={{ background: sc + '18', color: sc, fontSize: 7, fontWeight: 700 }}>
                       {name.split(' ').map((n: string) => n[0]).join('')}
                     </div>
-                    <span className="font-semibold" style={{ fontSize: 10, color: '#263238' }}>{name}</span>
+                    <div className="flex-1">
+                      <div style={{ fontSize: 9, fontWeight: 600, color: '#1A1F36' }}>{name}</div>
+                      <div style={{ fontSize: 7.5, color: '#94A3B8' }}>{source}</div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="size-1.5 rounded-full" style={{ background: sc }} />
+                      <span style={{ fontSize: 8.5, color: sc, fontWeight: 600 }}>{status}</span>
+                    </div>
+                    <div style={{ fontSize: 9.5, fontWeight: 700, color: '#1A1F36' }}>{budget}</div>
                   </div>
-                  <div style={{ fontSize: 9.5, color: '#78889B' }}>{company}</div>
-                  <div className="flex items-center gap-1">
-                    <div className="size-1.5 rounded-full" style={{ background: sc }} />
-                    <span className="font-semibold" style={{ fontSize: 9.5, color: sc }}>{status}</span>
-                  </div>
-                  <div className="font-bold tabular-nums" style={{ fontSize: 10, color: '#263238' }}>{val}</div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* ── View: Properties ──────────────────────────────────────── */}
+          {active === 'Properties' && (
+            <div className="flex-1 flex flex-col p-3 gap-2.5" style={{ overflow: 'hidden', background: '#F5F2EE' }}>
+              <div className="flex items-center gap-2 shrink-0">
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#1A1F36', flex: 1 }}>3 listings</span>
+                <div className="px-2.5 py-1 rounded" style={{ fontSize: 8.5, fontWeight: 600, background: '#2563EB', color: '#fff', cursor: 'pointer' }}>+ Add Property</div>
+              </div>
+              <div className="flex gap-2.5 shrink-0">
+                {MOCK_PROPERTIES.map(({ title, price, loc, status, sc }) => (
+                  <div key={title} className="flex-1 rounded-lg overflow-hidden" style={MC}>
+                    {/* Image placeholder */}
+                    <div style={{ height: 72, background: `linear-gradient(135deg, ${sc}22 0%, ${sc}08 100%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                      <Building2 className="size-6" style={{ color: sc + '80' }} />
+                      <div style={{ position: 'absolute', top: 6, right: 6, fontSize: 7, fontWeight: 700, color: sc, background: sc + '18', padding: '2px 6px', borderRadius: 3 }}>{status}</div>
+                    </div>
+                    <div className="p-2.5">
+                      <div style={{ fontSize: 9.5, fontWeight: 700, color: '#1A1F36', marginBottom: 2 }}>{title}</div>
+                      <div style={{ fontSize: 8, color: '#94A3B8', marginBottom: 4 }}>{loc}</div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#1A1F36', letterSpacing: '-0.02em' }}>{price}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Quick stats */}
+              <div className="grid gap-2 shrink-0" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
+                {[
+                  { label: 'Available', val: '1', color: '#059669' },
+                  { label: 'Under Offer', val: '1', color: '#F59E0B' },
+                  { label: 'Sold', val: '1', color: '#94A3B8' },
+                ].map(({ label, val, color }) => (
+                  <div key={label} className="rounded-lg p-2.5 flex items-center gap-2" style={MC}>
+                    <div className="size-2 rounded-full shrink-0" style={{ background: color }} />
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: '#1A1F36', lineHeight: 1 }}>{val}</div>
+                      <div style={{ fontSize: 7.5, color: '#94A3B8', marginTop: 1 }}>{label}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── View: Analytics ───────────────────────────────────────── */}
+          {active === 'Analytics' && (
+            <div className="flex-1 flex flex-col p-3 gap-2.5" style={{ overflow: 'hidden', background: '#F5F2EE' }}>
+              <div className="grid gap-2 shrink-0" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
+                {[
+                  { label: 'Pipeline Value', val: '₹46.5L', note: '+8.2% this month', color: '#2563EB' },
+                  { label: 'Hot Leads',      val: '24',     note: 'Needs follow-up',  color: '#DC2626' },
+                  { label: 'Site Visits',    val: '12',     note: '2 scheduled today',color: '#059669' },
+                  { label: 'Close Rate',     val: '34%',    note: '+4% vs last mo',   color: '#D97706' },
+                ].map(({ label, val, note, color }) => (
+                  <div key={label} className="rounded-lg p-2.5" style={{ ...MC, borderTop: `2px solid ${color}` }}>
+                    <div style={{ ...ML, marginBottom: 4 }}>{label}</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', lineHeight: 1, letterSpacing: '-0.02em', marginBottom: 3 }}>{val}</div>
+                    <div style={{ fontSize: 7.5, color, fontWeight: 600 }}>{note}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2.5 shrink-0">
+                <div className="flex-1 rounded-lg p-3" style={MC}>
+                  <div style={{ ...ML, marginBottom: 5 }}>Revenue Pipeline</div>
+                  <div className="flex items-baseline gap-2 mb-2.5">
+                    <span style={{ fontSize: 20, fontWeight: 800, color: '#1A1F36', lineHeight: 1, letterSpacing: '-0.03em' }}>₹46.5L</span>
+                    <span style={{ fontSize: 7.5, color: '#B0B8C8' }}>vs ₹49.2L last mo</span>
+                    <span className="px-1.5 py-0.5 rounded" style={{ fontSize: 7, fontWeight: 700, background: 'rgba(37,99,235,0.08)', color: '#2563EB' }}>+55%</span>
+                  </div>
+                  <ResponsiveContainer width="100%" height={58}>
+                    <AreaChart data={DASH_SALES_DATA} margin={{ top: 2, right: 2, left: -36, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="dash-rev-grad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.20} />
+                          <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.01} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="month" tick={{ fontSize: 6.5, fill: '#B0B8C8' }} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={{ fontSize: 8, border: 'none', background: '#fff', boxShadow: '0 4px 16px rgba(0,0,0,0.10)', borderRadius: 6, padding: '4px 10px' }} formatter={(v: number) => [`₹${v}L`, 'Revenue']} />
+                      <Area type="monotone" dataKey="v" stroke="#3B82F6" strokeWidth={1.5} fill="url(#dash-rev-grad)" dot={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-col gap-2" style={{ width: 168 }}>
+                  <div className="rounded-lg p-3" style={MC}>
+                    <div style={{ ...ML, marginBottom: 4 }}>Sales Overview</div>
+                    <div className="flex items-baseline gap-1.5 mb-2.5">
+                      <span style={{ fontSize: 16, fontWeight: 800, color: '#1A1F36', lineHeight: 1, letterSpacing: '-0.02em' }}>₹18K</span>
+                      <span style={{ fontSize: 7.5, fontWeight: 600, color: '#059669' }}>+28% ↗</span>
+                    </div>
+                    <div className="flex items-end gap-1" style={{ height: 42 }}>
+                      {DASH_BAR_DATA.map(({ label, p, q, w }) => (
+                        <div key={label} className="flex-1 flex flex-col items-center">
+                          <div className="flex items-end gap-px w-full" style={{ flex: 1 }}>
+                            <div style={{ flex: 1, height: `${p}%`, background: '#2563EB', borderRadius: '1px 1px 0 0', minHeight: 2 }} />
+                            <div style={{ flex: 1, height: `${q}%`, background: '#93C5FD', borderRadius: '1px 1px 0 0', minHeight: 2 }} />
+                            <div style={{ flex: 1, height: `${w}%`, background: '#DBEAFE', borderRadius: '1px 1px 0 0', minHeight: 2 }} />
+                          </div>
+                          <div style={{ fontSize: 6, color: '#D1D5DB', marginTop: 2 }}>{label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rounded-lg p-3" style={MC}>
+                    <div style={{ ...ML, marginBottom: 6 }}>Lead Sources</div>
+                    {[{ label: 'MagicBricks', pct: 45, color: '#2563EB' }, { label: '99acres', pct: 36, color: '#7C3AED' }, { label: 'Housing.com', pct: 19, color: '#059669' }].map(({ label, pct, color }) => (
+                      <div key={label} className="mb-2 last:mb-0">
+                        <div className="flex justify-between mb-1" style={{ fontSize: 8, color: '#64748B' }}>
+                          <span>{label}</span><span style={{ fontWeight: 700 }}>{pct}%</span>
+                        </div>
+                        <div style={{ height: 4, background: '#F1F5F9', borderRadius: 999, overflow: 'hidden' }}>
+                          <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 999 }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-lg overflow-hidden" style={{ ...MC, flex: 1 }}>
+                <div className="px-3 py-2 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', background: '#FAFAF8' }}>
+                  <span style={{ fontSize: 9.5, fontWeight: 700, color: '#1A1F36' }}>Priority Leads</span>
+                  <span style={{ fontSize: 8, color: '#2563EB', fontWeight: 600 }}>View all →</span>
+                </div>
+                <div className="grid px-3 py-1.5" style={{ gridTemplateColumns: '2fr 1.5fr 64px 64px', fontSize: 7, fontWeight: 700, color: '#CBD5E1', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+                  {['Name', 'Company', 'Status', 'Value'].map(h => <div key={h}>{h}</div>)}
+                </div>
+                {DASH_LEADS.map(({ name, company, status, sc, val }) => (
+                  <div key={name} className="grid px-3 py-2 items-center" style={{ gridTemplateColumns: '2fr 1.5fr 64px 64px', borderBottom: '1px solid rgba(0,0,0,0.035)' }}>
+                    <div className="flex items-center gap-2">
+                      <div className="size-5 rounded-full flex items-center justify-center font-bold shrink-0" style={{ background: sc + '18', color: sc, fontSize: 7 }}>
+                        {name.split(' ').map((n: string) => n[0]).join('')}
+                      </div>
+                      <span style={{ fontSize: 9.5, fontWeight: 600, color: '#1A1F36' }}>{name}</span>
+                    </div>
+                    <div style={{ fontSize: 9, color: '#94A3B8' }}>{company}</div>
+                    <div className="flex items-center gap-1">
+                      <div className="size-1.5 rounded-full shrink-0" style={{ background: sc }} />
+                      <span style={{ fontSize: 9, fontWeight: 600, color: sc }}>{status}</span>
+                    </div>
+                    <div style={{ fontSize: 9.5, fontWeight: 700, color: '#1A1F36' }}>{val}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── View: Tasks ───────────────────────────────────────────── */}
+          {active === 'Tasks' && (
+            <div className="flex-1 flex flex-col p-3 gap-2.5" style={{ overflow: 'hidden', background: '#F5F2EE' }}>
+              <div className="flex items-center gap-2 shrink-0">
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#1A1F36' }}>Today · Aug 13</div>
+                  <div style={{ fontSize: 8, color: '#94A3B8' }}>3 pending · 1 done</div>
+                </div>
+                <div className="flex-1" />
+                <div className="px-2.5 py-1 rounded" style={{ fontSize: 8.5, fontWeight: 600, background: '#2563EB', color: '#fff', cursor: 'pointer' }}>+ Add Task</div>
+              </div>
+              <div className="rounded-lg overflow-hidden flex-1" style={MC}>
+                <div className="px-3 py-2" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', background: '#FAFAF8' }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: '#1A1F36' }}>Task Queue</span>
+                </div>
+                {MOCK_TASKS.map(({ text, due, priority, done, pc }) => (
+                  <div key={text} className="flex items-start gap-2.5 px-3 py-2.5" style={{ borderBottom: '1px solid rgba(0,0,0,0.035)', opacity: done ? 0.45 : 1 }}>
+                    <div className="size-4 rounded-full border-2 shrink-0 mt-0.5 flex items-center justify-center" style={{ borderColor: done ? '#059669' : pc, background: done ? '#059669' : 'transparent' }}>
+                      {done && <div className="size-1.5 rounded-full" style={{ background: '#fff' }} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div style={{ fontSize: 9.5, fontWeight: 600, color: '#1A1F36', textDecoration: done ? 'line-through' : 'none', lineHeight: 1.35 }}>{text}</div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span style={{ fontSize: 7.5, color: '#94A3B8' }}>{due}</span>
+                        <span className="px-1.5 py-0.5 rounded" style={{ fontSize: 7, fontWeight: 700, color: pc, background: pc + '15' }}>{priority}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Quick stats */}
+              <div className="grid gap-2 shrink-0" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
+                {[
+                  { label: 'Due Today',    val: '3', color: '#DC2626' },
+                  { label: 'Completed',    val: '1', color: '#059669' },
+                  { label: 'Upcoming',     val: '7', color: '#2563EB' },
+                ].map(({ label, val, color }) => (
+                  <div key={label} className="rounded-lg p-2.5 flex items-center gap-2" style={MC}>
+                    <div style={{ fontSize: 16, fontWeight: 800, color, lineHeight: 1 }}>{val}</div>
+                    <div style={{ fontSize: 8, color: '#94A3B8' }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          </motion.div>
+          </AnimatePresence>
+
         </div>
       </div>
     </div>
@@ -837,20 +1249,8 @@ function Hero() {
     <section
       id="lp-hero"
       className="relative flex flex-col justify-center min-h-[86vh] pt-16 overflow-hidden"
-      style={{ background: '#0B0F3B' }}
+      style={{ background: 'transparent' }}
     >
-      {/* Silk WebGL background */}
-      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
-        <Silk
-          speed={3}
-          scale={1.2}
-          color="#0a2fa8"
-          noiseIntensity={1.8}
-          rotation={0}
-          className="absolute inset-0"
-        />
-      </div>
-
       {/* Content */}
       <div className="relative flex flex-col items-center text-center px-6 pb-8 max-w-[660px] mx-auto" style={{ zIndex: 2 }}>
 
@@ -872,9 +1272,9 @@ function Hero() {
 
         {/* Headline */}
         <h1
-          className="lp-fade-up leading-[1.08] tracking-tight text-white mb-5 md:mb-7 text-balance"
+          className="lp-fade-up leading-[1.08] tracking-tight text-white mb-5 md:mb-7"
           style={{
-            fontSize: 'clamp(38px, 6vw, 72px)',
+            fontSize: 'clamp(34px, 5vw, 54px)',
             fontWeight: 800,
             opacity: 0,
             animationDelay: '0.14s',
@@ -895,8 +1295,8 @@ function Hero() {
 
         {/* Subtitle */}
         <p
-          className="lp-fade-up leading-relaxed mb-8 text-pretty"
-          style={{ fontSize: 15, color: 'rgba(255,255,255,0.52)', maxWidth: 400, opacity: 0, animationDelay: '0.26s' }}
+          className="lp-fade-up leading-relaxed mb-8"
+          style={{ fontSize: 14, color: 'rgba(255,255,255,0.52)', maxWidth: 360, opacity: 0, animationDelay: '0.26s' }}
         >
           Auto-capture from 99acres, MagicBricks &amp; Housing.com.
           AI follow-ups. Real-time pipeline. Built for Indian real estate.
@@ -943,14 +1343,88 @@ function Hero() {
   )
 }
 
-/* ─── Hero scroll reveal — 3D perspective tilt ───────────────────────────── */
+/* ─── Hero scroll reveal — macOS desktop scene ───────────────────────────── */
+const MAC_DOCK = [
+  { label: 'Lead Gap CRM', bg: 'linear-gradient(160deg,#1A3A8F 0%,#1E52CC 50%,#0F2D7A 100%)', logo: true,  Icon: null,     dot: true  },
+  { label: 'Analytics',    bg: 'linear-gradient(160deg,#1A7A4A 0%,#22C55E 55%,#14532D 100%)', logo: false, Icon: BarChart3, dot: false },
+  { label: 'Leads',        bg: 'linear-gradient(160deg,#1D4ED8 0%,#60A5FA 55%,#1E3A8A 100%)', logo: false, Icon: Users,     dot: false },
+  { label: 'Calls',        bg: 'linear-gradient(160deg,#9A3412 0%,#F97316 55%,#7C2D12 100%)', logo: false, Icon: PhoneCall, dot: false },
+  { label: 'Pipeline',     bg: 'linear-gradient(160deg,#991B1B 0%,#F87171 55%,#7F1D1D 100%)', logo: false, Icon: Target,    dot: false },
+  { label: 'Tasks',        bg: 'linear-gradient(160deg,#155E75 0%,#22D3EE 55%,#083344 100%)', logo: false, Icon: Calendar,  dot: false },
+  { label: 'AI',           bg: 'linear-gradient(160deg,#4C1D95 0%,#A78BFA 55%,#2E1065 100%)', logo: false, Icon: Sparkles,  dot: false },
+]
+
 function HeroScrollDash() {
+  const ref = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start 0.9', 'center center'] })
+  const prefersReduced = useReducedMotion()
+  const scale   = useTransform(scrollYProgress, [0, 1], [0.82, 1])
+  const opacity = useTransform(scrollYProgress, [0, 0.18], [0, 1])
+  const y       = useTransform(scrollYProgress, [0, 1], [64, 0])
+
+  const animStyle = prefersReduced ? {} : { scale, opacity, y }
+
   return (
-    <div style={{ background: 'linear-gradient(to bottom, #071580 0%, #FAFAF8 22%)' }}>
-      <ContainerScroll titleComponent={<></>}>
-        <HeroDashboardMock />
-      </ContainerScroll>
-    </div>
+    <section ref={ref} className="relative overflow-hidden" style={{ background: 'transparent', paddingBlock: '4rem 5rem' }}>
+      <motion.div className="relative mx-auto" style={{ maxWidth: 1100, paddingInline: '1.5rem', zIndex: 1, ...animStyle }}>
+
+        {/* macOS desktop frame */}
+        <div className="relative w-full overflow-hidden" style={{
+          aspectRatio: '16 / 10',
+          borderRadius: 18,
+          boxShadow: '0 56px 140px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.07)',
+        }}>
+
+          {/* Wallpaper gradient — macOS Big Sur style */}
+          <div className="absolute inset-0" style={{
+            background: 'linear-gradient(150deg, #120528 0%, #3d1168 16%, #7e2fba 32%, #b84d8c 48%, #e07058 65%, #f0aa68 80%, #e8d298 100%)',
+          }} />
+          {/* Warm haze at bottom */}
+          <div className="absolute inset-0" style={{
+            background: 'radial-gradient(ellipse 90% 55% at 50% 90%, rgba(255,200,140,0.22) 0%, transparent 70%)',
+          }} />
+
+          {/* macOS menu bar */}
+          <div className="absolute top-0 left-0 right-0 flex items-center gap-4 px-3" style={{
+            height: 28, zIndex: 30,
+            background: 'rgba(0,0,0,0.28)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+          }}>
+            {/* LGC logo in place of Apple mark */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/lgc-logo.svg" alt="" style={{ height: 18, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.9 }} />
+            {['File', 'Edit', 'View', 'Window', 'Help'].map(m => (
+              <span key={m} style={{ fontSize: 10, color: 'rgba(255,255,255,0.72)', fontWeight: 500 }}>{m}</span>
+            ))}
+            <div className="flex-1" />
+            <span style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>Wed 13 Aug &nbsp; 2:28 PM</span>
+          </div>
+
+          {/* Dashboard window — floating, slightly inset */}
+          <div className="absolute" style={{ top: '9%', left: '5.5%', right: '5.5%', bottom: '17%', zIndex: 20 }}>
+            <div style={{
+              width: '100%', height: '100%',
+              borderRadius: 10, overflow: 'hidden',
+              boxShadow: '0 28px 72px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.11)',
+            }}>
+              <HeroDashboardMock />
+            </div>
+          </div>
+
+          {/* macOS Dock — animated magnification */}
+          <div className="absolute bottom-0 left-0 right-0 flex justify-center items-end" style={{ paddingBottom: 8, zIndex: 30 }}>
+            <MacOSDock
+              apps={DOCK_APPS}
+              openApps={['lgc']}
+              iconSize={36}
+              maxScale={1.75}
+            />
+          </div>
+
+        </div>
+      </motion.div>
+    </section>
   )
 }
 
@@ -1229,33 +1703,30 @@ const PORTALS = [
 ]
 
 function PortalStrip() {
-  const doubled = [...PORTALS, ...PORTALS]
-
   return (
     <section style={{ background: '#FAFAF8', borderTop: '1px solid #EDEAE3', borderBottom: '1px solid #EDEAE3' }}>
-      <p className="text-center text-[11px] font-bold uppercase tracking-[0.2em] pt-7 pb-5" style={{ color: '#0047AB' }}>
+      <p className="text-center text-[11px] font-bold uppercase tracking-[0.2em] pt-7 pb-2" style={{ color: '#0047AB' }}>
         Leads auto-synced from India&apos;s top portals
       </p>
 
-      <div
-        className="relative overflow-hidden pb-7"
-        style={{
-          maskImage: 'linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)',
-        }}
-      >
-        <div className="lp-marquee-track flex w-max gap-3 items-center">
-          {doubled.map((p, i) => (
-            <div key={i} className="flex items-center gap-2 px-3.5 py-1.5 whitespace-nowrap select-none"
-              style={{ background: `${p.dot}12`, border: `1px solid ${p.dot}28`, borderRadius: 6 }}>
-              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: p.dot }} />
-              <span className="text-[13px] font-semibold tracking-tight" style={{ color: p.dot }}>
-                {p.name}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <Marquee speed={32} pauseOnHover className="pb-6">
+        {PORTALS.map((p) => (
+          <div
+            key={p.name}
+            className="flex items-center gap-2 px-3.5 py-1.5 whitespace-nowrap select-none mx-2"
+            style={{
+              background: `${p.dot}12`,
+              border: `1px solid ${p.dot}28`,
+              borderRadius: 6,
+            }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: p.dot }} />
+            <span className="text-[13px] font-semibold tracking-tight" style={{ color: p.dot }}>
+              {p.name}
+            </span>
+          </div>
+        ))}
+      </Marquee>
     </section>
   )
 }
@@ -3005,71 +3476,205 @@ const SOLUTIONS = [
 
 function SolutionSection() {
   const ref = useScrollReveal()
+
+  const ORBITAL_PORTALS = [
+    { label: '99acres',  top: '4%',  left: '32%' },
+    { label: 'Magic\nBricks', top: '22%', left: '74%' },
+    { label: 'Housing\n.com',  top: '66%', left: '72%' },
+    { label: 'NoBroker', top: '72%', left: '16%' },
+    { label: 'Prop\nTiger',  top: '18%', left: '-2%' },
+  ]
+
+  const SCORE_ROWS = [
+    { badge: 'Hot',  bc: '#FEE2E2', tc: '#DC2626', w1: 72, w2: 48 },
+    { badge: 'Warm', bc: '#FEF3C7', tc: '#D97706', w1: 58, w2: 0  },
+    { badge: 'Cold', bc: '#F1F5F9', tc: '#64748B', w1: 44, w2: 0  },
+  ]
+
+  const PIPE_DATA = [
+    { label: 'New',       n: 18, pct: 100 },
+    { label: 'Contacted', n: 11, pct: 61  },
+    { label: 'Qualified', n: 6,  pct: 33  },
+    { label: 'Closing',   n: 3,  pct: 17  },
+  ]
+
+  const MICRO = [
+    { icon: Zap,      color: '#2563EB', bg: '#EEF2FF', title: '6 portals synced live',      body: 'Every lead posted on any portal appears in your inbox within seconds.'    },
+    { icon: Sparkles, color: '#7C3AED', bg: '#F5F3FF', title: 'Intent score in 30 seconds', body: 'AI ranks every enquiry so your agents always call the hottest lead first.' },
+    { icon: BarChart3,color: '#059669', bg: '#ECFDF5', title: 'Live pipeline, zero lag',    body: 'Revenue pipeline and team performance visible to everyone in real time.'   },
+  ]
+
+  const CARD = {
+    background: '#FFFFFF',
+    borderRadius: 20,
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05)',
+  }
+
   return (
-    <section ref={ref} className="py-28 px-6" style={{ background: '#F5F7FF', position: 'relative', zIndex: 1 }}>
+    <section ref={ref} className="py-28 px-6" style={{ background: '#EAECF5', position: 'relative', zIndex: 1 }}>
       <div className="max-w-5xl mx-auto">
-        <p className="lp-in lp-in-delay-1 text-center text-[11px] font-bold uppercase tracking-[0.2em] mb-5" style={{ color: '#0047AB' }}>
-          How Lead Gap CRM fixes it
-        </p>
-        <h2 className="lp-in lp-in-delay-2 text-center text-[36px] md:text-[44px] font-extrabold leading-tight tracking-tight text-[#1A1F27] mb-4">
-          One platform. Every problem solved.
-        </h2>
-        <p className="lp-in lp-in-delay-3 text-center text-[16px] leading-relaxed max-w-xl mx-auto mb-16 text-[#78889B]">
-          Lead Gap CRM automates the work your team does manually — and gives you visibility you&apos;ve never had before.
-        </p>
 
-        <div className="flex flex-col gap-4">
-          {SOLUTIONS.map((s, i) => (
-            <div
-              key={i}
-              className={`lp-in lp-in-delay-${i + 1} flex flex-col md:flex-row gap-8 items-start overflow-hidden`}
-              style={{ background: '#FFFFFF', border: '1px solid #E8ECF0', borderRadius: 16, boxShadow: '0 2px 20px rgba(0,0,0,0.04)', borderLeft: `3px solid ${s.color}` }}
-            >
-              {/* Colored number */}
-              <div className="hidden md:flex items-center justify-center shrink-0 self-stretch px-6"
-                style={{ background: `${s.color}08`, borderRight: `1px solid ${s.color}18`, minWidth: 80 }}>
-                <span style={{ fontSize: 36, fontWeight: 900, color: `${s.color}30`, lineHeight: 1 }}>
-                  {String(i + 1).padStart(2, '0')}
-                </span>
+        {/* Header */}
+        <div className="text-center mb-14">
+          <p className="lp-in lp-in-delay-1 text-[11px] font-bold uppercase tracking-[0.2em] mb-4" style={{ color: '#0047AB' }}>
+            How Lead Gap CRM fixes it
+          </p>
+          <h2 className="lp-in lp-in-delay-2 text-[36px] md:text-[40px] font-extrabold leading-tight tracking-tight text-[#1A1F27] mb-4">
+            One platform.<br />Every problem solved.
+          </h2>
+          <p className="lp-in lp-in-delay-3 text-[15px] leading-relaxed max-w-lg mx-auto" style={{ color: '#78889B' }}>
+            Lead Gap CRM automates the work your team does manually — and gives you visibility you&apos;ve never had before.
+          </p>
+        </div>
+
+        {/* ── Top row: 3 equal feature cards ── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+
+          {/* Card 1: Orbital — portal sync */}
+          <motion.div
+            className="flex flex-col"
+            style={{ ...CARD, padding: '32px 28px' }}
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0 }}
+          >
+            <div style={{ position: 'relative', height: 180, marginBottom: 28, flexShrink: 0 }}>
+              {/* Concentric rings */}
+              {[160, 110].map((s, i) => (
+                <div key={s} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: s, height: s, borderRadius: '50%', border: `1.5px solid rgba(0,56,168,${i === 0 ? 0.07 : 0.11})` }} />
+              ))}
+              {/* Centre — LGC logo */}
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 48, height: 48, borderRadius: '50%', background: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.22)' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/lgc-logo.svg" alt="" style={{ width: 36, height: 36, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
               </div>
+              {/* Portal bubbles — each with its own subtle float */}
+              {ORBITAL_PORTALS.map(({ label, top, left }, pi) => (
+                <motion.div
+                  key={label}
+                  style={{ position: 'absolute', top, left, width: 44, height: 44, borderRadius: '50%', background: '#FFFFFF', border: '1px solid rgba(0,56,168,0.13)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.07)', fontSize: 7, fontWeight: 700, color: '#0038A8', textAlign: 'center', lineHeight: 1.3, whiteSpace: 'pre-line' }}
+                  animate={{ y: [0, pi % 2 === 0 ? -5 : 5, 0] }}
+                  transition={{ repeat: Infinity, duration: 3 + pi * 0.4, ease: 'easeInOut', delay: pi * 0.3 }}
+                >
+                  {label}
+                </motion.div>
+              ))}
+            </div>
+            <h3 style={{ fontSize: 21, fontWeight: 700, color: '#1A1F27', lineHeight: 1.25, marginBottom: 10 }}>One inbox. Every portal.</h3>
+            <p style={{ fontSize: 14, color: '#78889B', lineHeight: 1.65 }}>Connect every real estate portal in 2 minutes. Every lead flows in automatically — no copy-pasting, ever.</p>
+          </motion.div>
 
-              {/* Left: icon + copy */}
-              <div className="flex flex-col gap-4 flex-1 min-w-0 py-7 pl-0 md:pl-0 pr-0">
-                <div className="flex items-center gap-3 px-6 md:px-0">
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ background: s.bg }}>
-                    <s.icon className="w-4.5 h-4.5" style={{ color: s.color }} />
+          {/* Card 2: Priority rows — AI scoring */}
+          <motion.div
+            className="flex flex-col"
+            style={{ ...CARD, padding: '32px 28px' }}
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
+          >
+            <div style={{ marginBottom: 28, display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 }}>
+              {SCORE_ROWS.map(({ badge, bc, tc, w1, w2 }, ri) => (
+                <motion.div
+                  key={badge}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: '#F7F9FC', borderRadius: 12, border: '1px solid rgba(0,0,0,0.05)' }}
+                  initial={{ opacity: 0, x: -16 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: 0.22 + ri * 0.1 }}
+                >
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    <div style={{ height: 7, width: `${w1}%`, background: '#DDE3ED', borderRadius: 999 }} />
+                    {w2 > 0 && <div style={{ height: 5, width: `${w2}%`, background: '#E8EDF5', borderRadius: 999 }} />}
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: s.color }}>{s.fix}</span>
-                </div>
-                <h3 className="text-[20px] font-bold text-[#1A1F27] leading-snug px-6 md:px-0">{s.title}</h3>
-                <p className="text-[14px] text-[#78889B] leading-relaxed px-6 md:px-0">{s.body}</p>
-              </div>
+                  <div style={{ padding: '4px 12px', borderRadius: 999, background: bc, fontSize: 11, fontWeight: 700, color: tc, flexShrink: 0 }}>
+                    {badge}
+                  </div>
+                </motion.div>
+              ))}
+              <p style={{ fontSize: 10.5, color: '#B0B8C8', marginTop: 2, paddingLeft: 2 }}>Intent score · updated on arrival</p>
+            </div>
+            <h3 style={{ fontSize: 21, fontWeight: 700, color: '#1A1F27', lineHeight: 1.25, marginBottom: 10 }}>AI scores every lead.</h3>
+            <p style={{ fontSize: 14, color: '#78889B', lineHeight: 1.65 }}>Each enquiry is ranked the moment it arrives. The hottest leads rise to the top and trigger follow-ups automatically.</p>
+          </motion.div>
 
-              {/* Right: bullet checklist */}
-              <div className="flex flex-col gap-3 shrink-0 md:w-60 py-7 px-6 md:pr-8"
-                style={{ borderTop: '1px solid #F0F2F5' }} >
-                {s.bullets.map((b, j) => (
-                  <div key={j} className="flex items-start gap-2.5">
-                    <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: s.color }} />
-                    <span className="text-[13px] font-medium text-[#263238] leading-snug">{b}</span>
+          {/* Card 3: Timeline — pipeline stages */}
+          <motion.div
+            className="flex flex-col"
+            style={{ ...CARD, padding: '32px 28px' }}
+            initial={{ opacity: 0, y: 32 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.24 }}
+          >
+            <div style={{ marginBottom: 28, display: 'flex', gap: 14, flexShrink: 0 }}>
+              {/* Stage labels */}
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-around', paddingBlock: 4 }}>
+                {PIPE_DATA.map(({ label }) => (
+                  <span key={label} style={{ fontSize: 10.5, fontWeight: 600, color: '#94A3B8', whiteSpace: 'nowrap' }}>{label}</span>
+                ))}
+              </div>
+              {/* Vertical line + dot */}
+              <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', width: 12 }}>
+                <div style={{ width: 1.5, flex: 1, background: 'linear-gradient(to bottom,#E2E8F0,#CBD5E1,#E2E8F0)' }} />
+                <div style={{ position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%,-50%)', width: 10, height: 10, borderRadius: '50%', background: '#0F172A', border: '2.5px solid #fff', boxShadow: '0 0 0 3px rgba(15,23,42,0.1)' }} />
+              </div>
+              {/* Progress bars + counts */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 13, paddingBlock: 4 }}>
+                {PIPE_DATA.map(({ n, pct, label }, i) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ flex: 1, height: 8, background: '#EEF1F7', borderRadius: 999 }}>
+                      <motion.div
+                        style={{ height: '100%', background: i === 2 ? '#0038A8' : '#D1D9E8', borderRadius: 999 }}
+                        initial={{ width: 0 }}
+                        whileInView={{ width: `${pct}%` }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.35 + i * 0.08 }}
+                      />
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', minWidth: 20, textAlign: 'right' }}>{n}</span>
                   </div>
                 ))}
               </div>
             </div>
+            <h3 style={{ fontSize: 21, fontWeight: 700, color: '#1A1F27', lineHeight: 1.25, marginBottom: 10 }}>Live pipeline. Total clarity.</h3>
+            <p style={{ fontSize: 14, color: '#78889B', lineHeight: 1.65 }}>See every deal, every agent, every stage in real time. Spot what&apos;s stuck before it costs you a close.</p>
+          </motion.div>
+        </div>
+
+        {/* ── Bottom micro-card row ── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {MICRO.map(({ icon: Icon, color, bg, title, body }, mi) => (
+            <motion.div
+              key={title}
+              style={{ ...CARD, padding: '28px 26px' }}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: mi * 0.1 }}
+            >
+              <div style={{ width: 46, height: 46, borderRadius: 14, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+                <Icon style={{ width: 22, height: 22, color }} />
+              </div>
+              <div style={{ fontSize: 15.5, fontWeight: 700, color: '#1A1F27', marginBottom: 8, lineHeight: 1.3 }}>{title}</div>
+              <div style={{ fontSize: 13.5, color: '#78889B', lineHeight: 1.6 }}>{body}</div>
+            </motion.div>
           ))}
         </div>
 
+        {/* CTA */}
         <div className="lp-in lp-in-delay-4 flex justify-center mt-12">
           <Link
             href="/signup"
-            className="flex items-center gap-2 px-8 py-4 rounded-full text-[15px] font-semibold text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
-            style={{ background: '#0038A8', boxShadow: '0 8px 28px rgba(0,71,171,0.22)' }}
+            className="flex items-center gap-2 px-8 py-4 text-[14px] font-semibold text-white transition-all duration-200 hover:opacity-90"
+            style={{ background: '#0038A8', borderRadius: 12 }}
           >
             Get started free — no card needed
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
+
       </div>
     </section>
   )
@@ -3281,8 +3886,16 @@ export default function LandingPage() {
     <div className="min-h-screen" style={{ background: '#FAFAF8', fontFamily: 'var(--font-jakarta), system-ui, sans-serif' }}>
       <div className="grain-overlay" aria-hidden="true" />
       <Nav />
-      <Hero />
-      <HeroScrollDash />
+      {/* ── Unified Silk zone: hero text + scroll-reveal desktop ── */}
+      <div className="relative overflow-hidden" style={{ background: '#0B0F3B' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+          <Silk speed={3} scale={1.2} color="#0a2fa8" noiseIntensity={1.8} rotation={0} className="absolute inset-0" />
+        </div>
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <Hero />
+          <HeroScrollDash />
+        </div>
+      </div>
       <PortalStrip />
       <ProblemSection />
       <SolutionSection />

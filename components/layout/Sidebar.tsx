@@ -62,11 +62,11 @@ function Logo({ collapsed }: { collapsed: boolean }) {
       style={{ borderBottom: '1px solid rgba(0,41,102,0.08)' }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/logo.png"
+        src="/lgc-logo.svg"
         alt="Lead Gap CRM"
         style={collapsed
-          ? { height: 36, width: 36, objectFit: 'contain' }
-          : { height: 44, width: 'auto', objectFit: 'contain' }
+          ? { height: 38, width: 'auto', objectFit: 'contain', maxWidth: 52 }
+          : { height: 42, width: 'auto', objectFit: 'contain', maxWidth: 160 }
         }
       />
     </Link>
