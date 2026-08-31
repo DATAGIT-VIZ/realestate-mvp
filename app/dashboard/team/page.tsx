@@ -2,23 +2,29 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import {
-  Plus, X, Trash2, Edit2, Trophy, TrendingUp,
-  Handshake, Target, Users, Phone, Mail, Loader2,
-  CheckCircle, Circle, Star, Award
-} from 'lucide-react'
+  Plus, X, Trash, PencilSimple, Trophy, TrendUp,
+  Handshake, Target, Users, Phone, Envelope, CircleNotch,
+  CheckCircle, Circle, Star, Medal, Warning, Lightning,
+} from '@phosphor-icons/react'
+import { PageTabBar } from '@/components/layout/PageTabBar'
+
+const WORKSPACE_TABS = [
+  { label: 'Tasks', href: '/dashboard/tasks' },
+  { label: 'Team',  href: '/dashboard/team', teamsOnly: true },
+]
 
 const C = {
-  bg: '#F5F6FA', panel: '#FFFFFF', border: '#E8ECF0',
+  bg: '#FAFAF8', panel: '#FFFFFF', border: '#E2E2DC',
   text: '#263238', muted: '#78889B', label: '#A4B1BE',
-  blue: '#FF7043', emerald: '#059669', amber: '#F59E0B',
-  red: '#EF4444', violet: '#FF7043',
+  blue: '#1D4ED8', emerald: '#059669', amber: '#F59E0B',
+  red: '#EF4444', violet: '#1D4ED8',
 }
-const ORANGE_DIM = 'rgba(255,112,67,0.08)'
-const ORANGE_BRD = 'rgba(255,112,67,0.22)'
+const ORANGE_DIM = 'rgba(29,78,216,0.08)'
+const ORANGE_BRD = 'rgba(29,78,216,0.22)'
 
 const ROLES      = ['agent', 'senior_agent', 'manager']
 const ROLE_LABEL: Record<string, string> = { agent: 'Agent', senior_agent: 'Sr. Agent', manager: 'Manager' }
-const ROLE_COLOR: Record<string, string> = { agent: '#FF7043', senior_agent: '#F59E0B', manager: '#059669' }
+const ROLE_COLOR: Record<string, string> = { agent: '#1D4ED8', senior_agent: '#F59E0B', manager: '#059669' }
 
 const CITIES     = ['Mumbai', 'Delhi', 'Bangalore', 'Pune', 'Hyderabad', 'Chennai', 'Ahmedabad', 'Kolkata', 'Surat', 'Jaipur']
 const PROP_TYPES = ['1BHK', '2BHK', '3BHK', '4BHK+', 'Villa', 'Plot', 'Commercial']
@@ -98,7 +104,7 @@ function AgentModal({ member, onClose, onSave }: {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
-      <div style={{ background: C.panel, borderRadius: 20, padding: 20, width: 'min(520px, calc(100vw - 32px))', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+      <div style={{ background: C.panel, borderRadius: 2, padding: 20, width: 'min(520px, calc(100vw - 32px))', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h2 style={{ fontSize: 17, fontWeight: 700, color: C.text, margin: 0 }}>{member ? 'Edit Agent' : 'Add Agent'}</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted }}><X style={{ width: 20, height: 20 }} /></button>
@@ -122,7 +128,7 @@ function AgentModal({ member, onClose, onSave }: {
             <div>
               <label style={lbl}>Email</label>
               <div style={{ position: 'relative' }}>
-                <Mail style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: C.label }} />
+                <Envelope style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: C.label }} />
                 <input style={{ ...inp, paddingLeft: 30 }} type="email" value={form.email ?? ''} onChange={e => set('email', e.target.value)} placeholder="agent@example.com" />
               </div>
             </div>
@@ -146,7 +152,7 @@ function AgentModal({ member, onClose, onSave }: {
               {CITIES.map(c => {
                 const on = (form.specialty_cities ?? []).includes(c)
                 return <button key={c} type="button" onClick={() => tog('specialty_cities', c)}
-                  style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, border: `1px solid ${on ? C.blue : C.border}`, background: on ? 'rgba(255,112,67,0.08)' : '#F5F6FA', color: on ? C.blue : C.muted, cursor: 'pointer' }}>
+                  style={{ padding: '4px 10px', borderRadius: 2, fontSize: 12, fontWeight: 600, border: `1px solid ${on ? C.blue : C.border}`, background: on ? 'rgba(29,78,216,0.08)' : '#F5F6FA', color: on ? C.blue : C.muted, cursor: 'pointer' }}>
                   {c}
                 </button>
               })}
@@ -159,7 +165,7 @@ function AgentModal({ member, onClose, onSave }: {
               {PROP_TYPES.map(t => {
                 const on = (form.specialty_types ?? []).includes(t)
                 return <button key={t} type="button" onClick={() => tog('specialty_types', t)}
-                  style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, border: `1px solid ${on ? C.violet : C.border}`, background: on ? 'rgba(255,112,67,0.08)' : '#F5F6FA', color: on ? C.violet : C.muted, cursor: 'pointer' }}>
+                  style={{ padding: '4px 10px', borderRadius: 2, fontSize: 12, fontWeight: 600, border: `1px solid ${on ? C.violet : C.border}`, background: on ? 'rgba(29,78,216,0.08)' : '#F5F6FA', color: on ? C.violet : C.muted, cursor: 'pointer' }}>
                   {t}
                 </button>
               })}
@@ -176,7 +182,7 @@ function AgentModal({ member, onClose, onSave }: {
           <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
             <button onClick={onClose} style={{ flex: 1, padding: '11px 0', border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 14, fontWeight: 600, color: C.muted, background: '#F5F6FA', cursor: 'pointer' }}>Cancel</button>
             <button onClick={handleSave} disabled={saving} style={{ flex: 2, padding: '11px 0', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#fff', background: saving ? '#E2E8F0' : C.blue, cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
-              {saving ? <><Loader2 style={{ width: 15, height: 15, animation: 'spin 1s linear infinite' }} /> Saving…</> : (member ? 'Save Changes' : 'Add Agent')}
+              {saving ? <><CircleNotch style={{ width: 15, height: 15, animation: 'spin 1s linear infinite' }} /> Saving…</> : (member ? 'Save Changes' : 'Add Agent')}
             </button>
           </div>
         </div>
@@ -189,6 +195,7 @@ function AgentModal({ member, onClose, onSave }: {
 export default function TeamPage() {
   const [members,    setMembers]    = useState<TeamMember[]>([])
   const [deals,      setDeals]      = useState<Deal[]>([])
+  const [tasks,      setTasks]      = useState<{ assigned_to: string | null; status: string; due_date: string }[]>([])
   const [loading,    setLoading]    = useState(true)
   const [modal,      setModal]      = useState<TeamMember | 'new' | null>(null)
   const [deleting,   setDeleting]   = useState<string | null>(null)
@@ -198,15 +205,17 @@ export default function TeamPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const [mRes, dRes, distRes] = await Promise.all([
+    const [mRes, dRes, distRes, tRes] = await Promise.all([
       fetch('/api/team'),
       fetch('/api/deals'),
       fetch('/api/crm/leads/distribute'),
+      fetch('/api/crm/tasks'),
     ])
-    const [mJson, dJson, distJson] = await Promise.all([mRes.json(), dRes.json(), distRes.json()])
+    const [mJson, dJson, distJson, tJson] = await Promise.all([mRes.json(), dRes.json(), distRes.json(), tRes.json()])
     setMembers(mJson.members ?? [])
     setDeals(dJson.deals ?? [])
     setAssignedCounts(distJson.perAgent ?? {})
+    setTasks(tJson.tasks ?? [])
     setLoading(false)
   }, [])
 
@@ -254,15 +263,15 @@ export default function TeamPage() {
   const totalWon      = agentStats.reduce((s, a) => s + a.won, 0)
 
   const rankBadge = (i: number) => {
-    const medals = [
-      { label: '🥇', bg: 'rgba(255,112,67,0.10)', color: '#FF7043', border: 'rgba(255,112,67,0.28)' },
-      { label: '🥈', bg: '#F1F5F9',               color: '#64748B', border: '#CBD5E1'               },
-      { label: '🥉', bg: 'rgba(245,158,11,0.10)', color: '#F59E0B', border: 'rgba(245,158,11,0.28)' },
+    const ranks = [
+      { bg: 'rgba(29,78,216,0.10)', color: '#1D4ED8', border: 'rgba(29,78,216,0.28)' },
+      { bg: 'rgba(120,136,155,0.10)', color: '#5A6A78', border: 'rgba(120,136,155,0.28)' },
+      { bg: 'rgba(245,158,11,0.10)', color: '#F59E0B', border: 'rgba(245,158,11,0.28)' },
     ]
-    const m = medals[i]
-    if (m) return (
-      <div style={{ width: 28, height: 28, borderRadius: '50%', background: m.bg, border: `1px solid ${m.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: m.color }}>
-        {m.label}
+    const r = ranks[i]
+    if (r) return (
+      <div style={{ width: 26, height: 26, borderRadius: 2, background: r.bg, border: `1px solid ${r.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: r.color }}>
+        #{i + 1}
       </div>
     )
     return <span style={{ fontSize: 12, fontWeight: 600, color: C.label }}>#{i + 1}</span>
@@ -276,7 +285,9 @@ export default function TeamPage() {
   })
 
   return (
-    <div className="px-4 py-5 pb-24 lg:px-7 lg:py-7 min-h-screen" style={{ background: C.bg }}>
+    <div className="min-h-screen" style={{ background: C.bg }}>
+      <PageTabBar tabs={WORKSPACE_TABS} />
+    <div className="px-4 py-5 pb-24 lg:px-7 lg:py-7">
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
         <div className="hidden lg:block">
@@ -284,7 +295,7 @@ export default function TeamPage() {
           <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>Manage agents, track performance, view leaderboard</p>
         </div>
         <button onClick={() => setModal('new')}
-          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: C.blue, border: 'none', borderRadius: 12, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(255,112,67,0.28)' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: C.blue, border: 'none', borderRadius: 12, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(29,78,216,0.28)' }}>
           <Plus style={{ width: 15, height: 15 }} /> Add Agent
         </button>
       </div>
@@ -293,7 +304,7 @@ export default function TeamPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-[14px] mb-6">
         {[
           { label: 'Team Size',       value: `${members.filter(m => m.is_active).length} active`, icon: <Users style={{ width: 16, height: 16 }} />,    color: C.blue },
-          { label: 'Total Pipeline',  value: fmt(totalPipeline),                                  icon: <TrendingUp style={{ width: 16, height: 16 }} />, color: C.violet },
+          { label: 'Total Pipeline',  value: fmt(totalPipeline),                                  icon: <TrendUp style={{ width: 16, height: 16 }} />, color: C.violet },
           { label: 'Deals Won',       value: `${totalWon} this month`,                            icon: <Trophy style={{ width: 16, height: 16 }} />,     color: C.emerald },
           { label: 'Deals in Active', value: `${deals.filter(d => !['won','lost'].includes(d.stage)).length}`, icon: <Handshake style={{ width: 16, height: 16 }} />, color: C.amber },
         ].map(s => (
@@ -319,14 +330,14 @@ export default function TeamPage() {
 
       {loading ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: C.muted, padding: 40 }}>
-          <Loader2 style={{ width: 18, height: 18, animation: 'spin 1s linear infinite' }} /> Loading team data…
+          <CircleNotch size={18} weight="light" style={{ animation: 'spin 0.8s linear infinite' }} /> Loading team data…
         </div>
       ) : activeTab === 'leaderboard' ? (
         /* ── Leaderboard ─────────────────────────────────────────────────── */
-        <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 20, overflow: 'hidden' }}>
+        <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 2, overflow: 'hidden' }}>
           {agentStats.length === 0 ? (
             <div style={{ padding: 48, textAlign: 'center', color: C.muted }}>
-              <Award style={{ width: 40, height: 40, margin: '0 auto 12px', opacity: 0.3 }} />
+              <Medal style={{ width: 40, height: 40, margin: '0 auto 12px', opacity: 0.3 }} />
               <p style={{ margin: 0, fontSize: 14 }}>Add agents and assign deals to see the leaderboard.</p>
             </div>
           ) : (
@@ -344,7 +355,7 @@ export default function TeamPage() {
               </thead>
               <tbody>
                 {agentStats.map((a, i) => (
-                  <tr key={a.name} style={{ borderBottom: `1px solid ${C.border}`, background: i === 0 ? 'rgba(255,112,67,0.06)' : 'transparent' }}>
+                  <tr key={a.name} style={{ borderBottom: `1px solid ${C.border}`, background: i === 0 ? 'rgba(29,78,216,0.06)' : 'transparent' }}>
                     <td style={{ padding: '12px 16px' }}>{rankBadge(i)}</td>
                     <td style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -388,63 +399,103 @@ export default function TeamPage() {
           )}
         </div>
       ) : (
-        /* ── Agent Cards ─────────────────────────────────────────────────── */
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+        /* ── Agent Capacity Cards ────────────────────────────────────────── */
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
           {members.length === 0 ? (
-            <div style={{ gridColumn: '1 / -1', padding: 48, textAlign: 'center', background: C.panel, borderRadius: 20, border: `1px solid ${C.border}`, color: C.muted }}>
-              <Users style={{ width: 40, height: 40, margin: '0 auto 12px', opacity: 0.3 }} />
+            <div style={{ gridColumn: '1 / -1', padding: 48, textAlign: 'center', background: C.panel, borderRadius: 2, border: `1px solid ${C.border}`, color: C.muted }}>
+              <Users size={32} weight="light" style={{ margin: '0 auto 12px', display: 'block', opacity: 0.3 }} />
               <p style={{ margin: '0 0 16px', fontSize: 14 }}>No agents added yet.</p>
-              <button onClick={() => setModal('new')} style={{ padding: '9px 20px', background: C.blue, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Add your first agent</button>
+              <button onClick={() => setModal('new')} style={{ padding: '9px 20px', background: C.blue, border: 'none', borderRadius: 2, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Add your first agent</button>
             </div>
           ) : members.map(m => {
-            const stats = agentStats.find(a => a.name === m.name)
+            const stats        = agentStats.find(a => a.name === m.name)
+            const now          = new Date()
+            const todayStr     = now.toISOString().slice(0, 10)
+            const agentTasks   = tasks.filter(t => t.assigned_to === m.id && t.status === 'Pending')
+            const taskToday    = agentTasks.filter(t => new Date(t.due_date).toISOString().slice(0, 10) === todayStr).length
+            const taskOverdue  = agentTasks.filter(t => new Date(t.due_date) < now && new Date(t.due_date).toISOString().slice(0, 10) !== todayStr).length
+            const taskTotal    = agentTasks.length
+            const MAX_CAPACITY = 12
+            const loadPct      = Math.min((taskTotal / MAX_CAPACITY) * 100, 100)
+            const loadColor    = taskOverdue > 0 ? C.red : taskTotal >= 8 ? C.amber : C.emerald
+
             return (
-              <div key={m.id} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 18, padding: '20px 20px 16px', opacity: m.is_active ? 1 : 0.6 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: `${ROLE_COLOR[m.role]}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: ROLE_COLOR[m.role] }}>
+              <div key={m.id} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 2, padding: '16px 16px 14px', opacity: m.is_active ? 1 : 0.55 }}>
+
+                {/* Header: avatar + name + actions */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 2, background: `${ROLE_COLOR[m.role]}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: ROLE_COLOR[m.role] }}>
                       {m.name.charAt(0)}
                     </div>
                     <div>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{m.name}</div>
-                      <span style={{ fontSize: 10, fontWeight: 700, background: `${ROLE_COLOR[m.role]}20`, color: ROLE_COLOR[m.role], borderRadius: 20, padding: '2px 8px' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{m.name}</div>
+                      <span style={{ fontSize: 9, fontWeight: 700, background: `${ROLE_COLOR[m.role]}14`, color: ROLE_COLOR[m.role], borderRadius: 2, padding: '1px 6px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                         {ROLE_LABEL[m.role]}
                       </span>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button onClick={() => setModal(m)} style={{ padding: '5px 7px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#F5F6FA', color: C.muted, cursor: 'pointer' }}><Edit2 style={{ width: 13, height: 13 }} /></button>
-                    <button onClick={() => setDeleting(m.id)} style={{ padding: '5px 7px', borderRadius: 8, border: `1px solid ${C.border}`, background: '#FFF1F2', color: C.red, cursor: 'pointer' }}><Trash2 style={{ width: 13, height: 13 }} /></button>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button onClick={() => setModal(m)} style={{ padding: '4px 6px', borderRadius: 2, border: `1px solid ${C.border}`, background: C.bg, cursor: 'pointer' }}>
+                      <PencilSimple size={12} weight="light" style={{ color: C.muted }} />
+                    </button>
+                    <button onClick={() => setDeleting(m.id)} style={{ padding: '4px 6px', borderRadius: 2, border: `1px solid rgba(239,68,68,0.25)`, background: 'rgba(239,68,68,0.05)', cursor: 'pointer' }}>
+                      <Trash size={12} weight="light" style={{ color: C.red }} />
+                    </button>
                   </div>
                 </div>
 
+                {/* Task capacity bar */}
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Task Load</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: loadColor }}>{taskTotal} tasks</span>
+                      {taskToday > 0 && <span style={{ fontSize: 10, color: C.amber, fontWeight: 600 }}>{taskToday} today</span>}
+                      {taskOverdue > 0 && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, color: C.red, fontWeight: 700 }}>
+                          <Warning size={10} weight="light" style={{ color: C.red }} />
+                          {taskOverdue} overdue
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ height: 5, borderRadius: 2, background: `${loadColor}18` }}>
+                    <div style={{ height: '100%', borderRadius: 2, background: loadColor, width: `${loadPct}%`, transition: 'width 0.5s ease' }} />
+                  </div>
+                </div>
+
+                {/* Contact */}
                 {(m.email || m.phone) && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
-                    {m.email && <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.muted }}><Mail style={{ width: 12, height: 12 }} />{m.email}</div>}
-                    {m.phone && <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.muted }}><Phone style={{ width: 12, height: 12 }} />{m.phone}</div>}
+                  <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
+                    {m.email && <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: C.muted }}><Envelope size={11} weight="light" />{m.email}</div>}
+                    {m.phone && <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: C.muted }}><Phone size={11} weight="light" />{m.phone}</div>}
                   </div>
                 )}
 
+                {/* City/type specialties */}
                 {(m.specialty_cities.length > 0 || m.specialty_types.length > 0) && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 12 }}>
-                    {m.specialty_cities.map(c => <span key={c} style={{ fontSize: 10, fontWeight: 600, background: 'rgba(255,112,67,0.08)', color: C.blue, borderRadius: 20, padding: '2px 8px' }}>{c}</span>)}
-                    {m.specialty_types.map(t => <span key={t} style={{ fontSize: 10, fontWeight: 600, background: 'rgba(255,112,67,0.08)', color: C.violet, borderRadius: 20, padding: '2px 8px' }}>{t}</span>)}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 10 }}>
+                    {m.specialty_cities.map(c => <span key={c} style={{ fontSize: 9, fontWeight: 700, background: 'rgba(29,78,216,0.07)', color: C.blue, borderRadius: 2, padding: '2px 6px', letterSpacing: '0.03em' }}>{c}</span>)}
+                    {m.specialty_types.map(t => <span key={t} style={{ fontSize: 9, fontWeight: 700, background: 'rgba(29,78,216,0.07)', color: C.violet, borderRadius: 2, padding: '2px 6px', letterSpacing: '0.03em' }}>{t}</span>)}
                   </div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
+                {/* Stats strip */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
                   {[
-                    { label: 'Assigned', value: (assignedCounts[m.id] ?? 0).toLocaleString(), color: C.blue },
-                    { label: 'Active',   value: stats?.active ?? 0,                            color: C.violet },
-                    { label: 'Won',      value: stats?.won ?? 0,                               color: C.emerald },
-                    { label: 'Target',   value: `${stats?.won ?? 0}/${m.monthly_target}`,      color: (stats?.won ?? 0) >= m.monthly_target ? C.emerald : C.amber },
+                    { label: 'Leads',   value: (assignedCounts[m.id] ?? 0), color: C.blue    },
+                    { label: 'Active',  value: stats?.active ?? 0,           color: C.violet  },
+                    { label: 'Won',     value: stats?.won ?? 0,              color: C.emerald },
+                    { label: 'Target',  value: `${stats?.won ?? 0}/${m.monthly_target}`, color: (stats?.won ?? 0) >= m.monthly_target ? C.emerald : C.amber },
                   ].map(s => (
                     <div key={s.label} style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: s.color }}>{s.value}</div>
-                      <div style={{ fontSize: 10, color: C.label }}>{s.label}</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: s.color, letterSpacing: '-0.02em' }}>{s.value}</div>
+                      <div style={{ fontSize: 9, color: C.label, textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>{s.label}</div>
                     </div>
                   ))}
                 </div>
+
               </div>
             )
           })}
@@ -457,7 +508,7 @@ export default function TeamPage() {
 
       {deleting && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: 16 }}>
-          <div style={{ background: C.panel, borderRadius: 18, padding: 28, maxWidth: 360, width: '100%' }}>
+          <div style={{ background: C.panel, borderRadius: 2, padding: 28, maxWidth: 360, width: '100%' }}>
             <p style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Remove this agent?</p>
             <p style={{ fontSize: 13, color: C.muted, margin: '0 0 20px' }}>Their deal assignments will not be affected.</p>
             <div style={{ display: 'flex', gap: 10 }}>
@@ -469,6 +520,7 @@ export default function TeamPage() {
       )}
 
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
     </div>
   )
 }

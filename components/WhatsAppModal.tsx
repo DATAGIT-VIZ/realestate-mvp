@@ -7,7 +7,7 @@ import { X, MessageCircle, Send, Loader2, Check, Paperclip, FileText, ChevronDow
 const BG_OVERLAY = 'rgba(15,23,42,0.4)'
 const PANEL      = '#FFFFFF'
 const BORDER     = '#E2E8F0'
-const PRIMARY    = '#FF7043'
+const PRIMARY    = '#1D4ED8'
 const GREEN      = '#059669'
 const TEXT       = '#0F172A'
 const MUTED      = '#64748B'
@@ -220,7 +220,7 @@ export function WhatsAppModal({ isOpen, onClose, leadId, leadName = '', leadPhon
                 {TEMPLATES.map(tpl => (
                   <button key={tpl.name} onClick={() => selectTemplate(tpl)}
                     style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '13px 16px', background: BG, border: `1px solid ${BORDER}`, borderRadius: 12, cursor: 'pointer', textAlign: 'left', transition: 'all 0.12s' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = PRIMARY; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,112,67,0.03)' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = PRIMARY; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(29,78,216,0.03)' }}
                     onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = BORDER; (e.currentTarget as HTMLButtonElement).style.background = BG }}
                   >
                     <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{tpl.label}</span>
@@ -238,7 +238,7 @@ export function WhatsAppModal({ isOpen, onClose, leadId, leadName = '', leadPhon
                   </p>
                   <div style={{ position: 'relative' }}>
                     <button type="button" onClick={() => setBrochureOpen(o => !o)}
-                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: selectedBrochure ? 'rgba(255,112,67,0.05)' : BG, border: `1px solid ${selectedBrochure ? PRIMARY : BORDER}`, borderRadius: 9, cursor: 'pointer' }}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: selectedBrochure ? 'rgba(29,78,216,0.05)' : BG, border: `1px solid ${selectedBrochure ? PRIMARY : BORDER}`, borderRadius: 9, cursor: 'pointer' }}
                     >
                       <FileText style={{ width: 13, height: 13, color: selectedBrochure ? PRIMARY : MUTED, flexShrink: 0 }} />
                       <span style={{ flex: 1, textAlign: 'left', fontSize: 13, color: selectedBrochure ? TEXT : MUTED }}>
@@ -246,7 +246,7 @@ export function WhatsAppModal({ isOpen, onClose, leadId, leadName = '', leadPhon
                       </span>
                       {selectedBrochure && (
                         <span onClick={e => { e.stopPropagation(); setSelectedBrochure(null) }}
-                          style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(255,112,67,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                          style={{ width: 18, height: 18, borderRadius: '50%', background: 'rgba(29,78,216,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
                           <X style={{ width: 9, height: 9, color: PRIMARY }} />
                         </span>
                       )}
@@ -257,9 +257,9 @@ export function WhatsAppModal({ isOpen, onClose, leadId, leadName = '', leadPhon
                         {brochures.map(b => (
                           <button key={b.id} type="button"
                             onClick={() => { setSelectedBrochure(b); setBrochureOpen(false) }}
-                            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: selectedBrochure?.id === b.id ? 'rgba(255,112,67,0.06)' : 'transparent', border: 'none', borderBottom: `1px solid ${BORDER}`, cursor: 'pointer', textAlign: 'left' }}
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: selectedBrochure?.id === b.id ? 'rgba(29,78,216,0.06)' : 'transparent', border: 'none', borderBottom: `1px solid ${BORDER}`, cursor: 'pointer', textAlign: 'left' }}
                           >
-                            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,112,67,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(29,78,216,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                               <FileText style={{ width: 15, height: 15, color: PRIMARY }} />
                             </div>
                             <div>
@@ -286,7 +286,7 @@ export function WhatsAppModal({ isOpen, onClose, leadId, leadName = '', leadPhon
           {step === 'fill' && selectedTpl && (
             <>
               {selectedBrochure && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', background: 'rgba(255,112,67,0.07)', border: '1px solid rgba(255,112,67,0.2)', borderRadius: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', background: 'rgba(29,78,216,0.07)', border: '1px solid rgba(29,78,216,0.2)', borderRadius: 8 }}>
                   <Paperclip style={{ width: 12, height: 12, color: PRIMARY, flexShrink: 0 }} />
                   <span style={{ fontSize: 12, color: PRIMARY, fontWeight: 600, flex: 1 }}>📎 {selectedBrochure.name}</span>
                   <button type="button" onClick={() => setSelectedBrochure(null)}
@@ -359,7 +359,7 @@ export function WhatsAppModal({ isOpen, onClose, leadId, leadName = '', leadPhon
               ← Back
             </button>
             <button onClick={send} disabled={loading || !leadPhone}
-              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 20px', background: loading ? 'rgba(160,0,200,0.5)' : PRIMARY, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 20px', background: loading ? 'rgba(29,78,216,0.5)' : PRIMARY, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer' }}
             >
               {loading
                 ? <><Loader2 style={{ width: 13, height: 13, animation: 'spin 1s linear infinite' }} />Sending…</>

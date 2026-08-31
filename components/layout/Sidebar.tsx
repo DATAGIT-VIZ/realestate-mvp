@@ -4,107 +4,134 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
-  LayoutDashboard, Users, HandshakeIcon, Building2,
-  Phone, BarChart3, BarChart2, Calculator, Settings,
-  ChevronLeft, ChevronRight, LogOut, Loader2, Activity,
-  MessageCircle, CreditCard, UserCheck, GitBranch, Sparkles, Plug, Layers, HelpCircle,
-  CheckSquare,
-} from 'lucide-react'
+  House, Users, Megaphone, CheckSquare, ChartBar,
+  Robot, Gear, Lock, CaretLeft, CaretRight, SignOut,
+} from '@phosphor-icons/react'
+import { CircleNotch } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
-import { getPlan, getRole, canAccess, type Plan, type Role } from '@/lib/plan'
+import { getPlan, getRole, type Plan, type Role } from '@/lib/plan'
 
-const NAV_SECTIONS = [
+type NavItem = {
+  name: string
+  href: string
+  icon: React.ElementType
+  /** all pathname prefixes that should make this item active */
+  activePaths: string[]
+  /** exact match only */
+  exact?: boolean
+  /** teams-only lock */
+  teamsOnly?: boolean
+}
+
+const NAV_ITEMS: NavItem[] = [
   {
-    label: null,
-    items: [{ name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: true }],
+    name: 'Dashboard',
+    href: '/dashboard',
+    icon: House,
+    activePaths: ['/dashboard'],
+    exact: true,
   },
   {
-    label: 'Workspace',
-    items: [
-      { name: 'Leads',          href: '/dashboard/leads',            icon: Users,         exact: false },
-      { name: 'Lifecycle',      href: '/dashboard/lifecycle',        icon: Layers,        exact: false },
-      { name: 'Tasks',           href: '/dashboard/tasks',            icon: CheckSquare,   exact: false },
-      { name: 'Team',           href: '/dashboard/team',             icon: UserCheck,     exact: false, teamsOnly: true },
+    name: 'Leads',
+    href: '/dashboard/leads',
+    icon: Users,
+    activePaths: ['/dashboard/leads', '/dashboard/lifecycle'],
+  },
+  {
+    name: 'Outreach',
+    href: '/dashboard/outreach/broadcast',
+    icon: Megaphone,
+    activePaths: ['/dashboard/outreach', '/dashboard/calls'],
+  },
+  {
+    name: 'Workspace',
+    href: '/dashboard/tasks',
+    icon: CheckSquare,
+    activePaths: ['/dashboard/tasks', '/dashboard/team'],
+  },
+  {
+    name: 'Insights',
+    href: '/dashboard/analytics',
+    icon: ChartBar,
+    activePaths: [
+      '/dashboard/analytics',
+      '/dashboard/team/analytics',
+      '/dashboard/calculators',
+      '/dashboard/reports',
     ],
   },
   {
-    label: 'Engage',
-    items: [
-      { name: 'AI Advisor',    href: '/dashboard/advisor',            icon: Sparkles,      exact: false },
-      { name: 'Broadcast',     href: '/dashboard/outreach/broadcast', icon: MessageCircle, exact: false },
-      { name: 'Power Dialer',  href: '/dashboard/calls',              icon: Phone,         exact: false },
-    ],
+    name: 'AI Advisor',
+    href: '/dashboard/advisor',
+    icon: Robot,
+    activePaths: ['/dashboard/advisor'],
   },
   {
-    label: 'Insights',
-    items: [
-      { name: 'Analytics',      href: '/dashboard/analytics',        icon: BarChart3,  exact: false },
-      { name: 'Team Analytics', href: '/dashboard/team/analytics',   icon: Users,      exact: false, teamsOnly: true },
-      { name: 'Calculators',    href: '/dashboard/calculators',      icon: Calculator, exact: false },
-      { name: 'Reports',        href: '/dashboard/reports',          icon: BarChart2,  exact: false },
-    ],
-  },
-  {
-    label: 'Settings',
-    items: [
-      { name: 'Lead Routing',   href: '/dashboard/settings/routing',  icon: GitBranch,  exact: false, teamsOnly: true },
-      { name: 'Billing',        href: '/dashboard/settings/billing',  icon: CreditCard, exact: false },
-      { name: 'Integrations',   href: '/dashboard/integrations',      icon: Plug,       exact: false },
-      { name: 'Help & Support', href: '/dashboard/help',              icon: HelpCircle, exact: false },
+    name: 'Settings',
+    href: '/dashboard/settings',
+    icon: Gear,
+    activePaths: [
+      '/dashboard/settings',
+      '/dashboard/integrations',
+      '/dashboard/help',
     ],
   },
 ]
 
 function Logo({ collapsed }: { collapsed: boolean }) {
   return (
-    <Link href="/dashboard" className={cn('flex items-center gap-3 px-4 h-14 transition-colors', collapsed && 'justify-center px-0')}
-      style={{ borderBottom: '1px solid rgba(0,41,102,0.08)' }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/lgc-logo.svg"
-        alt="Lead Gap CRM"
-        style={collapsed
-          ? { height: 38, width: 'auto', objectFit: 'contain', maxWidth: 52 }
-          : { height: 42, width: 'auto', objectFit: 'contain', maxWidth: 160 }
-        }
-      />
+    <Link
+      href="/dashboard"
+      className={cn('flex items-center gap-3 px-4 h-14 transition-colors', collapsed && 'justify-center px-0')}
+      style={{ borderBottom: '1px solid rgba(0,41,102,0.08)' }}
+    >
+      {collapsed ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src="/lgc-icon.svg" alt="LGC" style={{ height: 34, width: 34, objectFit: 'contain' }} />
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src="/lgc-logo.svg" alt="Lead Gap CRM" style={{ height: 38, width: 'auto', objectFit: 'contain', maxWidth: 168 }} />
+      )}
     </Link>
   )
 }
 
-function NavItem({
+function NavItemEl({
   item, collapsed, active, onClick, locked = false,
 }: {
-  item: { name: string; href: string; icon: React.ElementType }
+  item: NavItem
   collapsed: boolean
   active: boolean
   onClick?: () => void
   locked?: boolean
 }) {
   const Icon = item.icon
-  const tooltip = collapsed ? (locked ? `${item.name} — Teams only` : item.name) : undefined
 
   if (locked) {
     return (
       <div
-        title={tooltip}
+        title={collapsed ? `${item.name} — Teams only` : undefined}
         className={cn(
-          'group relative flex items-center gap-2.5 text-[13px] font-medium cursor-not-allowed opacity-35',
+          'group relative flex items-center gap-2.5 text-[13px] font-medium cursor-not-allowed select-none',
           collapsed ? 'justify-center w-9 h-9 mx-auto' : 'px-3 py-2',
           'border-l-2 border-transparent'
         )}
-        style={{ color: 'rgba(0,56,168,0.35)' }}
+        style={{ color: 'rgba(0,56,168,0.30)', opacity: 0.5 }}
       >
-        <Icon className={cn('shrink-0 w-4 h-4', collapsed && 'w-[18px] h-[18px]')} />
+        <Icon size={collapsed ? 18 : 16} weight="light" />
+        {!collapsed && <span className="flex-1">{item.name}</span>}
         {!collapsed && (
-          <span className="flex-1">{item.name}</span>
-        )}
-        {!collapsed && (
-          <span className="text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5" style={{ background: 'rgba(0,56,168,0.08)', color: '#0038A8', borderRadius: 2 }}>Teams</span>
+          <span
+            className="text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5"
+            style={{ background: 'rgba(0,56,168,0.08)', color: '#0038A8', borderRadius: 2 }}
+          >
+            Teams
+          </span>
         )}
         {collapsed && (
-          <span className="pointer-events-none absolute left-full ml-3 hidden px-2.5 py-1.5 text-xs whitespace-nowrap z-50 group-hover:block" style={{ background: '#0038A8', color: '#fff', borderRadius: 2 }}>
+          <span className="pointer-events-none absolute left-full ml-3 hidden px-2.5 py-1.5 text-xs whitespace-nowrap z-50 group-hover:block"
+            style={{ background: '#0038A8', color: '#fff', borderRadius: 2 }}>
             {item.name} — Teams only
           </span>
         )}
@@ -116,11 +143,12 @@ function NavItem({
     <Link
       href={item.href}
       onClick={onClick}
-      title={tooltip}
+      title={collapsed ? item.name : undefined}
       className={cn(
         'group relative flex items-center gap-2.5 text-[13px] font-medium transition-all duration-150',
         collapsed ? 'justify-center w-9 h-9 mx-auto' : 'px-3 py-2',
-        active ? 'border-l-2' : 'border-l-2 border-transparent'
+        'border-l-2',
+        active ? '' : 'border-transparent'
       )}
       style={active
         ? { background: 'rgba(0,56,168,0.08)', color: '#0038A8', borderLeftColor: '#0038A8' }
@@ -130,28 +158,17 @@ function NavItem({
       onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = '' }}
     >
       <Icon
-        className={cn(
-          'shrink-0 transition-colors duration-150',
-          collapsed ? 'w-[18px] h-[18px]' : 'w-4 h-4',
-        )}
+        size={collapsed ? 18 : 16}
+        weight={active ? 'bold' : 'light'}
       />
       {!collapsed && item.name}
-
       {collapsed && (
-        <span className="pointer-events-none absolute left-full ml-3 hidden px-2.5 py-1.5 text-xs whitespace-nowrap z-50 group-hover:block" style={{ background: '#0038A8', color: '#fff', borderRadius: 2 }}>
+        <span className="pointer-events-none absolute left-full ml-3 hidden px-2.5 py-1.5 text-xs whitespace-nowrap z-50 group-hover:block"
+          style={{ background: '#0038A8', color: '#fff', borderRadius: 2 }}>
           {item.name}
         </span>
       )}
     </Link>
-  )
-}
-
-function SectionLabel({ label, collapsed }: { label: string; collapsed: boolean }) {
-  if (collapsed) return <div className="mx-auto w-5 h-px my-2" style={{ background: 'rgba(0,56,168,0.12)' }} />
-  return (
-    <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-[0.06em] select-none" style={{ color: 'rgba(0,56,168,0.4)' }}>
-      {label}
-    </p>
   )
 }
 
@@ -193,8 +210,10 @@ export function Sidebar({
     window.dispatchEvent(new CustomEvent('sidebar-collapsed-change', { detail: next }))
   }
 
-  const isActive = (href: string, exact: boolean) =>
-    exact ? pathname === href : pathname.startsWith(href)
+  const isActive = (item: NavItem) => {
+    if (item.exact) return pathname === item.href
+    return item.activePaths.some(p => pathname.startsWith(p))
+  }
 
   const handleLogout = async () => {
     setLoggingOut(true)
@@ -203,6 +222,10 @@ export function Sidebar({
   }
 
   const initial = userEmail?.charAt(0).toUpperCase() ?? 'A'
+
+  // Separate settings from the main nav for bottom-pinned treatment
+  const mainItems = NAV_ITEMS.filter(i => i.name !== 'Settings')
+  const settingsItem = NAV_ITEMS.find(i => i.name === 'Settings')!
 
   return (
     <>
@@ -218,46 +241,37 @@ export function Sidebar({
           'lg:translate-x-0',
           mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
-        style={{ background: '#FFFFFF', borderRight: 'none', boxShadow: '4px 0 24px rgba(0,41,102,0.13)' }}
+        style={{ background: '#FFFFFF', boxShadow: '4px 0 24px rgba(0,41,102,0.13)' }}
       >
         <Logo collapsed={collapsed} />
 
         <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-0.5">
-          {NAV_SECTIONS.map((section, si) => {
-            const visibleItems = section.items.filter(item => canAccess(item.href, plan, role))
-            if (visibleItems.length === 0) return null
+          {mainItems.map((item) => {
+            const locked = Boolean(item.teamsOnly && plan !== 'teams')
             return (
-              <div key={si}>
-                {section.label && <SectionLabel label={section.label} collapsed={collapsed} />}
-                <div className="space-y-0.5">
-                  {visibleItems.map((item) => {
-                    const isTeamsLocked = Boolean('teamsOnly' in item && item.teamsOnly && plan !== 'teams')
-                    return (
-                      <NavItem
-                        key={item.href}
-                        item={item}
-                        collapsed={collapsed}
-                        active={isActive(item.href, item.exact)}
-                        onClick={onMobileClose}
-                        locked={isTeamsLocked}
-                      />
-                    )
-                  })}
-                </div>
-              </div>
+              <NavItemEl
+                key={item.href}
+                item={item}
+                collapsed={collapsed}
+                active={isActive(item)}
+                onClick={onMobileClose}
+                locked={locked}
+              />
             )
           })}
         </nav>
 
+        {/* Settings pinned above user profile */}
         <div className="px-2 pb-2 pt-2" style={{ borderTop: '1px solid rgba(0,56,168,0.08)' }}>
-          <NavItem
-            item={{ name: 'Settings', href: '/dashboard/settings', icon: Settings }}
+          <NavItemEl
+            item={settingsItem}
             collapsed={collapsed}
-            active={isActive('/dashboard/settings', false)}
+            active={isActive(settingsItem)}
             onClick={onMobileClose}
           />
         </div>
 
+        {/* User profile */}
         <div className={cn('px-2 pb-3 pt-3', collapsed && 'px-1.5')} style={{ borderTop: '1px solid rgba(0,56,168,0.08)' }}>
           {collapsed ? (
             <div className="flex justify-center">
@@ -269,7 +283,7 @@ export function Sidebar({
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-2.5 px-2 py-2 transition-colors group" style={{ cursor: 'default' }}>
+            <div className="flex items-center gap-2.5 px-2 py-2 group" style={{ cursor: 'default' }}>
               <div
                 className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
                 style={{ background: 'rgba(0,56,168,0.1)', border: '1px solid rgba(0,56,168,0.3)' }}
@@ -302,36 +316,50 @@ export function Sidebar({
                 className="opacity-0 group-hover:opacity-100 transition-opacity p-1"
               >
                 {loggingOut
-                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: 'rgba(0,56,168,0.4)' }} />
-                  : <LogOut className="w-3.5 h-3.5" style={{ color: 'rgba(0,56,168,0.4)' }} />
+                  ? <CircleNotch size={14} weight="light" className="animate-spin" style={{ color: 'rgba(0,56,168,0.4)' }} />
+                  : <SignOut size={14} weight="light" style={{ color: 'rgba(0,56,168,0.4)' }} />
                 }
               </button>
             </div>
           )}
         </div>
 
-        {/* Collapse strip at bottom */}
+        {/* Collapse toggle */}
         <button
           onClick={toggleCollapsed}
           className="hidden lg:flex items-center justify-center h-8 transition-colors"
           style={{ borderTop: '1px solid rgba(0,56,168,0.08)', color: 'rgba(0,56,168,0.35)' }}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,56,168,0.05)'; (e.currentTarget as HTMLElement).style.color = '#0038A8' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = ''; (e.currentTarget as HTMLElement).style.color = 'rgba(0,56,168,0.35)' }}
+          onMouseEnter={e => {
+            ;(e.currentTarget as HTMLElement).style.background = 'rgba(0,56,168,0.05)'
+            ;(e.currentTarget as HTMLElement).style.color = '#0038A8'
+          }}
+          onMouseLeave={e => {
+            ;(e.currentTarget as HTMLElement).style.background = ''
+            ;(e.currentTarget as HTMLElement).style.color = 'rgba(0,56,168,0.35)'
+          }}
         >
-          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          {collapsed
+            ? <CaretRight size={14} weight="light" />
+            : <CaretLeft size={14} weight="light" />
+          }
         </button>
       </aside>
 
-      {/* Floating expand pill — only visible when sidebar is collapsed */}
       {collapsed && (
         <button
           onClick={toggleCollapsed}
           title="Expand sidebar"
           className="hidden lg:flex fixed top-1/2 left-[60px] -translate-y-1/2 z-50 items-center justify-center w-5 h-10 transition-all"
-          style={{ background: '#0038A8', borderRight: '1px solid rgba(0,56,168,0.2)', borderTop: '1px solid rgba(0,56,168,0.2)', borderBottom: '1px solid rgba(0,56,168,0.2)', color: '#fff' }}
+          style={{
+            background: '#0038A8',
+            borderRight: '1px solid rgba(0,56,168,0.2)',
+            borderTop: '1px solid rgba(0,56,168,0.2)',
+            borderBottom: '1px solid rgba(0,56,168,0.2)',
+            color: '#fff',
+          }}
         >
-          <ChevronRight className="w-3 h-3" />
+          <CaretRight size={12} weight="light" />
         </button>
       )}
     </>

@@ -3,23 +3,29 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import {
-  Phone, MessageCircle, Bell, FileText, Eye,
-  Building2, CheckCircle2, XCircle, Loader2, ChevronDown,
-  AlertTriangle, Flame, Target, Zap, Trophy,
-  Plus, X, Search, Edit2, User, Users,
-  CornerDownRight,
-} from 'lucide-react'
+  Phone, ChatCircle, Bell, FileText, Eye,
+  Buildings, CheckCircle, XCircle, CircleNotch, CaretDown,
+  Warning, Fire, Target, Lightning, Trophy,
+  Plus, X, MagnifyingGlass, PencilSimple, User, Users,
+  ArrowBendDownRight,
+} from '@phosphor-icons/react'
+import { PageTabBar } from '@/components/layout/PageTabBar'
+
+const WORKSPACE_TABS = [
+  { label: 'Tasks', href: '/dashboard/tasks' },
+  { label: 'Team',  href: '/dashboard/team', teamsOnly: true },
+]
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
-const BG          = '#F5F6FA'
+const BG          = '#FAFAF8'
 const PANEL       = '#FFFFFF'
 const BORDER      = '#E8ECF0'
 const TEXT        = '#263238'
 const MUTED       = '#78889B'
 const LABEL       = '#A4B1BE'
-const ORANGE      = '#FF7043'
-const ORANGE_DIM  = 'rgba(255,112,67,0.09)'
-const ORANGE_GRAD = 'linear-gradient(135deg, #FF7043 0%, #FF8A65 100%)'
+const ORANGE      = '#1D4ED8'
+const ORANGE_DIM  = 'rgba(29,78,216,0.09)'
+const ORANGE_GRAD = 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)'
 const EMERALD     = '#059669'
 const AMBER       = '#F59E0B'
 const RED         = '#EF4444'
@@ -76,8 +82,9 @@ const TYPE_DEFAULTS: Record<string, string> = {
 
 const TASK_ICONS: Record<string, React.ElementType> = {
   'Follow Up': Bell, 'Call Back': Phone, 'Site Visit': Eye,
-  'Send Brochure': FileText, 'Meeting': Building2, 'Send Proposal': FileText,
-  'Check In': MessageCircle, 'Custom': Target,
+  'Send Brochure': FileText, 'Meeting': Buildings, 'Send Proposal': FileText,
+  'Check In': ChatCircle, 'Custom': Target,
+
 }
 
 const PRIORITY_CFG = {
@@ -206,7 +213,7 @@ function TaskFormModal({
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div style={{ background: PANEL, borderRadius: 20, width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
+      <div style={{ background: PANEL, borderRadius: 2, width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto', border: `1px solid ${BORDER}` }}>
 
         <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div>
@@ -217,8 +224,8 @@ function TaskFormModal({
               {mode === 'create' ? 'Schedule a task across any lead' : 'Update task details'}
             </p>
           </div>
-          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${BORDER}`, background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <X style={{ width: 13, height: 13, color: MUTED }} />
+          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 2, border: `1px solid ${BORDER}`, background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <X size={13} weight="light" style={{ color: MUTED }} />
           </button>
         </div>
 
@@ -228,7 +235,7 @@ function TaskFormModal({
           <div ref={leadRef} style={{ position: 'relative' }}>
             <label style={{ fontSize: 11, fontWeight: 700, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 5 }}>Lead *</label>
             <div style={{ position: 'relative' }}>
-              <Search style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: LABEL, pointerEvents: 'none' }} />
+              <MagnifyingGlass size={13} weight="light" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: LABEL, pointerEvents: 'none' }} />
               <input style={{ ...inp, paddingLeft: 30 }} placeholder="Search lead..." value={leadSearch}
                 onChange={e => { setLeadSearch(e.target.value); setShowLeads(true); if (!e.target.value) set('lead_id', '') }}
                 onFocus={() => setShowLeads(true)} />
@@ -246,7 +253,7 @@ function TaskFormModal({
             )}
             {form.lead_id && (
               <div style={{ marginTop: 4, fontSize: 11, color: EMERALD, display: 'flex', alignItems: 'center', gap: 4 }}>
-                <CheckCircle2 style={{ width: 11, height: 11 }} /> Lead selected
+                <CheckCircle style={{ width: 11, height: 11 }} /> Lead selected
               </div>
             )}
           </div>
@@ -328,7 +335,7 @@ function TaskFormModal({
             </button>
             <button onClick={handleSave} disabled={!canSave || saving}
               style={{ flex: 2, padding: '10px 0', borderRadius: 10, border: 'none', background: !canSave || saving ? '#CBD5E1' : ORANGE_GRAD, fontSize: 13, fontWeight: 700, color: '#fff', cursor: !canSave || saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              {saving && <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />}
+              {saving && <CircleNotch style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />}
               {mode === 'create' ? 'Create Task' : 'Save Changes'}
             </button>
           </div>
@@ -363,17 +370,15 @@ function TaskCard({
 
   return (
     <div
-      style={{ background: PANEL, borderRadius: 14, border: `1px solid ${BORDER}`, overflow: 'hidden', opacity: busy ? 0.6 : 1, boxShadow: '0 1px 3px rgba(0,0,0,0.04)', transition: 'box-shadow 0.15s, transform 0.15s' }}
-      onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 4px 16px rgba(0,0,0,0.09)'; el.style.transform = 'translateY(-1px)' }}
-      onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'; el.style.transform = 'none' }}
+      style={{ background: PANEL, borderRadius: 2, border: `1px solid ${BORDER}`, overflow: 'hidden', opacity: busy ? 0.6 : 1 }}
     >
       <div style={{ display: 'flex', gap: 11, alignItems: 'flex-start', padding: '13px 13px 13px 14px' }}>
         {/* Priority bar */}
         <div style={{ width: 3, borderRadius: 99, background: pc.color, alignSelf: 'stretch', flexShrink: 0, minHeight: 36 }} />
 
         {/* Icon */}
-        <div style={{ width: 34, height: 34, borderRadius: 10, background: due.overdue ? 'rgba(239,68,68,0.10)' : due.isToday ? ORANGE_DIM : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-          <Icon style={{ width: 15, height: 15, color: due.overdue ? RED : due.isToday ? ORANGE : MUTED }} />
+        <div style={{ width: 32, height: 32, borderRadius: 2, background: due.overdue ? 'rgba(239,68,68,0.08)' : due.isToday ? ORANGE_DIM : '#F5F5F2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+          <Icon size={14} weight="light" style={{ color: due.overdue ? RED : due.isToday ? ORANGE : MUTED }} />
         </div>
 
         {/* Body */}
@@ -385,7 +390,7 @@ function TaskCard({
               <span style={{ fontSize: 10, fontWeight: 700, color: pc.color, background: pc.bg, border: `1px solid ${pc.border}`, padding: '2px 7px', borderRadius: 99 }}>{task.priority}</span>
               {isAssigned && (
                 <span style={{ fontSize: 10, fontWeight: 700, color: BLUE, background: 'rgba(46,102,246,0.09)', border: '1px solid rgba(46,102,246,0.18)', padding: '2px 7px', borderRadius: 99, display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <CornerDownRight style={{ width: 8, height: 8 }} /> Delegated
+                  <ArrowBendDownRight style={{ width: 8, height: 8 }} /> Delegated
                 </span>
               )}
             </div>
@@ -436,17 +441,17 @@ function TaskCard({
         {/* Actions */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flexShrink: 0 }}>
           <button onClick={() => onDone(task.id)} disabled={busy} title="Mark done"
-            style={{ width: 30, height: 30, borderRadius: 8, border: `1.5px solid ${EMERALD}`, background: 'rgba(5,150,105,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: busy ? 'wait' : 'pointer' }}>
-            {busy ? <Loader2 style={{ width: 13, height: 13, color: EMERALD, animation: 'spin 1s linear infinite' }} />
-                  : <CheckCircle2 style={{ width: 13, height: 13, color: EMERALD }} />}
+            style={{ width: 28, height: 28, borderRadius: 2, border: `1px solid ${EMERALD}`, background: 'rgba(5,150,105,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: busy ? 'wait' : 'pointer' }}>
+            {busy ? <CircleNotch size={12} weight="light" style={{ color: EMERALD, animation: 'spin 0.8s linear infinite' }} />
+                  : <CheckCircle size={12} weight="light" style={{ color: EMERALD }} />}
           </button>
           <button onClick={() => onEdit(task)} title="Edit"
-            style={{ width: 30, height: 30, borderRadius: 8, border: `1.5px solid ${BORDER}`, background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <Edit2 style={{ width: 12, height: 12, color: MUTED }} />
+            style={{ width: 28, height: 28, borderRadius: 2, border: `1px solid ${BORDER}`, background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <PencilSimple size={12} weight="light" style={{ color: MUTED }} />
           </button>
           <button onClick={() => onCancel(task.id)} disabled={busy} title="Dismiss"
-            style={{ width: 30, height: 30, borderRadius: 8, border: `1.5px solid ${BORDER}`, background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: busy ? 'wait' : 'pointer' }}>
-            <XCircle style={{ width: 13, height: 13, color: LABEL }} />
+            style={{ width: 28, height: 28, borderRadius: 2, border: `1px solid ${BORDER}`, background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: busy ? 'wait' : 'pointer' }}>
+            <XCircle size={12} weight="light" style={{ color: LABEL }} />
           </button>
         </div>
       </div>
@@ -458,8 +463,8 @@ function TaskCard({
 function SectionHead({ label, count, color, icon: Icon }: { label: string; count: number; color: string; icon: React.ElementType }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-      <div style={{ width: 26, height: 26, borderRadius: 7, background: `${color}14`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Icon style={{ width: 13, height: 13, color }} />
+      <div style={{ width: 24, height: 24, borderRadius: 2, background: `${color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Icon size={12} weight="light" style={{ color }} />
       </div>
       <span style={{ fontSize: 12, fontWeight: 700, color: TEXT, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</span>
       <span style={{ fontSize: 11, fontWeight: 700, color, background: `${color}14`, padding: '2px 8px', borderRadius: 99 }}>{count}</span>
@@ -572,12 +577,13 @@ export default function TasksPage() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <Loader2 style={{ width: 28, height: 28, color: ORANGE, animation: 'spin 1s linear infinite' }} />
+      <CircleNotch size={22} weight="light" style={{ color: ORANGE, animation: 'spin 0.8s linear infinite' }} />
     </div>
   )
 
   return (
     <div style={{ minHeight: '100vh', background: BG }}>
+      <PageTabBar tabs={WORKSPACE_TABS} />
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '28px 20px 48px' }}>
 
         {/* Header */}
@@ -585,26 +591,26 @@ export default function TasksPage() {
           <div>
             <h1 style={{ fontSize: 26, fontWeight: 800, color: TEXT, margin: '0 0 4px', letterSpacing: '-0.04em' }}>Tasks</h1>
             <p style={{ fontSize: 13, color: MUTED, margin: 0 }}>
-              {allPending.length === 0 ? 'All caught up 🎉' : `${allPending.length} pending · ${kpiDelegate} delegated to agents`}
+              {allPending.length === 0 ? 'All caught up.' : `${allPending.length} pending · ${kpiDelegate} delegated to agents`}
             </p>
           </div>
           <button onClick={() => setShowCreate(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 10, border: 'none', background: ORANGE_GRAD, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(255,112,67,0.28)' }}>
-            <Plus style={{ width: 14, height: 14 }} /> New Task
+            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 2, border: 'none', background: ORANGE_GRAD, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+            <Plus size={14} weight="light" /> New Task
           </button>
         </div>
 
         {/* KPI strip */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 18 }}>
           {[
-            { label: 'Overdue',    value: kpiOverdue,  color: RED,     Icon: AlertTriangle },
-            { label: 'Due Today',  value: kpiToday,    color: ORANGE,  Icon: Flame },
+            { label: 'Overdue',    value: kpiOverdue,  color: RED,     Icon: Warning },
+            { label: 'Due Today',  value: kpiToday,    color: ORANGE,  Icon: Lightning },
             { label: 'Done Today', value: todayDone,   color: EMERALD, Icon: Trophy },
             { label: 'Delegated',  value: kpiDelegate, color: BLUE,    Icon: Users },
           ].map(k => (
-            <div key={k.label} style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 14, padding: '13px 15px' }}>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: `${k.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
-                <k.Icon style={{ width: 13, height: 13, color: k.color }} />
+            <div key={k.label} style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 2, padding: '12px 14px' }}>
+              <div style={{ width: 26, height: 26, borderRadius: 2, background: `${k.color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                <k.Icon size={13} weight="light" style={{ color: k.color }} />
               </div>
               <div style={{ fontSize: 24, fontWeight: 800, color: k.value > 0 ? k.color : LABEL, letterSpacing: '-0.04em', lineHeight: 1 }}>{k.value}</div>
               <div style={{ fontSize: 11, color: MUTED, marginTop: 3, fontWeight: 500 }}>{k.label}</div>
@@ -614,7 +620,7 @@ export default function TasksPage() {
 
         {/* Progress bar */}
         {todayAll.length > 0 && (
-          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 14, padding: '13px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 2, padding: '12px 16px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: TEXT }}>Today's Progress</span>
@@ -692,16 +698,15 @@ export default function TasksPage() {
 
         {/* Task sections */}
         {pending.length === 0 ? (
-          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 20, padding: '52px 32px', textAlign: 'center' }}>
-            <div style={{ fontSize: 48, marginBottom: 14 }}>{tab === 'assigned' ? '👥' : '🎉'}</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: TEXT, letterSpacing: '-0.03em', marginBottom: 6 }}>
-              {tab === 'assigned' ? 'No delegated tasks' : tab === 'self' ? 'No personal tasks' : 'All caught up!'}
+          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 2, padding: '48px 32px', textAlign: 'center' }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: TEXT, letterSpacing: '-0.03em', marginBottom: 6 }}>
+              {tab === 'assigned' ? 'No delegated tasks' : tab === 'self' ? 'No personal tasks' : 'All caught up'}
             </div>
             <div style={{ fontSize: 13, color: MUTED, maxWidth: 260, margin: '0 auto 20px' }}>
-              {tab === 'assigned' ? 'Assign tasks to agents from any lead.' : 'You\'re on top of things. Keep closing!'}
+              {tab === 'assigned' ? 'Assign tasks to agents from any lead.' : 'You are on top of things. Keep closing!'}
             </div>
             <button onClick={() => setShowCreate(true)}
-              style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: ORANGE_GRAD, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              style={{ padding: '9px 20px', borderRadius: 2, border: 'none', background: ORANGE_GRAD, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
               + New Task
             </button>
           </div>
@@ -709,7 +714,7 @@ export default function TasksPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
             {overdue.length > 0 && (
               <div>
-                <SectionHead label="Overdue" count={overdue.length} color={RED} icon={AlertTriangle} />
+                <SectionHead label="Overdue" count={overdue.length} color={RED} icon={Warning} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {overdue.map(t => <TaskCard key={t.id} task={t} members={members} onDone={id => handleStatusChange(id, 'Done')} onCancel={id => handleStatusChange(id, 'Cancelled')} onEdit={setEditTarget} busy={completing === t.id} />)}
                 </div>
@@ -717,7 +722,7 @@ export default function TasksPage() {
             )}
             {today.length > 0 && (
               <div>
-                <SectionHead label="Due Today" count={today.length} color={ORANGE} icon={Flame} />
+                <SectionHead label="Due Today" count={today.length} color={ORANGE} icon={Fire} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {today.map(t => <TaskCard key={t.id} task={t} members={members} onDone={id => handleStatusChange(id, 'Done')} onCancel={id => handleStatusChange(id, 'Cancelled')} onEdit={setEditTarget} busy={completing === t.id} />)}
                 </div>
@@ -725,7 +730,7 @@ export default function TasksPage() {
             )}
             {upcoming.length > 0 && (
               <div>
-                <SectionHead label="Upcoming" count={upcoming.length} color={BLUE} icon={Zap} />
+                <SectionHead label="Upcoming" count={upcoming.length} color={BLUE} icon={Lightning} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {upcoming.map(t => <TaskCard key={t.id} task={t} members={members} onDone={id => handleStatusChange(id, 'Done')} onCancel={id => handleStatusChange(id, 'Cancelled')} onEdit={setEditTarget} busy={completing === t.id} />)}
                 </div>
@@ -739,15 +744,15 @@ export default function TasksPage() {
           <div style={{ marginTop: 28 }}>
             <button onClick={() => setShowDone(s => !s)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: MUTED, background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
-              <CheckCircle2 style={{ width: 13, height: 13, color: EMERALD }} />
+              <CheckCircle style={{ width: 13, height: 13, color: EMERALD }} />
               {showDone ? 'Hide' : 'Show'} completed ({done.length})
-              <ChevronDown style={{ width: 12, height: 12, transition: 'transform 0.2s', transform: showDone ? 'rotate(180deg)' : 'none' }} />
+              <CaretDown style={{ width: 12, height: 12, transition: 'transform 0.2s', transform: showDone ? 'rotate(180deg)' : 'none' }} />
             </button>
             {showDone && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
                 {done.slice(0, 30).map(t => (
                   <div key={t.id} style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'center', opacity: 0.5 }}>
-                    <CheckCircle2 style={{ width: 14, height: 14, color: t.status === 'Done' ? EMERALD : LABEL, flexShrink: 0 }} />
+                    <CheckCircle style={{ width: 14, height: 14, color: t.status === 'Done' ? EMERALD : LABEL, flexShrink: 0 }} />
                     <span style={{ fontSize: 12, fontWeight: 500, color: MUTED, textDecoration: 'line-through', flex: 1 }}>{t.title}</span>
                     <span style={{ fontSize: 11, color: LABEL }}>{getLeadName(t)}</span>
                     {t.assignee && <span style={{ fontSize: 11, color: BLUE, display: 'flex', alignItems: 'center', gap: 3 }}><User style={{ width: 10, height: 10 }} /> {t.assignee.name}</span>}

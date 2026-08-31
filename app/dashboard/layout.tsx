@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
+import { CircleNotch } from '@phosphor-icons/react'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { TopBar } from '@/components/layout/TopBar'
 import { MobileTabBar } from '@/components/layout/MobileTabBar'
@@ -31,7 +31,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#a000c8' }} />
+        <CircleNotch size={24} weight="light" className="animate-spin" style={{ color: '#1D4ED8' }} />
       </div>
     )
   }

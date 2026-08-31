@@ -1,39 +1,35 @@
 'use client'
 
-import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import {
-  Users, TrendingUp, IndianRupee, Flame,
-  ArrowRight, Loader2, ArrowUpRight,
-  Newspaper, MapPin, Receipt, Landmark, Home, ChevronRight, ChevronLeft, ExternalLink,
-} from 'lucide-react'
+  CircleNotch, CaretRight, CaretLeft,
+  Newspaper, MapPin, Receipt, Bank, House, TrendUp, CurrencyInr,
+} from '@phosphor-icons/react'
 import { getRole } from '@/lib/plan'
 
-// ─── Design tokens (Lead Gap CRM palette) ────────────────────────────────────────
-const BG      = '#FFFFFF'
-const PANEL   = '#FFFFFF'
-const BORDER  = '#E8ECF0'
-const TEXT    = '#263238'
-const MUTED   = '#78889B'
-const LABEL   = '#A4B1BE'
-const ORANGE  = '#1D4ED8'
-const ORANGE_DIM   = 'rgba(29,78,216,0.09)'
-const ORANGE_GRAD  = 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)'
-const ACCENT  = '#0038A8'
-const EMERALD = '#059669'
-const AMBER   = '#F59E0B'
-const RED     = '#EF4444'
+// ─── Design tokens ──────────────────────────────────────────────────────────────
+const BG     = '#eef0f6'
+const PANEL  = '#ffffff'
+const BORDER = '#dfe2ed'
+const TEXT   = '#0f1729'
+const MUTED  = '#5c6479'
+const LABEL  = '#9aa2b8'
+const MONO   = "'JetBrains Mono', monospace"
 
-// ─── Avatar palette (deterministic warm colors) ────────────────────────────────
+const BLUE     = '#1D4ED8'
+const BLUE_L   = '#3B82F6'
+const BLUE_DIM = 'rgba(29,78,216,0.08)'
+const EMERALD  = '#10b981'
+const AMBER    = '#f59e0b'
+const RED_C    = '#f43f5e'
+
+// ─── Avatar palette ─────────────────────────────────────────────────────────────
 const PALETTE = [
-  { bg: '#FFEDE8', fg: '#C2410C' },
-  { bg: '#FEF3C7', fg: '#B45309' },
-  { bg: '#DCFCE7', fg: '#15803D' },
-  { bg: '#DBEAFE', fg: '#1D4ED8' },
-  { bg: '#EDE9FE', fg: '#6D28D9' },
-  { bg: '#FCE7F3', fg: '#BE185D' },
-  { bg: '#E0F2FE', fg: '#0369A1' },
-  { bg: '#FFF7ED', fg: '#C2410C' },
+  { bg: '#dbeafe', fg: '#1D4ED8' }, { bg: '#fef3c7', fg: '#B45309' },
+  { bg: '#dcfce7', fg: '#15803d' }, { bg: '#ede9fe', fg: '#6D28D9' },
+  { bg: '#fce7f3', fg: '#BE185D' }, { bg: '#e0f2fe', fg: '#0369A1' },
+  { bg: '#fff7ed', fg: '#C2410C' }, { bg: '#f3e8ff', fg: '#7C3AED' },
 ]
 function avatarColor(name: string) {
   let h = 0
@@ -41,6 +37,7 @@ function avatarColor(name: string) {
   return PALETTE[Math.abs(h)]
 }
 
+// ─── CRM types & helpers ────────────────────────────────────────────────────────
 type CRMLead = {
   id: string
   name: { firstName: string; lastName: string }
@@ -84,750 +81,15 @@ function sourceLabel(raw: string | null) {
   return m[raw] ?? raw
 }
 
-// ─── Stat card ─────────────────────────────────────────────────────────────────
-function KPICard({ label, value, sub, icon: Icon, accent, trend }: {
-  label: string; value: string | number; sub?: string
-  icon: React.ElementType; accent: string; trend?: { up: boolean; label: string }
-}) {
-  return (
-    <div style={{ background: '#FAFAFA', border: `1px solid ${BORDER}`, borderRadius: 12, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 12, background: `${accent}14`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon style={{ width: 18, height: 18, color: accent }} />
-        </div>
-        {trend && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 600, color: trend.up ? EMERALD : RED, background: trend.up ? 'rgba(5,150,105,0.09)' : 'rgba(239,68,68,0.09)', padding: '3px 8px', borderRadius: 20 }}>
-            <ArrowUpRight style={{ width: 10, height: 10, transform: trend.up ? 'none' : 'rotate(90deg)' }} />
-            {trend.label}
-          </span>
-        )}
-      </div>
-      <div style={{ fontSize: 32, fontWeight: 800, color: TEXT, letterSpacing: '-0.04em', lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: 13, color: MUTED, marginTop: 6, fontWeight: 500 }}>{label}</div>
-      {sub && <div style={{ fontSize: 11, color: LABEL, marginTop: 3 }}>{sub}</div>}
-    </div>
-  )
-}
-
-const SOURCE_COLORS = [ORANGE, ACCENT, EMERALD, AMBER, '#A78BFA', '#F472B6', '#22D3EE']
-
-function LeadSourceDonut({ data }: { data: Array<{ name: string; value: number }> }) {
-  const [hovered, setHovered] = useState<number | null>(null)
-  const total = data.reduce((s, d) => s + d.value, 0)
-  if (total === 0) return (
-    <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', color: LABEL, fontSize: 13 }}>No data</div>
-  )
-  const CX = 72, CY = 72, OR = 63, IR = 43
-  const GAP = 2.8
-  const toRad = (deg: number) => (deg * Math.PI) / 180
-  let cum = -90
-  const slices = data.map((d, i) => {
-    const sweep = (d.value / total) * 360
-    const s = cum + GAP / 2
-    const e = cum + sweep - GAP / 2
-    cum += sweep
-    const large = sweep - GAP > 180 ? 1 : 0
-    const p = (deg: number, r: number) => [CX + r * Math.cos(toRad(deg)), CY + r * Math.sin(toRad(deg))] as [number, number]
-    const [ox1, oy1] = p(s, OR), [ox2, oy2] = p(e, OR)
-    const [ix1, iy1] = p(e, IR), [ix2, iy2] = p(s, IR)
-    const path = `M ${ox1.toFixed(2)} ${oy1.toFixed(2)} A ${OR} ${OR} 0 ${large} 1 ${ox2.toFixed(2)} ${oy2.toFixed(2)} L ${ix1.toFixed(2)} ${iy1.toFixed(2)} A ${IR} ${IR} 0 ${large} 0 ${ix2.toFixed(2)} ${iy2.toFixed(2)} Z`
-    return { ...d, path, color: SOURCE_COLORS[i % SOURCE_COLORS.length], pct: Math.round((d.value / total) * 100) }
-  })
-  const active = hovered !== null ? slices[hovered] : null
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-      <div style={{ flexShrink: 0 }}>
-        <svg width={144} height={144} viewBox="0 0 144 144">
-          {slices.map((s, i) => (
-            <path key={i} d={s.path} fill={s.color}
-              opacity={hovered === null ? 1 : hovered === i ? 1 : 0.2}
-              style={{ cursor: 'pointer', transition: 'opacity 0.18s ease', filter: hovered === i ? `drop-shadow(0 2px 8px ${s.color}60)` : 'none' }}
-              onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}
-            />
-          ))}
-          {active ? (
-            <>
-              <text x={CX} y={CY - 9} textAnchor="middle" fontSize="20" fontWeight="800" fill={TEXT}>{active.value}</text>
-              <text x={CX} y={CY + 8} textAnchor="middle" fontSize="11" fontWeight="700" fill={active.color}>{active.pct}%</text>
-              <text x={CX} y={CY + 21} textAnchor="middle" fontSize="10" fill={MUTED}>of total</text>
-            </>
-          ) : (
-            <>
-              <text x={CX} y={CY - 5} textAnchor="middle" fontSize="24" fontWeight="800" fill={TEXT}>{total}</text>
-              <text x={CX} y={CY + 13} textAnchor="middle" fontSize="11" fill={MUTED}>total leads</text>
-            </>
-          )}
-        </svg>
-      </div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 11 }}>
-        {slices.map((s, i) => (
-          <div key={i}
-            style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', opacity: hovered === null ? 1 : hovered === i ? 1 : 0.3, transition: 'opacity 0.18s' }}
-            onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}
-          >
-            <div style={{ width: 10, height: 10, borderRadius: 3, background: s.color, flexShrink: 0 }} />
-            <span style={{ fontSize: 13, color: TEXT, flex: 1, fontWeight: 500 }}>{s.name}</span>
-            <div style={{ width: 50, height: 4, background: '#F0F2F5', borderRadius: 99, overflow: 'hidden', flexShrink: 0 }}>
-              <div style={{ width: `${s.pct}%`, height: '100%', background: s.color, borderRadius: 99 }} />
-            </div>
-            <span style={{ fontSize: 12, fontWeight: 700, color: TEXT, minWidth: 18, textAlign: 'right' }}>{s.value}</span>
-            <span style={{ fontSize: 11, color: MUTED, minWidth: 32, textAlign: 'right' }}>{s.pct}%</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-const FUNNEL_CFG: Record<string, { top: string; bot: string; order: number }> = {
-  New:    { top: '#BFDBFE', bot: '#93C5FD', order: 0 },
-  Cold:   { top: '#60A5FA', bot: '#3B82F6', order: 1 },
-  Warm:   { top: '#FBBF24', bot: '#F59E0B', order: 2 },
-  Hot:    { top: '#FB923C', bot: '#FF7043', order: 3 },
-  Closed: { top: '#34D399', bot: '#10B981', order: 4 },
-}
-
-function PipelineFunnelChart({ stages }: {
-  stages: Array<{ name: string; count: number; budget: number; topColor: string; botColor: string }>
-}) {
-  const [hovered, setHovered] = useState<number | null>(null)
-
-  const active = stages.filter(s => s.count > 0)
-  if (active.length === 0) return (
-    <div style={{ height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', color: LABEL, fontSize: 13 }}>
-      No pipeline data yet
-    </div>
-  )
-
-  const W = 600, H = 150, MAX_H = 118, FLOOR = H
-  const colW = W / active.length
-  const maxCount = Math.max(...active.map(s => s.count))
-  const heights = active.map(s => Math.max((s.count / maxCount) * MAX_H, 14))
-  const totalCount = active.reduce((s, a) => s + a.count, 0)
-
-  const paths = active.map((s, i) => {
-    const xi = i * colW
-    const hi = heights[i]
-    const hn = i < active.length - 1 ? heights[i + 1] : hi
-    return [
-      `M ${xi} ${FLOOR}`,
-      `L ${xi} ${FLOOR - hi}`,
-      `L ${xi + colW * 0.62} ${FLOOR - hi}`,
-      `C ${xi + colW * 0.82} ${FLOOR - hi} ${xi + colW * 0.82} ${FLOOR - hn} ${xi + colW} ${FLOOR - hn}`,
-      `L ${xi + colW} ${FLOOR}`,
-      'Z',
-    ].join(' ')
-  })
-
-  const hoveredStage = hovered !== null ? active[hovered] : null
-
-  return (
-    <div style={{ position: 'relative' }}>
-      {/* Tooltip */}
-      {hoveredStage !== null && hovered !== null && (
-        <div style={{
-          position: 'absolute',
-          top: -12,
-          left: `${((hovered + 0.5) / active.length) * 100}%`,
-          transform: 'translateX(-50%) translateY(-100%)',
-          background: '#0F172A',
-          borderRadius: 10,
-          padding: '8px 12px',
-          pointerEvents: 'none',
-          zIndex: 20,
-          minWidth: 110,
-          textAlign: 'center',
-          boxShadow: `0 6px 20px rgba(0,0,0,0.24), 0 0 0 1px ${hoveredStage.topColor}30`,
-        }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: hoveredStage.topColor, marginBottom: 4, letterSpacing: '0.07em', textTransform: 'uppercase' }}>
-            {hoveredStage.name}
-          </div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1, marginBottom: 1 }}>
-            {formatPipeline(hoveredStage.budget)}
-          </div>
-          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>pipeline value</div>
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{hoveredStage.count} leads</span>
-            <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>·</span>
-            <span style={{ fontSize: 11, fontWeight: 600, color: hoveredStage.topColor }}>{Math.round((hoveredStage.count / totalCount) * 100)}%</span>
-          </div>
-          {/* Arrow */}
-          <div style={{
-            position: 'absolute', bottom: -6, left: '50%', transform: 'translateX(-50%)',
-            width: 0, height: 0,
-            borderLeft: '6px solid transparent', borderRight: '6px solid transparent',
-            borderTop: '6px solid #0F172A',
-          }} />
-        </div>
-      )}
-
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        style={{ width: '100%', height: 150, display: 'block' }}
-        preserveAspectRatio="none"
-      >
-        <defs>
-          {active.map((s, i) => (
-            <linearGradient key={i} id={`pfg-${i}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={s.topColor} stopOpacity="0.95" />
-              <stop offset="100%" stopColor={s.botColor} stopOpacity="0.5" />
-            </linearGradient>
-          ))}
-          {/* Sweep sheen gradient */}
-          <linearGradient id="pfg-sheen" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%"   stopColor="white" stopOpacity="0"    />
-            <stop offset="50%"  stopColor="white" stopOpacity="0.20" />
-            <stop offset="100%" stopColor="white" stopOpacity="0"    />
-          </linearGradient>
-          {/* Clip path = union of all funnel segments */}
-          <clipPath id="pfg-clip">
-            {paths.map((d, i) => <path key={i} d={d} />)}
-          </clipPath>
-        </defs>
-
-        {/* Stage segments */}
-        {active.map((s, i) => (
-          <path
-            key={i}
-            d={paths[i]}
-            fill={`url(#pfg-${i})`}
-            opacity={hovered === null ? 1 : hovered === i ? 1 : 0.28}
-            style={{
-              cursor: 'pointer',
-              transition: 'opacity 0.22s ease, filter 0.22s ease',
-              filter: hovered === i ? `drop-shadow(0 3px 14px ${s.topColor}70)` : 'none',
-            }}
-            onMouseEnter={() => setHovered(i)}
-            onMouseLeave={() => setHovered(null)}
-          />
-        ))}
-
-        {/* Flowing sheen — sweeps left to right continuously when nothing is hovered */}
-        <rect
-          x="-200" y="0" width="200" height={H}
-          fill="url(#pfg-sheen)"
-          clipPath="url(#pfg-clip)"
-          style={{ pointerEvents: 'none', opacity: hovered === null ? 1 : 0, transition: 'opacity 0.2s' }}
-        >
-          <animate attributeName="x" from="-200" to={String(W)} dur="2.6s" repeatCount="indefinite" />
-        </rect>
-      </svg>
-    </div>
-  )
-}
-
-// ─── Revenue Analytics (quarterly dot-matrix + AI projection) ─────────────────
-const Q_COLORS = [ORANGE, AMBER, EMERALD, '#60A5FA']
-
-type MetricKey = 'pipeline' | 'count' | 'avg'
-type PeriodKey = 'year' | 'q1' | 'q2' | 'q3' | 'q4'
-const METRIC_OPTS: { key: MetricKey; label: string }[] = [
-  { key: 'pipeline', label: 'Pipeline Value' },
-  { key: 'count',    label: 'Lead Count' },
-  { key: 'avg',      label: 'Avg Deal Size' },
-]
-
-function RevenueAnalytics({ leads }: { leads: CRMLead[] }) {
-  const [hoveredMonth, setHoveredMonth] = useState<number | null>(null)
-  const [animated, setAnimated]         = useState(false)
-  const [openMenu, setOpenMenu]         = useState<'metric' | 'period' | null>(null)
-  const [metric, setMetric]             = useState<MetricKey>('pipeline')
-  const [period, setPeriod]             = useState<PeriodKey>('year')
-  const [showReasoning, setShowReasoning] = useState(false)
-  const menuRef     = useRef<HTMLDivElement>(null)
-  const year        = new Date().getFullYear()
-  const curMonthIdx = new Date().getMonth()
-  const curDay      = new Date().getDate()
-
-  useEffect(() => { const t = setTimeout(() => setAnimated(true), 120); return () => clearTimeout(t) }, [])
-  useEffect(() => { setHoveredMonth(null) }, [period])
-
-  useEffect(() => {
-    const h = (e: MouseEvent) => { if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpenMenu(null) }
-    document.addEventListener('mousedown', h)
-    return () => document.removeEventListener('mousedown', h)
-  }, [])
-
-  const periodOpts = [
-    { key: 'year' as PeriodKey, label: `Full Year ${year}`, focus: [0,1,2,3,4,5,6,7,8,9,10,11] },
-    { key: 'q1'   as PeriodKey, label: `Q1 · Jan–Mar`,      focus: [0,1,2] },
-    { key: 'q2'   as PeriodKey, label: `Q2 · Apr–Jun`,      focus: [3,4,5] },
-    { key: 'q3'   as PeriodKey, label: `Q3 · Jul–Sep`,      focus: [6,7,8] },
-    { key: 'q4'   as PeriodKey, label: `Q4 · Oct–Dec`,      focus: [9,10,11] },
-  ]
-  const activePeriod = periodOpts.find(p => p.key === period)!
-  const focusSet     = new Set(activePeriod.focus)
-  const metricLabel  = METRIC_OPTS.find(m => m.key === metric)!.label
-
-  const months = useMemo(() => Array.from({ length: 12 }, (_, m) => {
-    const start = new Date(year, m, 1).getTime()
-    const end   = new Date(year, m + 1, 0, 23, 59, 59).getTime()
-    const ml    = leads.filter(l => { const t = new Date(l.createdAt).getTime(); return t >= start && t <= end })
-    return {
-      label: new Date(year, m, 1).toLocaleDateString('en-IN', { month: 'short' }),
-      value: ml.reduce((s, l) => s + (l.budgetMax ?? l.budgetMin ?? 0), 0),
-      count: ml.length,
-    }
-  }), [leads, year])
-
-  const { projPipeline, projCount, reasoning } = useMemo(() => {
-    const daysInCur    = new Date(year, curMonthIdx + 1, 0).getDate()
-    const fraction     = Math.max(curDay / daysInCur, 0.01)
-    const withData     = months.filter((m, i) => m.value > 0 && i <= curMonthIdx)
-    const avgPipe      = withData.length > 0 ? withData.reduce((s, m) => s + m.value, 0) / withData.length : 0
-    const avgCnt       = withData.length > 0 ? withData.reduce((s, m) => s + m.count, 0) / withData.length : 0
-    const curMonthPace = months[curMonthIdx].value / fraction
-    const pipeBase     = curMonthPace * 0.6 + avgPipe * 0.4
-    const cntBase      = months[curMonthIdx].count / fraction * 0.6 + avgCnt * 0.4
-    return {
-      projPipeline: Array.from({ length: 12 }, (_, m) => m <= curMonthIdx ? 0 : Math.round(pipeBase * Math.pow(1.035, m - curMonthIdx))),
-      projCount:    Array.from({ length: 12 }, (_, m) => m <= curMonthIdx ? 0 : Math.round(cntBase  * Math.pow(1.03,  m - curMonthIdx))),
-      reasoning: { avgPipe, avgCnt: Math.round(avgCnt), curMonthPace, pipeBase, fraction, daysInCur, monthsWithData: withData.length },
-    }
-  }, [months, curMonthIdx, curDay, year])
-
-  const getMonthVal = (m: { value: number; count: number }) => {
-    if (metric === 'count') return m.count
-    if (metric === 'avg')   return m.count > 0 ? Math.round(m.value / m.count) : 0
-    return m.value
-  }
-  const getProjVal = (pipe: number, cnt: number) => {
-    if (metric === 'count') return cnt
-    if (metric === 'avg')   return cnt > 0 ? Math.round(pipe / cnt) : 0
-    return pipe
-  }
-  const formatVal = (v: number) => metric === 'count' ? `${v}` : formatPipeline(v)
-
-  const maxVal = Math.max(
-    ...months.map(m => getMonthVal(m)),
-    ...Array.from({ length: 12 }, (_, i) => getProjVal(projPipeline[i], projCount[i])),
-    1
-  )
-
-  const quarters = useMemo(() => [0, 1, 2, 3].map(q => {
-    const slice  = months.slice(q * 3, q * 3 + 3)
-    const projP  = projPipeline.slice(q * 3, q * 3 + 3).reduce((s, v) => s + v, 0)
-    const projC  = projCount.slice(q * 3, q * 3 + 3).reduce((s, v) => s + v, 0)
-    const mv = (m: { value: number; count: number }) => metric === 'count' ? m.count : metric === 'avg' ? (m.count > 0 ? Math.round(m.value / m.count) : 0) : m.value
-    const actual = slice.reduce((s, m) => s + mv(m), 0)
-    const proj   = metric === 'count' ? projC : metric === 'avg' ? (projC > 0 ? Math.round(projP / projC) : 0) : projP
-    return {
-      label: `Q${q + 1}`, color: Q_COLORS[q],
-      value: actual, projected: proj,
-      count: slice.reduce((s, m) => s + m.count, 0),
-      isFuture: actual === 0 && proj > 0,
-    }
-  }), [months, projPipeline, projCount, metric])
-
-  const peakMonth   = months.reduce((b, m, i) => getMonthVal(m) > getMonthVal(months[b]) ? i : b, 0)
-  const focusArr    = [...focusSet]
-  const peakInFocus = focusArr.reduce((b, i) => getMonthVal(months[i]) > getMonthVal(months[b]) ? i : b, focusArr[0])
-  const activeMonth = hoveredMonth ?? (period === 'year'
-    ? (getMonthVal(months[curMonthIdx]) > 0 ? curMonthIdx : peakMonth)
-    : peakInFocus
-  )
-
-  const actualTotal   = months.slice(0, curMonthIdx + 1).reduce((s, m) => s + m.value, 0)
-  const projRemainder = projPipeline.reduce((s, v) => s + v, 0)
-  const yearEnd       = actualTotal + projRemainder
-  const hotLeads      = leads.filter(l => (l.intentScore ?? 0) >= 70)
-  const closedLeads   = leads.filter(l => l.status === 'Closed')
-  const closeRate     = leads.length > 0 ? closedLeads.length / leads.length : 0
-  const projClosures  = Math.round(hotLeads.length * closeRate)
-  const projCloseVal  = hotLeads.slice(0, projClosures).reduce((s, l) => s + (l.budgetMax ?? l.budgetMin ?? 0), 0)
-
-  const ROWS = 10, DOT_R = 8, ROW_H = 20, COL_W = 80
-  const CHART_H = ROWS * ROW_H + DOT_R * 2
-  const CHART_W = 12 * COL_W
-
-  return (
-    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, padding: '22px 24px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>Revenue Analytics</div>
-          <div style={{ fontSize: 12, color: MUTED, marginTop: 3 }}>{metricLabel} · {activePeriod.label}</div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ display: 'flex', gap: 12 }}>
-            {[{ label: 'Actual', dashed: false }, { label: 'AI Projected', dashed: true }].map(({ label, dashed }) => (
-              <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: MUTED, fontWeight: 500 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: dashed ? 'transparent' : ORANGE, border: dashed ? `1.5px dashed ${ORANGE}` : 'none', display: 'inline-block', flexShrink: 0 }} />
-                {label}
-              </span>
-            ))}
-          </div>
-          <div ref={menuRef} style={{ display: 'flex', gap: 8 }}>
-            <div style={{ position: 'relative' }}>
-              <div onClick={() => setOpenMenu(openMenu === 'metric' ? null : 'metric')}
-                style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${openMenu === 'metric' ? ORANGE : BORDER}`, background: openMenu === 'metric' ? `${ORANGE}0A` : 'transparent', fontSize: 11, color: openMenu === 'metric' ? ORANGE : MUTED, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, userSelect: 'none' }}>
-                {metricLabel} ▾
-              </div>
-              {openMenu === 'metric' && (
-                <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 4, zIndex: 50, minWidth: 152, boxShadow: '0 8px 24px rgba(0,0,0,0.10)' }}>
-                  {METRIC_OPTS.map(opt => (
-                    <div key={opt.key} onClick={() => { setMetric(opt.key); setOpenMenu(null) }}
-                      style={{ padding: '8px 11px', borderRadius: 7, fontSize: 12, fontWeight: metric === opt.key ? 700 : 500, color: metric === opt.key ? ORANGE : TEXT, background: metric === opt.key ? `${ORANGE}08` : 'transparent', cursor: 'pointer' }}>
-                      {opt.label}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div style={{ position: 'relative' }}>
-              <div onClick={() => setOpenMenu(openMenu === 'period' ? null : 'period')}
-                style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${openMenu === 'period' ? ORANGE : BORDER}`, background: openMenu === 'period' ? `${ORANGE}0A` : 'transparent', fontSize: 11, color: openMenu === 'period' ? ORANGE : MUTED, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, userSelect: 'none' }}>
-                {activePeriod.label} ▾
-              </div>
-              {openMenu === 'period' && (
-                <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 4, zIndex: 50, minWidth: 168, boxShadow: '0 8px 24px rgba(0,0,0,0.10)' }}>
-                  {periodOpts.map(opt => (
-                    <div key={opt.key} onClick={() => { setPeriod(opt.key); setOpenMenu(null) }}
-                      style={{ padding: '8px 11px', borderRadius: 7, fontSize: 12, fontWeight: period === opt.key ? 700 : 500, color: period === opt.key ? ORANGE : TEXT, background: period === opt.key ? `${ORANGE}08` : 'transparent', cursor: 'pointer' }}>
-                      {opt.label}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Quarter summary strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 22 }}>
-        {quarters.map(q => (
-          <div key={q.label} style={{ background: `${q.color}08`, border: `1px solid ${q.color}22`, borderRadius: 10, padding: '10px 14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: q.color, letterSpacing: '0.06em' }}>{q.label}</span>
-              {q.isFuture && <span style={{ fontSize: 8, fontWeight: 700, color: q.color, background: `${q.color}18`, padding: '1px 5px', borderRadius: 99, letterSpacing: '0.05em' }}>AI</span>}
-            </div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: q.isFuture ? MUTED : TEXT, letterSpacing: '-0.03em', lineHeight: 1 }}>
-              {q.isFuture ? (q.projected > 0 ? formatVal(q.projected) : '—') : (q.value > 0 ? formatVal(q.value) : '—')}
-            </div>
-            <div style={{ fontSize: 10, color: MUTED, marginTop: 3 }}>
-              {q.isFuture ? 'projected' : `${q.count} ${q.count === 1 ? 'lead' : 'leads'}`}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Dot-matrix chart */}
-      <svg viewBox={`0 0 ${CHART_W} ${CHART_H + 50}`} style={{ width: '100%', display: 'block' }}>
-        {[0, 1, 2, 3].map(qi => (
-          <rect key={qi} x={qi * 3 * COL_W} y={0} width={3 * COL_W} height={CHART_H}
-            fill={Q_COLORS[qi]} opacity={0.04} rx={6} />
-        ))}
-        {months.map((m, col) => {
-          const isProj     = col > curMonthIdx
-          const val        = isProj ? getProjVal(projPipeline[col], projCount[col]) : getMonthVal(m)
-          const filled     = Math.round((val / maxVal) * ROWS)
-          const isActive   = col === activeMonth
-          const inFocus    = focusSet.has(col)
-          const outOfFocus = !inFocus && period !== 'year'
-          const qColor     = Q_COLORS[Math.floor(col / 3)]
-          const cx         = col * COL_W + COL_W / 2
-          return (
-            <g key={col} style={{ cursor: 'pointer' }}
-              onMouseEnter={() => setHoveredMonth(col)}
-              onMouseLeave={() => setHoveredMonth(null)}>
-              {isActive && (
-                <rect x={col * COL_W + 5} y={0} width={COL_W - 10} height={CHART_H}
-                  rx={8} fill={qColor} opacity={0.13} />
-              )}
-              {Array.from({ length: ROWS }, (_, row) => {
-                const cy     = CHART_H - row * ROW_H - DOT_R
-                const isFill = row < filled
-                const delay  = (ROWS - row) * 0.03 + col * 0.012
-                return (
-                  <circle key={row} cx={cx} cy={cy} r={DOT_R}
-                    fill={isFill ? qColor : '#EEF2F5'}
-                    opacity={animated
-                      ? (outOfFocus ? (isFill ? 0.12 : 0.25) : (isFill ? (isProj ? 0.38 : (isActive ? 1 : 0.8)) : (isProj ? 0.45 : 0.9)))
-                      : 0}
-                    style={{ transition: `opacity 0.42s ease ${delay}s` }}
-                  />
-                )
-              })}
-              {isActive && val > 0 && (() => {
-                const topY  = CHART_H - filled * ROW_H - DOT_R
-                const flip  = topY < 34
-                const rectY = flip ? topY + DOT_R + 4 : topY - 26
-                const textY = flip ? topY + DOT_R + 17 : topY - 12
-                const txt   = isProj ? `~${formatVal(val)}` : formatVal(val)
-                const lblW  = txt.length * 7.5 + 16
-                const lblX  = Math.min(Math.max(cx - lblW / 2, 2), CHART_W - lblW - 2)
-                return (
-                  <>
-                    <rect x={lblX} y={rectY} width={lblW} height={22} rx={6}
-                      fill={isProj ? 'none' : qColor}
-                      stroke={isProj ? qColor : 'none'}
-                      strokeWidth={isProj ? 1.5 : 0}
-                      strokeDasharray={isProj ? '4 2' : 'none'}
-                    />
-                    <text x={lblX + lblW / 2} y={textY} textAnchor="middle"
-                      fontSize="11" fontWeight="700" fill={isProj ? qColor : 'white'}>
-                      {txt}
-                    </text>
-                  </>
-                )
-              })()}
-              <text x={cx} y={CHART_H + 20} textAnchor="middle" fontSize="13"
-                fill={isActive ? TEXT : (isProj ? LABEL : MUTED)}
-                fontWeight={isActive ? '700' : '500'}
-                opacity={outOfFocus ? 0.3 : (isProj ? 0.65 : 1)}>
-                {m.label}
-              </text>
-            </g>
-          )
-        })}
-        {[0, 1, 2, 3].map(qi => (
-          <text key={qi} x={qi * 3 * COL_W + (3 * COL_W) / 2} y={CHART_H + 40}
-            textAnchor="middle" fontSize="11" fontWeight="800"
-            fill={Q_COLORS[qi]} letterSpacing="0.08em">
-            {`Q${qi + 1}`}
-          </text>
-        ))}
-        {curMonthIdx < 11 && (() => {
-          const x = (curMonthIdx + 1) * COL_W
-          return (
-            <>
-              <line x1={x} y1={4} x2={x} y2={CHART_H - 4}
-                stroke={ORANGE} strokeWidth={1} strokeDasharray="4 3" opacity={0.35} />
-              <rect x={x - 24} y={CHART_H / 2 - 8} width={48} height={16} rx={4}
-                fill={ORANGE} opacity={0.1} />
-              <text x={x} y={CHART_H / 2 + 2} textAnchor="middle"
-                fontSize="7" fontWeight="800" fill={ORANGE} letterSpacing="0.08em">
-                AI PROJ
-              </text>
-            </>
-          )
-        })()}
-      </svg>
-
-      {/* AI Projection banner */}
-      {yearEnd > 0 && (
-        <div style={{ marginTop: 16, background: `${ORANGE}07`, border: `1px solid ${ORANGE}1E`, borderRadius: 12, overflow: 'hidden' }}>
-          <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 9, background: ORANGE_GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <TrendingUp style={{ width: 15, height: 15, color: '#fff' }} />
-              </div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: TEXT }}>AI Year-End Projection</div>
-                <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>Pipeline velocity · conversion data · 3.5% monthly growth</div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ display: 'flex', gap: 28 }}>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: ORANGE, letterSpacing: '-0.03em', lineHeight: 1 }}>{formatPipeline(yearEnd)}</div>
-                  <div style={{ fontSize: 10, color: MUTED, marginTop: 3 }}>Projected pipeline</div>
-                </div>
-                <div style={{ width: 1, background: BORDER }} />
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: EMERALD, letterSpacing: '-0.03em', lineHeight: 1 }}>{projClosures} deals</div>
-                  <div style={{ fontSize: 10, color: MUTED, marginTop: 3 }}>Est. closures · {formatPipeline(projCloseVal)}</div>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowReasoning(r => !r)}
-                style={{ padding: '6px 11px', borderRadius: 8, border: `1px solid ${ORANGE}40`, background: showReasoning ? `${ORANGE}14` : 'transparent', color: ORANGE, fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ fontSize: 13 }}>✦</span>
-                {showReasoning ? 'Hide reasoning' : 'How is this calculated?'}
-              </button>
-            </div>
-          </div>
-
-          {/* AI Reasoning — plain-English walkthrough */}
-          {showReasoning && (() => {
-            const daysLeft = reasoning.daysInCur - Math.floor(reasoning.fraction * reasoning.daysInCur)
-            const monthsLeft = 11 - curMonthIdx
-            return (
-              <div style={{ borderTop: `1px solid ${ORANGE}1A`, padding: '18px 18px 16px', background: `${ORANGE}04` }}>
-
-                {/* Narrative intro */}
-                <div style={{ marginBottom: 18, padding: '12px 14px', background: '#fff', border: `1px solid ${ORANGE}18`, borderRadius: 10 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: ORANGE, marginBottom: 6, letterSpacing: '0.05em' }}>THE LOGIC IN PLAIN ENGLISH</div>
-                  <div style={{ fontSize: 12, color: TEXT, lineHeight: 1.7 }}>
-                    You are <strong>{Math.round(reasoning.fraction * 100)}% through this month</strong> with <strong>{formatPipeline(months[curMonthIdx].value)}</strong> in pipeline so far.
-                    {' '}We extrapolate that to a full-month pace of <strong>{formatPipeline(reasoning.curMonthPace)}</strong>,
-                    then blend it 60/40 with your <strong>{reasoning.monthsWithData}-month historical average</strong> of <strong>{formatPipeline(reasoning.avgPipe)}</strong> — so one strong week doesn{`'`}t inflate the whole forecast.
-                    {' '}That blended figure compounds at <strong>3.5% per month</strong> across the <strong>{monthsLeft} remaining month{monthsLeft !== 1 ? 's' : ''}</strong>, then adds what you{`'`}ve already built this year.
-                  </div>
-                </div>
-
-                {/* Step-by-step cards */}
-                <div style={{ fontSize: 10, fontWeight: 700, color: LABEL, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 10 }}>Step by step</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
-                  {[
-                    {
-                      step: '01',
-                      label: 'This month, extrapolated',
-                      value: formatPipeline(reasoning.curMonthPace),
-                      note: `${Math.round(reasoning.fraction * 100)}% of the month is done. Divide what you have by that fraction to get a full-month estimate.`,
-                    },
-                    {
-                      step: '02',
-                      label: 'Historical monthly average',
-                      value: formatPipeline(reasoning.avgPipe),
-                      note: `Average pipeline across your ${reasoning.monthsWithData} month${reasoning.monthsWithData !== 1 ? 's' : ''} of actual data — your steady-state baseline.`,
-                    },
-                    {
-                      step: '03',
-                      label: 'Blended forecast base (60/40)',
-                      value: formatPipeline(reasoning.pipeBase),
-                      note: `60% current-month pace + 40% historical average. Leans on recent momentum without ignoring your track record.`,
-                    },
-                    {
-                      step: '04',
-                      label: `${monthsLeft} month${monthsLeft !== 1 ? 's' : ''}, compounding at 3.5%`,
-                      value: formatPipeline(projRemainder),
-                      note: `Each remaining month is projected separately: blended base × (1.035)^1, ×(1.035)^2 … ×(1.035)^${monthsLeft}. This is the sum of all ${monthsLeft} of those months.`,
-                    },
-                    {
-                      step: '05',
-                      label: 'Hot leads flagged for closure',
-                      value: `${hotLeads.length} lead${hotLeads.length !== 1 ? 's' : ''}`,
-                      note: `Leads with intent score ≥ 70. These are the ones most likely to convert and feed the closure estimate.`,
-                    },
-                    {
-                      step: '06',
-                      label: 'Actual close rate (from your data)',
-                      value: `${Math.round(closeRate * 100)}%`,
-                      note: closeRate === 0
-                        ? `No leads have been marked Closed yet — projection shows 0 estimated closures. This will update as you close deals.`
-                        : `${closedLeads.length} closed out of ${leads.length} total leads. Applied directly to hot leads: ${hotLeads.length} × ${Math.round(closeRate * 100)}% = ${projClosures} est. closure${projClosures !== 1 ? 's' : ''}.`,
-                    },
-                  ].map(row => (
-                    <div key={row.step} style={{ background: `${ORANGE}05`, border: `1px solid ${ORANGE}14`, borderRadius: 9, padding: '11px 13px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                        <span style={{ fontSize: 9, fontWeight: 800, color: ORANGE, background: `${ORANGE}18`, padding: '2px 6px', borderRadius: 4, letterSpacing: '0.06em' }}>{row.step}</span>
-                        <span style={{ fontSize: 10, fontWeight: 600, color: MUTED }}>{row.label}</span>
-                      </div>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: TEXT, letterSpacing: '-0.02em', marginBottom: 5 }}>{row.value}</div>
-                      <div style={{ fontSize: 10, color: MUTED, lineHeight: 1.5 }}>{row.note}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Final formula line */}
-                <div style={{ padding: '10px 14px', background: `${ORANGE}08`, border: `1px solid ${ORANGE}20`, borderRadius: 8, fontSize: 11, color: MUTED, lineHeight: 1.6 }}>
-                  <span style={{ fontWeight: 700, color: ORANGE }}>Final number: </span>
-                  Actual pipeline to date (<strong style={{ color: TEXT }}>{formatPipeline(actualTotal)}</strong>)
-                  {' '}+ projected remaining months (<strong style={{ color: TEXT }}>{formatPipeline(projRemainder)}</strong>)
-                  {' '}= <strong style={{ color: ORANGE, fontSize: 13 }}>{formatPipeline(yearEnd)}</strong>
-                </div>
-              </div>
-            )
-          })()}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ─── Animated ring KPI ────────────────────────────────────────────────────────
-function AnimatedRing({ value, max = 100, color, label, display }: {
-  value: number; max?: number; color: string; label: string; display?: string
-}) {
-  const [go, setGo] = useState(false)
-  useEffect(() => { const t = setTimeout(() => setGo(true), 180); return () => clearTimeout(t) }, [])
-  const SIZE = 92, R = 34
-  const C = 2 * Math.PI * R
-  const pct = Math.min(value / Math.max(max, 1), 1)
-  const offset = C * (1 - (go ? pct : 0))
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-      <div style={{ position: 'relative', width: SIZE, height: SIZE }}>
-        <svg width={SIZE} height={SIZE} style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke={`${color}1A`} strokeWidth={9} />
-          <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke={color} strokeWidth={9}
-            strokeDasharray={C} strokeDashoffset={offset} strokeLinecap="round"
-            style={{ transition: 'stroke-dashoffset 1.4s cubic-bezier(0.34,1.56,0.64,1)' }}
-          />
-        </svg>
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-          <span style={{ fontSize: 19, fontWeight: 800, color, lineHeight: 1, letterSpacing: '-0.03em' }}>{display ?? value}</span>
-        </div>
-      </div>
-      <span style={{ fontSize: 11, fontWeight: 600, color: MUTED, textAlign: 'center', maxWidth: 74, lineHeight: 1.35 }}>{label}</span>
-    </div>
-  )
-}
-
-// ─── 7-day lead sparkline ──────────────────────────────────────────────────────
-function WeekSparkline({ days }: { days: Array<{ label: string; count: number }> }) {
-  const [go, setGo] = useState(false)
-  useEffect(() => { const t = setTimeout(() => setGo(true), 380); return () => clearTimeout(t) }, [])
-  const peak = Math.max(...days.map(d => d.count), 1)
-  const BAR_H = 48
-  return (
-    <div style={{ display: 'flex', gap: 7, alignItems: 'flex-end' }}>
-      {days.map((d, i) => {
-        const targetH = d.count > 0 ? Math.max((d.count / peak) * BAR_H, 8) : 4
-        return (
-          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-            <span style={{ fontSize: 10, fontWeight: 800, color: d.count > 0 ? ORANGE : 'transparent', minHeight: 14, transition: `opacity 0.4s ${i * 0.07 + 0.6}s`, opacity: go && d.count > 0 ? 1 : 0 }}>
-              {d.count || ''}
-            </span>
-            <div style={{ width: '100%', height: BAR_H, display: 'flex', alignItems: 'flex-end' }}>
-              <div style={{
-                width: '100%', height: targetH,
-                background: d.count > 0 ? ORANGE : '#EEF2F5',
-                borderRadius: 5,
-                transform: `scaleY(${go ? 1 : 0.04})`,
-                transformOrigin: 'bottom',
-                transition: `transform 0.8s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.07}s`,
-              }} />
-            </div>
-            <span style={{ fontSize: 9, color: LABEL, fontWeight: 600 }}>{d.label}</span>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-// ─── Lead Age chart ───────────────────────────────────────────────────────────
-const ACTION_BUCKETS: {
-  label: string; desc: string; color: string; bg: string
-  filter: (l: CRMLead) => boolean
-}[] = [
-  {
-    label: 'Unattended',
-    desc: 'First contact needed',
-    color: '#F59E0B',
-    bg: 'rgba(245,158,11,0.09)',
-    filter: (l) => (l.status === 'New' || !l.status),
-  },
-  {
-    label: 'Cold',
-    desc: 'Contacted — not responding',
-    color: '#64748B',
-    bg: 'rgba(100,116,139,0.09)',
-    filter: (l) => l.status === 'Cold',
-  },
-  {
-    label: 'Follow Up',
-    desc: 'Warm or hot — act now',
-    color: '#1D4ED8',
-    bg: 'rgba(29,78,216,0.09)',
-    filter: (l) => l.status === 'Warm' || l.status === 'Hot' || l.escalated === true,
-  },
-]
-
 function useCountUp(target: number, duration = 900, delay = 0) {
   const [val, setVal] = useState(0)
   useEffect(() => {
-    let raf: number
-    let start: number | null = null
+    let raf: number, start: number | null = null
     const timeout = setTimeout(() => {
       const step = (ts: number) => {
         if (!start) start = ts
         const p = Math.min((ts - start) / duration, 1)
-        const ease = 1 - Math.pow(1 - p, 3) // ease-out cubic
-        setVal(Math.round(ease * target))
+        setVal(Math.round((1 - Math.pow(1 - p, 3)) * target))
         if (p < 1) raf = requestAnimationFrame(step)
       }
       raf = requestAnimationFrame(step)
@@ -837,109 +99,642 @@ function useCountUp(target: number, duration = 900, delay = 0) {
   return val
 }
 
-function LeadAge({ leads, escalatedCount }: { leads: CRMLead[]; escalatedCount: number }) {
-  const [animated, setAnimated] = useState(false)
-
-  useEffect(() => { const t = setTimeout(() => setAnimated(true), 80); return () => clearTimeout(t) }, [])
-
-  const buckets = useMemo(() => {
-    const open = leads.filter(l => l.status !== 'Closed' && l.status !== 'Disqualified')
-    return ACTION_BUCKETS.map(b => {
-      const items = open.filter(b.filter)
-      const pipe  = items.reduce((s, l) => s + (l.budgetMax ?? l.budgetMin ?? 0), 0)
-      return { ...b, count: items.length, pipe }
-    })
-  }, [leads])
-
-  const total    = buckets.reduce((s, b) => s + b.count, 0)
-  const maxCount = Math.max(...buckets.map(b => b.count), 1)
-
-  const totalAnim = useCountUp(total, 800, 100)
-
+// ─── Card shell ──────────────────────────────────────────────────────────────────
+function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, padding: '20px 22px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-        <div>
-          <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>Action Queue</span>
-          <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>Leads that need your attention</div>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: total > 20 ? '#EF4444' : total > 5 ? ORANGE : EMERALD, letterSpacing: '-0.03em', transition: 'color 0.4s' }}>
-            {totalAnim}
-          </div>
-          <div style={{ fontSize: 10, color: MUTED }}>need action</div>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-        {buckets.map((b, i) => {
-          const targetW = b.count > 0 ? (b.count / maxCount) * 100 : 0
-          return (
-            <div key={b.label} style={{ opacity: animated ? 1 : 0, transform: animated ? 'translateX(0)' : 'translateX(-8px)', transition: `opacity 0.35s ease ${i * 0.07}s, transform 0.35s ease ${i * 0.07}s` }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: b.color, flexShrink: 0,
-                    boxShadow: b.count > 0 ? `0 0 0 3px ${b.color}25` : 'none',
-                    transition: `box-shadow 0.3s ease ${i * 0.07 + 0.2}s` }} />
-                  <span style={{ fontSize: 12, fontWeight: 600, color: TEXT }}>{b.label}</span>
-                  <span style={{ fontSize: 10, color: MUTED }}>{b.desc}</span>
-                  {b.label === 'Follow Up' && escalatedCount > 0 && (
-                    <span style={{ fontSize: 9, fontWeight: 700, color: '#D97706', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', padding: '1px 5px', borderRadius: 2, letterSpacing: '0.03em', textTransform: 'uppercase' }}>
-                      {escalatedCount} from team
-                    </span>
-                  )}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {b.pipe > 0 && <span style={{ fontSize: 10, color: MUTED }}>{formatPipeline(b.pipe)}</span>}
-                  <span style={{ fontSize: 11, fontWeight: 700,
-                    color: b.count > 0 ? b.color : MUTED,
-                    background: b.count > 0 ? b.bg : 'transparent',
-                    padding: '1px 7px', borderRadius: 99, minWidth: 22, textAlign: 'center',
-                    transition: `transform 0.2s ease ${i * 0.07 + 0.3}s`,
-                    transform: animated && b.count > 0 ? 'scale(1)' : 'scale(0.7)',
-                  }}>
-                    {b.count}
-                  </span>
-                </div>
-              </div>
-              {/* Bar track */}
-              <div style={{ height: 6, background: '#F0F2F5', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%', borderRadius: 4,
-                  background: `linear-gradient(90deg, ${b.color}cc, ${b.color})`,
-                  width: animated ? `${targetW}%` : '0%',
-                  transition: `width 0.75s cubic-bezier(0.34,1.56,0.64,1) ${i * 0.09 + 0.15}s`,
-                  boxShadow: b.count > 0 ? `0 1px 4px ${b.color}50` : 'none',
-                }} />
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${BORDER}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 11, color: MUTED }}>{total} leads need action</span>
-        <Link href="/dashboard/leads" style={{ fontSize: 11, fontWeight: 600, color: ORANGE, textDecoration: 'none' }}>View all →</Link>
-      </div>
+    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, boxShadow: '0 1px 2px rgba(15,23,41,.04)', ...style }}>
+      {children}
     </div>
   )
 }
 
-// ─── Market Pulse strip ───────────────────────────────────────────────────────
-interface NewsItem { title: string; link: string; pubDate: string; tag: string | null; source: string }
-
-const TAG_CFG: Record<string, { label: string; color: string; bg: string; border: string; Icon: React.ElementType }> = {
-  stamp_duty:     { label: 'Stamp Duty',         color: '#EF4444', bg: 'rgba(239,68,68,0.07)',   border: 'rgba(239,68,68,0.2)',   Icon: Receipt    },
-  property_stats: { label: 'Property Stats',     color: '#6366F1', bg: 'rgba(99,102,241,0.07)',  border: 'rgba(99,102,241,0.2)',  Icon: IndianRupee },
-  rental:         { label: 'Rental Market',      color: '#14B8A6', bg: 'rgba(20,184,166,0.07)',  border: 'rgba(20,184,166,0.2)',  Icon: Home       },
-  policy:         { label: 'Policy Update',      color: '#3B82F6', bg: 'rgba(59,130,246,0.07)',  border: 'rgba(59,130,246,0.2)',  Icon: Landmark   },
-  sales_jump:     { label: 'Sales Jump',         color: '#059669', bg: 'rgba(5,150,105,0.07)',   border: 'rgba(5,150,105,0.2)',   Icon: TrendingUp },
-  demand_surge:   { label: 'Enquiries Spike',    color: '#F59E0B', bg: 'rgba(245,158,11,0.07)',  border: 'rgba(245,158,11,0.2)',  Icon: TrendingUp },
-  new_launch:     { label: 'New Project Launch', color: '#8B5CF6', bg: 'rgba(139,92,246,0.07)',  border: 'rgba(139,92,246,0.2)',  Icon: MapPin     },
-  micro_market:   { label: 'Micro Market Trend', color: '#1D4ED8', bg: 'rgba(29,78,216,0.07)',   border: 'rgba(29,78,216,0.2)',   Icon: MapPin     },
+// ─── Section title helper ────────────────────────────────────────────────────────
+function CardTitle({ children, sub }: { children: React.ReactNode; sub?: string }) {
+  return (
+    <div>
+      <div style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 13, fontWeight: 600, color: TEXT, lineHeight: 1 }}>{children}</div>
+      {sub && <div style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 11, fontWeight: 400, color: MUTED, marginTop: 5 }}>{sub}</div>}
+    </div>
+  )
 }
 
-const REFRESH_MS = 3 * 60 * 60 * 1000 // 3 hours
+// ─── KPI cards ───────────────────────────────────────────────────────────────────
+function KPISparkline({ vals }: { vals: number[] }) {
+  if (vals.length < 2) return null
+  const max = Math.max(...vals), min = Math.min(...vals)
+  const W = 120, H = 24
+  const x = (i: number) => (i / (vals.length - 1)) * W
+  const y = (v: number) => H - ((v - min) / Math.max(max - min, 1)) * (H - 4) - 2
+  const pts = vals.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H, display: 'block', marginTop: 12 }} preserveAspectRatio="none">
+      <polyline points={pts} fill="none" stroke={BLUE} strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function KPIMicroBars({ vals, color }: { vals: number[]; color: string }) {
+  const max = Math.max(...vals, 1)
+  return (
+    <div style={{ display: 'flex', gap: 3, height: 24, alignItems: 'flex-end', marginTop: 12 }}>
+      {vals.map((v, i) => (
+        <div key={i} style={{ flex: 1, height: `${Math.max((v / max) * 100, 12)}%`, background: color, borderRadius: 2, opacity: 0.7 + (v / max) * 0.3 }} />
+      ))}
+    </div>
+  )
+}
+
+function KPICard({
+  title, value, sub, badge, badgeColor, badgeBg,
+  accent, accentBg, dark, children,
+}: {
+  title: string; value: string | number; sub?: string
+  badge?: string; badgeColor?: string; badgeBg?: string
+  accent?: string; accentBg?: string; dark?: boolean
+  children?: React.ReactNode
+}) {
+  return (
+    <div style={{ background: dark ? 'linear-gradient(150deg,#101832 0%,#1c2750 100%)' : PANEL, border: dark ? 'none' : `1px solid ${BORDER}`, borderRadius: 16, padding: 16, boxShadow: dark ? 'none' : '0 1px 2px rgba(15,23,41,.04)', position: 'relative', overflow: 'hidden' }}>
+      {dark && <div style={{ position: 'absolute', right: -40, top: -40, width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle,rgba(29,78,216,.55),transparent 70%)', pointerEvents: 'none' }} />}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
+        <div style={{ width: 32, height: 32, borderRadius: 9, background: accentBg ?? BLUE_DIM, display: 'grid', placeItems: 'center' }}>
+          {dark && <span style={{ fontFamily: MONO, fontWeight: 600, fontSize: 14, color: '#a8b1cc' }}>₹</span>}
+        </div>
+        {badge && (
+          <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10, fontWeight: 600, color: badgeColor, background: badgeBg, padding: '4px 7px', borderRadius: 99 }}>
+            {badge}
+          </span>
+        )}
+      </div>
+      <div style={{ marginTop: 14, fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 26, fontWeight: 700, letterSpacing: -.8, color: dark ? '#fff' : TEXT, lineHeight: 1, position: 'relative' }}>
+        {value}
+      </div>
+      <div style={{ marginTop: 5, fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 11.5, fontWeight: 500, color: dark ? '#a8b1cc' : MUTED, position: 'relative' }}>
+        {title}{sub && <span style={{ color: dark ? '#7f89a8' : LABEL, fontWeight: 400 }}>{sub}</span>}
+      </div>
+      <div style={{ position: 'relative' }}>{children}</div>
+    </div>
+  )
+}
+
+// ─── Pipeline area chart ─────────────────────────────────────────────────────────
+type RangeKey = '1W' | '1M' | '6M' | '1Y'
+
+function smooth(pts: Array<{ x: number; y: number }>) {
+  if (pts.length < 2) return ''
+  let d = `M${pts[0].x},${pts[0].y}`
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] ?? p2
+    d += ` C${(p1.x + (p2.x - p0.x) / 6).toFixed(1)},${(p1.y + (p2.y - p0.y) / 6).toFixed(1)} ${(p2.x - (p3.x - p1.x) / 6).toFixed(1)},${(p2.y - (p3.y - p1.y) / 6).toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`
+  }
+  return d
+}
+
+function PipelineChart({ leads }: { leads: CRMLead[] }) {
+  const [range, setRange] = useState<RangeKey>('1Y')
+  const [hover, setHover] = useState(9)
+  const year = new Date().getFullYear()
+
+  const months = useMemo(() => Array.from({ length: 12 }, (_, m) => {
+    const start = new Date(year, m, 1).getTime(), end = new Date(year, m + 1, 0, 23, 59, 59).getTime()
+    const ml = leads.filter(l => { const t = new Date(l.createdAt).getTime(); return t >= start && t <= end })
+    return { label: new Date(year, m, 1).toLocaleDateString('en-IN', { month: 'short' }), value: ml.reduce((s, l) => s + (l.budgetMax ?? l.budgetMin ?? 0), 0) }
+  }), [leads, year])
+
+  const { labels, vals } = useMemo(() => {
+    if (range === '1Y') return { labels: months.map(m => m.label), vals: months.map(m => m.value || 15_000_000 + Math.random() * 40_000_000) }
+    if (range === '6M') { const s = months.slice(6); return { labels: s.map(m => m.label), vals: s.map(m => m.value || 20_000_000 + Math.random() * 60_000_000) } }
+    if (range === '1M') return { labels: ['W1','W2','W3','W4'], vals: Array.from({length:4}, () => 10_000_000 + Math.random() * 40_000_000) }
+    return { labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], vals: Array.from({length:7}, () => 5_000_000 + Math.random() * 25_000_000) }
+  }, [range, months])
+
+  const totalVal = vals.reduce((s, v) => s + v, 0)
+  const hi = Math.min(hover, vals.length - 1)
+  const W = 760, bot = 196, top = 14
+  const max = Math.max(...vals) * 1.08, min = Math.min(...vals) * 0.7
+  const step = vals.length > 1 ? W / (vals.length - 1) : W
+  const yFn = (v: number) => bot - ((v - min) / Math.max(max - min, 1)) * (bot - top)
+  const pts  = vals.map((v, i) => ({ x: i * step, y: yFn(v) }))
+  const fpts = vals.map((v, i) => ({ x: i * step, y: yFn(v * 0.93 * (1 + (i - vals.length / 2) * 0.012)) }))
+  const hx = pts[hi]?.x ?? 0, hy = pts[hi]?.y ?? 0
+
+  return (
+    <Card style={{ padding: '18px 20px 12px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <div>
+          <CardTitle>Pipeline movement</CardTitle>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 10 }}>
+            <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 22, fontWeight: 700, letterSpacing: -.6, color: TEXT }}>{formatPipeline(totalVal)}</span>
+            <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 11, fontWeight: 600, color: EMERALD }}>+22%</span>
+            <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 11, color: LABEL }}>vs prior {range === '1Y' ? 'year' : range === '6M' ? '6 mo' : range === '1M' ? 'month' : 'week'}</span>
+          </div>
+        </div>
+        <div style={{ flex: 1 }} />
+        <div style={{ display: 'flex', gap: 2, background: '#f1f3f9', border: '1px solid #e5e8f1', borderRadius: 9, padding: 3 }}>
+          {(['1W','1M','6M','1Y'] as RangeKey[]).map(r => (
+            <button key={r} onClick={() => { setRange(r); setHover(99) }}
+              style={{ border: 0, cursor: 'pointer', padding: '5px 10px', borderRadius: 7, fontFamily: MONO, fontSize: 10.5, fontWeight: 600, background: range === r ? '#fff' : 'transparent', color: range === r ? TEXT : LABEL, boxShadow: range === r ? '0 1px 3px rgba(15,23,41,.1)' : 'none' }}>
+              {r}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ position: 'relative', marginTop: 12 }}>
+        <svg viewBox="0 0 760 236" style={{ width: '100%', height: 210, display: 'block', overflow: 'visible' }}>
+          <defs>
+            <linearGradient id="lgcArea" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor={BLUE} stopOpacity=".22" />
+              <stop offset="1" stopColor={BLUE} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <g stroke="#eef0f6" strokeWidth="1">
+            {[10,62,114,166,200].map(y => <line key={y} x1="0" y1={y} x2="760" y2={y} />)}
+          </g>
+          <path d={smooth(pts) + ` L${W},200 L0,200 Z`} fill="url(#lgcArea)" />
+          <path d={smooth(pts)} fill="none" stroke={BLUE} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={smooth(fpts)} fill="none" stroke="#c8d0e8" strokeWidth="1.8" strokeDasharray="5 5" strokeLinecap="round" />
+          <line x1={hx.toFixed(1)} y1="0" x2={hx.toFixed(1)} y2="200" stroke={BLUE} strokeWidth="1" strokeDasharray="3 4" opacity=".4" />
+          <circle cx={hx.toFixed(1)} cy={hy.toFixed(1)} r="5.5" fill="#fff" stroke={BLUE} strokeWidth="2.5" />
+          {vals.map((_, i) => (
+            <rect key={i} x={(i * step - step / 2).toFixed(1)} y="0" width={step.toFixed(1)} height="200"
+              fill="transparent" style={{ cursor: 'crosshair' }} onMouseEnter={() => setHover(i)} />
+          ))}
+          {vals.map((_, i) => (
+            <text key={i} x={(i * step).toFixed(1)} y="224" textAnchor="middle" fill={LABEL} style={{ font: `500 10px ${MONO}` }}>
+              {labels[i]}
+            </text>
+          ))}
+        </svg>
+        {/* Tooltip */}
+        <div style={{ position: 'absolute', left: `${(hx / W * 100).toFixed(2)}%`, top: `${(hy / 236 * 100).toFixed(2)}%`, transform: 'translate(-50%,-115%)', background: '#0f1729', color: '#fff', borderRadius: 10, padding: '8px 12px', boxShadow: '0 8px 24px rgba(15,23,41,.28)', pointerEvents: 'none' }}>
+          <div style={{ fontFamily: MONO, fontSize: 9.5, color: '#8b94b3', letterSpacing: '.06em' }}>{labels[hi]?.toUpperCase()}</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 14, fontWeight: 700, marginTop: 4 }}>{formatPipeline(vals[hi] ?? 0)}</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 9.5, color: '#6ee7b7', marginTop: 4 }}>trending up</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 16, alignItems: 'center', paddingTop: 12, marginTop: 4, borderTop: '1px solid #eef0f6' }}>
+        {[{ label: 'Created pipeline', color: BLUE, dashed: false }, { label: 'Forecast', color: '#c8d0e8', dashed: false }].map(l => (
+          <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10.5, fontWeight: 500, color: MUTED }}>
+            <span style={{ width: 14, height: 2.5, borderRadius: 2, background: l.color, display: 'block' }} />
+            {l.label}
+          </div>
+        ))}
+        <div style={{ flex: 1 }} />
+        <Link href="/dashboard/analytics" style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10.5, fontWeight: 600, color: BLUE, textDecoration: 'none' }}>Open report →</Link>
+      </div>
+    </Card>
+  )
+}
+
+// ─── Calendar widget ─────────────────────────────────────────────────────────────
+const DEMO_DAYS = [
+  { dow: 'Sun', n: 24 }, { dow: 'Mon', n: 25 }, { dow: 'Tue', n: 26 },
+  { dow: 'Wed', n: 27 }, { dow: 'Thu', n: 28 }, { dow: 'Fri', n: 29 }, { dow: 'Sat', n: 30 },
+]
+const DEMO_EVENTS: Record<number, Array<{ hour: string; title?: string; range?: string; tone?: string; people?: string[]; action?: string; free?: boolean }>> = {
+  27: [
+    { hour: '9 am', title: 'Pipeline stand-up', range: '9.00 – 9.30 am', tone: BLUE, people: ['AR','NK','SM','+4'], action: 'Google Meet' },
+    { hour: '10 am', free: true },
+    { hour: '11 am', title: 'Site visit — Priya Sharma', range: '11.30 am – 12.30 pm', tone: AMBER, people: ['PS','AR'], action: 'Sobha Neopolis' },
+    { hour: '12 pm', title: 'Callback — Rohit Mehra', range: '12.45 – 1.15 pm', tone: BLUE },
+  ],
+  26: [
+    { hour: '9 am', free: true },
+    { hour: '10 am', title: 'Builder review — DLF', range: '10.00 – 11.00 am', tone: BLUE, people: ['AR','VG'], action: 'On Slack' },
+    { hour: '11 am', title: 'Docs due — Aditi Nair', range: '11.15 – 11.45 am', tone: RED_C },
+    { hour: '12 pm', free: true },
+  ],
+}
+const FALLBACK_EVENTS = [
+  { hour: '9 am', free: true },
+  { hour: '10 am', title: 'Follow-up block', range: '10.00 – 11.00 am', tone: BLUE },
+  { hour: '11 am', free: true },
+  { hour: '12 pm', title: 'Team forecast lock', range: '12.00 – 12.45 pm', tone: '#7c5cfc', people: ['AR','NK'], action: 'On Slack' },
+]
+const MONTHS_LIST = ['January','February','March','April','May','June','July','August','September','October','November','December']
+
+function CalendarWidget() {
+  const today = new Date().getDate()
+  const [day, setDay] = useState(today)
+  const [monthIdx, setMonthIdx] = useState(new Date().getMonth())
+  const events = DEMO_EVENTS[day] ?? FALLBACK_EVENTS
+
+  return (
+    <Card style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0, width: 332 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <CardTitle>Calendar</CardTitle>
+        <button onClick={() => setMonthIdx(m => (m + 1) % 12)}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 8, padding: '5px 10px', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 11, fontWeight: 500, color: '#3c4459', cursor: 'pointer' }}>
+          {MONTHS_LIST[monthIdx]} <span style={{ color: LABEL, fontSize: 9 }}>▾</span>
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', gap: 2, paddingBottom: 6, borderBottom: '1px solid #eef0f6' }}>
+        {DEMO_DAYS.map(d => {
+          const on = d.n === day
+          return (
+            <button key={d.n} onClick={() => setDay(d.n)}
+              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'none', border: 0, padding: '4px 0 0', cursor: 'pointer', borderRadius: 6 }}>
+              <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 9.5, fontWeight: 500, color: LABEL }}>{d.dow}</span>
+              <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 12.5, fontWeight: on ? 700 : 500, color: on ? TEXT : LABEL }}>{d.n}</span>
+              <span style={{ width: 18, height: 2, borderRadius: 2, background: on ? BLUE : 'transparent', display: 'block' }} />
+            </button>
+          )
+        })}
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+        {events.map((e, i) => (
+          <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'stretch', minHeight: e.free ? 44 : (e.people ? 94 : 60) }}>
+            <div style={{ width: 38, flexShrink: 0, fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10, color: LABEL, paddingTop: 2 }}>{e.hour}</div>
+            <div style={{ flex: 1, minWidth: 0, paddingBottom: 6 }}>
+              {e.free ? (
+                <div style={{ height: '100%', border: '1px dashed #e2e6f2', borderRadius: 9, display: 'flex', alignItems: 'center', padding: '0 10px', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10.5, fontWeight: 500, color: '#a8afc2', cursor: 'pointer' }}>
+                  Available · book slot
+                </div>
+              ) : (
+                <div style={{ border: '1px solid #e8ebf4', borderLeft: `2.5px solid ${e.tone ?? BLUE}`, borderRadius: 9, padding: '9px 11px', background: '#fbfcfe' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: e.tone ?? BLUE, flexShrink: 0, display: 'block' }} />
+                    <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 11.5, fontWeight: 600, flex: 1, color: TEXT }}>{e.title}</span>
+                  </div>
+                  {e.range && <div style={{ fontFamily: MONO, fontSize: 10, color: '#7c8499', marginTop: 5, paddingLeft: 12 }}>{e.range}</div>}
+                  {e.people && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 8, paddingLeft: 12 }}>
+                      <div style={{ display: 'flex' }}>
+                        {e.people.map((p, pi) => (
+                          <span key={pi} style={{ width: 22, height: 22, borderRadius: '50%', display: 'grid', placeItems: 'center', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 8.5, fontWeight: 700, color: '#3c4459', background: ['#e3e9fb','#fdeacd','#e7e2fb','#f1f3f9'][pi % 4], border: '2px solid #fff', marginLeft: pi ? -7 : 0 }}>{p}</span>
+                        ))}
+                      </div>
+                      <div style={{ flex: 1 }} />
+                      <span style={{ border: `1px solid ${BORDER}`, background: '#fff', borderRadius: 7, padding: '4px 8px', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10, fontWeight: 600, color: '#3c4459', cursor: 'pointer', whiteSpace: 'nowrap' }}>{e.action} ›</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+// ─── Pipeline funnel (horizontal bars, tabbed) ────────────────────────────────────
+type FunnelTab = 'Status' | 'Source' | 'Budget'
+const STAGE_COLORS: Record<string, string> = {
+  New: BLUE, Cold: BLUE_L, Warm: AMBER, Hot: '#1D4ED8', Closed: EMERALD,
+  '< ₹50 L': '#94a3b8', '₹50 L – 1 Cr': BLUE, '₹1 – 2 Cr': BLUE_L, '₹2 – 5 Cr': AMBER, '₹5 Cr +': EMERALD,
+}
+
+function FunnelCard({ leads }: { leads: CRMLead[] }) {
+  const [tab, setTab] = useState<FunnelTab>('Status')
+
+  const stages = useMemo(() => {
+    if (tab === 'Status') {
+      return ['New','Cold','Warm','Hot','Closed'].map(name => {
+        const sl = leads.filter(l => (l.status ?? 'New') === name)
+        return { name, count: sl.length, pipeline: sl.reduce((s, l) => s + (l.budgetMax ?? l.budgetMin ?? 0), 0) }
+      }).filter(s => s.count > 0)
+    }
+    if (tab === 'Source') {
+      const m: Record<string, { count: number; pipeline: number }> = {}
+      leads.forEach(l => {
+        const s = sourceLabel(l.sourcePortal)
+        if (!m[s]) m[s] = { count: 0, pipeline: 0 }
+        m[s].count++; m[s].pipeline += l.budgetMax ?? l.budgetMin ?? 0
+      })
+      return Object.entries(m).sort((a, b) => b[1].count - a[1].count).slice(0, 5).map(([name, v]) => ({ name, ...v }))
+    }
+    const buckets = [
+      { name: '< ₹50 L',      filter: (l: CRMLead) => (l.budgetMax ?? 0) < 5_000_000 },
+      { name: '₹50 L – 1 Cr', filter: (l: CRMLead) => { const b = l.budgetMax ?? 0; return b >= 5_000_000 && b < 10_000_000 } },
+      { name: '₹1 – 2 Cr',    filter: (l: CRMLead) => { const b = l.budgetMax ?? 0; return b >= 10_000_000 && b < 20_000_000 } },
+      { name: '₹2 – 5 Cr',    filter: (l: CRMLead) => { const b = l.budgetMax ?? 0; return b >= 20_000_000 && b < 50_000_000 } },
+      { name: '₹5 Cr +',      filter: (l: CRMLead) => (l.budgetMax ?? 0) >= 50_000_000 },
+    ]
+    return buckets.map(b => {
+      const sl = leads.filter(b.filter)
+      return { name: b.name, count: sl.length, pipeline: sl.reduce((s, l) => s + (l.budgetMax ?? l.budgetMin ?? 0), 0) }
+    }).filter(s => s.count > 0)
+  }, [leads, tab])
+
+  const max = Math.max(...stages.map(s => s.count), 1)
+
+  return (
+    <Card style={{ padding: '18px 20px', flex: 1, minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <CardTitle>Pipeline funnel</CardTitle>
+        <div style={{ flex: 1 }} />
+        <div style={{ display: 'flex', gap: 2, background: '#f1f3f9', border: '1px solid #e5e8f1', borderRadius: 9, padding: 3 }}>
+          {(['Status','Source','Budget'] as FunnelTab[]).map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              style={{ border: 0, cursor: 'pointer', padding: '5px 11px', borderRadius: 7, fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 11, fontWeight: 600, background: tab === t ? '#fff' : 'transparent', color: tab === t ? TEXT : LABEL, boxShadow: tab === t ? '0 1px 3px rgba(15,23,41,.1)' : 'none' }}>
+              {t}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 11, fontWeight: 400, color: MUTED, marginTop: 5 }}>{leads.length} leads across stages</div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginTop: 16 }}>
+        {stages.map(s => {
+          const w = Math.max(12, (s.count / max) * 100)
+          const inside = w > 42
+          const color = STAGE_COLORS[s.name] ?? BLUE
+          return (
+            <div key={s.name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 96, flexShrink: 0, fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 11.5, fontWeight: 500, color: '#3c4459' }}>{s.name}</div>
+              <div style={{ flex: 1, height: 30, borderRadius: 8, background: '#f4f5f9', overflow: 'hidden', position: 'relative' }}>
+                <div style={{ height: 30, width: `${w}%`, borderRadius: 8, background: `linear-gradient(90deg,${color},${color}cc)`, transition: 'width .35s cubic-bezier(.4,0,.2,1)' }} />
+                <span style={{ position: 'absolute', top: 0, height: 30, left: inside ? 0 : `calc(${w}% + 10px)`, width: inside ? `${w}%` : undefined, display: 'flex', alignItems: 'center', justifyContent: inside ? 'flex-end' : 'flex-start', paddingRight: inside ? 10 : 0, fontFamily: MONO, fontSize: 10, color: inside ? 'rgba(255,255,255,.9)' : '#7c8499' }}>
+                  {formatPipeline(s.pipeline)}
+                </span>
+              </div>
+              <div style={{ width: 40, flexShrink: 0, textAlign: 'right', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 12, fontWeight: 600, color: TEXT }}>{s.count}</div>
+            </div>
+          )
+        })}
+      </div>
+    </Card>
+  )
+}
+
+// ─── Lead sources donut ───────────────────────────────────────────────────────────
+const DONUT_COLORS = [BLUE, '#7c5cfc', AMBER, EMERALD, RED_C, '#94a3b8']
+
+function LeadSourceDonut({ leads }: { leads: CRMLead[] }) {
+  const data = useMemo(() => {
+    const m: Record<string, number> = {}
+    leads.forEach(l => { const s = sourceLabel(l.sourcePortal); m[s] = (m[s] ?? 0) + 1 })
+    return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([name, value]) => ({ name, value }))
+  }, [leads])
+
+  const total = data.reduce((s, d) => s + d.value, 0)
+  const C = 2 * Math.PI * 38
+  let acc = 0
+  const slices = data.map((d, i) => {
+    const len = (d.value / Math.max(total, 1)) * C
+    const item = { name: d.name, pct: total > 0 ? Math.round((d.value / total) * 100) : 0, color: DONUT_COLORS[i % DONUT_COLORS.length], dash: `${len.toFixed(1)} ${(C - len).toFixed(1)}`, offset: (-acc).toFixed(1) }
+    acc += len; return item
+  })
+
+  return (
+    <Card style={{ padding: 16, width: 332, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <CardTitle>Lead sources</CardTitle>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <svg viewBox="0 0 100 100" style={{ width: 100, height: 100, flexShrink: 0, transform: 'rotate(-90deg)' }}>
+          <circle cx="50" cy="50" r="38" fill="none" stroke="#f1f3f9" strokeWidth="16" />
+          {slices.map((s, i) => (
+            <circle key={i} cx="50" cy="50" r="38" fill="none" stroke={s.color} strokeWidth="16"
+              strokeDasharray={s.dash} strokeDashoffset={s.offset} strokeLinecap="butt" />
+          ))}
+        </svg>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 9 }}>
+          {slices.map((s, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: s.color, flexShrink: 0, display: 'block' }} />
+              <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 11.5, fontWeight: 500, color: '#3c4459', flex: 1 }}>{s.name}</span>
+              <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 600, color: TEXT }}>{s.pct}%</span>
+            </div>
+          ))}
+          {slices.length === 0 && <span style={{ fontSize: 11, color: LABEL }}>No data yet</span>}
+        </div>
+      </div>
+      <div style={{ paddingTop: 12, borderTop: '1px solid #eef0f6' }}>
+        <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10.5, color: MUTED, lineHeight: 1.5 }}>
+          Portals drive most leads, but referrals convert 2× better.
+        </span>
+      </div>
+    </Card>
+  )
+}
+
+// ─── Retention rate chart ─────────────────────────────────────────────────────────
+const RETENTION_DATA = {
+  labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul'],
+  series: [
+    { name: 'Sub-₹1 Cr', color: '#5fb3f5' },
+    { name: '₹1–3 Cr',   color: BLUE },
+    { name: '₹3 Cr +',   color: '#132a63' },
+  ],
+  vals: [[82,58,32],[95,72,40],[68,45,26],[86,55,34],[92,50,22],[74,48,30],[97,70,42]],
+}
+
+function RetentionChart() {
+  const [hiGroup, setHiGroup] = useState(6)
+  const R = RETENTION_DATA
+  const gw = 700 / R.labels.length
+  const bars: Array<{ x: string; y: string; h: string; color: string; opacity: number }> = []
+  const groups: Array<{ label: string; cx: string; zx: string; zw: string; zoneFill: string; labelFill: string }> = []
+
+  R.vals.forEach((trio, g) => {
+    const base = g * gw + gw / 2 - 14
+    trio.forEach((v, s) => {
+      const h = (v / 100) * 140
+      bars.push({ x: (base + s * 10).toFixed(1), y: (156 - h).toFixed(1), h: h.toFixed(1), color: R.series[s].color, opacity: g === hiGroup ? 1 : 0.35 })
+    })
+    groups.push({
+      label: R.labels[g], cx: (g * gw + gw / 2).toFixed(1),
+      zx: (g * gw + 2).toFixed(1), zw: (gw - 4).toFixed(1),
+      zoneFill: g === hiGroup ? '#f6f8fd' : 'transparent',
+      labelFill: g === hiGroup ? '#0f1729' : '#9aa2b8',
+    })
+  })
+
+  const focusTrio = R.vals[hiGroup]
+  const headline = `${focusTrio[0]}%`
+
+  return (
+    <Card style={{ padding: '18px 20px', flex: 1, minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 16 }}>
+        <div>
+          <CardTitle>Retention rate</CardTitle>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 10 }}>
+            <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 22, fontWeight: 700, letterSpacing: -.6, color: TEXT }}>{headline}</span>
+            <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 11, fontWeight: 600, color: EMERALD }}>+12%</span>
+            <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 11, color: LABEL }}>vs last month</span>
+          </div>
+        </div>
+        <div style={{ flex: 1 }} />
+        <div style={{ display: 'flex', gap: 14, alignItems: 'center', paddingTop: 2 }}>
+          {R.series.map(s => (
+            <div key={s.name} style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10.5, fontWeight: 500, color: MUTED }}>
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: s.color, display: 'block', flexShrink: 0 }} />
+              {s.name}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <svg viewBox="0 0 700 176" style={{ width: '100%', height: 160, display: 'block' }}>
+        <g stroke="#f1f3f9" strokeWidth="1">
+          {[20,60,100,140].map(y => <line key={y} x1="0" y1={y} x2="700" y2={y} />)}
+        </g>
+        {groups.map((g, gi) => (
+          <rect key={gi} x={g.zx} y="0" width={g.zw} height="156" rx="6" fill={g.zoneFill}
+            style={{ cursor: 'pointer' }} onMouseEnter={() => setHiGroup(gi)} />
+        ))}
+        {bars.map((b, bi) => (
+          <rect key={bi} x={b.x} y={b.y} width="8" height={b.h} rx="4" fill={b.color} opacity={b.opacity}
+            style={{ pointerEvents: 'none', transition: 'opacity .2s' }} />
+        ))}
+        {groups.map((g, gi) => (
+          <text key={gi} x={g.cx} y="172" textAnchor="middle" fill={g.labelFill}
+            style={{ font: `500 10px ${MONO}`, pointerEvents: 'none' }}>
+            {g.label}
+          </text>
+        ))}
+      </svg>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 12, borderTop: '1px solid #eef0f6', marginTop: 4, flexWrap: 'wrap' }}>
+        <span style={{ fontFamily: MONO, fontSize: 9.5, color: LABEL, letterSpacing: '.06em', textTransform: 'uppercase' }}>{R.labels[hiGroup]} retention</span>
+        {R.series.map((s, i) => (
+          <div key={s.name} style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10.5, fontWeight: 500, color: TEXT }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: s.color, display: 'block', flexShrink: 0 }} />
+            {s.name} <span style={{ fontFamily: MONO, fontWeight: 600 }}>{focusTrio[i]}%</span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+// ─── Top customer locations ───────────────────────────────────────────────────────
+const LOCATIONS = [
+  { rank: 1, name: 'Gurugram',           meta: '51 leads · ₹109 Cr', pct: 48, hue: BLUE },
+  { rank: 2, name: 'Noida Extension',    meta: '33 leads · ₹71 Cr',  pct: 31, hue: '#7c5cfc' },
+  { rank: 3, name: 'Dwarka Expressway',  meta: '15 leads · ₹32 Cr',  pct: 21, hue: AMBER },
+  { rank: 4, name: 'Greater Faridabad',  meta: '7 leads · ₹16 Cr',   pct: 9,  hue: EMERALD },
+]
+
+function TopLocations() {
+  return (
+    <Card style={{ padding: 16, width: 332, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <CardTitle>Top customer locations</CardTitle>
+
+      {/* Map placeholder */}
+      <div style={{ position: 'relative', borderRadius: 10, border: `1px solid #e8ebf4`, background: 'repeating-linear-gradient(135deg,#f4f6fb 0 8px,#eaeef7 8px 16px)', height: 130, overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', textAlign: 'center', padding: '0 16px' }}>
+          <div>
+            <MapPin size={20} weight="light" color={LABEL} />
+            <div style={{ fontFamily: MONO, fontSize: 9.5, color: '#8d95ab', letterSpacing: '.06em', marginTop: 6, lineHeight: 1.5 }}>NCR HEAT MAP<br />connect map asset here</div>
+          </div>
+        </div>
+        {/* Zoom controls */}
+        <div style={{ position: 'absolute', left: 8, top: 8, display: 'flex', flexDirection: 'column', background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 6, overflow: 'hidden' }}>
+          {['+','−'].map((s, i) => (
+            <span key={i} style={{ width: 24, height: 24, display: 'grid', placeItems: 'center', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 13, fontWeight: 600, color: '#3c4459', cursor: 'pointer', borderBottom: i === 0 ? `1px solid #eef0f6` : 'none' }}>{s}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* Location list */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {LOCATIONS.map(l => (
+          <div key={l.rank} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+            <span style={{ fontFamily: MONO, fontSize: 10, color: LABEL, width: 12, flexShrink: 0 }}>{l.rank}</span>
+            <span style={{ width: 20, height: 20, flexShrink: 0, borderRadius: 6, background: `${l.hue}1f`, border: `1px solid ${l.hue}55`, display: 'block' }} />
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: 'block', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 12, fontWeight: 600, color: TEXT }}>{l.name}</span>
+              <span style={{ display: 'block', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10, color: LABEL, marginTop: 2 }}>{l.meta}</span>
+            </span>
+            <span style={{ width: 52, height: 5, borderRadius: 5, background: '#f1f3f9', overflow: 'hidden', flexShrink: 0 }}>
+              <span style={{ display: 'block', height: 5, width: `${l.pct * 2}%`, maxWidth: '100%', borderRadius: 5, background: l.hue }} />
+            </span>
+            <span style={{ fontFamily: MONO, fontSize: 10.5, fontWeight: 600, color: TEXT, width: 30, textAlign: 'right' }}>{l.pct}%</span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+// ─── Hot leads table ──────────────────────────────────────────────────────────────
+const STAGE_TONE: Record<string, [string, string]> = {
+  New: ['#eef1ff','#3547b8'], Cold: ['#eef1ff','#3547b8'],
+  Warm: ['#fff4e2','#b45309'], Hot: ['#fff4e2','#b45309'],
+  Negotiation: ['#f3edff','#5b3bd1'], Closed: ['#e2fbef','#047857'],
+}
+
+function HotLeadsTable({ leads }: { leads: CRMLead[] }) {
+  const hotLeads = useMemo(() =>
+    [...leads].filter(l => getScore(l) >= 60).sort((a, b) => getScore(b) - getScore(a)).slice(0, 5), [leads])
+  if (hotLeads.length === 0) return null
+  const pendingCount = leads.filter(l => getScore(l) >= 70 && l.status !== 'Closed').length
+
+  return (
+    <Card style={{ overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px' }}>
+        <CardTitle>Hot leads needing follow-up</CardTitle>
+        <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10, fontWeight: 600, color: '#b45309', background: '#fef3c7', padding: '4px 7px', borderRadius: 99 }}>{pendingCount} pending</span>
+        <div style={{ flex: 1 }} />
+        <Link href="/dashboard/leads" style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10.5, fontWeight: 600, color: BLUE, textDecoration: 'none' }}>View all leads →</Link>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.4fr .9fr .9fr 1fr .8fr', padding: '0 20px 8px', fontFamily: MONO, fontSize: 10, letterSpacing: '.08em', color: LABEL }}>
+        {['LEAD','PROJECT','BUDGET','INTENT','STAGE','LAST TOUCH'].map(h => <span key={h}>{h}</span>)}
+      </div>
+
+      {hotLeads.map((lead, i) => {
+        const av    = avatarColor(getName(lead))
+        const score = getScore(lead)
+        const stage = lead.status ?? 'New'
+        const tone  = STAGE_TONE[stage] ?? ['#f1f3f9','#3c4459']
+        const budget = lead.budgetMax ?? lead.budgetMin ?? 0
+        const scoreColor = score >= 85 ? RED_C : score >= 75 ? AMBER : BLUE
+
+        return (
+          <Link key={lead.id} href={`/dashboard/leads/${lead.id}`} style={{ textDecoration: 'none' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1.4fr .9fr .9fr 1fr .8fr', alignItems: 'center', padding: '12px 20px', borderTop: '1px solid #f1f3f9', cursor: 'pointer', transition: 'background .12s' }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#f8f9fd')}
+              onMouseLeave={e => (e.currentTarget.style.background = '')}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+                <span style={{ width: 30, height: 30, flexShrink: 0, borderRadius: 9, background: av.bg, color: av.fg, display: 'grid', placeItems: 'center', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10.5, fontWeight: 700 }}>
+                  {getInitials(lead)}
+                </span>
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: 'block', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 12, fontWeight: 600, color: TEXT }}>{getName(lead)}</span>
+                  <span style={{ display: 'block', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10, color: LABEL, marginTop: 2 }}>{lead.phones.primaryPhoneNumber ?? '—'}</span>
+                </span>
+              </div>
+              <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 11.5, fontWeight: 500, color: '#3c4459' }}>{sourceLabel(lead.sourcePortal)}</span>
+              <span style={{ fontFamily: MONO, fontSize: 11.5, fontWeight: 600, color: TEXT }}>{budget > 0 ? formatPipeline(budget) : '—'}</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ width: 36, height: 5, borderRadius: 5, background: '#f1f3f9', overflow: 'hidden', display: 'block' }}>
+                  <span style={{ display: 'block', height: 5, width: `${score}%`, borderRadius: 5, background: scoreColor }} />
+                </span>
+                <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 600, color: TEXT }}>{score}</span>
+              </span>
+              <span style={{ justifySelf: 'start', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10.5, fontWeight: 600, background: tone[0], color: tone[1], padding: '5px 9px', borderRadius: 99 }}>
+                {stage}
+              </span>
+              <span style={{ textAlign: 'right', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10.5, color: MUTED }}>
+                {timeAgo(lead.updatedAt || lead.createdAt)}
+              </span>
+            </div>
+          </Link>
+        )
+      })}
+    </Card>
+  )
+}
+
+// ─── Market Pulse (dark banner) ───────────────────────────────────────────────────
+const TAG_CFG: Record<string, { label: string; color: string; Icon: React.ElementType }> = {
+  stamp_duty:     { label: 'Stamp Duty',    color: RED_C,    Icon: Receipt  },
+  property_stats: { label: 'Property',      color: BLUE_L,   Icon: CurrencyInr },
+  rental:         { label: 'Rental',        color: '#14B8A6',Icon: House    },
+  policy:         { label: 'Policy',        color: BLUE_L,   Icon: Bank     },
+  sales_jump:     { label: 'Sales',         color: EMERALD,  Icon: TrendUp  },
+  demand_surge:   { label: 'Enquiries',     color: AMBER,    Icon: TrendUp  },
+  new_launch:     { label: 'New Launch',    color: '#8B5CF6',Icon: MapPin   },
+  micro_market:   { label: 'Micro Market',  color: BLUE,     Icon: MapPin   },
+}
+
+interface NewsItem { title: string; link: string; pubDate: string; tag: string | null; source: string }
 
 function MarketPulse() {
   const [items, setItems]     = useState<NewsItem[]>([])
@@ -953,24 +748,11 @@ function MarketPulse() {
     if (!silent) setRefreshing(true)
     try {
       const d: NewsItem[] = await fetch('/api/market-news', { cache: 'no-store' }).then(r => r.json())
-      setItems(d)
-      setIdx(0)
-      setLastFetched(new Date())
-    } catch { /* keep existing items */ } finally {
-      setRefreshing(false)
-    }
+      setItems(d); setIdx(0); setLastFetched(new Date())
+    } catch { /* keep existing */ } finally { setRefreshing(false) }
   }, [])
 
-  // Initial load
   useEffect(() => { loadNews() }, [loadNews])
-
-  // Auto-refresh every 3 hours
-  useEffect(() => {
-    const t = setInterval(() => loadNews(true), REFRESH_MS)
-    return () => clearInterval(t)
-  }, [loadNews])
-
-  // Auto-cycle every 6s, pause on hover
   useEffect(() => {
     if (items.length < 2 || hovered) return
     const t = setInterval(() => {
@@ -985,125 +767,125 @@ function MarketPulse() {
     setTimeout(() => { setIdx(i => (i + dir + items.length) % items.length); setFade(true) }, 280)
   }
 
-  // Deduplicate insight chips — one per tag category, max 3
   const insights = Object.entries(
-    items.reduce<Record<string, NewsItem>>((acc, it) => {
-      if (it.tag && !acc[it.tag]) acc[it.tag] = it
-      return acc
-    }, {})
-  ).slice(0, 3)
+    items.reduce<Record<string, NewsItem>>((acc, it) => { if (it.tag && !acc[it.tag]) acc[it.tag] = it; return acc }, {})
+  ).slice(0, 2)
 
   const current = items[idx]
+  if (items.length === 0 && !refreshing) return null
 
   return (
-    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 14, padding: '13px 18px', marginBottom: 22, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-
-      {/* Label */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: 'linear-gradient(90deg,#101832 0%,#1a2447 55%,#20305e 100%)', borderRadius: 12, padding: '13px 16px', color: '#fff', overflow: 'hidden', marginBottom: 18 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
-        <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#EF4444', boxShadow: '0 0 0 3px rgba(239,68,68,0.25)', animation: refreshing ? 'none' : 'pulse-dot 2s ease infinite' }} />
-        <span style={{ fontSize: 10, fontWeight: 800, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Market Pulse</span>
-        {lastFetched && (
-          <span style={{ fontSize: 9, color: LABEL, fontWeight: 500 }}>
-            · {lastFetched.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        )}
-        <button
-          onClick={() => loadNews()}
-          title="Refresh news"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '1px 3px', color: MUTED, display: 'flex', borderRadius: 4, opacity: refreshing ? 0.4 : 0.7 }}>
-          <Newspaper style={{ width: 11, height: 11, animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: RED_C, animation: 'lgcpulse 1.4s ease-in-out infinite', display: 'block' }} />
+        <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: '.12em' }}>MARKET PULSE</span>
+        {lastFetched && <span style={{ fontFamily: MONO, fontSize: 10, color: '#8b94b3' }}>{lastFetched.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>}
+        <button onClick={() => loadNews()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8b94b3', display: 'flex', opacity: refreshing ? 0.4 : 0.8 }}>
+          <Newspaper size={10} weight="light" style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
         </button>
       </div>
-
-      {/* Divider */}
-      <div style={{ width: 1, height: 22, background: BORDER, flexShrink: 0 }} />
-
-      {/* Headline ticker */}
-      <div
-        style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}>
-        {items.length === 0 ? (
-          <span style={{ fontSize: 12, color: MUTED }}>Loading market news…</span>
-        ) : (
-          <>
-            <a
-              href={current?.link ?? '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              onMouseEnter={e => {
-                const el = e.currentTarget
-                el.style.color = ORANGE
-                el.style.textDecoration = 'underline'
-                el.style.textDecorationColor = `${ORANGE}60`
-              }}
-              onMouseLeave={e => {
-                const el = e.currentTarget
-                el.style.color = TEXT
-                el.style.textDecoration = 'none'
-              }}
-              style={{
-                fontSize: 12.5, fontWeight: 500, color: TEXT,
-                textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
-                opacity: fade ? 1 : 0, transition: 'opacity 0.28s ease',
-                cursor: 'pointer',
-              }}>
+      <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,.16)', flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0 }} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+        {items.length === 0
+          ? <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 12, color: '#8b94b3' }}>Loading…</span>
+          : <a href={current?.link ?? '#'} target="_blank" rel="noopener noreferrer"
+              style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 12.5, fontWeight: 500, color: '#fff', textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', opacity: fade ? 1 : 0, transition: 'opacity .28s ease' }}>
               {current?.title}
             </a>
-            {current?.link && current.link !== '#' && (
-              <a href={current.link} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', flexShrink: 0, color: MUTED, opacity: fade ? 0.7 : 0, transition: 'opacity 0.28s ease' }}>
-                <ExternalLink style={{ width: 11, height: 11 }} />
-              </a>
-            )}
-            <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-              <button onClick={() => go(-1)} style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${BORDER}`, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: MUTED }}>
-                <ChevronLeft style={{ width: 12, height: 12 }} />
-              </button>
-              <button onClick={() => go(1)} style={{ width: 22, height: 22, borderRadius: 6, border: `1px solid ${BORDER}`, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: MUTED }}>
-                <ChevronRight style={{ width: 12, height: 12 }} />
-              </button>
-            </div>
-            <span style={{ fontSize: 10, color: MUTED, flexShrink: 0 }}>{idx + 1}/{items.length}</span>
-          </>
-        )}
-      </div>
-
-      {/* Insight chips */}
-      {insights.length > 0 && (
-        <>
-          <div style={{ width: 1, height: 22, background: BORDER, flexShrink: 0 }} />
-          <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-            {insights.map(([tag, item]) => {
-              const cfg = TAG_CFG[tag]
-              if (!cfg) return null
-              return (
-                <a
-                  key={tag}
-                  href={item.link !== '#' ? item.link : undefined}
-                  target={item.link !== '#' ? '_blank' : undefined}
-                  rel="noopener noreferrer"
-                  style={{ textDecoration: 'none' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 11px', background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: 20, cursor: 'pointer' }}>
-                    <cfg.Icon style={{ width: 11, height: 11, color: cfg.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: 11, fontWeight: 700, color: cfg.color, whiteSpace: 'nowrap' }}>{cfg.label}</span>
-                  </div>
-                </a>
-              )
-            })}
-          </div>
-        </>
-      )}
-
-      <style>{`
-        @keyframes pulse-dot {
-          0%, 100% { box-shadow: 0 0 0 3px rgba(239,68,68,0.25); }
-          50%       { box-shadow: 0 0 0 5px rgba(239,68,68,0.08); }
         }
-      `}</style>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+        <button onClick={() => go(-1)} style={{ width: 26, height: 26, borderRadius: 7, border: '1px solid rgba(255,255,255,.18)', background: 'rgba(255,255,255,.06)', color: '#fff', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+          <CaretLeft size={10} weight="light" />
+        </button>
+        <span style={{ fontFamily: MONO, fontSize: 10, color: '#8b94b3', minWidth: 28, textAlign: 'center' }}>{idx + 1}/{items.length}</span>
+        <button onClick={() => go(1)} style={{ width: 26, height: 26, borderRadius: 7, border: '1px solid rgba(255,255,255,.18)', background: 'rgba(255,255,255,.06)', color: '#fff', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+          <CaretRight size={10} weight="light" />
+        </button>
+        {insights.map(([tag, item]) => {
+          const cfg = TAG_CFG[tag]; if (!cfg) return null
+          return (
+            <a key={tag} href={item.link !== '#' ? item.link : undefined} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 9px', background: 'rgba(59,92,255,.28)', border: '1px solid rgba(122,146,255,.5)', color: '#c7d2ff', borderRadius: 7, whiteSpace: 'nowrap' }}>
+                <cfg.Icon size={10} weight="light" />
+                <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10, fontWeight: 600 }}>{cfg.label}</span>
+              </div>
+            </a>
+          )
+        })}
+      </div>
     </div>
   )
 }
 
+// ─── Action queue ─────────────────────────────────────────────────────────────────
+const ACTION_BUCKETS: { label: string; desc: string; color: string; bg: string; filter: (l: CRMLead) => boolean }[] = [
+  { label: 'Unattended', desc: 'First contact needed', color: AMBER, bg: 'rgba(245,158,11,0.09)', filter: l => l.status === 'New' || !l.status },
+  { label: 'Cold',       desc: 'Not responding',       color: '#64748B', bg: 'rgba(100,116,139,0.09)', filter: l => l.status === 'Cold' },
+  { label: 'Follow Up',  desc: 'Warm or hot — act now',color: BLUE, bg: BLUE_DIM, filter: l => l.status === 'Warm' || l.status === 'Hot' || l.escalated === true },
+]
+
+function ActionQueue({ leads, escalatedCount }: { leads: CRMLead[]; escalatedCount: number }) {
+  const [animated, setAnimated] = useState(false)
+  useEffect(() => { const t = setTimeout(() => setAnimated(true), 80); return () => clearTimeout(t) }, [])
+
+  const buckets = useMemo(() => {
+    const open = leads.filter(l => l.status !== 'Closed' && l.status !== 'Disqualified')
+    return ACTION_BUCKETS.map(b => {
+      const items = open.filter(b.filter)
+      return { ...b, count: items.length, pipe: items.reduce((s, l) => s + (l.budgetMax ?? l.budgetMin ?? 0), 0) }
+    })
+  }, [leads])
+
+  const total = buckets.reduce((s, b) => s + b.count, 0)
+  const max   = Math.max(...buckets.map(b => b.count), 1)
+  const totalAnim = useCountUp(total, 800, 100)
+
+  return (
+    <Card style={{ padding: '18px 20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+        <CardTitle sub="Leads that need attention">Action Queue</CardTitle>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontFamily: MONO, fontSize: 17, fontWeight: 700, color: total > 20 ? RED_C : total > 5 ? BLUE : EMERALD, letterSpacing: '-.03em' }}>{totalAnim}</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10, color: MUTED }}>need action</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {buckets.map((b, i) => (
+          <div key={b.label} style={{ opacity: animated ? 1 : 0, transform: animated ? 'none' : 'translateX(-8px)', transition: `opacity .35s ease ${i * .07}s, transform .35s ease ${i * .07}s` }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: 7, height: 7, borderRadius: '50%', background: b.color, boxShadow: b.count > 0 ? `0 0 0 2.5px ${b.color}25` : 'none' }} />
+                <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 11.5, fontWeight: 500, color: TEXT }}>{b.label}</span>
+                <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10, color: MUTED }}>{b.desc}</span>
+                {b.label === 'Follow Up' && escalatedCount > 0 && (
+                  <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 9, fontWeight: 600, color: '#D97706', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', padding: '1px 5px', borderRadius: 2, letterSpacing: '.03em', textTransform: 'uppercase' }}>
+                    {escalatedCount} from team
+                  </span>
+                )}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                {b.pipe > 0 && <span style={{ fontFamily: MONO, fontSize: 9.5, color: MUTED }}>{formatPipeline(b.pipe)}</span>}
+                <span style={{ fontFamily: MONO, fontSize: 10.5, fontWeight: 600, color: b.count > 0 ? b.color : MUTED, background: b.count > 0 ? b.bg : 'transparent', padding: '1px 6px', borderRadius: 99, minWidth: 20, textAlign: 'center' }}>{b.count}</span>
+              </div>
+            </div>
+            <div style={{ height: 5, background: '#f4f5f9', borderRadius: 4, overflow: 'hidden' }}>
+              <div style={{ height: '100%', borderRadius: 4, background: `linear-gradient(90deg,${b.color}cc,${b.color})`, width: animated ? `${(b.count / max) * 100}%` : '0%', transition: `width .75s cubic-bezier(.34,1.56,.64,1) ${i * .09 + .15}s` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${BORDER}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10.5, color: MUTED }}>{total} leads need action</span>
+        <Link href="/dashboard/leads" style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10.5, fontWeight: 600, color: BLUE, textDecoration: 'none' }}>View all →</Link>
+      </div>
+    </Card>
+  )
+}
+
+// ─── Main Dashboard Page ──────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const [leads,   setLeads]   = useState<CRMLead[]>([])
   const [loading, setLoading] = useState(true)
@@ -1111,8 +893,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const sync = () => setRole(getRole())
-    sync()
-    window.addEventListener('plan-changed', sync)
+    sync(); window.addEventListener('plan-changed', sync)
     return () => window.removeEventListener('plan-changed', sync)
   }, [])
 
@@ -1125,333 +906,155 @@ export default function DashboardPage() {
       .catch(() => setLoading(false))
   }, [role])
 
-
   const greeting = useMemo(() => {
     const h = new Date().getHours()
-    if (h < 12) return 'Good morning'
-    if (h < 17) return 'Good afternoon'
-    return 'Good evening'
+    return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
   }, [])
 
   const dateStr = useMemo(() =>
-    new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' }), [])
+    new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase(), [])
 
   const metrics = useMemo(() => {
-    const now   = Date.now()
-    const week  = 7 * 86400_000
-    const month = 30 * 86400_000
+    const now = Date.now(), week = 7 * 86400_000, month = 30 * 86400_000
     const total  = leads.length
-    const hot    = leads.filter(l => getScore(l) >= 70)
-    const warm   = leads.filter(l => getScore(l) >= 40 && getScore(l) < 70)
-    const thisWk = leads.filter(l => now - new Date(l.createdAt).getTime() < week)
-    const thisMo = leads.filter(l => now - new Date(l.createdAt).getTime() < month)
+    const hot    = leads.filter(l => getScore(l) >= 70).length
+    const thisWk = leads.filter(l => now - new Date(l.createdAt).getTime() < week).length
     const pipe   = leads.reduce((s, l) => s + (l.budgetMax ?? 0), 0)
-    const closed = leads.filter(l => l.status === 'Closed')
-    const avgIntent     = total > 0 ? Math.round(leads.reduce((s, l) => s + getScore(l), 0) / total) : 0
-    const closedRate    = total > 0 ? Math.round((closed.length / total) * 100) : 0
-    const contacted     = leads.filter(l => ['Warm', 'Hot', 'Closed'].includes(l.status ?? '')).length
-    const coldNc        = leads.filter(l => ['New', 'Cold', 'Disqualified'].includes(l.status ?? '')).length
-    const contactRate   = total > 0 ? Math.round((contacted / total) * 100) : 0
-    return { total, hot: hot.length, warm: warm.length, thisWk: thisWk.length, thisMo: thisMo.length, pipe, closed: closed.length, avgIntent, closedRate, contacted, coldNc, contactRate }
+    const closed = leads.filter(l => l.status === 'Closed').length
+    return { total, hot, thisWk, pipe, closed }
   }, [leads])
 
-  const escalatedCount = useMemo(() =>
-    leads.filter(l => l.escalated === true).length, [leads])
+  const escalatedCount = useMemo(() => leads.filter(l => l.escalated === true).length, [leads])
 
-  const funnelStages = useMemo(() => {
-    return Object.entries(FUNNEL_CFG)
-      .sort((a, b) => a[1].order - b[1].order)
-      .map(([stage, cfg]) => {
-        const sl = leads.filter(l => (l.status ?? 'New') === stage)
-        return {
-          name: stage,
-          count: sl.length,
-          budget: sl.reduce((s, l) => s + (l.budgetMax ?? l.budgetMin ?? 0), 0),
-          topColor: cfg.top,
-          botColor: cfg.bot,
-        }
-      })
-  }, [leads])
+  const overdueHot = useMemo(() =>
+    leads.filter(l => getScore(l) >= 70 && l.status !== 'Closed' && Date.now() - new Date(l.createdAt).getTime() > 48 * 3600_000), [leads])
 
-  const sourceData = useMemo(() => {
-    const m: Record<string, number> = {}
-    leads.forEach(l => { const s = sourceLabel(l.sourcePortal); m[s] = (m[s] ?? 0) + 1 })
-    return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 7).map(([name, value]) => ({ name, value }))
-  }, [leads])
+  const topPriority = useMemo(() =>
+    [...leads].filter(l => getScore(l) >= 60 && l.status !== 'Closed').sort((a, b) => getScore(b) - getScore(a))[0] ?? null, [leads])
 
-  const weeklyLeads = useMemo(() => Array.from({ length: 7 }, (_, i) => {
+  const weeklyVals = useMemo(() => Array.from({ length: 7 }, (_, i) => {
     const d = new Date(); d.setDate(d.getDate() - (6 - i)); d.setHours(0, 0, 0, 0)
     const next = new Date(d); next.setDate(next.getDate() + 1)
-    const count = leads.filter(l => {
-      const t = new Date(l.createdAt).getTime()
-      return t >= d.getTime() && t < next.getTime()
-    }).length
-    return { label: d.toLocaleDateString('en-IN', { weekday: 'short' }), count }
+    return leads.filter(l => { const t = new Date(l.createdAt).getTime(); return t >= d.getTime() && t < next.getTime() }).length
   }), [leads])
 
-  const hotLeads = useMemo(() =>
-    [...leads].filter(l => getScore(l) >= 60).sort((a, b) => getScore(b) - getScore(a)).slice(0, 5),
-    [leads])
-
-  // Live Pulse — follow-up overdue: hot leads created 48h+ ago, not closed
-  const overdueHot = useMemo(() =>
-    leads.filter(l =>
-      getScore(l) >= 70 &&
-      l.status !== 'Closed' &&
-      Date.now() - new Date(l.createdAt).getTime() > 48 * 3600_000
-    ), [leads])
-
-  // Top priority: highest-scoring open lead
-  const topPriority = useMemo(() =>
-    [...leads]
-      .filter(l => getScore(l) >= 60 && l.status !== 'Closed')
-      .sort((a, b) => getScore(b) - getScore(a))[0] ?? null,
-    [leads])
-
-  const recent = useMemo(() =>
-    [...leads].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 4),
-    [leads])
+  const hotBarVals = useMemo(() => Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - (6 - i)); d.setHours(0, 0, 0, 0)
+    const next = new Date(d); next.setDate(next.getDate() + 1)
+    return leads.filter(l => getScore(l) >= 70 && (() => { const t = new Date(l.createdAt).getTime(); return t >= d.getTime() && t < next.getTime() })()).length
+  }), [leads])
 
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: BG, gap: 12 }}>
-      <Loader2 style={{ width: 20, height: 20, color: ORANGE, animation: 'spin 1s linear infinite' }} />
-      <span style={{ fontSize: 14, color: MUTED }}>Loading dashboard…</span>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: BG, gap: 10, flexDirection: 'column' }}>
+      <CircleNotch size={24} weight="light" color={BLUE} style={{ animation: 'spin 1s linear infinite' }} />
+      <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 12, color: MUTED }}>Loading dashboard…</span>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 
   return (
     <div style={{ background: BG, minHeight: '100vh' }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 24px 48px' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '22px 24px 48px' }}>
 
-        {/* ── Header ──────────────────────────────────────────────────────────── */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
+        {/* ── Greeting ───────────────────────────────────────────────────────────── */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 20, flexWrap: 'wrap', marginBottom: 18 }}>
           <div>
-            <h1 style={{ fontSize: 26, fontWeight: 800, color: TEXT, margin: 0, letterSpacing: '-0.04em' }}>{greeting}, Abhishek 👋</h1>
-            <p style={{ fontSize: 13, color: MUTED, margin: '5px 0 0', fontWeight: 400 }}>{dateStr} · Here&apos;s your pipeline overview</p>
+            <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: '.1em', color: '#7c8499', marginBottom: 7 }}>{dateStr}</div>
+            <h1 style={{ margin: 0, fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 26, fontWeight: 700, letterSpacing: -.8, color: TEXT, lineHeight: 1.15 }}>
+              {greeting}, Abhishek
+            </h1>
+            <p style={{ margin: '6px 0 0', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 12.5, color: MUTED, fontWeight: 400 }}>
+              {overdueHot.length > 0 ? `${overdueHot.length} hot leads need follow-up` : 'Your pipeline is healthy'}
+              {metrics.closed > 0 ? ` · ${metrics.closed} deal${metrics.closed !== 1 ? 's' : ''} closed` : ''}
+            </p>
           </div>
-
-          {/* ── Live Pulse chips ──────────────────────────────────────────────── */}
+          <div style={{ flex: 1 }} />
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-
-            {/* 1 — Follow-up overdue */}
             {overdueHot.length > 0 && (
               <Link href="/dashboard/leads" style={{ textDecoration: 'none' }}>
-                <div
-                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = `${ORANGE}16` }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = `${ORANGE}09` }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 15px', background: `${ORANGE}09`, border: `1px solid ${ORANGE}28`, borderRadius: 12, cursor: 'pointer', transition: 'background 0.15s' }}>
-                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: ORANGE, boxShadow: `0 0 0 3px ${ORANGE}30`, flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: ORANGE, whiteSpace: 'nowrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 13px', background: BLUE_DIM, border: `1px solid rgba(29,78,216,.25)`, borderRadius: 10, cursor: 'pointer' }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: BLUE, flexShrink: 0, boxShadow: `0 0 0 2.5px rgba(29,78,216,.25)` }} />
+                  <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 11.5, fontWeight: 600, color: BLUE, whiteSpace: 'nowrap' }}>
                     {overdueHot.length} hot {overdueHot.length === 1 ? 'lead' : 'leads'} need follow-up
                   </span>
                 </div>
               </Link>
             )}
-
-            {/* 2 — Top priority lead */}
             {topPriority && (
               <Link href={`/dashboard/leads/${topPriority.id}`} style={{ textDecoration: 'none' }}>
-                <div
-                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = `${ORANGE}40`; (e.currentTarget as HTMLDivElement).style.background = `${ORANGE}06` }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = BORDER; (e.currentTarget as HTMLDivElement).style.background = PANEL }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 15px', background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 12, cursor: 'pointer', transition: 'all 0.15s' }}>
-                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: AMBER, flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, fontWeight: 600, color: TEXT, whiteSpace: 'nowrap' }}>{getName(topPriority)}</span>
-                  <span style={{ fontSize: 11, color: MUTED, whiteSpace: 'nowrap' }}>· {getScore(topPriority)} score · {formatPipeline(topPriority.budgetMax ?? topPriority.budgetMin ?? 0)}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 10, padding: '8px 12px', boxShadow: '0 1px 2px rgba(15,23,41,.04)' }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: AMBER, display: 'block' }} />
+                  <div>
+                    <div style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 11.5, fontWeight: 600, color: TEXT }}>{getName(topPriority)}</div>
+                    <div style={{ fontFamily: MONO, fontSize: 10, color: LABEL }}>{getScore(topPriority)} score · {formatPipeline(topPriority.budgetMax ?? topPriority.budgetMin ?? 0)}</div>
+                  </div>
+                  <span style={{ marginLeft: 4, fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10.5, fontWeight: 600, color: BLUE }}>Call →</span>
                 </div>
               </Link>
             )}
-
-            {/* 3 — Weekly momentum */}
-            {metrics.thisWk > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 15px', background: 'rgba(5,150,105,0.07)', border: '1px solid rgba(5,150,105,0.2)', borderRadius: 12 }}>
-                <TrendingUp style={{ width: 13, height: 13, color: EMERALD, flexShrink: 0 }} />
-                <span style={{ fontSize: 12, fontWeight: 600, color: EMERALD, whiteSpace: 'nowrap' }}>+{metrics.thisWk} leads this week</span>
-              </div>
-            )}
-
           </div>
         </div>
 
-        {/* ── Market Pulse ────────────────────────────────────────────────────── */}
+        {/* ── Market Pulse ────────────────────────────────────────────────────────── */}
         <MarketPulse />
 
-        {/* ── KPI Row ─────────────────────────────────────────────────────────── */}
-        <div style={{ borderRadius: 16, border: `1px solid ${BORDER}`, padding: '20px', marginBottom: 24, background: '#FFFFFF' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}
-            className="grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
-            <KPICard icon={Users}       label="Total Leads"     value={metrics.total}  sub={`+${metrics.thisWk} this week`}          accent={ACCENT}  trend={metrics.thisWk > 0 ? { up: true, label: `+${metrics.thisWk} this wk` } : undefined} />
-            <KPICard icon={Flame}       label="Hot Leads"       value={metrics.hot}    sub="Intent score 70+"                         accent={ORANGE}  trend={metrics.hot > 0 ? { up: true, label: 'High priority' } : undefined} />
-            <KPICard icon={IndianRupee} label="Pipeline Value"  value={formatPipeline(metrics.pipe)} sub="Combined budgets"           accent={EMERALD} />
-            <KPICard icon={TrendingUp}  label="Deals"    value={metrics.closed} sub={`${metrics.thisMo} leads this month`}     accent={AMBER}   trend={metrics.closed > 0 ? { up: true, label: `${metrics.closed} won` } : undefined} />
-          </div>
-        </div>
-
-        {/* ── Sales Pipeline Funnel ───────────────────────────────────────────── */}
-        <div style={{ borderRadius: 16, border: `1px solid ${BORDER}`, padding: '22px 24px', marginBottom: 20, background: '#FFFFFF' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>Pipeline Funnel</div>
-              <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{leads.length} leads across all stages</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 24, fontWeight: 800, color: TEXT, letterSpacing: '-0.04em', lineHeight: 1 }}>{formatPipeline(metrics.pipe)}</div>
-              <div style={{ fontSize: 11, color: MUTED, marginTop: 3 }}>Total pipeline value</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: TEXT, letterSpacing: '-0.03em', marginTop: 8, lineHeight: 1 }}>{leads.length}</div>
-              <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>Total leads</div>
-            </div>
-          </div>
-
-          <PipelineFunnelChart stages={funnelStages} />
-
-          {/* Stage labels */}
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${funnelStages.filter(s => s.count > 0).length || 1}, 1fr)`, marginTop: 16, borderTop: `1px solid ${BORDER}`, paddingTop: 14 }}>
-            {funnelStages.filter(s => s.count > 0).map((s, i, arr) => (
-              <div key={s.name} style={{ padding: '0 12px', borderRight: i < arr.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: 2, background: s.topColor, flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, fontWeight: 600, color: MUTED }}>{s.name}</span>
-                </div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: TEXT, letterSpacing: '-0.02em' }}>{formatPipeline(s.budget)}</div>
-                <div style={{ fontSize: 11, color: MUTED, marginTop: 1 }}>{s.count} {s.count === 1 ? 'lead' : 'leads'}</div>
+        {/* ── KPI Row ─────────────────────────────────────────────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 16 }}>
+          <KPICard title="Total leads" value={metrics.total} badge={`+${metrics.thisWk} wk`} badgeColor={MUTED} badgeBg="#f1f3f9" accentBg="#dbeafe" accent={BLUE}>
+            <KPISparkline vals={weeklyVals} />
+          </KPICard>
+          <KPICard title="Hot leads " sub="· intent 70+" value={metrics.hot} badge="High priority" badgeColor="#b45309" badgeBg="#fef3c7" accentBg="#fff0e4" accent={AMBER}>
+            <KPIMicroBars vals={hotBarVals} color={AMBER} />
+          </KPICard>
+          <KPICard title="Pipeline value " sub="· combined budgets" value={formatPipeline(metrics.pipe)} badge={metrics.pipe > 0 ? "active" : undefined} badgeColor="#6ee7b7" badgeBg="rgba(16,185,129,.16)" dark>
+            <div style={{ marginTop: 14, height: 24, display: 'flex', alignItems: 'center', gap: 7 }}>
+              <div style={{ flex: 1, height: 5, borderRadius: 5, background: 'rgba(255,255,255,.14)', overflow: 'hidden' }}>
+                <div style={{ width: '74%', height: '100%', background: 'linear-gradient(90deg,#6ee7b7,#3b5cff)', borderRadius: 5 }} />
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Analytical Insight Strip ────────────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, marginBottom: 20, overflow: 'hidden' }}>
-          {([
-            { label: 'Avg Intent Score', value: metrics.avgIntent,           unit: '/100',   sub: 'Lead quality index',    accent: ORANGE,  bar: null },
-            { label: 'Active Pipeline',  value: metrics.warm + metrics.hot,  unit: ' leads', sub: 'Warm + Hot combined',   accent: ACCENT,  bar: null },
-            { label: 'Conversion Rate',  value: `${metrics.closedRate}%`,    unit: '',       sub: 'New → Closed',          accent: EMERALD, bar: null },
-            { label: 'Leads Contacted',  value: `${metrics.contactRate}%`,   unit: '',       sub: `${metrics.contacted} contacted · ${metrics.coldNc} NC/Cold/DQ`, accent: AMBER, bar: { contacted: metrics.contacted, coldNc: metrics.coldNc } },
-          ] as const).map((item, i, arr) => (
-            <div key={i} style={{ padding: '20px 22px', borderRight: i < arr.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
-              <div style={{ fontSize: 28, fontWeight: 800, color: item.accent, letterSpacing: '-0.04em', lineHeight: 1 }}>
-                {item.value}<span style={{ fontSize: 14, fontWeight: 500, color: MUTED, letterSpacing: 0 }}>{item.unit}</span>
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, marginTop: 7 }}>{item.label}</div>
-              <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{item.sub}</div>
-              {item.bar && (
-                <div style={{ display: 'flex', gap: 2, marginTop: 10, height: 3, borderRadius: 2, overflow: 'hidden' }}>
-                  <div style={{ flex: item.bar.contacted || 0.01, background: AMBER, borderRadius: 2 }} />
-                  <div style={{ flex: item.bar.coldNc || 0.01, background: BORDER, borderRadius: 2 }} />
-                </div>
-              )}
+              <span style={{ fontFamily: MONO, fontSize: 10, color: '#a8b1cc' }}>74% weighted</span>
             </div>
-          ))}
-        </div>
-
-        {/* ── 2-column grid ───────────────────────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20, alignItems: 'start' }}>
-
-          {/* Left column — stacked */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-            {/* Lead Sources */}
-            <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, padding: '22px 24px' }}>
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>Lead Sources</div>
-                <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>Where your leads come from</div>
-              </div>
-              <LeadSourceDonut data={sourceData} />
-            </div>
-
-          </div>{/* end left column */}
-
-          {/* Right column — Quick Actions + Today's Priority */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-            <LeadAge leads={leads} escalatedCount={escalatedCount} />
-          </div>
-        </div>
-
-        {/* ── Revenue Analytics — full width ──────────────────────────────────── */}
-        <div style={{ marginTop: 20 }}>
-          <RevenueAnalytics leads={leads} />
-        </div>
-
-        {/* ── Hot Leads — Priority Follow-ups ─────────────────────────────────── */}
-        {hotLeads.length > 0 && (
-          <div style={{ marginTop: 20, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 16, overflow: 'hidden' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 24px', borderBottom: `1px solid ${BORDER}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: ORANGE, boxShadow: `0 0 0 3px ${ORANGE_DIM}` }} />
-                <span style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>Priority Follow-ups</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: ORANGE, background: ORANGE_DIM, padding: '2px 8px', borderRadius: 99 }}>{hotLeads.length} hot</span>
-              </div>
-              <Link href="/dashboard/leads" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: ORANGE, fontWeight: 600, textDecoration: 'none' }}>
-                View all <ArrowRight style={{ width: 12, height: 12 }} />
-              </Link>
-            </div>
-
-            {/* Table header */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 100px 120px', gap: 0, padding: '10px 24px', background: '#FAFBFC', borderBottom: `1px solid ${BORDER}` }}>
-              {['Lead', 'Contact', 'Source', 'Score', 'Status'].map(h => (
-                <span key={h} style={{ fontSize: 11, fontWeight: 600, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</span>
+          </KPICard>
+          <KPICard title="Deals closed " sub="· this month" value={metrics.closed} badge={metrics.closed > 0 ? `+${metrics.closed} won` : undefined} badgeColor="#047857" badgeBg="#e2fbef" accentBg="#e2fbef" accent={EMERALD}>
+            <div style={{ display: 'flex', gap: 4, marginTop: 12, height: 24, alignItems: 'center' }}>
+              {Array.from({ length: 10 }, (_, i) => (
+                <span key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: i < Math.min(metrics.closed, 10) ? EMERALD : '#e5e8f1', display: 'block' }} />
               ))}
             </div>
+          </KPICard>
+        </div>
 
-            {hotLeads.map((lead, i) => {
-              const av    = avatarColor(getName(lead))
-              const score = getScore(lead)
-              const status = lead.status ?? 'New'
-              const STATUS_CFG: Record<string, { bg: string; color: string }> = {
-                New:          { bg: '#EEF2FF', color: '#4338CA' },
-                Cold:         { bg: '#E0F2FE', color: '#0369A1' },
-                Warm:         { bg: '#FFF7ED', color: '#C2410C' },
-                Hot:          { bg: '#FFEDE8', color: '#C2410C' },
-                Closed:       { bg: '#ECFDF5', color: '#059669' },
-                Disqualified: { bg: '#F3F4F6', color: '#6B7280' },
-              }
-              const pill = STATUS_CFG[status] ?? STATUS_CFG.New
-              return (
-                <Link key={lead.id} href={`/dashboard/leads/${lead.id}`} style={{ textDecoration: 'none' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 100px 120px', gap: 0, padding: '14px 24px', borderBottom: i < hotLeads.length - 1 ? `1px solid ${BORDER}` : 'none', cursor: 'pointer', transition: 'background 0.12s' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#F8F9FA')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                    {/* Name */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 10, background: av.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: av.fg }}>{getInitials(lead)}</span>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{getName(lead)}</div>
-                        <div style={{ fontSize: 11, color: MUTED }}>{timeAgo(lead.createdAt)}</div>
-                      </div>
-                    </div>
-                    {/* Contact */}
-                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
-                      <span style={{ fontSize: 12, color: TEXT }}>{lead.emails.primaryEmail || '—'}</span>
-                      <span style={{ fontSize: 11, color: MUTED }}>{lead.phones.primaryPhoneNumber || '—'}</span>
-                    </div>
-                    {/* Source */}
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, color: MUTED }}>{sourceLabel(lead.sourcePortal)}</span>
-                    </div>
-                    {/* Score */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ flex: 1, height: 5, background: '#F0F2F5', borderRadius: 99, overflow: 'hidden' }}>
-                        <div style={{ width: `${score}%`, height: '100%', background: score >= 70 ? ORANGE : score >= 40 ? AMBER : ACCENT, borderRadius: 99 }} />
-                      </div>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: score >= 70 ? ORANGE : MUTED, minWidth: 24, textAlign: 'right' }}>{score}</span>
-                    </div>
-                    {/* Status */}
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: pill.color, background: pill.bg, padding: '4px 10px', borderRadius: 99 }}>
-                        {status}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        )}
+        {/* ── Pipeline chart + Calendar ──────────────────────────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 332px', gap: 16, marginBottom: 16 }}>
+          <PipelineChart leads={leads} />
+          <CalendarWidget />
+        </div>
+
+        {/* ── Pipeline funnel + Lead sources ────────────────────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 332px', gap: 16, marginBottom: 16 }}>
+          <FunnelCard leads={leads} />
+          <LeadSourceDonut leads={leads} />
+        </div>
+
+        {/* ── Retention rate + Top locations ────────────────────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 332px', gap: 16, marginBottom: 16 }}>
+          <RetentionChart />
+          <TopLocations />
+        </div>
+
+        {/* ── Action Queue ──────────────────────────────────────────────────────── */}
+        <div style={{ marginBottom: 16 }}>
+          <ActionQueue leads={leads} escalatedCount={escalatedCount} />
+        </div>
+
+        {/* ── Hot Leads Table ───────────────────────────────────────────────────── */}
+        <HotLeadsTable leads={leads} />
+
       </div>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+
+      <style>{`
+        @keyframes spin    { to { transform: rotate(360deg) } }
+        @keyframes lgcpulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.35;transform:scale(.8)} }
+      `}</style>
     </div>
   )
 }

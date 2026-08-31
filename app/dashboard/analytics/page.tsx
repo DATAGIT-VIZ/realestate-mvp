@@ -13,15 +13,23 @@ import {
   ChevronRight, BarChart3, Sparkles, TrendingUp,
 } from 'lucide-react'
 import { format, subDays, subMonths, differenceInHours } from 'date-fns'
+import { PageTabBar } from '@/components/layout/PageTabBar'
+
+const INSIGHTS_TABS = [
+  { label: 'Analytics',      href: '/dashboard/analytics', exact: true },
+  { label: 'Team Analytics', href: '/dashboard/team/analytics', teamsOnly: true },
+  { label: 'Reports',        href: '/dashboard/reports' },
+  { label: 'Calculators',    href: '/dashboard/calculators' },
+]
 
 // ─── Design tokens ─────────────────────────────────────────────────────────
 const C = {
   bg: '#F8FAFC', panel: '#FFFFFF', border: '#E2E8F0',
-  amber: '#be2ed6', amberDim: 'rgba(190,46,214,0.08)',
-  emerald: '#059669', red: '#EF4444', blue: '#a000c8',  // primary = Vyapulse purple
-  orange: '#a000c8', purple: '#a000c8',
-  purpleDim: 'rgba(160,0,200,0.08)', purpleBorder: 'rgba(160,0,200,0.25)',
-  purpleGrad: 'linear-gradient(135deg, #7600bc 0%, #b100cd 100%)',
+  amber: '#3B82F6', amberDim: 'rgba(59,130,246,0.08)',
+  emerald: '#059669', red: '#EF4444', blue: '#1D4ED8',
+  orange: '#1D4ED8', purple: '#1D4ED8',
+  purpleDim: 'rgba(29,78,216,0.08)', purpleBorder: 'rgba(29,78,216,0.25)',
+  purpleGrad: 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)',
   muted: '#64748B', label: '#94A3B8', text: '#0F172A',
 }
 
@@ -323,6 +331,7 @@ export default function AnalyticsPage() {
   // ─── Main render ──────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: '100vh', background: C.bg }}>
+      <PageTabBar tabs={INSIGHTS_TABS} />
       <div className="max-w-[1280px] mx-auto px-4 pb-16 lg:px-6">
 
         {/* ── Header ── */}
@@ -350,7 +359,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* ── AI insight strip (both tabs) ── */}
-        <div style={{ background: 'linear-gradient(135deg, rgba(160,0,200,0.06) 0%, rgba(160,0,200,0.02) 100%)', border: '1px solid rgba(160,0,200,0.18)', borderRadius: 14, padding: '12px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ background: 'linear-gradient(135deg, rgba(29,78,216,0.06) 0%, rgba(29,78,216,0.02) 100%)', border: '1px solid rgba(29,78,216,0.18)', borderRadius: 14, padding: '12px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.purpleDim, border: `1px solid ${C.purpleBorder}`, borderRadius: 20, padding: '4px 12px', whiteSpace: 'nowrap', flexShrink: 0 }}>
             <Sparkles style={{ width: 12, height: 12, color: C.purple }} />
             <span style={{ fontSize: 11, fontWeight: 700, color: C.purple, letterSpacing: '0.05em', textTransform: 'uppercase' }}>AI Insight</span>
@@ -440,13 +449,13 @@ export default function AnalyticsPage() {
                     <Tooltip content={<Tip />} />
                     <Bar dataKey="count" name="Total" radius={[6, 6, 0, 0]}>
                       {portalBreakdown.map((_, i) => {
-                        const colors = [C.purple, C.emerald, '#be2ed6', '#da8ee7', C.red]
+                        const colors = [C.purple, C.emerald, '#3B82F6', '#BFDBFE', C.red]
                         return <Cell key={i} fill={colors[i % colors.length]} fillOpacity={0.8} />
                       })}
                     </Bar>
                     <Bar dataKey="hot" name="Hot" radius={[6, 6, 0, 0]}>
                       {portalBreakdown.map((_, i) => {
-                        const colors = [C.purple, C.emerald, '#be2ed6', '#da8ee7', C.red]
+                        const colors = [C.purple, C.emerald, '#3B82F6', '#BFDBFE', C.red]
                         return <Cell key={i} fill={colors[i % colors.length]} />
                       })}
                     </Bar>
@@ -462,7 +471,7 @@ export default function AnalyticsPage() {
                 <p style={{ fontSize: 12, color: C.muted, margin: '0 0 20px' }}>Conversion by stage</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {funnel.map((s, i) => {
-                    const colors = [C.label, C.purple, '#be2ed6', C.orange]
+                    const colors = [C.label, C.purple, '#3B82F6', C.orange]
                     return (
                       <div key={i}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>

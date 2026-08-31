@@ -13,15 +13,15 @@ const C = {
   text:    '#0F172A',
   muted:   '#64748B',
   label:   '#94A3B8',
-  blue:    '#a000c8',
+  blue:    '#1D4ED8',
   emerald: '#059669',
-  amber:   '#be2ed6',
+  amber:   '#3B82F6',
   red:     '#EF4444',
 }
 
 const STATUS_META = {
   Available:     { color: C.emerald, bg: 'rgba(5,150,105,0.08)'  },
-  'Under Offer': { color: C.amber,   bg: 'rgba(190,46,214,0.08)'  },
+  'Under Offer': { color: C.amber,   bg: 'rgba(59,130,246,0.08)'  },
   Sold:          { color: C.muted,   bg: 'rgba(100,116,139,0.08)' },
 }
 
@@ -327,8 +327,8 @@ export default function PropertiesPage() {
         {/* Empty state */}
         {filtered.length === 0 && (
           <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '56px 24px', textAlign: 'center' }}>
-            <div style={{ width: 60, height: 60, borderRadius: 18, background: 'linear-gradient(135deg,#a000c815,#7600bc15)', border: '1px solid #a000c820', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
-              <Building2 style={{ width: 28, height: 28, color: '#a000c8' }} />
+            <div style={{ width: 60, height: 60, borderRadius: 18, background: 'linear-gradient(135deg,#1D4ED815,#1D4ED815)', border: '1px solid #1D4ED820', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
+              <Building2 style={{ width: 28, height: 28, color: '#1D4ED8' }} />
             </div>
             <h3 style={{ fontSize: 17, fontWeight: 700, color: '#0F172A', margin: '0 0 8px' }}>
               {properties.length === 0 ? 'No properties yet' : 'No results found'}
@@ -341,7 +341,7 @@ export default function PropertiesPage() {
             {properties.length === 0 && (
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
                 <button onClick={handleSeedDemo} disabled={seeding}
-                  style={{ padding: '11px 22px', background: 'linear-gradient(135deg,#a000c8,#7600bc)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 13, fontWeight: 700, cursor: seeding ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7, opacity: seeding ? 0.7 : 1, boxShadow: '0 2px 12px rgba(160,0,200,0.3)' }}>
+                  style={{ padding: '11px 22px', background: 'linear-gradient(135deg,#1D4ED8,#1D4ED8)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 13, fontWeight: 700, cursor: seeding ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7, opacity: seeding ? 0.7 : 1, boxShadow: '0 2px 12px rgba(29,78,216,0.3)' }}>
                   {seeding ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Sparkles style={{ width: 14, height: 14 }} />}
                   {seeding ? 'Loading Demo Data…' : 'Load Demo Properties'}
                 </button>
@@ -430,7 +430,7 @@ export default function PropertiesPage() {
             {/* Upload card */}
             <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '20px 24px', marginBottom: 16 }}>
               <h3 style={{ fontSize: 14, fontWeight: 700, color: C.text, margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: 7 }}>
-                <Upload style={{ width: 15, height: 15, color: '#FF7043' }} />Upload Brochure
+                <Upload style={{ width: 15, height: 15, color: '#1D4ED8' }} />Upload Brochure
               </h3>
               {uploadError && <p style={{ fontSize: 12, color: C.red, margin: '0 0 10px' }}>{uploadError}</p>}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
@@ -446,8 +446,8 @@ export default function PropertiesPage() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <label style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: C.bg, border: `1px solid ${uploadFile ? '#FF7043' : C.border}`, borderRadius: 8, cursor: 'pointer' }}>
-                  <FileText style={{ width: 14, height: 14, color: uploadFile ? '#FF7043' : C.muted, flexShrink: 0 }} />
+                <label style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: C.bg, border: `1px solid ${uploadFile ? '#1D4ED8' : C.border}`, borderRadius: 8, cursor: 'pointer' }}>
+                  <FileText style={{ width: 14, height: 14, color: uploadFile ? '#1D4ED8' : C.muted, flexShrink: 0 }} />
                   <span style={{ fontSize: 13, color: uploadFile ? C.text : C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {uploadFile ? uploadFile.name : 'Choose PDF or image…'}
                   </span>
@@ -455,7 +455,7 @@ export default function PropertiesPage() {
                     onChange={e => setUploadFile(e.target.files?.[0] ?? null)} />
                 </label>
                 <button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadName.trim()}
-                  style={{ padding: '9px 20px', background: uploading ? 'rgba(255,112,67,0.4)' : '#FF7043', border: 'none', borderRadius: 9, color: '#fff', fontSize: 13, fontWeight: 600, cursor: uploading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  style={{ padding: '9px 20px', background: uploading ? 'rgba(29,78,216,0.4)' : '#1D4ED8', border: 'none', borderRadius: 9, color: '#fff', fontSize: 13, fontWeight: 600, cursor: uploading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                   {uploading ? <Loader2 style={{ width: 13, height: 13, animation: 'spin 1s linear infinite' }} /> : <Upload style={{ width: 13, height: 13 }} />}
                   {uploading ? 'Uploading…' : 'Upload'}
                 </button>
@@ -465,17 +465,17 @@ export default function PropertiesPage() {
             {/* Brochures list */}
             {bLoading ? (
               <div style={{ textAlign: 'center', padding: 40 }}>
-                <Loader2 style={{ width: 20, height: 20, color: '#FF7043', animation: 'spin 1s linear infinite' }} />
+                <Loader2 style={{ width: 20, height: 20, color: '#1D4ED8', animation: 'spin 1s linear infinite' }} />
               </div>
             ) : brochures.length === 0 ? (
               <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '48px 24px', textAlign: 'center' }}>
-                <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(255,112,67,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
-                  <FileText style={{ width: 24, height: 24, color: '#FF7043' }} />
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(29,78,216,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+                  <FileText style={{ width: 24, height: 24, color: '#1D4ED8' }} />
                 </div>
                 <p style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: '0 0 6px' }}>No brochures yet</p>
                 <p style={{ fontSize: 13, color: C.muted, margin: '0 0 20px' }}>Upload property PDFs above — agents can send them directly from WhatsApp</p>
                 <button onClick={handleSeedBrochures} disabled={bSeeding}
-                  style={{ padding: '10px 22px', background: bSeeding ? 'rgba(255,112,67,0.4)' : 'linear-gradient(135deg, #FF7043 0%, #FF8A65 100%)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: bSeeding ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                  style={{ padding: '10px 22px', background: bSeeding ? 'rgba(29,78,216,0.4)' : 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: bSeeding ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
                   {bSeeding ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Sparkles style={{ width: 14, height: 14 }} />}
                   {bSeeding ? 'Loading…' : 'Load Demo Brochures'}
                 </button>
@@ -484,8 +484,8 @@ export default function PropertiesPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {brochures.map(b => (
                   <div key={b.id} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,112,67,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <FileText style={{ width: 18, height: 18, color: '#FF7043' }} />
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(29,78,216,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <FileText style={{ width: 18, height: 18, color: '#1D4ED8' }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>{b.name}</p>

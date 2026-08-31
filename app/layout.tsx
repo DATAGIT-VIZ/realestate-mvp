@@ -22,8 +22,8 @@ export const metadata: Metadata = {
   description:
     'AI-powered real estate CRM for Indian agents. Capture leads from MagicBricks, 99acres, Housing.com. Auto follow-up. Close more deals.',
   icons: {
-    icon: '/lgc-logo.svg',
-    apple: '/lgc-logo.svg',
+    icon: '/lgc-icon.svg',
+    apple: '/lgc-icon.svg',
   },
 }
 

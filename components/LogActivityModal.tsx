@@ -96,7 +96,7 @@ const DEAL_LOST_REASONS = [
 
 const STATUS_ORDER = ['New', 'Cold', 'Warm', 'Hot', 'Closed']
 const STATUS_COLOR: Record<string, string> = {
-  New: '#64748B', Cold: '#2563EB', Warm: '#9333EA', Hot: '#FF7043',
+  New: '#64748B', Cold: '#2563EB', Warm: '#9333EA', Hot: '#1D4ED8',
   Closed: '#059669', Disqualified: '#94A3B8',
 }
 
@@ -108,9 +108,9 @@ const BORDER    = '#E8ECF0'
 const TEXT      = '#0F172A'
 const MUTED     = '#64748B'
 const LABEL     = '#94A3B8'
-const PRIMARY   = '#FF7043'
-const P_DIM     = 'rgba(255,112,67,0.09)'
-const P_GRAD    = 'linear-gradient(135deg, #FF7043 0%, #FF8A65 100%)'
+const PRIMARY   = '#1D4ED8'
+const P_DIM     = 'rgba(29,78,216,0.09)'
+const P_GRAD    = 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)'
 const EMERALD   = '#059669'
 const RED       = '#EF4444'
 const BLUE      = '#2563EB'
@@ -646,7 +646,7 @@ export function LogActivityModal({
 
             {/* Calendar panel */}
             {calOpen && (
-              <div style={{ marginBottom: 10, border: `1px solid rgba(255,112,67,0.25)`, borderRadius: 12, overflow: 'hidden', maxWidth: 280, boxShadow: '0 4px 16px rgba(255,112,67,0.1)' }}>
+              <div style={{ marginBottom: 10, border: `1px solid rgba(29,78,216,0.25)`, borderRadius: 12, overflow: 'hidden', maxWidth: 280, boxShadow: '0 4px 16px rgba(29,78,216,0.1)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: P_GRAD }}>
                   <button type="button" onClick={() => { if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1) } else setCalMonth(m => m - 1) }}
                     style={{ width: 24, height: 24, border: 'none', background: 'rgba(255,255,255,0.2)', borderRadius: 6, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -658,7 +658,7 @@ export function LogActivityModal({
                     <ChevronRight style={{ width: 12, height: 12 }} />
                   </button>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', padding: '6px 8px 2px', background: 'rgba(255,112,67,0.03)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', padding: '6px 8px 2px', background: 'rgba(29,78,216,0.03)' }}>
                   {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => <div key={d} style={{ textAlign: 'center', fontSize: 9, fontWeight: 700, color: PRIMARY }}>{d}</div>)}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', padding: '2px 8px 6px', background: '#fff' }}>
@@ -674,7 +674,7 @@ export function LogActivityModal({
                     )
                   })}
                 </div>
-                <div style={{ padding: '7px 12px', borderTop: `1px solid rgba(255,112,67,0.12)`, background: 'rgba(255,112,67,0.02)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ padding: '7px 12px', borderTop: `1px solid rgba(29,78,216,0.12)`, background: 'rgba(29,78,216,0.02)', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Clock style={{ width: 11, height: 11, color: PRIMARY, flexShrink: 0 }} />
                   <input type="time" value={nextTime} onChange={e => setNextTime(e.target.value)}
                     style={{ ...inp, flex: 1, background: '#fff', padding: '4px 8px', accentColor: PRIMARY }} />
@@ -684,7 +684,7 @@ export function LogActivityModal({
 
             {/* Task hint */}
             {nextDate && (
-              <div style={{ marginBottom: 8, padding: '7px 10px', background: P_DIM, border: '1px solid rgba(255,112,67,0.2)', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ marginBottom: 8, padding: '7px 10px', background: P_DIM, border: '1px solid rgba(29,78,216,0.2)', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Bell style={{ width: 11, height: 11, color: PRIMARY, flexShrink: 0 }} />
                 <p style={{ fontSize: 11, color: PRIMARY, margin: 0, fontWeight: 600 }}>
                   Task created for{' '}
@@ -698,7 +698,7 @@ export function LogActivityModal({
               <div style={{ marginBottom: 12 }}>
                 <p style={{ fontSize: 10, fontWeight: 700, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 6px' }}>Mandatory Task</p>
                 <input
-                  style={{ ...inp, borderColor: taskTitle ? BORDER : nextDate ? 'rgba(255,112,67,0.35)' : BORDER }}
+                  style={{ ...inp, borderColor: taskTitle ? BORDER : nextDate ? 'rgba(29,78,216,0.35)' : BORDER }}
                   placeholder="e.g. Schedule 2nd Site Visit / Send pricing breakdown"
                   value={taskTitle}
                   onChange={e => setTaskTitle(e.target.value)}
@@ -725,7 +725,7 @@ export function LogActivityModal({
             Cancel
           </button>
           <button type="button" onClick={handleSubmit} disabled={loading}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 20px', background: loading ? 'rgba(255,112,67,0.3)' : P_GRAD, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', boxShadow: loading ? 'none' : '0 4px 12px rgba(255,112,67,0.28)' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 20px', background: loading ? 'rgba(29,78,216,0.3)' : P_GRAD, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', boxShadow: loading ? 'none' : '0 4px 12px rgba(29,78,216,0.28)' }}>
             {loading
               ? <><Loader2 style={{ width: 13, height: 13, animation: 'spin 1s linear infinite' }} />Saving…</>
               : manualStage !== currentStatus

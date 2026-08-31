@@ -16,12 +16,12 @@ type Lead = {
 
 const STATUS_STYLE: Record<string, React.CSSProperties> = {
   Fresh:            { background: '#F8FAFC', color: '#64748B' },
-  Attempting:       { background: 'rgba(160,0,200,0.07)', color: '#a000c8' },
-  'VM Done':        { background: 'rgba(160,0,200,0.1)',  color: '#8a00c2' },
+  Attempting:       { background: 'rgba(29,78,216,0.07)', color: '#1D4ED8' },
+  'VM Done':        { background: 'rgba(29,78,216,0.1)',  color: '#8a00c2' },
   Connected:        { background: '#ECFDF5', color: '#059669' },
-  'Virtual Meeting':{ background: 'rgba(190,46,214,0.07)', color: '#be2ed6' },
-  'Site Visit':     { background: 'rgba(160,0,200,0.08)', color: '#8a00c2' },
-  Negotiation:      { background: 'rgba(160,0,200,0.1)',  color: '#7600bc' },
+  'Virtual Meeting':{ background: 'rgba(59,130,246,0.07)', color: '#3B82F6' },
+  'Site Visit':     { background: 'rgba(29,78,216,0.08)', color: '#8a00c2' },
+  Negotiation:      { background: 'rgba(29,78,216,0.1)',  color: '#1D4ED8' },
   Won:              { background: '#ECFDF5', color: '#059669' },
   Lost:             { background: '#FEF2F2', color: '#DC2626' },
 }

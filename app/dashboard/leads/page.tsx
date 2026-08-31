@@ -9,11 +9,17 @@ import { CsvUploadModal } from '@/components/crm/CsvUploadModal'
 import { EmailParserModal } from '@/components/crm/EmailParserModal'
 import { DistributeModal } from '@/components/crm/DistributeModal'
 import { LogActivityModal } from '@/components/LogActivityModal'
+import { PageTabBar } from '@/components/layout/PageTabBar'
 import {
   Search, Plus, Filter, Eye, Loader2, UserPlus, Clock,
   ChevronDown, LayoutGrid, List, UploadCloud, MailPlus, Mail, Copy,
   Activity, Shuffle, Home,
 } from 'lucide-react'
+
+const LEADS_TABS = [
+  { label: 'All Leads', href: '/dashboard/leads', exact: true },
+  { label: 'Pipeline',  href: '/dashboard/lifecycle' },
+]
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const BG      = '#F5F6FA'
@@ -256,6 +262,7 @@ export default function LeadsPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: BG }}>
+      <PageTabBar tabs={LEADS_TABS} />
       {/* Import toast */}
       {importStatus && (
         <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 200, background: '#111827', color: '#fff', borderRadius: 14, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.2)', minWidth: 280 }}>

@@ -7,8 +7,8 @@ import { Phone, Mail } from 'lucide-react'
 const COLUMNS = [
   { id: 'New',          title: 'New',          color: '#64748B', bg: '#F8FAFC' },
   { id: 'Cold',         title: 'Cold',         color: '#2563EB', bg: '#EFF6FF' },
-  { id: 'Warm',         title: 'Warm',         color: '#be2ed6', bg: '#FDF4FF' },
-  { id: 'Hot',          title: 'Hot 🔥',       color: '#a000c8', bg: '#FDF4FF' },
+  { id: 'Warm',         title: 'Warm',         color: '#3B82F6', bg: '#FDF4FF' },
+  { id: 'Hot',          title: 'Hot 🔥',       color: '#1D4ED8', bg: '#FDF4FF' },
   { id: 'Closed',       title: 'Closed ✓',     color: '#059669', bg: '#F0FDF4' },
   { id: 'Disqualified', title: 'Disqualified', color: '#94A3B8', bg: '#F8FAFC' },
 ]
@@ -18,8 +18,8 @@ const getPhone = (l: CRMLead) => l.phones.primaryPhoneNumber ?? ''
 const getScore = (l: CRMLead) => l.intentScore ?? 0
 
 function scoreDot(score: number) {
-  if (score >= 70) return '#a000c8'
-  if (score >= 40) return '#be2ed6'
+  if (score >= 70) return '#1D4ED8'
+  if (score >= 40) return '#3B82F6'
   return '#94A3B8'
 }
 

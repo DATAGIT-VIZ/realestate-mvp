@@ -7,6 +7,13 @@ import {
   MessageCircle, Star, ChevronRight, Trophy, Copy, Check,
   Flame, Thermometer, Snowflake, Clock, Phone, List,
 } from 'lucide-react'
+import { PageTabBar } from '@/components/layout/PageTabBar'
+
+const OUTREACH_TABS = [
+  { label: 'Broadcast',    href: '/dashboard/outreach/broadcast' },
+  { label: 'Sequences',    href: '/dashboard/outreach/sequences' },
+  { label: 'Power Dialer', href: '/dashboard/calls' },
+]
 
 const BG     = '#F8FAFC'
 const PANEL  = '#FFFFFF'
@@ -14,12 +21,12 @@ const BORDER = '#E2E8F0'
 const TEXT   = '#0F172A'
 const MUTED  = '#64748B'
 const LABEL  = '#94A3B8'
-const BLUE   = '#a000c8'
-const BLUE_D = 'rgba(160,0,200,0.07)'
+const BLUE   = '#1D4ED8'
+const BLUE_D = 'rgba(29,78,216,0.07)'
 const GREEN  = '#059669'
 const GREEN_D= '#ECFDF5'
-const AMBER  = '#be2ed6'
-const AMBER_D= 'rgba(190,46,214,0.07)'
+const AMBER  = '#3B82F6'
+const AMBER_D= 'rgba(59,130,246,0.07)'
 const RED    = '#EF4444'
 const RED_D  = '#FFF1F2'
 
@@ -78,8 +85,8 @@ function ScoreBadge({ score }: { score?: number|null }) {
   if (!score) return null
   const hot = score >= 75, warm = score >= 50
   const Icon  = hot ? Flame : warm ? Thermometer : Snowflake
-  const color = hot ? '#a000c8' : warm ? AMBER : '#475569'
-  const bg    = hot ? 'rgba(160,0,200,0.07)' : warm ? AMBER_D : '#F1F5F9'
+  const color = hot ? '#1D4ED8' : warm ? AMBER : '#475569'
+  const bg    = hot ? 'rgba(29,78,216,0.07)' : warm ? AMBER_D : '#F1F5F9'
   const label = hot ? 'Hot' : warm ? 'Warm' : 'New'
   return (
     <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:700, background:bg, color, borderRadius:6, padding:'3px 8px', border:`1px solid ${color}25` }}>
@@ -230,7 +237,7 @@ export default function PowerDialerPage() {
             {[
               { label:'Dialed',    value:stats.total,      color:BLUE  },
               { label:'Connected', value:stats.connected,  color:GREEN },
-              { label:'Rate',      value:`${connectRate}%`,color:'#a000c8' },
+              { label:'Rate',      value:`${connectRate}%`,color:'#1D4ED8' },
             ].map(s => (
               <div key={s.label} style={{ background:PANEL, border:`1px solid ${BORDER}`, borderRadius:12, padding:'14px 10px' }}>
                 <div style={{ fontSize:22, fontWeight:800, color:s.color, letterSpacing:'-0.01em' }}>{s.value}</div>
@@ -408,7 +415,9 @@ export default function PowerDialerPage() {
 
   // ── DESKTOP ──────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight:'100vh', background:BG, padding:'24px 28px' }}>
+    <div style={{ minHeight:'100vh', background:BG }}>
+      <PageTabBar tabs={OUTREACH_TABS} />
+    <div style={{ padding:'24px 28px' }}>
 
       {/* Page header */}
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
@@ -437,7 +446,7 @@ export default function PowerDialerPage() {
           { label:'Remaining', value:leads.length-queueIdx, color:BLUE   },
           { label:'Dialed',    value:stats.total,           color:TEXT   },
           { label:'Connected', value:stats.connected,       color:GREEN  },
-          { label:'Rate',      value:`${connectRate}%`,     color:'#a000c8' },
+          { label:'Rate',      value:`${connectRate}%`,     color:'#1D4ED8' },
         ].map(s => (
           <div key={s.label} style={{ background:PANEL, border:`1px solid ${BORDER}`, borderRadius:12, padding:'14px 16px' }}>
             <div style={{ fontSize:22, fontWeight:800, color:s.color, letterSpacing:'-0.02em' }}>{s.value}</div>
@@ -620,6 +629,7 @@ export default function PowerDialerPage() {
         @keyframes spin  { to { transform: rotate(360deg) } }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
       `}</style>
+    </div>
     </div>
   )
 }

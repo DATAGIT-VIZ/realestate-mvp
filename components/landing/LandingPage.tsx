@@ -448,7 +448,7 @@ function TeakHeroCard() {
         <div className="flex items-center justify-between px-4 py-2.5" style={{ background: '#080D18' }}>
           <div className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/lgc-logo.svg" alt="Lead Gap CRM" style={{ height: 24, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+            <img src="/lgc-icon.svg" alt="Lead Gap CRM" style={{ height: 22, width: 22, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
           </div>
           <div className="flex items-center gap-1.5">
             <span className="size-1.5 rounded-full bg-emerald-400"
@@ -739,7 +739,7 @@ function HeroDashboardMock({ activeView, onViewChange }: { activeView?: string; 
         <div className="flex flex-col shrink-0" style={{ width: 76, background: '#0F172A' }}>
           <div className="flex items-center justify-center" style={{ height: 46, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/lgc-logo.svg" alt="" style={{ height: 26, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.9 }} />
+            <img src="/lgc-icon.svg" alt="" style={{ height: 24, width: 24, objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.9 }} />
           </div>
           <div className="flex flex-col flex-1 pt-1.5 pb-1" style={{ padding: '6px 5px', gap: 2 }}>
             {DASH_NAV.map(({ Icon, label }) => {
@@ -1248,7 +1248,7 @@ function Hero() {
   return (
     <section
       id="lp-hero"
-      className="relative flex flex-col justify-center min-h-[86vh] pt-16 overflow-hidden"
+      className="relative flex flex-col justify-end min-h-[86vh] pt-16 pb-24 overflow-hidden"
       style={{ background: 'transparent' }}
     >
       {/* Content */}
@@ -1274,7 +1274,7 @@ function Hero() {
         <h1
           className="lp-fade-up leading-[1.08] tracking-tight text-white mb-5 md:mb-7"
           style={{
-            fontSize: 'clamp(34px, 5vw, 54px)',
+            fontSize: 'clamp(44px, 6vw, 68px)',
             fontWeight: 800,
             opacity: 0,
             animationDelay: '0.14s',
@@ -1393,7 +1393,7 @@ function HeroScrollDash() {
           }}>
             {/* LGC logo in place of Apple mark */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/lgc-logo.svg" alt="" style={{ height: 18, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.9 }} />
+            <img src="/lgc-icon.svg" alt="" style={{ height: 16, width: 16, objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.9 }} />
             {['File', 'Edit', 'View', 'Window', 'Help'].map(m => (
               <span key={m} style={{ fontSize: 10, color: 'rgba(255,255,255,0.72)', fontWeight: 500 }}>{m}</span>
             ))}
@@ -2935,9 +2935,9 @@ function AICloseCard() {
 function HowItWorks() {
   const ref = useScrollReveal()
   const steps = [
-    { num: '01', color: '#0047AB', icon: <PhoneCall className="w-5 h-5" />, title: 'Connect your portals', desc: 'Paste credentials once. Leads pull in automatically 24/7 — no human in the loop.', card: <PortalSyncCard /> },
-    { num: '02', color: '#2E66F6', icon: <Users className="w-5 h-5" />,    title: 'Leads auto-assign',   desc: 'New leads route instantly to the right agent. Private workspace — zero overlap ever.', card: <LeadRoutingCard /> },
-    { num: '03', color: '#059669', icon: <TrendingUp className="w-5 h-5" />, title: 'Close more with AI', desc: 'AI scores intent in real time, triggers follow-ups, flags hot deals. You just close.', card: <AICloseCard /> },
+    { num: '01', color: '#0047AB', icon: <PhoneCall className="w-5 h-5" />, title: 'Connect your portals', desc: 'Link 99acres, MagicBricks, Housing.com and NoBroker in under 5 minutes. Every new enquiry lands in Lead Gap CRM automatically — buyer name, contact, property interest, and source already tagged. No copy-paste, no spreadsheet, no missed leads at 2 AM.', card: <PortalSyncCard /> },
+    { num: '02', color: '#2E66F6', icon: <Users className="w-5 h-5" />,    title: 'Leads auto-assign',   desc: 'The moment a lead arrives, the routing engine assigns it to the right agent based on zone, capacity, and seniority — in under 2 minutes. Each agent sees only their leads in a private workspace. No duplicate follow-ups, no "who\'s handling this?" on WhatsApp.', card: <LeadRoutingCard /> },
+    { num: '03', color: '#059669', icon: <TrendingUp className="w-5 h-5" />, title: 'Close more with AI', desc: 'AI tracks every buyer signal — portal views, callbacks, budget confirmations — and scores intent 0–100 in real time. Hot leads surface instantly. Automated sequences keep buyers warm between touchpoints. You focus on site visits and negotiation; the system handles the rest.', card: <AICloseCard /> },
   ]
 
   return (
@@ -2946,11 +2946,14 @@ function HowItWorks() {
         <div className="text-center mb-14">
           <div className="lp-in lp-in-delay-1 inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold mb-5"
             style={{ background: 'rgba(107,142,247,0.1)', border: '1px solid rgba(107,142,247,0.25)', color: '#6B8EF7' }}>
-            <Clock className="w-3.5 h-3.5" /> Up and running in minutes
+            <Clock className="w-3.5 h-3.5" /> How it works
           </div>
           <h2 className="lp-in lp-in-delay-2 text-[38px] md:text-[48px] font-extrabold text-white leading-tight tracking-tight">
-            Three steps from signup<br className="hidden md:block" /> to closing deals
+            From portal enquiry<br className="hidden md:block" /> to closed deal — automated
           </h2>
+          <p className="lp-in lp-in-delay-3 mt-4 text-[15px] leading-relaxed max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            Lead Gap CRM connects your property portals, routes every lead to the right agent instantly, and uses AI to tell you exactly who to call next.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -3377,14 +3380,52 @@ function ProblemSection() {
                       <span className="text-[12px] font-bold tabular-nums" style={{ color: '#EF4444' }}>{timer} unresponded</span>
                     </div>
                   </div>
-                  {/* Lottie animation fills remaining space */}
-                  <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden p-2">
-                    <DotLottieReact
-                      src="/lottie/dashboard-developer.lottie"
-                      loop
-                      autoplay
-                      style={{ width: '100%', height: '100%', maxHeight: '100%' }}
-                    />
+                  {/* Response time — summary + rows */}
+                  <div className="flex-1 min-h-0 flex flex-col overflow-hidden px-6 pb-5 gap-3">
+                    {/* Avg wait callout */}
+                    <div className="flex items-end gap-3 px-3 py-2.5 rounded" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
+                      <div>
+                        <div className="text-[22px] font-black tabular-nums leading-none" style={{ color: '#DC2626' }}>4h 12m</div>
+                        <div className="text-[9px] font-semibold uppercase tracking-wider mt-0.5" style={{ color: '#F87171' }}>avg response time today</div>
+                      </div>
+                      <div className="flex-1" />
+                      <div className="text-right">
+                        <div className="text-[13px] font-bold" style={{ color: '#DC2626' }}>4</div>
+                        <div className="text-[8px]" style={{ color: '#F87171' }}>leads at risk</div>
+                      </div>
+                    </div>
+                    {/* Lead rows */}
+                    {[
+                      { name: 'Amit Sharma',  source: '99acres',     time: '4h 12m', mins: 252, status: 'Overdue',  sc: '#EF4444', pulse: true  },
+                      { name: 'Priya Verma',  source: 'MagicBricks', time: '2h 03m', mins: 123, status: 'Late',     sc: '#F59E0B', pulse: false },
+                      { name: 'Deepak Joshi', source: 'Housing.com', time: '0h 28m', mins: 28,  status: 'Active',   sc: '#10B981', pulse: false },
+                      { name: 'Neha Gupta',   source: 'NoBroker',    time: '5h 40m', mins: 340, status: 'Critical', sc: '#DC2626', pulse: true  },
+                    ].map(({ name, source, time, mins, status, sc, pulse }) => (
+                      <div key={name} className="flex items-center gap-3 rounded overflow-hidden" style={{ border: '1px solid #EFEFEF', background: '#FAFAFA' }}>
+                        {/* Urgency left bar */}
+                        <div className="w-1 self-stretch shrink-0" style={{ background: sc }} />
+                        <div className="size-6 rounded-full flex items-center justify-center shrink-0 text-[8px] font-bold" style={{ background: sc + '18', color: sc }}>
+                          {name.split(' ').map((n: string) => n[0]).join('')}
+                        </div>
+                        <div className="flex-1 min-w-0 py-2">
+                          <div className="text-[10px] font-semibold truncate" style={{ color: '#1A1F27' }}>{name}</div>
+                          {/* time fill bar */}
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <div style={{ flex: 1, height: 3, background: '#F1F5F9', borderRadius: 99, overflow: 'hidden' }}>
+                              <div style={{ width: `${Math.min((mins / 360) * 100, 100)}%`, height: '100%', background: sc, borderRadius: 99 }} />
+                            </div>
+                            <span className="text-[8px] shrink-0" style={{ color: '#94A3B8' }}>{source}</span>
+                          </div>
+                        </div>
+                        <div className="pr-3 text-right shrink-0">
+                          <div className="flex items-center gap-1 justify-end">
+                            {pulse && <span className="size-1.5 rounded-full shrink-0" style={{ background: sc, animation: 'bento-timer-pulse 1s ease-in-out infinite' }} />}
+                            <span className="text-[10px] font-bold tabular-nums" style={{ color: sc }}>{time}</span>
+                          </div>
+                          <div className="text-[7px] font-semibold uppercase tracking-wide mt-0.5" style={{ color: sc }}>{status}</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -3409,27 +3450,53 @@ function ProblemSection() {
                     <div className="text-[16px] font-extrabold leading-tight" style={{ color: '#1A1F27' }}>Nobody owns what.</div>
                     <div className="text-[11px] mt-1" style={{ color: '#78889B' }}>AI assigns, follows up, and closes the gaps.</div>
                   </div>
-                  {/* AI stat rows */}
-                  <div className="px-6 pb-2 flex flex-col gap-1.5 shrink-0">
-                    {[
-                      { label: 'Leads scored today',    value: '12',      clr: '#7C3AED' },
-                      { label: 'Follow-ups auto-sent',  value: '3',       clr: '#10B981' },
-                      { label: 'Pipeline monitored',    value: '₹4.2 Cr', clr: '#F59E0B' },
-                    ].map((s, i) => (
-                      <div key={i} className="flex items-center justify-between px-3 py-1.5 rounded" style={{ background: '#F5F6FA', border: '1px solid #EFEFEF' }}>
-                        <span className="text-[10px] font-medium" style={{ color: '#5A6472' }}>{s.label}</span>
-                        <span className="text-[11px] font-bold tabular-nums" style={{ color: s.clr }}>{s.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Dashboard Lottie */}
-                  <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden p-2">
-                    <DotLottieReact
-                      src="/lottie/dashboard-main.lottie"
-                      loop
-                      autoplay
-                      style={{ width: '100%', height: '100%', maxHeight: '100%' }}
-                    />
+                  {/* AI scoring panel */}
+                  <div className="flex-1 min-h-0 flex flex-col gap-3 px-6 pb-5 overflow-hidden">
+                    {/* Summary strip */}
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { label: 'Scored',   value: '12', clr: '#7C3AED', bg: '#F5F3FF' },
+                        { label: 'Assigned', value: '3',  clr: '#2563EB', bg: '#EFF6FF' },
+                        { label: 'Pipeline', value: '₹4.2Cr', clr: '#F59E0B', bg: '#FFFBEB' },
+                      ].map(({ label, value, clr, bg }) => (
+                        <div key={label} className="flex flex-col items-center py-2 rounded" style={{ background: bg, border: `1px solid ${clr}22` }}>
+                          <div className="text-[13px] font-black leading-none" style={{ color: clr }}>{value}</div>
+                          <div className="text-[7.5px] font-semibold uppercase tracking-wider mt-0.5" style={{ color: clr + 'aa' }}>{label}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Score ring rows */}
+                    {(() => {
+                      const CIRC = 2 * Math.PI * 13
+                      return [
+                        { name: 'Rajesh Kumar', score: 94, status: 'Call now',  agent: 'Priya S.',  sc: '#7C3AED' },
+                        { name: 'Ananya Menon', score: 78, status: 'Follow up', agent: 'Rohit M.',  sc: '#2563EB' },
+                        { name: 'Suresh Patel', score: 51, status: 'Nurture',   agent: 'Kavya R.',  sc: '#10B981' },
+                      ].map(({ name, score, status, agent, sc }) => (
+                        <div key={name} className="flex items-center gap-3 px-3 py-2 rounded" style={{ background: sc + '06', border: `1px solid ${sc}18` }}>
+                          {/* Score ring */}
+                          <div className="relative shrink-0" style={{ width: 36, height: 36 }}>
+                            <svg viewBox="0 0 36 36" width="36" height="36" style={{ transform: 'rotate(-90deg)' }}>
+                              <circle cx="18" cy="18" r="13" fill="none" stroke="#E8ECF0" strokeWidth="3" />
+                              <circle cx="18" cy="18" r="13" fill="none" stroke={sc} strokeWidth="3"
+                                strokeDasharray={`${(score / 100) * CIRC} ${CIRC}`} strokeLinecap="round" />
+                            </svg>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-[9px] font-black tabular-nums" style={{ color: sc }}>{score}</span>
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[10px] font-semibold truncate" style={{ color: '#1A1F27' }}>{name}</div>
+                            <div className="text-[8.5px]" style={{ color: '#94A3B8' }}>→ {agent}</div>
+                          </div>
+                          <div className="px-2 py-0.5 rounded shrink-0 text-[8px] font-bold" style={{ background: sc + '15', color: sc, border: `1px solid ${sc}30` }}>{status}</div>
+                        </div>
+                      ))
+                    })()}
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" style={{ animation: 'bento-timer-pulse 2s ease-in-out infinite' }} />
+                      <span className="text-[9.5px] font-medium" style={{ color: '#166534' }}>AI assigned 3 leads in the last 5 min</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3476,6 +3543,33 @@ const SOLUTIONS = [
 
 function SolutionSection() {
   const ref = useScrollReveal()
+  const [activeRow, setActiveRow] = useState(0)
+  const [flashPortal, setFlashPortal] = useState(-1)
+  const [newCount, setNewCount] = useState(18)
+  const [barPulse, setBarPulse] = useState(false)
+
+  useEffect(() => {
+    const id = setInterval(() => setActiveRow(r => (r + 1) % 3), 1800)
+    return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    let pi = 0
+    const id = setInterval(() => {
+      setFlashPortal(pi % 5)
+      pi++
+    }, 1200)
+    return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setNewCount(n => (n >= 22 ? 18 : n + 1))
+      setBarPulse(true)
+      setTimeout(() => setBarPulse(false), 500)
+    }, 2200)
+    return () => clearInterval(id)
+  }, [])
 
   const ORBITAL_PORTALS = [
     { label: '99acres',  top: '4%',  left: '32%' },
@@ -3492,7 +3586,7 @@ function SolutionSection() {
   ]
 
   const PIPE_DATA = [
-    { label: 'New',       n: 18, pct: 100 },
+    { label: 'New',       n: newCount, pct: 100 },
     { label: 'Contacted', n: 11, pct: 61  },
     { label: 'Qualified', n: 6,  pct: 33  },
     { label: 'Closing',   n: 3,  pct: 17  },
@@ -3534,32 +3628,60 @@ function SolutionSection() {
           <motion.div
             className="flex flex-col"
             style={{ ...CARD, padding: '32px 28px' }}
-            initial={{ opacity: 0, y: 32 }}
+            initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0 }}
+            whileHover={{ y: -3, transition: { duration: 0.2 } }}
           >
             <div style={{ position: 'relative', height: 180, marginBottom: 28, flexShrink: 0 }}>
-              {/* Concentric rings */}
+              {/* Concentric static rings */}
               {[160, 110].map((s, i) => (
-                <div key={s} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: s, height: s, borderRadius: '50%', border: `1.5px solid rgba(0,56,168,${i === 0 ? 0.07 : 0.11})` }} />
+                <div key={s} style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: s, height: s, borderRadius: '50%', border: `1.5px solid rgba(0,56,168,${i === 0 ? 0.08 : 0.14})` }} />
               ))}
+              {/* Pulse ring emanating from centre */}
+              <motion.div
+                style={{ position: 'absolute', top: '50%', left: '50%', translateX: '-50%', translateY: '-50%', width: 56, height: 56, borderRadius: '50%', border: '2px solid rgba(0,56,168,0.35)', pointerEvents: 'none' }}
+                animate={{ scale: [1, 2.6], opacity: [0.5, 0] }}
+                transition={{ repeat: Infinity, duration: 2.2, ease: 'easeOut', repeatDelay: 0.4 }}
+              />
+              {/* Second offset pulse */}
+              <motion.div
+                style={{ position: 'absolute', top: '50%', left: '50%', translateX: '-50%', translateY: '-50%', width: 56, height: 56, borderRadius: '50%', border: '2px solid rgba(0,56,168,0.2)', pointerEvents: 'none' }}
+                animate={{ scale: [1, 2.6], opacity: [0.4, 0] }}
+                transition={{ repeat: Infinity, duration: 2.2, ease: 'easeOut', repeatDelay: 0.4, delay: 1.1 }}
+              />
               {/* Centre — LGC logo */}
-              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 48, height: 48, borderRadius: '50%', background: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.22)' }}>
+              <motion.div
+                style={{ position: 'absolute', top: '50%', left: '50%', translateX: '-50%', translateY: '-50%', width: 52, height: 52, borderRadius: '50%', background: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.28)' }}
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ repeat: Infinity, duration: 3.5, ease: 'easeInOut' }}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/lgc-logo.svg" alt="" style={{ width: 36, height: 36, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
-              </div>
-              {/* Portal bubbles — each with its own subtle float */}
-              {ORBITAL_PORTALS.map(({ label, top, left }, pi) => (
-                <motion.div
-                  key={label}
-                  style={{ position: 'absolute', top, left, width: 44, height: 44, borderRadius: '50%', background: '#FFFFFF', border: '1px solid rgba(0,56,168,0.13)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.07)', fontSize: 7, fontWeight: 700, color: '#0038A8', textAlign: 'center', lineHeight: 1.3, whiteSpace: 'pre-line' }}
-                  animate={{ y: [0, pi % 2 === 0 ? -5 : 5, 0] }}
-                  transition={{ repeat: Infinity, duration: 3 + pi * 0.4, ease: 'easeInOut', delay: pi * 0.3 }}
-                >
-                  {label}
-                </motion.div>
-              ))}
+                <img src="/lgc-icon.svg" alt="" style={{ width: 32, height: 32, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+              </motion.div>
+              {/* Portal bubbles — float + highlight on flash */}
+              {ORBITAL_PORTALS.map(({ label, top, left }, pi) => {
+                const isFlashing = flashPortal === pi
+                return (
+                  <motion.div
+                    key={label}
+                    style={{
+                      position: 'absolute', top, left, width: 46, height: 46, borderRadius: '50%',
+                      background: isFlashing ? '#EEF4FF' : '#FFFFFF',
+                      border: isFlashing ? '1.5px solid rgba(0,56,168,0.45)' : '1px solid rgba(0,56,168,0.14)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: isFlashing ? '0 0 0 4px rgba(0,56,168,0.12), 0 4px 14px rgba(0,56,168,0.18)' : '0 2px 8px rgba(0,0,0,0.07)',
+                      fontSize: 7, fontWeight: 700, color: '#0038A8', textAlign: 'center', lineHeight: 1.3, whiteSpace: 'pre-line',
+                      transition: 'all 0.3s ease',
+                    }}
+                    animate={{ y: [0, pi % 2 === 0 ? -14 : 14, 0] }}
+                    transition={{ repeat: Infinity, duration: 2.8 + pi * 0.35, ease: 'easeInOut', delay: pi * 0.5 }}
+                  >
+                    {label}
+                  </motion.div>
+                )
+              })}
             </div>
             <h3 style={{ fontSize: 21, fontWeight: 700, color: '#1A1F27', lineHeight: 1.25, marginBottom: 10 }}>One inbox. Every portal.</h3>
             <p style={{ fontSize: 14, color: '#78889B', lineHeight: 1.65 }}>Connect every real estate portal in 2 minutes. Every lead flows in automatically — no copy-pasting, ever.</p>
@@ -3569,31 +3691,65 @@ function SolutionSection() {
           <motion.div
             className="flex flex-col"
             style={{ ...CARD, padding: '32px 28px' }}
-            initial={{ opacity: 0, y: 32 }}
+            initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
+            whileHover={{ y: -3, transition: { duration: 0.2 } }}
           >
-            <div style={{ marginBottom: 28, display: 'flex', flexDirection: 'column', gap: 10, flexShrink: 0 }}>
-              {SCORE_ROWS.map(({ badge, bc, tc, w1, w2 }, ri) => (
-                <motion.div
-                  key={badge}
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: '#F7F9FC', borderRadius: 12, border: '1px solid rgba(0,0,0,0.05)' }}
-                  initial={{ opacity: 0, x: -16 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: 0.22 + ri * 0.1 }}
-                >
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
-                    <div style={{ height: 7, width: `${w1}%`, background: '#DDE3ED', borderRadius: 999 }} />
-                    {w2 > 0 && <div style={{ height: 5, width: `${w2}%`, background: '#E8EDF5', borderRadius: 999 }} />}
-                  </div>
-                  <div style={{ padding: '4px 12px', borderRadius: 999, background: bc, fontSize: 11, fontWeight: 700, color: tc, flexShrink: 0 }}>
-                    {badge}
-                  </div>
-                </motion.div>
-              ))}
-              <p style={{ fontSize: 10.5, color: '#B0B8C8', marginTop: 2, paddingLeft: 2 }}>Intent score · updated on arrival</p>
+            <div style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 9, flexShrink: 0 }}>
+              {/* Live indicator */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                <motion.span
+                  style={{ width: 7, height: 7, borderRadius: '50%', background: '#DC2626', display: 'inline-block' }}
+                  animate={{ opacity: [1, 0.3, 1] }}
+                  transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
+                />
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', letterSpacing: '0.08em', textTransform: 'uppercase' }}>AI scoring · live</span>
+              </div>
+              {SCORE_ROWS.map(({ badge, bc, tc, w1, w2 }, ri) => {
+                const isActive = activeRow === ri
+                return (
+                  <motion.div
+                    key={badge}
+                    animate={{
+                      background: isActive ? (ri === 0 ? '#FFF5F5' : ri === 1 ? '#FFFBEB' : '#F8FAFC') : '#F7F9FC',
+                      borderColor: isActive ? (ri === 0 ? 'rgba(220,38,38,0.2)' : ri === 1 ? 'rgba(217,119,6,0.2)' : 'rgba(100,116,139,0.15)') : 'rgba(0,0,0,0.05)',
+                      scale: isActive ? 1.02 : 1,
+                    }}
+                    transition={{ duration: 0.35, ease: 'easeOut' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 12, border: '1px solid rgba(0,0,0,0.05)', overflow: 'hidden', position: 'relative' }}
+                  >
+                    {/* Scan shimmer on active */}
+                    {isActive && (
+                      <motion.div
+                        style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%)', pointerEvents: 'none' }}
+                        initial={{ x: '-100%' }}
+                        animate={{ x: '100%' }}
+                        transition={{ duration: 0.7, ease: 'easeInOut' }}
+                      />
+                    )}
+                    {/* Active left bar */}
+                    <motion.div
+                      style={{ position: 'absolute', left: 0, top: 4, bottom: 4, width: 3, borderRadius: 999, background: ri === 0 ? '#DC2626' : ri === 1 ? '#D97706' : '#64748B' }}
+                      animate={{ opacity: isActive ? 1 : 0, scaleY: isActive ? 1 : 0.3 }}
+                      transition={{ duration: 0.25 }}
+                    />
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      <div style={{ height: 7, width: `${w1}%`, background: '#DDE3ED', borderRadius: 999 }} />
+                      {w2 > 0 && <div style={{ height: 5, width: `${w2}%`, background: '#E8EDF5', borderRadius: 999 }} />}
+                    </div>
+                    <motion.div
+                      animate={{ scale: isActive ? 1.08 : 1 }}
+                      transition={{ duration: 0.25 }}
+                      style={{ padding: '4px 12px', borderRadius: 999, background: bc, fontSize: 11, fontWeight: 700, color: tc, flexShrink: 0 }}
+                    >
+                      {badge}
+                    </motion.div>
+                  </motion.div>
+                )
+              })}
+              <p style={{ fontSize: 10.5, color: '#B0B8C8', marginTop: 3, paddingLeft: 2 }}>Intent score · updated on arrival</p>
             </div>
             <h3 style={{ fontSize: 21, fontWeight: 700, color: '#1A1F27', lineHeight: 1.25, marginBottom: 10 }}>AI scores every lead.</h3>
             <p style={{ fontSize: 14, color: '#78889B', lineHeight: 1.65 }}>Each enquiry is ranked the moment it arrives. The hottest leads rise to the top and trigger follow-ups automatically.</p>
@@ -3603,22 +3759,27 @@ function SolutionSection() {
           <motion.div
             className="flex flex-col"
             style={{ ...CARD, padding: '32px 28px' }}
-            initial={{ opacity: 0, y: 32 }}
+            initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.24 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.24 }}
+            whileHover={{ y: -3, transition: { duration: 0.2 } }}
           >
-            <div style={{ marginBottom: 28, display: 'flex', gap: 14, flexShrink: 0 }}>
+            <div style={{ marginBottom: 20, display: 'flex', gap: 14, flexShrink: 0 }}>
               {/* Stage labels */}
               <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-around', paddingBlock: 4 }}>
                 {PIPE_DATA.map(({ label }) => (
                   <span key={label} style={{ fontSize: 10.5, fontWeight: 600, color: '#94A3B8', whiteSpace: 'nowrap' }}>{label}</span>
                 ))}
               </div>
-              {/* Vertical line + dot */}
+              {/* Vertical line + animated dot */}
               <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', width: 12 }}>
                 <div style={{ width: 1.5, flex: 1, background: 'linear-gradient(to bottom,#E2E8F0,#CBD5E1,#E2E8F0)' }} />
-                <div style={{ position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%,-50%)', width: 10, height: 10, borderRadius: '50%', background: '#0F172A', border: '2.5px solid #fff', boxShadow: '0 0 0 3px rgba(15,23,42,0.1)' }} />
+                <motion.div
+                  style={{ position: 'absolute', top: '20%', left: '50%', translateX: '-50%', width: 10, height: 10, borderRadius: '50%', background: '#0038A8', border: '2.5px solid #fff', boxShadow: '0 0 0 3px rgba(0,56,168,0.15)' }}
+                  animate={{ top: ['20%', '45%', '70%', '20%'] }}
+                  transition={{ repeat: Infinity, duration: 3.6, ease: 'easeInOut' }}
+                />
               </div>
               {/* Progress bars + counts */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 13, paddingBlock: 4 }}>
@@ -3626,17 +3787,33 @@ function SolutionSection() {
                   <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ flex: 1, height: 8, background: '#EEF1F7', borderRadius: 999 }}>
                       <motion.div
-                        style={{ height: '100%', background: i === 2 ? '#0038A8' : '#D1D9E8', borderRadius: 999 }}
+                        style={{ height: '100%', borderRadius: 999, background: i === 0 && barPulse ? '#0038A8' : i === 0 ? '#4D7FD0' : i === 2 ? '#0038A8' : '#D1D9E8' }}
                         initial={{ width: 0 }}
-                        whileInView={{ width: `${pct}%` }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.35 + i * 0.08 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: i * 0.1 }}
                       />
                     </div>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', minWidth: 20, textAlign: 'right' }}>{n}</span>
+                    <motion.span
+                      key={n}
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25 }}
+                      style={{ fontSize: 11, fontWeight: 600, color: i === 0 ? '#0038A8' : '#94A3B8', minWidth: 20, textAlign: 'right' }}
+                    >
+                      {n}
+                    </motion.span>
                   </div>
                 ))}
               </div>
+            </div>
+            {/* Live tag */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 12 }}>
+              <motion.span
+                style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669', display: 'inline-block' }}
+                animate={{ opacity: [1, 0.3, 1] }}
+                transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+              />
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Pipeline · live</span>
             </div>
             <h3 style={{ fontSize: 21, fontWeight: 700, color: '#1A1F27', lineHeight: 1.25, marginBottom: 10 }}>Live pipeline. Total clarity.</h3>
             <p style={{ fontSize: 14, color: '#78889B', lineHeight: 1.65 }}>See every deal, every agent, every stage in real time. Spot what&apos;s stuck before it costs you a close.</p>
@@ -3649,10 +3826,11 @@ function SolutionSection() {
             <motion.div
               key={title}
               style={{ ...CARD, padding: '28px 26px' }}
-              initial={{ opacity: 0, y: 24 }}
+              initial={{ opacity: 0, y: 28 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: mi * 0.1 }}
+              viewport={{ once: true, margin: '-24px' }}
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.08 + mi * 0.1 }}
+              whileHover={{ y: -2, boxShadow: '0 4px 24px rgba(0,0,0,0.09)', transition: { duration: 0.2 } }}
             >
               <div style={{ width: 46, height: 46, borderRadius: 14, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
                 <Icon style={{ width: 22, height: 22, color }} />
@@ -3887,9 +4065,9 @@ export default function LandingPage() {
       <div className="grain-overlay" aria-hidden="true" />
       <Nav />
       {/* ── Unified Silk zone: hero text + scroll-reveal desktop ── */}
-      <div className="relative overflow-hidden" style={{ background: '#0B0F3B' }}>
+      <div className="relative overflow-hidden" style={{ background: '#1a2d8a' }}>
         <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
-          <Silk speed={3} scale={1.2} color="#0a2fa8" noiseIntensity={1.8} rotation={0} className="absolute inset-0" />
+          <Silk speed={3} scale={1.2} color="#2756e8" noiseIntensity={1.8} rotation={0} className="absolute inset-0" />
         </div>
         <div style={{ position: 'relative', zIndex: 1 }}>
           <Hero />
@@ -3897,13 +4075,13 @@ export default function LandingPage() {
         </div>
       </div>
       <PortalStrip />
+      <HowItWorks />
       <ProblemSection />
       <SolutionSection />
       <WorkspaceSection />
       <UniqueFeatures />
       <Features />
       <Stats />
-      <HowItWorks />
       <KPIDashboard />
       <Testimonial />
       <CTASection />

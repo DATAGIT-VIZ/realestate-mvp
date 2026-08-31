@@ -9,8 +9,8 @@ const C = {
   text:    '#263238',
   muted:   '#78889B',
   label:   '#A4B1BE',
-  violet:  '#FF7043',
-  blue:    '#FF7043',
+  violet:  '#1D4ED8',
+  blue:    '#1D4ED8',
   emerald: '#059669',
   red:     '#EF4444',
   amber:   '#F59E0B',
@@ -102,7 +102,7 @@ export function FollowUpWriter({ lead }: Props) {
         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: 'transparent', border: 'none', cursor: 'pointer' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(160,0,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(29,78,216,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Sparkles style={{ width: 14, height: 14, color: C.violet }} />
           </div>
           <div style={{ textAlign: 'left' }}>
@@ -175,7 +175,7 @@ export function FollowUpWriter({ lead }: Props) {
             disabled={loading || !agentContext.trim()}
             style={{
               width: '100%', marginTop: 10, padding: '10px 0',
-              background: loading || !agentContext.trim() ? '#E2E8F0' : `linear-gradient(135deg, #FF7043, #FF8A65)`,
+              background: loading || !agentContext.trim() ? '#E2E8F0' : `linear-gradient(135deg, #1D4ED8, #3B82F6)`,
               border: 'none', borderRadius: 10, color: loading || !agentContext.trim() ? C.label : '#fff',
               fontSize: 12, fontWeight: 700, cursor: loading || !agentContext.trim() ? 'not-allowed' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,

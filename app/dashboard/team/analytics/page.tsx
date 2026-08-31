@@ -13,16 +13,24 @@ import {
 } from 'lucide-react'
 import { format, subDays } from 'date-fns'
 import type { CRMLead } from '@/lib/twenty'
+import { PageTabBar } from '@/components/layout/PageTabBar'
+
+const INSIGHTS_TABS = [
+  { label: 'Analytics',      href: '/dashboard/analytics', exact: true },
+  { label: 'Team Analytics', href: '/dashboard/team/analytics', teamsOnly: true },
+  { label: 'Reports',        href: '/dashboard/reports' },
+  { label: 'Calculators',    href: '/dashboard/calculators' },
+]
 
 const C = {
   bg: '#F8FAFC', panel: '#FFFFFF', border: '#E2E8F0',
   text: '#0F172A', muted: '#64748B', label: '#94A3B8',
-  blue: '#a000c8', blueDim: 'rgba(160,0,200,0.07)',
+  blue: '#1D4ED8', blueDim: 'rgba(29,78,216,0.07)',
   emerald: '#059669', emeraldDim: '#ECFDF5',
-  amber: '#be2ed6', amberDim: 'rgba(190,46,214,0.07)',
+  amber: '#3B82F6', amberDim: 'rgba(59,130,246,0.07)',
   red: '#EF4444', redDim: '#FEF2F2',
-  violet: '#a000c8', violetDim: 'rgba(160,0,200,0.07)',
-  orange: '#a000c8',
+  violet: '#1D4ED8', violetDim: 'rgba(29,78,216,0.07)',
+  orange: '#1D4ED8',
 }
 
 type Timeframe = 'week' | 'month' | 'quarter'
@@ -178,13 +186,15 @@ export default function TeamAnalyticsPage() {
   }
 
   return (
-    <div className="px-4 py-5 pb-24 lg:px-7 lg:py-7 min-h-screen" style={{ background: C.bg }}>
+    <div className="min-h-screen" style={{ background: C.bg }}>
+      <PageTabBar tabs={INSIGHTS_TABS} />
+    <div className="px-4 py-5 pb-24 lg:px-7 lg:py-7">
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* ── Header ── */}
       <div style={{ marginBottom: 20 }}>
-        <button onClick={() => router.push('/dashboard/team')} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.muted, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 10 }}>
-          <ArrowLeft size={13} /> Team
+        <button onClick={() => router.push('/dashboard/analytics')} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.muted, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 10 }}>
+          <ArrowLeft size={13} /> Analytics
         </button>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
           <div>
@@ -207,7 +217,7 @@ export default function TeamAnalyticsPage() {
         {[
           { label: 'New Leads',       value: kpis.newLeads,       sub: TF_LABEL[timeframe], icon: <PlusCircle size={17} color={C.blue}    />, accent: C.blue,    dim: C.blueDim    },
           { label: 'Deals Won',        value: kpis.wonLeads,       sub: 'all time',          icon: <Trophy     size={17} color={C.emerald} />, accent: C.emerald, dim: C.emeraldDim },
-          { label: 'Hot Leads',        value: kpis.hotLeads,       sub: 'score ≥ 70',        icon: <Flame      size={17} color={C.orange}  />, accent: C.orange,  dim: 'rgba(160,0,200,0.07)'    },
+          { label: 'Hot Leads',        value: kpis.hotLeads,       sub: 'score ≥ 70',        icon: <Flame      size={17} color={C.orange}  />, accent: C.orange,  dim: 'rgba(29,78,216,0.07)'    },
           { label: 'Total Activities', value: kpis.totalActivities, sub: TF_LABEL[timeframe], icon: <Activity   size={17} color={C.violet}  />, accent: C.violet,  dim: C.violetDim  },
           { label: 'Response Rate',    value: `${kpis.responseRate}%`, sub: 'leads contacted',icon: <TrendingUp size={17} color={C.amber}   />, accent: C.amber,   dim: C.amberDim   },
           { label: 'Total Leads',      value: kpis.totalLeads,     sub: 'in system',         icon: <Users      size={17} color={C.label}   />, accent: C.label,   dim: '#F8FAFC'    },
@@ -427,6 +437,7 @@ export default function TeamAnalyticsPage() {
           </div>
         )}
       </div>
+    </div>
     </div>
   )
 }

@@ -17,6 +17,14 @@ import {
   Copy,
   MessageCircle,
 } from 'lucide-react'
+import { PageTabBar } from '@/components/layout/PageTabBar'
+
+const INSIGHTS_TABS = [
+  { label: 'Analytics',      href: '/dashboard/analytics', exact: true },
+  { label: 'Team Analytics', href: '/dashboard/team/analytics', teamsOnly: true },
+  { label: 'Reports',        href: '/dashboard/reports' },
+  { label: 'Calculators',    href: '/dashboard/calculators' },
+]
 import {
   BarChart,
   Bar,
@@ -59,7 +67,7 @@ const panelStyle: React.CSSProperties = {
 }
 const heroGrad: React.CSSProperties = {
   padding: '20px 22px',
-  background: 'linear-gradient(135deg, #4c00b0 0%, #b100cd 100%)',
+  background: 'linear-gradient(135deg, #4c00b0 0%, #3B82F6 100%)',
 }
 const tipStyle = { background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 12 }
 
@@ -71,11 +79,11 @@ function SliderRow({ label, value, min, max, step = 1, suffix = '%', onChange }:
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
         <span style={labelStyle}>{label}</span>
-        <span style={{ fontSize: 12, fontWeight: 700, color: '#a000c8' }}>{value}{suffix}</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#1D4ED8' }}>{value}{suffix}</span>
       </div>
       <input type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(Number(e.target.value))}
-        style={{ width: '100%', accentColor: '#a000c8' }} />
+        style={{ width: '100%', accentColor: '#1D4ED8' }} />
     </div>
   )
 }
@@ -183,7 +191,7 @@ function RentalYieldCalculator() {
     else if (netYield >= 4) verdict = 'Good'
     else if (netYield >= 2.5) verdict = 'Marginal'
 
-    const verdictColor = verdict === 'Excellent' ? '#059669' : verdict === 'Good' ? '#a000c8' : verdict === 'Marginal' ? '#be2ed6' : '#EF4444'
+    const verdictColor = verdict === 'Excellent' ? '#059669' : verdict === 'Good' ? '#1D4ED8' : verdict === 'Marginal' ? '#3B82F6' : '#EF4444'
 
     return {
       grossYield, netYield, capRate, netOperatingIncome, totalExpenses,
@@ -196,9 +204,9 @@ function RentalYieldCalculator() {
 
   const comparisons = [
     { name: 'Fixed Deposit',  rate: 7,  color: '#94A3B8' },
-    { name: 'REITs',          rate: 9,  color: '#a000c8' },
+    { name: 'REITs',          rate: 9,  color: '#1D4ED8' },
     { name: 'Stock Market',   rate: 12, color: '#059669' },
-    { name: 'This Property',  rate: calculations.annualizedROI, color: '#a000c8' },
+    { name: 'This Property',  rate: calculations.annualizedROI, color: '#1D4ED8' },
   ]
 
   return (
@@ -228,7 +236,7 @@ function RentalYieldCalculator() {
         <div style={panelStyle}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: useFinancing ? 14 : 0 }}>
             <input type="checkbox" checked={useFinancing} onChange={e => setUseFinancing(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: '#a000c8' }} />
+              style={{ width: 16, height: 16, accentColor: '#1D4ED8' }} />
             <span style={{ fontSize: 13, fontWeight: 600, color: '#0F172A' }}>Include Financing</span>
           </label>
           {useFinancing && (
@@ -236,9 +244,9 @@ function RentalYieldCalculator() {
               <INRInput label="Loan Amount" value={loanAmount} hint={formatCurrency(loanAmount)} onChange={setLoanAmount} />
               <SliderRow label="Interest Rate" value={loanInterestRate} min={6} max={15} step={0.1} onChange={setLoanInterestRate} />
               <SliderRow label="Loan Tenure" value={loanTenure} min={5} max={30} suffix=" yrs" onChange={setLoanTenure} />
-              <div style={{ background: 'rgba(160,0,200,0.05)', border: '1px solid rgba(160,0,200,0.15)', borderRadius: 10, padding: '10px 12px' }}>
-                <p style={{ fontSize: 11, color: '#a000c8', margin: '0 0 2px' }}>Monthly EMI</p>
-                <p style={{ fontSize: 18, fontWeight: 800, color: '#a000c8', margin: 0 }}>₹{formatNumber(calculations.monthlyEMI)}</p>
+              <div style={{ background: 'rgba(29,78,216,0.05)', border: '1px solid rgba(29,78,216,0.15)', borderRadius: 10, padding: '10px 12px' }}>
+                <p style={{ fontSize: 11, color: '#1D4ED8', margin: '0 0 2px' }}>Monthly EMI</p>
+                <p style={{ fontSize: 18, fontWeight: 800, color: '#1D4ED8', margin: 0 }}>₹{formatNumber(calculations.monthlyEMI)}</p>
               </div>
             </div>
           )}
@@ -267,8 +275,8 @@ function RentalYieldCalculator() {
             </p>
           </div>
           <div style={{ padding: 18, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <StatBox label="Gross Yield" value={`${calculations.grossYield.toFixed(2)}%`} color="#a000c8" />
-            <StatBox label={useFinancing ? 'Cash-on-Cash' : 'Cap Rate'} value={`${(useFinancing ? calculations.cashOnCashReturn : calculations.capRate).toFixed(2)}%`} color="#a000c8" />
+            <StatBox label="Gross Yield" value={`${calculations.grossYield.toFixed(2)}%`} color="#1D4ED8" />
+            <StatBox label={useFinancing ? 'Cash-on-Cash' : 'Cap Rate'} value={`${(useFinancing ? calculations.cashOnCashReturn : calculations.capRate).toFixed(2)}%`} color="#1D4ED8" />
             <StatBox label="Net Annual Cash Flow" value={formatCurrency(calculations.annualCashFlow)} color={calculations.annualCashFlow >= 0 ? '#059669' : '#EF4444'} />
             <div style={{ background: `${calculations.verdictColor}10`, border: `1px solid ${calculations.verdictColor}30`, borderRadius: 12, padding: '12px 14px' }}>
               <p style={{ fontSize: 11, color: '#94A3B8', margin: '0 0 4px' }}>Verdict</p>
@@ -284,10 +292,10 @@ function RentalYieldCalculator() {
           </div>
           <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 0 }}>
             {[
-              { label: '+ Rental Income (after vacancy)', value: calculations.effectiveRent, color: '#a000c8' },
-              { label: '- Maintenance', value: -monthlyMaintenance * 12, color: '#be2ed6' },
-              { label: '- Taxes & Insurance', value: -(annualPropertyTax + annualInsurance), color: '#be2ed6' },
-              { label: '- Management Fees', value: -calculations.managementFee, color: '#be2ed6' },
+              { label: '+ Rental Income (after vacancy)', value: calculations.effectiveRent, color: '#1D4ED8' },
+              { label: '- Maintenance', value: -monthlyMaintenance * 12, color: '#3B82F6' },
+              { label: '- Taxes & Insurance', value: -(annualPropertyTax + annualInsurance), color: '#3B82F6' },
+              { label: '- Management Fees', value: -calculations.managementFee, color: '#3B82F6' },
               ...(useFinancing ? [{ label: '- Loan EMI', value: -calculations.annualEMI, color: '#EF4444' }] : []),
             ].map((row, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #F1F5F9' }}>
@@ -313,7 +321,7 @@ function RentalYieldCalculator() {
               <XAxis dataKey="year" tick={{ fill: '#94A3B8', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => formatCurrency(v, 0)} />
               <Tooltip contentStyle={tipStyle} formatter={(v: number) => formatCurrency(v)} />
-              <Bar dataKey="cashFlow" name="Cash Flow" fill="#a000c8" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="cashFlow" name="Cash Flow" fill="#1D4ED8" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -340,10 +348,10 @@ function RentalYieldCalculator() {
         <div style={panelStyle}>
           <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: '0 0 14px' }}>After {years} Years</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <StatBox label="Property Value"  value={formatCurrency(calculations.finalValue)}       color="#a000c8" />
+            <StatBox label="Property Value"  value={formatCurrency(calculations.finalValue)}       color="#1D4ED8" />
             <StatBox label="Capital Gain"    value={formatCurrency(calculations.totalCapitalGain)} color="#059669" />
-            <StatBox label="Total Cash Flow" value={formatCurrency(calculations.yearlyData[calculations.yearlyData.length - 1]?.cumulativeCashFlow ?? 0)} color={calculations.annualCashFlow >= 0 ? '#a000c8' : '#EF4444'} />
-            <StatBox label="Total ROI"       value={`${calculations.totalROI.toFixed(0)}%`}        color="#a000c8" />
+            <StatBox label="Total Cash Flow" value={formatCurrency(calculations.yearlyData[calculations.yearlyData.length - 1]?.cumulativeCashFlow ?? 0)} color={calculations.annualCashFlow >= 0 ? '#1D4ED8' : '#EF4444'} />
+            <StatBox label="Total ROI"       value={`${calculations.totalROI.toFixed(0)}%`}        color="#1D4ED8" />
           </div>
         </div>
       </div>
@@ -468,7 +476,7 @@ function InvestmentProjection() {
               { key: 'optimistic',   label: 'Optimistic',   rate: '10%' },
             ] as const).map(({ key, label, rate }) => (
               <button key={key} onClick={() => setScenario(key)}
-                style={{ flex: 1, padding: '9px 0', borderRadius: 10, border: `1.5px solid ${scenario === key ? '#a000c8' : '#E2E8F0'}`, background: scenario === key ? 'rgba(160,0,200,0.06)' : '#fff', color: scenario === key ? '#a000c8' : '#64748B', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                style={{ flex: 1, padding: '9px 0', borderRadius: 10, border: `1.5px solid ${scenario === key ? '#1D4ED8' : '#E2E8F0'}`, background: scenario === key ? 'rgba(29,78,216,0.06)' : '#fff', color: scenario === key ? '#1D4ED8' : '#64748B', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                 <div>{label}</div>
                 <div style={{ fontSize: 10, opacity: 0.7, marginTop: 2 }}>{rate}/yr</div>
               </button>
@@ -479,7 +487,7 @@ function InvestmentProjection() {
         <div style={panelStyle}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: hasLoan ? 14 : 0 }}>
             <input type="checkbox" checked={hasLoan} onChange={e => setHasLoan(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: '#a000c8' }} />
+              style={{ width: 16, height: 16, accentColor: '#1D4ED8' }} />
             <span style={{ fontSize: 13, fontWeight: 600, color: '#0F172A' }}>Include Home Loan</span>
           </label>
           {hasLoan && (
@@ -488,9 +496,9 @@ function InvestmentProjection() {
               <SliderRow label="Interest Rate" value={loanInterestRate} min={6} max={15} step={0.1} onChange={setLoanInterestRate} />
               <SliderRow label="Loan Tenure" value={loanTenure} min={5} max={30} suffix=" yrs" onChange={setLoanTenure} />
               {hasLoan && (
-                <div style={{ background: 'rgba(160,0,200,0.05)', border: '1px solid rgba(160,0,200,0.15)', borderRadius: 10, padding: '10px 12px' }}>
-                  <p style={{ fontSize: 11, color: '#a000c8', margin: '0 0 2px' }}>Monthly EMI</p>
-                  <p style={{ fontSize: 18, fontWeight: 800, color: '#a000c8', margin: 0 }}>₹{formatNumber(calculations.monthlyEMI)}</p>
+                <div style={{ background: 'rgba(29,78,216,0.05)', border: '1px solid rgba(29,78,216,0.15)', borderRadius: 10, padding: '10px 12px' }}>
+                  <p style={{ fontSize: 11, color: '#1D4ED8', margin: '0 0 2px' }}>Monthly EMI</p>
+                  <p style={{ fontSize: 18, fontWeight: 800, color: '#1D4ED8', margin: 0 }}>₹{formatNumber(calculations.monthlyEMI)}</p>
                 </div>
               )}
             </div>
@@ -512,9 +520,9 @@ function InvestmentProjection() {
           </div>
           <div style={{ padding: 18, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <StatBox label="Total Appreciation" value={formatCurrency(calculations.totalAppreciation)} color="#059669" />
-            <StatBox label="Loan Paid Down"     value={formatCurrency(calculations.loanPaidDown)}      color="#a000c8" />
-            <StatBox label="Wealth Created"     value={formatCurrency(calculations.totalWealthCreated)} color="#a000c8" />
-            <StatBox label="Annualized Return"  value={`${(calculations.appreciationPercent / 5).toFixed(1)}%/yr`} color="#be2ed6" />
+            <StatBox label="Loan Paid Down"     value={formatCurrency(calculations.loanPaidDown)}      color="#1D4ED8" />
+            <StatBox label="Wealth Created"     value={formatCurrency(calculations.totalWealthCreated)} color="#1D4ED8" />
+            <StatBox label="Annualized Return"  value={`${(calculations.appreciationPercent / 5).toFixed(1)}%/yr`} color="#3B82F6" />
           </div>
         </div>
 
@@ -534,12 +542,12 @@ function InvestmentProjection() {
               </thead>
               <tbody>
                 {calculations.main.map(row => (
-                  <tr key={row.year} style={{ borderBottom: '1px solid #F1F5F9', background: row.year === 0 ? 'rgba(160,0,200,0.03)' : 'transparent' }}>
+                  <tr key={row.year} style={{ borderBottom: '1px solid #F1F5F9', background: row.year === 0 ? 'rgba(29,78,216,0.03)' : 'transparent' }}>
                     <td style={{ padding: '9px 12px', fontWeight: 700, color: '#0F172A' }}>{row.calendarYear}</td>
                     <td style={{ padding: '9px 12px', textAlign: 'right', color: '#059669' }}>{formatCurrency(row.propertyValue)}</td>
-                    <td style={{ padding: '9px 12px', textAlign: 'right', color: '#a000c8' }}>{formatCurrency(row.equity)}</td>
-                    <td style={{ padding: '9px 12px', textAlign: 'right', color: '#be2ed6' }}>{formatCurrency(row.loanBalance)}</td>
-                    <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 700, color: '#a000c8' }}>{formatCurrency(row.netWorth)}</td>
+                    <td style={{ padding: '9px 12px', textAlign: 'right', color: '#1D4ED8' }}>{formatCurrency(row.equity)}</td>
+                    <td style={{ padding: '9px 12px', textAlign: 'right', color: '#3B82F6' }}>{formatCurrency(row.loanBalance)}</td>
+                    <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 700, color: '#1D4ED8' }}>{formatCurrency(row.netWorth)}</td>
                     <td style={{ padding: '9px 12px', textAlign: 'right', color: row.yoyGrowth > 0 ? '#059669' : '#64748B' }}>
                       {row.year === 0 ? '—' : `+${row.yoyGrowth.toFixed(0)}%`}
                     </td>
@@ -555,7 +563,7 @@ function InvestmentProjection() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: 0 }}>Wealth Growth</p>
             <div style={{ display: 'flex', gap: 12 }}>
-              {[{ label: 'Property Value', color: '#059669' }, { label: 'Equity', color: '#a000c8' }, ...(hasLoan ? [{ label: 'Loan Balance', color: '#be2ed6' }] : [])].map(l => (
+              {[{ label: 'Property Value', color: '#059669' }, { label: 'Equity', color: '#1D4ED8' }, ...(hasLoan ? [{ label: 'Loan Balance', color: '#3B82F6' }] : [])].map(l => (
                 <span key={l.label} style={{ fontSize: 10, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: l.color, display: 'inline-block' }} />
                   {l.label}
@@ -570,8 +578,8 @@ function InvestmentProjection() {
               <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => formatCurrency(v, 0)} />
               <Tooltip contentStyle={tipStyle} formatter={(v: number) => formatCurrency(v)} />
               <Area type="monotone" dataKey="Property Value" stroke="#059669" fill="#059669" fillOpacity={0.12} strokeWidth={2} dot={false} />
-              <Area type="monotone" dataKey="Equity"         stroke="#a000c8" fill="#a000c8" fillOpacity={0.18} strokeWidth={2} dot={false} />
-              {hasLoan && <Area type="monotone" dataKey="Loan Balance" stroke="#be2ed6" fill="#be2ed6" fillOpacity={0.08} strokeWidth={2} dot={false} />}
+              <Area type="monotone" dataKey="Equity"         stroke="#1D4ED8" fill="#1D4ED8" fillOpacity={0.18} strokeWidth={2} dot={false} />
+              {hasLoan && <Area type="monotone" dataKey="Loan Balance" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.08} strokeWidth={2} dot={false} />}
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -585,9 +593,9 @@ function InvestmentProjection() {
               { key: 'moderate',     label: 'Moderate 7%',     value: calculations.moderate[5]?.netWorth ?? 0 },
               { key: 'optimistic',   label: 'Optimistic 10%',  value: calculations.optimistic[5]?.netWorth ?? 0 },
             ] as const).map(s => (
-              <div key={s.key} style={{ textAlign: 'center', padding: '12px 8px', borderRadius: 12, background: scenario === s.key ? 'rgba(160,0,200,0.06)' : '#F8FAFC', border: `1px solid ${scenario === s.key ? 'rgba(160,0,200,0.2)' : '#E2E8F0'}` }}>
+              <div key={s.key} style={{ textAlign: 'center', padding: '12px 8px', borderRadius: 12, background: scenario === s.key ? 'rgba(29,78,216,0.06)' : '#F8FAFC', border: `1px solid ${scenario === s.key ? 'rgba(29,78,216,0.2)' : '#E2E8F0'}` }}>
                 <p style={{ fontSize: 10, color: '#94A3B8', margin: '0 0 4px' }}>{s.label}</p>
-                <p style={{ fontSize: 15, fontWeight: 800, color: scenario === s.key ? '#a000c8' : '#0F172A', margin: 0 }}>{formatCurrency(s.value)}</p>
+                <p style={{ fontSize: 15, fontWeight: 800, color: scenario === s.key ? '#1D4ED8' : '#0F172A', margin: 0 }}>{formatCurrency(s.value)}</p>
               </div>
             ))}
           </div>
@@ -598,8 +606,8 @@ function InvestmentProjection() {
               <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => formatCurrency(v, 0)} />
               <Tooltip contentStyle={tipStyle} formatter={(v: number) => formatCurrency(v)} />
               <Line type="monotone" dataKey="Conservative (5%)" stroke="#94A3B8" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="Moderate (7%)"     stroke="#a000c8" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="Optimistic (10%)"  stroke="#be2ed6" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="Moderate (7%)"     stroke="#1D4ED8" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="Optimistic (10%)"  stroke="#3B82F6" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -728,7 +736,7 @@ function StampDutyCalculator() {
           <div style={{ display: 'flex', gap: 8 }}>
             {(['residential', 'commercial'] as const).map(t => (
               <button key={t} onClick={() => setPropType(t)}
-                style={{ flex: 1, padding: '9px 0', borderRadius: 10, border: `1.5px solid ${propType === t ? '#a000c8' : '#E2E8F0'}`, background: propType === t ? 'rgba(160,0,200,0.06)' : '#fff', color: propType === t ? '#a000c8' : '#64748B', fontSize: 12, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize' }}>
+                style={{ flex: 1, padding: '9px 0', borderRadius: 10, border: `1.5px solid ${propType === t ? '#1D4ED8' : '#E2E8F0'}`, background: propType === t ? 'rgba(29,78,216,0.06)' : '#fff', color: propType === t ? '#1D4ED8' : '#64748B', fontSize: 12, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize' }}>
                 {t}
               </button>
             ))}
@@ -740,7 +748,7 @@ function StampDutyCalculator() {
             <div style={{ display: 'flex', gap: 8 }}>
               {(['male', 'female', 'joint'] as const).map(g => (
                 <button key={g} onClick={() => setGender(g)}
-                  style={{ flex: 1, padding: '9px 0', borderRadius: 10, border: `1.5px solid ${gender === g ? '#a000c8' : '#E2E8F0'}`, background: gender === g ? 'rgba(160,0,200,0.06)' : '#fff', color: gender === g ? '#a000c8' : '#64748B', fontSize: 12, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize' }}>
+                  style={{ flex: 1, padding: '9px 0', borderRadius: 10, border: `1.5px solid ${gender === g ? '#1D4ED8' : '#E2E8F0'}`, background: gender === g ? 'rgba(29,78,216,0.06)' : '#fff', color: gender === g ? '#1D4ED8' : '#64748B', fontSize: 12, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize' }}>
                   {g}
                 </button>
               ))}
@@ -760,13 +768,13 @@ function StampDutyCalculator() {
         {state === 'TS' && (
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
             <input type="checkbox" checked={isResale} onChange={e => setIsResale(e.target.checked)}
-              style={{ width: 16, height: 16, accentColor: '#a000c8' }} />
+              style={{ width: 16, height: 16, accentColor: '#1D4ED8' }} />
             <span style={{ fontSize: 13, color: '#0F172A' }}>Resale property (+ 1.5% transfer duty)</span>
           </label>
         )}
         {propType === 'residential' && stateData.residential.note && (
-          <div style={{ background: 'rgba(160,0,200,0.05)', border: '1px solid rgba(160,0,200,0.15)', borderRadius: 10, padding: '10px 12px' }}>
-            <p style={{ fontSize: 12, color: '#a000c8', margin: 0 }}>ℹ️ {stateData.residential.note}</p>
+          <div style={{ background: 'rgba(29,78,216,0.05)', border: '1px solid rgba(29,78,216,0.15)', borderRadius: 10, padding: '10px 12px' }}>
+            <p style={{ fontSize: 12, color: '#1D4ED8', margin: 0 }}>ℹ️ {stateData.residential.note}</p>
           </div>
         )}
       </div>
@@ -783,9 +791,9 @@ function StampDutyCalculator() {
           <div style={{ padding: '20px' }}>
             {[
               { label: 'Property Value',               value: propValue,    color: '#0F172A' },
-              { label: `Stamp Duty (${stampDutyPct}%)`, value: stampDutyAmt, color: '#a000c8' },
+              { label: `Stamp Duty (${stampDutyPct}%)`, value: stampDutyAmt, color: '#1D4ED8' },
               { label: `Registration (${regPct}%)`,    value: regAmt,       color: '#059669' },
-              ...(state === 'TS' && isResale ? [{ label: 'Transfer Duty (1.5%)', value: propValue * 0.015, color: '#be2ed6' }] : []),
+              ...(state === 'TS' && isResale ? [{ label: 'Transfer Duty (1.5%)', value: propValue * 0.015, color: '#3B82F6' }] : []),
             ].map((row, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F1F5F9' }}>
                 <span style={{ fontSize: 13, color: '#64748B' }}>{row.label}</span>
@@ -804,7 +812,7 @@ function StampDutyCalculator() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
             {propType === 'residential' ? (
               (['male', 'female', 'joint'] as const).map(g => (
-                <div key={g} style={{ background: gender === g ? 'rgba(160,0,200,0.06)' : '#F8FAFC', border: `1px solid ${gender === g ? 'rgba(160,0,200,0.2)' : '#E2E8F0'}`, borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+                <div key={g} style={{ background: gender === g ? 'rgba(29,78,216,0.06)' : '#F8FAFC', border: `1px solid ${gender === g ? 'rgba(29,78,216,0.2)' : '#E2E8F0'}`, borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
                   <p style={{ fontSize: 10, color: '#94A3B8', margin: '0 0 4px', textTransform: 'capitalize' }}>{g}</p>
                   <p style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', margin: 0 }}>{stateData.residential[g]}%</p>
                   <p style={{ fontSize: 9, color: '#94A3B8', margin: '2px 0 0' }}>stamp duty</p>
@@ -831,12 +839,12 @@ function StampDutyCalculator() {
             const isActive = k === state
             return (
               <div key={k} onClick={() => { setState(k); setLocalBodyIdx(0) }}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 8, cursor: 'pointer', background: isActive ? 'rgba(160,0,200,0.05)' : 'transparent', marginBottom: 2 }}>
-                <span style={{ fontSize: 12, color: isActive ? '#a000c8' : '#64748B', flex: 1, fontWeight: isActive ? 700 : 400 }}>{v.label}</span>
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 8, cursor: 'pointer', background: isActive ? 'rgba(29,78,216,0.05)' : 'transparent', marginBottom: 2 }}>
+                <span style={{ fontSize: 12, color: isActive ? '#1D4ED8' : '#64748B', flex: 1, fontWeight: isActive ? 700 : 400 }}>{v.label}</span>
                 <div style={{ flex: 2, height: 6, background: '#F1F5F9', borderRadius: 99, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${(total / 15) * 100}%`, background: isActive ? '#a000c8' : '#94A3B8', borderRadius: 99 }} />
+                  <div style={{ height: '100%', width: `${(total / 15) * 100}%`, background: isActive ? '#1D4ED8' : '#94A3B8', borderRadius: 99 }} />
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 700, color: isActive ? '#a000c8' : '#0F172A', minWidth: 36, textAlign: 'right' }}>{total}%</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: isActive ? '#1D4ED8' : '#0F172A', minWidth: 36, textAlign: 'right' }}>{total}%</span>
               </div>
             )
           })}
@@ -900,6 +908,8 @@ export default function CalculatorsPage() {
   }
 
   return (
+    <div className="min-h-screen" style={{ background: '#F5F6FA' }}>
+      <PageTabBar tabs={INSIGHTS_TABS} />
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
@@ -917,7 +927,7 @@ export default function CalculatorsPage() {
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#64748B] transition-colors">
             <Share2 className="h-4 w-4" /> Share
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#a000c8] hover:bg-blue-700 text-white transition-colors">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#1D4ED8] hover:bg-blue-700 text-white transition-colors">
             <Download className="h-4 w-4" /> Download PDF
           </button>
         </div>
@@ -928,7 +938,7 @@ export default function CalculatorsPage() {
         {tabs.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             style={activeTab === tab.id
-              ? { background: '#EFF6FF', color: '#a000c8', border: '1px solid #BFDBFE', borderRadius: 8 }
+              ? { background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', borderRadius: 8 }
               : { background: 'transparent', color: '#64748B', border: '1px solid transparent', borderRadius: 8 }}
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all hover:bg-[#F8FAFC]">
             {tab.icon} {tab.label}
@@ -949,7 +959,7 @@ export default function CalculatorsPage() {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-[#EFF6FF] flex items-center justify-center">
-                  <Share2 className="h-5 w-5 text-[#a000c8]" />
+                  <Share2 className="h-5 w-5 text-[#1D4ED8]" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">Share Calculator</h3>
@@ -973,13 +983,13 @@ export default function CalculatorsPage() {
                     <div key={f.label}>
                       <label className="block text-sm text-gray-500 mb-1.5">{f.label}</label>
                       <input type={f.type} value={f.value} onChange={e => f.setter(e.target.value)} placeholder={f.placeholder}
-                        className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-2.5 text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#a000c8]/30 focus:border-[#a000c8]" />
+                        className="w-full bg-white border border-[#E2E8F0] rounded-xl px-4 py-2.5 text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/30 focus:border-[#1D4ED8]" />
                     </div>
                   ))}
                 </div>
                 {shareError && <div className="mb-4 p-3 bg-[#FEF2F2] border border-[#FECACA] rounded-xl text-[#EF4444] text-sm">{shareError}</div>}
                 <button onClick={handleShare} disabled={shareLoading || !agentName}
-                  className="w-full flex items-center justify-center gap-2 bg-[#a000c8] hover:bg-blue-700 disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] text-white py-3 rounded-xl font-medium transition-colors disabled:cursor-not-allowed">
+                  className="w-full flex items-center justify-center gap-2 bg-[#1D4ED8] hover:bg-blue-700 disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] text-white py-3 rounded-xl font-medium transition-colors disabled:cursor-not-allowed">
                   {shareLoading ? <><Loader2 className="h-5 w-5 animate-spin" /> Generating…</> : <><Share2 className="h-5 w-5" /> Generate Shareable Link</>}
                 </button>
               </>
@@ -987,17 +997,17 @@ export default function CalculatorsPage() {
               <>
                 <div className="text-center mb-6">
                   <div className="w-16 h-16 rounded-xl bg-[#EFF6FF] flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle className="h-8 w-8 text-[#a000c8]" />
+                    <CheckCircle className="h-8 w-8 text-[#1D4ED8]" />
                   </div>
                   <h4 className="text-xl font-semibold text-gray-900 mb-2">Link Generated!</h4>
                   <p className="text-gray-500 text-sm">Share this link with your client</p>
                 </div>
                 <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-3 mb-4">
-                  <p className="text-[#a000c8] text-sm break-all">{shareUrl}</p>
+                  <p className="text-[#1D4ED8] text-sm break-all">{shareUrl}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <button onClick={handleCopyLink}
-                    className={`flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-colors ${copied ? 'bg-[#a000c8] text-white' : 'bg-white border border-[#E2E8F0] text-[#0F172A] hover:bg-[#F8FAFC]'}`}>
+                    className={`flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-colors ${copied ? 'bg-[#1D4ED8] text-white' : 'bg-white border border-[#E2E8F0] text-[#0F172A] hover:bg-[#F8FAFC]'}`}>
                     {copied ? <><CheckCircle className="h-4 w-4" /> Copied!</> : <><Copy className="h-4 w-4" /> Copy Link</>}
                   </button>
                   <button onClick={handleWhatsAppShare}
@@ -1014,6 +1024,7 @@ export default function CalculatorsPage() {
           </div>
         </div>
       )}
+    </div>
     </div>
   )
 }

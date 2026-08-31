@@ -5,8 +5,11 @@ import {
   User, Building2, Bell, Phone, Plug, Zap, CreditCard,
   Shield, Database, ChevronRight, Settings, Layers,
   GitBranch, MessageSquare, Globe, Clock, Palette,
-  AlertCircle, Lock, Download, Trash2, ToggleLeft,
+  AlertCircle, Lock, Download, Trash2, ToggleLeft, Bot,
 } from 'lucide-react'
+import {
+  Robot, WhatsappLogo, TrendUp, CheckSquare,
+} from '@phosphor-icons/react'
 import { getPlan, getRole, setPlan, setRole, type Plan, type Role } from '@/lib/plan'
 
 // ─── Tokens ───────────────────────────────────────────────────────────────────
@@ -16,14 +19,14 @@ const BORDER  = '#E2E8F0'
 const TEXT    = '#0F172A'
 const MUTED   = '#64748B'
 const LABEL   = '#94A3B8'
-const BLUE    = '#a000c8'
-const BLUE_D  = 'rgba(160,0,200,0.07)'
+const BLUE    = '#1D4ED8'
+const BLUE_D  = 'rgba(29,78,216,0.07)'
 const GREEN   = '#059669'
 const GREEN_D = '#ECFDF5'
-const AMBER   = '#be2ed6'
-const AMBER_D = 'rgba(190,46,214,0.07)'
-const VIOLET  = '#a000c8'
-const VIOLET_D= 'rgba(160,0,200,0.07)'
+const AMBER   = '#3B82F6'
+const AMBER_D = 'rgba(59,130,246,0.07)'
+const VIOLET  = '#1D4ED8'
+const VIOLET_D= 'rgba(29,78,216,0.07)'
 const RED     = '#EF4444'
 const RED_D   = '#FEF2F2'
 
@@ -46,6 +49,7 @@ const SECTIONS: Section[] = [
   { id: 'calling',       label: 'Calling & WhatsApp', icon: Phone,        color: GREEN,  colorDim: GREEN_D  },
   { id: 'integrations',  label: 'Portals & Integrations', icon: Plug,     color: VIOLET, colorDim: VIOLET_D },
   { id: 'automations',   label: 'Automations',        icon: Zap,          color: AMBER,  colorDim: AMBER_D  },
+  { id: 'ai',            label: 'AI Preferences',     icon: Bot,          color: BLUE,   colorDim: BLUE_D   },
   { id: 'routing',       label: 'Lead Routing',       icon: GitBranch,    color: BLUE,   colorDim: BLUE_D,   teamsOnly: true, adminOnly: true },
   { id: 'branding',      label: 'Branding & Reports', icon: Palette,      color: VIOLET, colorDim: VIOLET_D },
   { id: 'billing',       label: 'Billing & Plan',     icon: CreditCard,   color: GREEN,  colorDim: GREEN_D  },
@@ -289,11 +293,11 @@ function IntegrationsSection() {
     { name: 'MagicBricks',  status: 'not_connected', color: '#E8460A' },
     { name: '99acres',      status: 'not_connected', color: '#E63946' },
     { name: 'Housing.com',  status: 'not_connected', color: '#EC4899' },
-    { name: 'NoBroker',     status: 'not_connected', color: '#a000c8' },
+    { name: 'NoBroker',     status: 'not_connected', color: '#1D4ED8' },
     { name: 'Square Yards', status: 'not_connected', color: '#0EA5E9' },
     { name: 'Facebook Lead Ads', status: 'not_connected', color: '#1877F2' },
     { name: 'Google Ads',   status: 'not_connected', color: '#EA4335' },
-    { name: 'IndiaProperty',status: 'not_connected', color: '#be2ed6' },
+    { name: 'IndiaProperty',status: 'not_connected', color: '#3B82F6' },
   ]
   return (
     <div>
@@ -316,7 +320,7 @@ function IntegrationsSection() {
           </div>
         ))}
       </div>
-      <div style={{ marginTop: 16, padding: '12px 14px', background: BLUE_D, border: `1px solid rgba(160,0,200,0.2)`, borderRadius: 10 }}>
+      <div style={{ marginTop: 16, padding: '12px 14px', background: BLUE_D, border: `1px solid rgba(29,78,216,0.2)`, borderRadius: 10 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: BLUE, marginBottom: 2 }}>Your Webhook URL</div>
         <div style={{ fontSize: 11, color: MUTED, fontFamily: 'monospace', background: PANEL, padding: '6px 10px', borderRadius: 6, marginTop: 4, wordBreak: 'break-all' as const }}>
           https://your-app.leadgap.in/api/webhook/leads?token=••••••••
@@ -360,6 +364,109 @@ function AutomationsSection() {
   )
 }
 
+type TrustLevel = 'suggest' | 'auto_notify' | 'autonomous'
+
+const TRUST_OPTS: { key: TrustLevel; label: string; desc: string }[] = [
+  { key: 'suggest',     label: 'Suggest',     desc: 'AI shows recommendation — you click to apply' },
+  { key: 'auto_notify', label: 'Auto-notify', desc: 'AI executes and sends you a notification' },
+  { key: 'autonomous',  label: 'Autonomous',  desc: 'AI executes silently, visible in Workflows log' },
+]
+
+function TrustToggle({ value, onChange, accentColor }: { value: TrustLevel; onChange: (v: TrustLevel) => void; accentColor: string }) {
+  return (
+    <div style={{ display: 'flex', gap: 4 }}>
+      {TRUST_OPTS.map(opt => {
+        const active = value === opt.key
+        return (
+          <button
+            key={opt.key}
+            onClick={() => onChange(opt.key)}
+            title={opt.desc}
+            style={{
+              padding: '5px 12px',
+              fontSize: 11,
+              fontWeight: active ? 700 : 500,
+              borderRadius: 2,
+              border: `1px solid ${active ? accentColor : BORDER}`,
+              background: active ? `${accentColor}12` : 'transparent',
+              color: active ? accentColor : MUTED,
+              cursor: 'pointer',
+              transition: 'all 0.12s',
+              fontFamily: 'inherit',
+              whiteSpace: 'nowrap' as const,
+            }}
+          >
+            {opt.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function AIPreferencesSection() {
+  const [whatsapp, setWhatsapp] = useState<TrustLevel>('suggest')
+  const [stage,    setStage]    = useState<TrustLevel>('suggest')
+  const [tasks,    setTasks]    = useState<TrustLevel>('suggest')
+
+  const WA_COLOR   = '#25D366'
+  const STAGE_COLOR = BLUE
+  const TASK_COLOR  = '#F59E0B'
+
+  const rows: {
+    Icon: React.ElementType
+    color: string
+    title: string
+    desc: string
+    value: TrustLevel
+    onChange: (v: TrustLevel) => void
+    last?: boolean
+  }[] = [
+    { Icon: WhatsappLogo, color: WA_COLOR,    title: 'WhatsApp Intent Detection', desc: 'AI reads WhatsApp conversations to detect intent signals and update lead stages', value: whatsapp, onChange: setWhatsapp },
+    { Icon: TrendUp,      color: STAGE_COLOR, title: 'Stage Progression',         desc: 'AI recommends or auto-moves leads between pipeline stages based on activity',    value: stage,    onChange: setStage    },
+    { Icon: CheckSquare,  color: TASK_COLOR,  title: 'Task Creation',             desc: 'AI creates follow-up tasks from call notes, messages, and detected action items', value: tasks,    onChange: setTasks, last: true },
+  ]
+
+  return (
+    <div>
+      <div style={{ fontSize: 12, color: MUTED, marginBottom: 16 }}>
+        Configure how autonomously the AI acts for each workflow. Start with <strong>Suggest</strong> and increase trust as you get comfortable.
+      </div>
+
+      {rows.map(r => (
+        <div key={r.title} style={{ padding: '16px 0', borderBottom: r.last ? 'none' : `1px solid ${BORDER}` }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' as const }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flex: 1, minWidth: 0 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 2, background: `${r.color}10`, border: `1px solid ${r.color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                <r.Icon size={14} weight="light" style={{ color: r.color }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, marginBottom: 2 }}>{r.title}</div>
+                <div style={{ fontSize: 12, color: MUTED }}>{r.desc}</div>
+              </div>
+            </div>
+            <TrustToggle value={r.value} onChange={r.onChange} accentColor={r.color} />
+          </div>
+
+          {/* Current trust level description */}
+          <div style={{ marginTop: 10, marginLeft: 40, fontSize: 11, color: LABEL }}>
+            {TRUST_OPTS.find(o => o.key === r.value)?.desc}
+          </div>
+        </div>
+      ))}
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+        <button
+          style={{ padding: '7px 16px', background: BLUE, border: 'none', borderRadius: 2, fontSize: 12, fontWeight: 700, color: '#fff', cursor: 'pointer' }}
+          onClick={() => { /* TODO: persist */ }}
+        >
+          Save preferences
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function RoutingSection() {
   return (
     <div>
@@ -388,7 +495,7 @@ function BrandingSection() {
         <Row label="Company Logo" description="Shown in the header of all printed reports">
           <button disabled style={{ fontSize: 12, fontWeight: 600, color: BLUE, background: BLUE_D, border: `1px solid ${BLUE}20`, borderRadius: 8, padding: '6px 14px', cursor: 'not-allowed' }}>Upload logo</button>
         </Row>
-        <Row label="Brand Colour" description="Accent colour on report headers"><PlaceholderInput placeholder="#a000c8"/></Row>
+        <Row label="Brand Colour" description="Accent colour on report headers"><PlaceholderInput placeholder="#1D4ED8"/></Row>
         <Row label="Report footer text" description="Line shown at the bottom of every report"><PlaceholderInput placeholder="© 2026 Your Agency · RERA Registered"/></Row>
         <Row label="Show RERA number on reports" last><PlaceholderToggle/></Row>
       </div>
@@ -495,6 +602,7 @@ export default function SettingsPage() {
       case 'calling':       return <CallingSection/>
       case 'integrations':  return <IntegrationsSection/>
       case 'automations':   return <AutomationsSection/>
+      case 'ai':            return <AIPreferencesSection/>
       case 'routing':       return <RoutingSection/>
       case 'branding':      return <BrandingSection/>
       case 'billing':       return <BillingSection plan={plan} onPlanChange={handlePlanChange}/>
