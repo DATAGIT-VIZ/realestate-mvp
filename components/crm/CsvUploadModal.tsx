@@ -16,6 +16,8 @@ import {
   Checks,
   Clock,
   Trash,
+  PencilSimple,
+  Check,
 } from '@phosphor-icons/react'
 import { type PreviewRow, type PreviewStats } from '@/lib/lead-import'
 
@@ -175,6 +177,11 @@ export function CsvUploadModal({ onClose, onSuccess }: Props) {
   const [result, setResult]             = useState<{ inserted: number; updated: number; skipped: number; errors: number } | null>(null)
   const [pollingBatchId, setPollingBatchId] = useState<string | null>(null)
 
+  // Inline editing
+  const [editingRowIdx, setEditingRowIdx] = useState<number | null>(null)
+  const [editName,      setEditName]      = useState('')
+  const [editPhone,     setEditPhone]     = useState('')
+
   // History
   const [showHistory, setShowHistory]       = useState(false)
   const [history, setHistory]               = useState<HistoryBatch[]>([])
@@ -317,6 +324,33 @@ export function CsvUploadModal({ onClose, onSuccess }: Props) {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const willImport = (stats?.new ?? 0) + (dedup === 'overwrite' ? (stats?.duplicates ?? 0) : 0)
   const mappedCount = FIELD_CONFIG.filter(f => fieldMap[f.key]).length
+
+  const startEdit = (row: PreviewRow) => {
+    setEditingRowIdx(row.rowIndex)
+    setEditName(row.raw['Client Name'] ?? row.parsed.name ?? '')
+    setEditPhone(row.raw['Phone'] ?? row.parsed.phone ?? '')
+  }
+
+  const saveEdit = (rowIndex: number) => {
+    const name  = editName.trim()
+    const phone = editPhone.trim()
+    setRawRows(prev => prev.map((r, i) =>
+      i === rowIndex - 1 ? { ...r, 'Client Name': name, 'Phone': phone } : r
+    ))
+    setPreviewRows(prev => prev.map(r => {
+      if (r.rowIndex !== rowIndex) return r
+      const hasPhone  = !!phone
+      const newErrors = hasPhone ? [] : ['Phone number is required']
+      return {
+        ...r,
+        raw:    { ...r.raw, 'Client Name': name, 'Phone': phone },
+        parsed: { ...r.parsed, name, phone: hasPhone ? phone : null },
+        errors: newErrors,
+        status: hasPhone && name ? 'new' : 'error',
+      }
+    }))
+    setEditingRowIdx(null)
+  }
 
   const resetToUpload = () => {
     setStep('upload'); setRawRows([]); setRawParsed([]); setPreviewRows([])
@@ -566,22 +600,43 @@ export function CsvUploadModal({ onClose, onSuccess }: Props) {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead style={{ position: 'sticky', top: 0, background: BG, zIndex: 1 }}>
                   <tr>
-                    {['Row', 'Client Name', 'Phone', 'Lead Source', 'Budget', 'Status / Issue'].map(h => (
+                    {['Row', 'Client Name', 'Phone', 'Lead Source', 'Budget', 'Status / Issue', ''].map(h => (
                       <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 700, color: LABEL, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: `1px solid ${BORDER}`, whiteSpace: 'nowrap' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {pageRows.map(row => {
-                    const cfg = STATUS_CFG[row.status]
+                    const cfg      = STATUS_CFG[row.status]
+                    const isEditing = editingRowIdx === row.rowIndex
                     return (
-                      <tr key={row.rowIndex} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                      <tr key={row.rowIndex} style={{ borderBottom: `1px solid ${BORDER}`, background: isEditing ? 'rgba(29,78,216,0.03)' : undefined }}>
                         <td style={{ padding: '7px 12px', color: LABEL, fontWeight: 600 }}>{row.rowIndex}</td>
-                        <td style={{ padding: '7px 12px', color: TEXT, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {row.parsed.name || <em style={{ color: LABEL }}>—</em>}
+                        <td style={{ padding: '7px 4px 7px 12px', color: TEXT, maxWidth: 160 }}>
+                          {isEditing ? (
+                            <input
+                              autoFocus
+                              value={editName}
+                              onChange={e => setEditName(e.target.value)}
+                              style={{ width: '100%', padding: '4px 7px', border: `1px solid ${PRIMARY}`, borderRadius: 2, fontSize: 12, outline: 'none', color: TEXT }}
+                            />
+                          ) : (
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                              {row.parsed.name || <em style={{ color: LABEL }}>—</em>}
+                            </span>
+                          )}
                         </td>
-                        <td style={{ padding: '7px 12px', color: MUTED, fontFamily: 'monospace', fontSize: 11 }}>
-                          {row.parsed.phone ?? <span style={{ color: DANGER }}>{row.raw['Phone'] || '—'}</span>}
+                        <td style={{ padding: '7px 4px', color: MUTED, fontFamily: 'monospace', fontSize: 11 }}>
+                          {isEditing ? (
+                            <input
+                              value={editPhone}
+                              onChange={e => setEditPhone(e.target.value)}
+                              onKeyDown={e => e.key === 'Enter' && saveEdit(row.rowIndex)}
+                              style={{ width: '100%', padding: '4px 7px', border: `1px solid ${editPhone ? PRIMARY : DANGER}`, borderRadius: 2, fontSize: 12, outline: 'none', color: TEXT, fontFamily: 'monospace' }}
+                            />
+                          ) : (
+                            row.parsed.phone ?? <span style={{ color: DANGER }}>{row.raw['Phone'] || '—'}</span>
+                          )}
                         </td>
                         <td style={{ padding: '7px 12px', color: MUTED }}>{row.parsed.source || '—'}</td>
                         <td style={{ padding: '7px 12px', color: MUTED }}>
@@ -597,6 +652,25 @@ export function CsvUploadModal({ onClose, onSuccess }: Props) {
                             <span style={{ display: 'block', fontSize: 10, color: LABEL, marginTop: 2, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {row.errors[0] ?? row.duplicateReason}
                             </span>
+                          )}
+                        </td>
+                        <td style={{ padding: '7px 8px', whiteSpace: 'nowrap' }}>
+                          {isEditing ? (
+                            <button
+                              onClick={() => saveEdit(row.rowIndex)}
+                              title="Save"
+                              style={{ display: 'flex', alignItems: 'center', padding: '4px 8px', background: SUCCESS, border: 'none', borderRadius: 2, color: '#fff', cursor: 'pointer', gap: 4, fontSize: 11, fontWeight: 700 }}
+                            >
+                              <Check weight="bold" size={11} />Save
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => startEdit(row)}
+                              title="Edit this row"
+                              style={{ display: 'flex', alignItems: 'center', padding: '4px 6px', background: 'none', border: `1px solid ${BORDER}`, borderRadius: 2, color: MUTED, cursor: 'pointer' }}
+                            >
+                              <PencilSimple weight="light" size={12} />
+                            </button>
                           )}
                         </td>
                       </tr>

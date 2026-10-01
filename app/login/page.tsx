@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { Mail, Lock, Loader2, Eye, EyeOff, TrendingUp, Users, Zap, Shield } from 'lucide-react'
+import { Envelope, Lock, CircleNotch, Eye, EyeSlash, TrendUp, Users, Lightning, Shield } from '@phosphor-icons/react'
 
 /* ─── Brand cobalt mesh (left panel) ────────────────────────────────────────── */
 const LEFT_BG = `
@@ -15,10 +15,10 @@ const LEFT_BG = `
 `.trim()
 
 const FEATURES = [
-  { icon: TrendingUp, text: 'Auto-sync leads from 99acres, MagicBricks & Housing' },
-  { icon: Users,      text: 'Assign, track and follow-up with your entire team' },
-  { icon: Zap,        text: 'AI lead scoring so you always call the right person first' },
-  { icon: Shield,     text: 'Bank-grade encryption — your data stays yours' },
+  { icon: TrendUp,   text: 'Auto-sync leads from 99acres, MagicBricks & Housing' },
+  { icon: Users,     text: 'Assign, track and follow-up with your entire team' },
+  { icon: Lightning, text: 'AI lead scoring so you always call the right person first' },
+  { icon: Shield,    text: 'Bank-grade encryption — your data stays yours' },
 ]
 
 const SOCIAL_PROOF = [
@@ -54,7 +54,6 @@ function LoginForm() {
       options: { redirectTo: `${window.location.origin}/dashboard` },
     })
     if (oauthError) { setError(oauthError.message); setGoogleLoading(false) }
-    // on success the browser redirects — no cleanup needed
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -110,19 +109,17 @@ function LoginForm() {
             The CRM built for Indian real estate teams. Sync portals, score leads with AI, and never drop a follow-up again.
           </p>
 
-          {/* Features list */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {FEATURES.map(({ icon: Icon, text }) => (
               <div key={text} style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                 <div style={{ width: 30, height: 30, background: 'rgba(0,71,171,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-                  <Icon size={14} style={{ color: '#0038A8' }} />
+                  <Icon size={14} weight="light" style={{ color: '#0038A8' }} />
                 </div>
                 <span style={{ fontSize: 13.5, color: '#4A3F35', lineHeight: 1.5 }}>{text}</span>
               </div>
             ))}
           </div>
 
-          {/* Social proof */}
           <div style={{ marginTop: 48, display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ display: 'flex' }}>
               {SOCIAL_PROOF.map((name, i) => (
@@ -144,7 +141,6 @@ function LoginForm() {
           </div>
         </div>
 
-        {/* Decorative blobs */}
         <div style={{ position: 'absolute', bottom: -80, left: -80, width: 320, height: 320, borderRadius: '50%', background: 'rgba(0,56,168,0.07)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', top: 120, right: -60, width: 200, height: 200, borderRadius: '50%', background: 'rgba(77,127,208,0.1)', pointerEvents: 'none' }} />
       </div>
@@ -153,7 +149,6 @@ function LoginForm() {
       <div style={{ width: '100%', maxWidth: 480, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', background: 'white', boxShadow: '-1px 0 0 #F0EDE8' }}>
         <div style={{ width: '100%', maxWidth: 380 }}>
 
-          {/* Logo (mobile only) */}
           <div className="lg:hidden" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 32 }}>
             <div style={{ width: 32, height: 32, background: '#0038A8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', letterSpacing: '0.02em' }}>LG</span>
@@ -161,7 +156,6 @@ function LoginForm() {
             <span style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', letterSpacing: '0.04em' }}>LEAD GAP</span>
           </div>
 
-          {/* Header */}
           <div style={{ marginBottom: 28 }}>
             <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.18em', color: '#0038A8', margin: '0 0 10px' }}>
               Sign in to Lead Gap CRM
@@ -174,9 +168,7 @@ function LoginForm() {
             </p>
           </div>
 
-          {/* Social buttons */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
-            {/* Google — active */}
             <button
               type="button"
               onClick={handleGoogle}
@@ -186,12 +178,11 @@ function LoginForm() {
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#E2E8F0' }}
             >
               {googleLoading
-                ? <Loader2 style={{ width: 15, height: 15, animation: 'spin 1s linear infinite', color: '#94A3B8' }} />
+                ? <CircleNotch size={15} weight="light" style={{ animation: 'spin 1s linear infinite', color: '#94A3B8' }} />
                 : <GoogleIcon />}
               {googleLoading ? 'Redirecting…' : 'Continue with Google'}
             </button>
 
-            {/* GitHub — placeholder */}
             <button type="button" disabled title="Coming soon"
               style={{ width: '100%', padding: '11px 16px', border: '1px solid #E2E8F0', background: '#FAFAFA', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 13.5, fontWeight: 600, color: '#64748B', cursor: 'not-allowed', opacity: 0.55, borderRadius: 2 }}>
               <GitHubIcon />
@@ -200,23 +191,20 @@ function LoginForm() {
             </button>
           </div>
 
-          {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
             <div style={{ flex: 1, height: 1, background: '#F0EDE8' }} />
             <span style={{ fontSize: 12, color: '#B0A89E', fontWeight: 500 }}>or sign in with email</span>
             <div style={{ flex: 1, height: 1, background: '#F0EDE8' }} />
           </div>
 
-          {/* Form */}
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-            {/* Email */}
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#7A6F65', marginBottom: 7, letterSpacing: '0.04em' }}>
                 Email address
               </label>
               <div style={{ position: 'relative' }}>
-                <Mail style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: '#B0A89E' }} />
+                <Envelope size={15} weight="light" style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: '#B0A89E' }} />
                 <input
                   type="email" required
                   value={email} onChange={e => setEmail(e.target.value)}
@@ -229,14 +217,13 @@ function LoginForm() {
               </div>
             </div>
 
-            {/* Password */}
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#7A6F65', letterSpacing: '0.04em' }}>Password</label>
                 <a href="#" style={{ fontSize: 12, color: '#0038A8', textDecoration: 'none', fontWeight: 500 }}>Forgot password?</a>
               </div>
               <div style={{ position: 'relative' }}>
-                <Lock style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: '#B0A89E' }} />
+                <Lock size={15} weight="light" style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: '#B0A89E' }} />
                 <input
                   type={showPass ? 'text' : 'password'} required
                   value={password} onChange={e => setPassword(e.target.value)}
@@ -248,28 +235,25 @@ function LoginForm() {
                 />
                 <button type="button" onClick={() => setShowPass(v => !v)}
                   style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#B0A89E', display: 'flex', padding: 0 }}>
-                  {showPass ? <EyeOff style={{ width: 15, height: 15 }} /> : <Eye style={{ width: 15, height: 15 }} />}
+                  {showPass ? <EyeSlash size={15} weight="light" /> : <Eye size={15} weight="light" />}
                 </button>
               </div>
             </div>
 
-            {/* Error */}
             {error && (
-              <div style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.18)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#DC2626' }}>
+              <div style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.18)', borderRadius: 2, padding: '10px 14px', fontSize: 13, color: '#DC2626' }}>
                 {error}
               </div>
             )}
 
-            {/* Submit */}
             <button type="submit" disabled={loading}
               style={{ padding: '13px 0', background: loading ? '#E2E8F0' : '#0038A8', border: 'none', borderRadius: 2, color: loading ? '#94A3B8' : '#fff', fontSize: 14, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 2, letterSpacing: '0.01em' }}>
               {loading
-                ? <><Loader2 style={{ width: 15, height: 15, animation: 'spin 1s linear infinite' }} /> Signing in…</>
+                ? <><CircleNotch size={15} weight="light" style={{ animation: 'spin 1s linear infinite' }} /> Signing in…</>
                 : 'Sign in'}
             </button>
           </form>
 
-          {/* Footer links */}
           <p style={{ textAlign: 'center', fontSize: 13, color: '#B0A89E', marginTop: 24 }}>
             Don't have an account?{' '}
             <Link href="/signup" style={{ color: '#0038A8', fontWeight: 600, textDecoration: 'none' }}>
@@ -291,7 +275,6 @@ function LoginForm() {
   )
 }
 
-/* ─── Placeholder social icons ──────────────────────────────────────────────── */
 function GoogleIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">

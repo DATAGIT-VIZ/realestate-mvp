@@ -7,6 +7,7 @@ import {
   Newspaper, MapPin, Receipt, Bank, House, TrendUp, CurrencyInr,
 } from '@phosphor-icons/react'
 import { getRole } from '@/lib/plan'
+import { LiveActivityFeed } from '@/components/LiveActivityFeed'
 
 // ─── Design tokens ──────────────────────────────────────────────────────────────
 const BG     = '#eef0f6'
@@ -1046,8 +1047,11 @@ export default function DashboardPage() {
           <ActionQueue leads={leads} escalatedCount={escalatedCount} />
         </div>
 
-        {/* ── Hot Leads Table ───────────────────────────────────────────────────── */}
-        <HotLeadsTable leads={leads} />
+        {/* ── Hot Leads + Live Feed ─────────────────────────────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 16, alignItems: 'start' }}>
+          <HotLeadsTable leads={leads} />
+          <LiveActivityFeed maxItems={20} />
+        </div>
 
       </div>
 

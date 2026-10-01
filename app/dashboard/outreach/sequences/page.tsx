@@ -2,10 +2,10 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import {
-  Plus, Trash2, X, Check, Loader2, Play, Pause,
-  MessageCircle, Phone, FileText, ChevronDown, ChevronUp,
-  Zap, RefreshCw, Sparkles, ArrowRight,
-} from 'lucide-react'
+  Plus, Trash, X, Check, CircleNotch, Play, Pause,
+  ChatCircle, Phone, FileText, CaretDown, CaretUp,
+  Lightning, ArrowsClockwise, Sparkle, ArrowRight,
+} from '@phosphor-icons/react'
 import { PageTabBar } from '@/components/layout/PageTabBar'
 
 const OUTREACH_TABS = [
@@ -46,9 +46,9 @@ type Sequence = {
 }
 
 const CHANNEL_META = {
-  whatsapp:      { label: 'WhatsApp',      icon: MessageCircle, color: C.wa,     bg: 'rgba(37,211,102,0.08)' },
-  call_reminder: { label: 'Call Reminder', icon: Phone,         color: '#1D4ED8', bg: 'rgba(29,78,216,0.08)'  },
-  note:          { label: 'Note',          icon: FileText,      color: C.violet,  bg: 'rgba(29,78,216,0.08)' },
+  whatsapp:      { label: 'WhatsApp',      icon: ChatCircle, color: C.wa,     bg: 'rgba(37,211,102,0.08)' },
+  call_reminder: { label: 'Call Reminder', icon: Phone,      color: '#1D4ED8', bg: 'rgba(29,78,216,0.08)'  },
+  note:          { label: 'Note',          icon: FileText,   color: C.violet,  bg: 'rgba(29,78,216,0.08)' },
 }
 
 const DEFAULT_STEPS: Step[] = [
@@ -98,7 +98,7 @@ function StepRow({ step, index, onChange, onDelete }: {
       {/* Step icon */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 10, gap: 0 }}>
         <div style={{ width: 32, height: 32, borderRadius: 10, background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <Icon style={{ width: 14, height: 14, color: meta.color }} />
+          <Icon size={14} weight="light" color={meta.color} />
         </div>
         {index >= 0 && <div style={{ width: 2, height: 12, background: C.border, marginTop: 4 }} />}
       </div>
@@ -135,7 +135,7 @@ function StepRow({ step, index, onChange, onDelete }: {
 
           <button onClick={onDelete}
             style={{ marginLeft: 'auto', width: 26, height: 26, borderRadius: 7, border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)', color: C.red, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <X style={{ width: 11, height: 11 }} />
+            <X size={11} weight="light" />
           </button>
         </div>
 
@@ -196,7 +196,7 @@ function SequenceModal({ onSave, onClose, saving }: {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
           <h2 style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: 0 }}>New Sequence</h2>
           <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <X style={{ width: 13, height: 13 }} />
+            <X size={13} weight="light" />
           </button>
         </div>
 
@@ -218,7 +218,7 @@ function SequenceModal({ onSave, onClose, saving }: {
             <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Steps ({steps.length})</span>
             <button onClick={addStep}
               style={{ padding: '6px 14px', background: 'linear-gradient(135deg,#1D4ED8,#1D4ED8)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <Plus style={{ width: 12, height: 12 }} /> Add Step
+              <Plus size={12} weight="light" /> Add Step
             </button>
           </div>
 
@@ -236,7 +236,7 @@ function SequenceModal({ onSave, onClose, saving }: {
           <button onClick={onClose} style={{ padding: '10px 20px', background: '#F1F5F9', border: 'none', borderRadius: 10, color: C.muted, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
           <button onClick={() => onSave(name, desc, steps)} disabled={saving || !name || steps.length === 0}
             style={{ flex: 1, padding: '10px 0', background: saving || !name || steps.length === 0 ? '#E2E8F0' : 'linear-gradient(135deg,#1D4ED8,#1D4ED8)', border: 'none', borderRadius: 10, color: saving || !name || steps.length === 0 ? C.label : '#fff', fontSize: 13, fontWeight: 700, cursor: saving || !name || steps.length === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            {saving ? 'Saving…' : <><Check style={{ width: 14, height: 14 }} /> Create Sequence</>}
+            {saving ? 'Saving…' : <><Check size={14} weight="light" /> Create Sequence</>}
           </button>
         </div>
       </div>
@@ -259,7 +259,7 @@ function SequenceCard({ seq, onToggle, onDelete }: {
       <div style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
         {/* Status */}
         <div style={{ width: 38, height: 38, borderRadius: 11, background: seq.active ? 'rgba(5,150,105,0.1)' : 'rgba(100,116,139,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <Zap style={{ width: 16, height: 16, color: seq.active ? C.emerald : C.label }} />
+          <Lightning size={16} weight="light" color={seq.active ? C.emerald : C.label} />
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -286,15 +286,15 @@ function SequenceCard({ seq, onToggle, onDelete }: {
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
           <button onClick={onToggle} title={seq.active ? 'Pause' : 'Resume'}
             style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: seq.active ? C.amber : C.emerald, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {seq.active ? <Pause style={{ width: 13, height: 13 }} /> : <Play style={{ width: 13, height: 13 }} />}
+            {seq.active ? <Pause size={13} weight="light" /> : <Play size={13} weight="light" />}
           </button>
           <button onClick={onDelete}
             style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)', color: C.red, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Trash2 style={{ width: 12, height: 12 }} />
+            <Trash size={12} weight="light" />
           </button>
           <button onClick={() => setExpanded(v => !v)}
             style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {expanded ? <ChevronUp style={{ width: 13, height: 13 }} /> : <ChevronDown style={{ width: 13, height: 13 }} />}
+            {expanded ? <CaretUp size={13} weight="light" /> : <CaretDown size={13} weight="light" />}
           </button>
         </div>
       </div>
@@ -310,7 +310,7 @@ function SequenceCard({ seq, onToggle, onDelete }: {
                 <div key={step.id} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
                   <div style={{ textAlign: 'center', minWidth: 90 }}>
                     <div style={{ width: 38, height: 38, borderRadius: 11, background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 6px', border: `1px solid ${meta.color}25` }}>
-                      <Icon style={{ width: 16, height: 16, color: meta.color }} />
+                      <Icon size={16} weight="light" color={meta.color} />
                     </div>
                     <p style={{ fontSize: 10, fontWeight: 700, color: meta.color, margin: '0 0 2px' }}>{meta.label}</p>
                     <p style={{ fontSize: 10, color: C.label, margin: '0 0 4px' }}>Day {step.delay_days}</p>
@@ -322,7 +322,7 @@ function SequenceCard({ seq, onToggle, onDelete }: {
                     )}
                   </div>
                   {i < steps.length - 1 && (
-                    <ArrowRight style={{ width: 14, height: 14, color: C.border, margin: '0 2px', flexShrink: 0, marginBottom: 20 }} />
+                    <ArrowRight size={14} weight="light" color={C.border} style={{ margin: '0 2px', flexShrink: 0, marginBottom: 20 }} />
                   )}
                 </div>
               )
@@ -397,7 +397,7 @@ export default function SequencesPage() {
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-        <Loader2 style={{ width: 22, height: 22, color: C.violet, animation: 'spin 1s linear infinite' }} />
+        <CircleNotch size={22} weight="light" color={C.violet} style={{ animation: 'spin 1s linear infinite' }} />
         <span style={{ fontSize: 14, color: C.muted }}>Loading sequences…</span>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
@@ -420,18 +420,18 @@ export default function SequencesPage() {
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => { setRefreshing(true); fetchData() }}
               style={{ width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, cursor: 'pointer' }}>
-              <RefreshCw style={{ width: 15, height: 15, color: C.muted, animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
+              <ArrowsClockwise size={15} weight="light" color={C.muted} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
             </button>
             <button onClick={() => setShowNew(true)}
               style={{ padding: '9px 18px', background: 'linear-gradient(135deg,#1D4ED8,#1D4ED8)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 10px rgba(29,78,216,0.3)' }}>
-              <Plus style={{ width: 14, height: 14 }} /> New Sequence
+              <Plus size={14} weight="light" /> New Sequence
             </button>
           </div>
         </div>
 
         {/* How it works */}
         <div style={{ background: 'linear-gradient(135deg,rgba(29,78,216,0.04),rgba(91,33,182,0.06))', border: '1px solid rgba(29,78,216,0.15)', borderRadius: 14, padding: '16px 20px', marginBottom: 24, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-          <Zap style={{ width: 18, height: 18, color: C.violet, flexShrink: 0, marginTop: 1 }} />
+          <Lightning size={18} weight="light" color={C.violet} style={{ flexShrink: 0, marginTop: 1 }} />
           <div>
             <p style={{ fontSize: 13, fontWeight: 700, color: C.violet, margin: '0 0 4px' }}>How sequences work</p>
             <p style={{ fontSize: 13, color: C.muted, margin: 0, lineHeight: 1.6 }}>
@@ -444,7 +444,7 @@ export default function SequencesPage() {
         {sequences.length === 0 && (
           <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '56px 24px', textAlign: 'center' }}>
             <div style={{ width: 60, height: 60, borderRadius: 18, background: 'linear-gradient(135deg,rgba(29,78,216,0.12),rgba(91,33,182,0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
-              <Zap style={{ width: 28, height: 28, color: C.violet }} />
+              <Lightning size={28} weight="light" color={C.violet} />
             </div>
             <h3 style={{ fontSize: 17, fontWeight: 700, color: C.text, margin: '0 0 8px' }}>No sequences yet</h3>
             <p style={{ fontSize: 13, color: C.muted, margin: '0 0 28px', maxWidth: 400, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
@@ -453,12 +453,12 @@ export default function SequencesPage() {
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button onClick={handleSeedDemo} disabled={seeding}
                 style={{ padding: '11px 22px', background: 'linear-gradient(135deg,#1D4ED8,#1D4ED8)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 13, fontWeight: 700, cursor: seeding ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 7, opacity: seeding ? 0.7 : 1, boxShadow: '0 2px 12px rgba(29,78,216,0.3)' }}>
-                {seeding ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} /> : <Sparkles style={{ width: 14, height: 14 }} />}
+                {seeding ? <CircleNotch size={14} weight="light" style={{ animation: 'spin 1s linear infinite' }} /> : <Sparkle size={14} weight="light" />}
                 {seeding ? 'Loading…' : 'Load Demo Sequences'}
               </button>
               <button onClick={() => setShowNew(true)}
                 style={{ padding: '11px 22px', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 11, color: C.text, fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
-                <Plus style={{ width: 14, height: 14 }} /> Build from Scratch
+                <Plus size={14} weight="light" /> Build from Scratch
               </button>
             </div>
           </div>
@@ -479,7 +479,7 @@ export default function SequencesPage() {
           onClick={e => e.target === e.currentTarget && setDeleteId(null)}>
           <div style={{ background: C.panel, borderRadius: 20, border: `1px solid ${C.border}`, padding: 28, width: 360, textAlign: 'center' }}>
             <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(239,68,68,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              <Trash2 style={{ width: 20, height: 20, color: C.red }} />
+              <Trash size={20} weight="light" color={C.red} />
             </div>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: '0 0 8px' }}>Delete Sequence?</h3>
             <p style={{ fontSize: 13, color: C.muted, margin: '0 0 24px' }}>All active enrollments will be cancelled. This cannot be undone.</p>

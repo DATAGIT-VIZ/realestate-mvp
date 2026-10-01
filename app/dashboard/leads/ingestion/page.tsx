@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import {
-  RefreshCw, X, ChevronLeft, ChevronRight, ExternalLink,
-  Mail, Sparkles, CheckCircle, AlertCircle, Upload,
-  User, Phone, MapPin, Home, IndianRupee, Clock, ChevronDown, ChevronUp,
-} from 'lucide-react'
+  ArrowsClockwise, X, CaretLeft, CaretRight, ArrowSquareOut,
+  EnvelopeSimple, Sparkle, CheckCircle, Warning, Upload,
+  User, Phone, MapPin, House, CurrencyInr, Clock, CaretDown, CaretUp, Copy, Link,
+} from '@phosphor-icons/react'
 import type { PortalLeadRow, IngestionStatus } from '@/lib/ingestionLog'
 
 const C = {
@@ -76,8 +76,8 @@ function LeadPreviewCard({ data, onConfirm, onDiscard, saving }: {
   const budget = fmtBudget(data.budgetMin, data.budgetMax)
   const chips = [
     data.city && { icon: MapPin, label: data.city },
-    data.propertyType?.[0] && { icon: Home, label: data.propertyType[0] },
-    budget && { icon: IndianRupee, label: budget },
+    data.propertyType?.[0] && { icon: House, label: data.propertyType[0] },
+    budget && { icon: CurrencyInr, label: budget },
     data.timeline && { icon: Clock, label: data.timeline },
     data.sourcePortal && { icon: null, label: data.sourcePortal, accent: true },
   ].filter(Boolean) as { icon: React.ComponentType<{size:number}> | null; label: string; accent?: boolean }[]
@@ -141,7 +141,7 @@ function LeadPreviewCard({ data, onConfirm, onDiscard, saving }: {
           <button onClick={onConfirm} disabled={saving}
             style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px 0', background: saving ? C.borderDim : C.emerald, border: 'none', borderRadius: 12, color: saving ? C.label : '#fff', fontSize: 14, fontWeight: 800, cursor: saving ? 'not-allowed' : 'pointer', boxShadow: saving ? 'none' : '0 4px 14px rgba(5,150,105,0.25)' }}>
             {saving
-              ? <><RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> Saving…</>
+              ? <><ArrowsClockwise size={14} weight="light" style={{ animation: 'spin 1s linear infinite' }} /> Saving…</>
               : <><Upload size={14} /> Add to CRM</>
             }
           </button>
@@ -252,14 +252,14 @@ Message: Looking for a ready-to-move flat for end use.`
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 30, height: 30, borderRadius: 8, background: C.blueDim, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Mail size={14} color={C.blue} />
+            <EnvelopeSimple size={14} weight="light" color={C.blue} />
           </div>
           <div style={{ textAlign: 'left' }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.text, lineHeight: 1.3 }}>Quick Import</div>
             <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.3 }}>Paste a portal email · AI extracts the lead</div>
           </div>
         </div>
-        {open ? <ChevronUp size={15} color={C.label} /> : <ChevronDown size={15} color={C.label} />}
+        {open ? <CaretUp size={15} weight="light" color={C.label} /> : <CaretDown size={15} weight="light" color={C.label} />}
       </button>
 
       {/* Body */}
@@ -278,7 +278,7 @@ Message: Looking for a ready-to-move flat for end use.`
           {/* Error banner */}
           {error && !preview && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: C.redDim, border: `1px solid #FCA5A5`, borderRadius: 12, padding: '12px 16px', marginBottom: 16 }}>
-              <AlertCircle size={16} color={C.red} />
+              <Warning size={16} weight="light" color={C.red} />
               <span style={{ fontSize: 13, color: C.red }}>{error}</span>
               <button onClick={() => setError(null)} style={{ marginLeft: 'auto', border: 'none', background: 'none', color: C.red, cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
             </div>
@@ -313,8 +313,8 @@ Message: Looking for a ready-to-move flat for end use.`
                   style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 20px', background: !body.trim() || parsing ? C.borderDim : 'linear-gradient(135deg,#1D4ED8,#1D4ED8)', border: 'none', borderRadius: 12, color: !body.trim() || parsing ? C.label : '#fff', fontSize: 14, fontWeight: 800, cursor: !body.trim() || parsing ? 'not-allowed' : 'pointer', boxShadow: body.trim() && !parsing ? '0 4px 14px rgba(29,78,216,0.25)' : 'none' }}
                 >
                   {parsing
-                    ? <><Sparkles size={14} style={{ animation: 'spin 1s linear infinite' }} /> Extracting…</>
-                    : <><Sparkles size={14} /> Extract Lead</>
+                    ? <><ArrowsClockwise size={14} weight="light" style={{ animation: 'spin 1s linear infinite' }} /> Extracting…</>
+                    : <><Sparkle size={14} weight="light" /> Extract Lead</>
                   }
                 </button>
                 {body && (
@@ -348,7 +348,7 @@ Message: Looking for a ready-to-move flat for end use.`
               {parsing && (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', gap: 12 }}>
                   <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg,rgba(29,78,216,0.07),rgba(29,78,216,0.07))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Sparkles size={22} color={C.violet} style={{ animation: 'pulse 1s infinite' }} />
+                    <Sparkle size={22} weight="light" color={C.violet} style={{ animation: 'pulse 1s infinite' }} />
                   </div>
                   <span style={{ fontSize: 13, fontWeight: 600, color: C.muted }}>AI is reading the email…</span>
                   <span style={{ fontSize: 11, color: C.label }}>Extracting name, phone, budget, preferences</span>
@@ -368,7 +368,7 @@ Message: Looking for a ready-to-move flat for end use.`
 
           {/* Bottom hint */}
           <div style={{ marginTop: 16, padding: '10px 14px', background: C.blueDim, border: `1px solid ${C.blueBorder}`, borderRadius: 10, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-            <Sparkles size={13} color={C.blue} style={{ flexShrink: 0, marginTop: 1 }} />
+            <Sparkle size={13} weight="light" color={C.blue} style={{ flexShrink: 0, marginTop: 1 }} />
             <span style={{ fontSize: 12, color: C.blue, lineHeight: 1.5 }}>
               <strong>Pro tip:</strong> Set up a Gmail filter to auto-forward lead emails from portals to a dedicated inbox, then paste them here in bulk. Once deployed, webhooks handle this automatically — zero manual work.
             </span>
@@ -416,6 +416,103 @@ function PayloadModal({ row, onClose }: { row: PortalLeadRow; onClose: () => voi
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+// ─── Webhook Setup Panel ──────────────────────────────────────────────────────
+const PORTALS = [
+  {
+    name: 'MagicBricks',
+    path: '/api/ingest/magicbricks',
+    color: '#1D4ED8',
+    bg: 'rgba(29,78,216,0.07)',
+    hint: 'In your MagicBricks account → Settings → Lead Routing → Add Webhook URL',
+  },
+  {
+    name: '99acres',
+    path: '/api/ingest/99acres',
+    color: '#059669',
+    bg: 'rgba(5,150,105,0.07)',
+    hint: 'In 99acres Seller Dashboard → Manage Leads → API Integration → Webhook URL',
+  },
+  {
+    name: 'Housing.com',
+    path: '/api/ingest/housing',
+    color: '#7C3AED',
+    bg: 'rgba(124,58,237,0.07)',
+    hint: 'In Housing.com Agency Panel → Leads → Auto-Forward → Webhook Endpoint',
+  },
+  {
+    name: 'Facebook Leads',
+    path: '/api/ingest/facebook',
+    color: '#1877F2',
+    bg: 'rgba(24,119,242,0.07)',
+    hint: 'Use Meta Lead Ads → CRM Integration → Custom Webhook URL',
+  },
+]
+
+function WebhookSetupPanel() {
+  const [open,    setOpen]    = useState(false)
+  const [copied,  setCopied]  = useState<string | null>(null)
+  const [origin,  setOrigin]  = useState('')
+
+  useEffect(() => { setOrigin(window.location.origin) }, [])
+
+  const copy = (url: string) => {
+    navigator.clipboard.writeText(url).catch(() => {})
+    setCopied(url)
+    setTimeout(() => setCopied(null), 2000)
+  }
+
+  return (
+    <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, overflow: 'hidden', marginBottom: 20 }}>
+      <button onClick={() => setOpen(v => !v)}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(29,78,216,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Link size={15} weight="light" color={C.blue} />
+          </div>
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: 0 }}>Webhook Setup</p>
+            <p style={{ fontSize: 11, color: C.muted, margin: 0 }}>Copy your webhook URLs to connect MagicBricks, 99acres, Housing.com, and Facebook</p>
+          </div>
+        </div>
+        {open ? <CaretUp size={14} weight="light" color={C.label} /> : <CaretDown size={14} weight="light" color={C.label} />}
+      </button>
+
+      {open && (
+        <div style={{ borderTop: `1px solid ${C.border}`, padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {PORTALS.map(portal => {
+            const url = `${origin}${portal.path}`
+            const isCopied = copied === url
+            return (
+              <div key={portal.name} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: portal.bg, color: portal.color }}>{portal.name}</span>
+                  <span style={{ fontSize: 11, color: C.muted }}>{portal.hint}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <code style={{ flex: 1, fontSize: 12, background: '#F8FAFC', border: `1px solid ${C.border}`, borderRadius: 8, padding: '8px 12px', color: C.text, fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                    {url}
+                  </code>
+                  <button onClick={() => copy(url)}
+                    style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', background: isCopied ? 'rgba(5,150,105,0.08)' : C.panel, border: `1px solid ${isCopied ? '#A7F3D0' : C.border}`, borderRadius: 8, color: isCopied ? '#059669' : C.muted, fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}>
+                    <Copy size={13} weight="light" />
+                    {isCopied ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+
+          <div style={{ marginTop: 4, padding: '10px 14px', background: 'rgba(29,78,216,0.04)', border: '1px solid rgba(29,78,216,0.12)', borderRadius: 10 }}>
+            <p style={{ fontSize: 12, color: C.muted, margin: 0, lineHeight: 1.6 }}>
+              <strong style={{ color: C.blue }}>No authentication needed</strong> — the webhook accepts any POST from the portal. New leads appear in the Ingestion Log below instantly. Duplicate numbers are detected automatically and won&apos;t create duplicate leads.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -469,10 +566,13 @@ export default function IngestionLogPage() {
           </p>
         </div>
         <button onClick={load} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, color: C.muted, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-          <RefreshCw size={13} style={loading ? { animation: 'spin 1s linear infinite' } : {}} />
+          <ArrowsClockwise size={13} weight="light" style={loading ? { animation: 'spin 1s linear infinite' } : {}} />
           Refresh
         </button>
       </div>
+
+      {/* Webhook setup */}
+      <WebhookSetupPanel />
 
       {/* Quick import panel */}
       <QuickImportPanel onImported={load} />
@@ -531,7 +631,7 @@ export default function IngestionLogPage() {
           </div>
         ) : rows.length === 0 ? (
           <div style={{ padding: '48px 20px', textAlign: 'center' }}>
-            <Mail size={28} color={C.label} style={{ display: 'block', margin: '0 auto 12px' }} />
+            <EnvelopeSimple size={28} weight="light" color={C.label} style={{ display: 'block', margin: '0 auto 12px' }} />
             <p style={{ fontSize: 15, fontWeight: 600, color: C.text, margin: '0 0 6px' }}>No events yet</p>
             <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>Use Quick Import above to add your first lead.</p>
           </div>
@@ -557,7 +657,7 @@ export default function IngestionLogPage() {
                   </span>
                   {row.contact_id ? (
                     <a href={`/dashboard/leads/${row.contact_id}`} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: C.blue, fontFamily: 'monospace', textDecoration: 'none' }}>
-                      {row.contact_id.slice(0, 8)}… <ExternalLink size={10} />
+                      {row.contact_id.slice(0, 8)}… <ArrowSquareOut size={10} weight="light" />
                     </a>
                   ) : (
                     <span style={{ fontSize: 12, color: C.label }}>—</span>
@@ -583,7 +683,7 @@ export default function IngestionLogPage() {
                     <div style={{ fontSize: 12, color: C.muted }}>{row.contact_phone || row.error_message?.slice(0, 60) || '—'}</div>
                     {row.contact_id && (
                       <a href={`/dashboard/leads/${row.contact_id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: C.blue, textDecoration: 'none', marginTop: 4 }}>
-                        View lead <ExternalLink size={9} />
+                        View lead <ArrowSquareOut size={9} weight="light" />
                       </a>
                     )}
                   </div>
@@ -609,14 +709,14 @@ export default function IngestionLogPage() {
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))} disabled={offset === 0}
               style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 12px', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 9, color: offset === 0 ? C.label : C.text, fontSize: 13, cursor: offset === 0 ? 'default' : 'pointer', opacity: offset === 0 ? 0.5 : 1 }}>
-              <ChevronLeft size={14} /> Prev
+              <CaretLeft size={14} weight="light" /> Prev
             </button>
             <span style={{ display: 'flex', alignItems: 'center', padding: '7px 14px', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 9, fontSize: 13, color: C.text }}>
               {currentPage} / {totalPages}
             </span>
             <button onClick={() => setOffset(offset + PAGE_SIZE)} disabled={offset + PAGE_SIZE >= total}
               style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 12px', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 9, color: offset + PAGE_SIZE >= total ? C.label : C.text, fontSize: 13, cursor: offset + PAGE_SIZE >= total ? 'default' : 'pointer', opacity: offset + PAGE_SIZE >= total ? 0.5 : 1 }}>
-              Next <ChevronRight size={14} />
+              Next <CaretRight size={14} weight="light" />
             </button>
           </div>
         </div>

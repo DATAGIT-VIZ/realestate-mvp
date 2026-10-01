@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   // Find all active enrollments whose next_fire_at has passed
   const { data: due, error } = await sb
     .from('sequence_enrollments')
-    .select('*, sequences(id, name), sequence_steps!inner(*)')
+    .select('*, sequences(id, name)')
     .eq('status', 'active')
     .lte('next_fire_at', new Date().toISOString())
     .limit(50)

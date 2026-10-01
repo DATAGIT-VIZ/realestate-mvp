@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
   House, Users, Megaphone, CheckSquare, ChartBar,
-  Robot, Gear, Lock, CaretLeft, CaretRight, SignOut,
+  Robot, Gear, Lock, CaretLeft, CaretRight, SignOut, CalendarCheck,
 } from '@phosphor-icons/react'
 import { CircleNotch } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
@@ -25,6 +25,13 @@ type NavItem = {
 }
 
 const NAV_ITEMS: NavItem[] = [
+  {
+    name: 'Today',
+    href: '/dashboard/today',
+    icon: CalendarCheck,
+    activePaths: ['/dashboard/today'],
+    exact: true,
+  },
   {
     name: 'Dashboard',
     href: '/dashboard',

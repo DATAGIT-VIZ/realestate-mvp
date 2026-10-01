@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Zap, X, Check, AlertCircle, Loader2 } from 'lucide-react'
+import { Lightning, X, Check, Warning, CircleNotch } from '@phosphor-icons/react'
 
 const C = {
   panel:   '#FFFFFF',
@@ -76,7 +76,7 @@ export function EnrollSequenceModal({ isOpen, onClose, leadId, leadName, leadPho
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: `1px solid ${C.border}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(29,78,216,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Zap style={{ width: 15, height: 15, color: C.blue }} />
+              <Lightning size={15} weight="light" color={C.blue} />
             </div>
             <div>
               <p style={{ fontSize: 14, fontWeight: 700, color: C.text, margin: 0 }}>Enroll in Sequence</p>
@@ -84,14 +84,14 @@ export function EnrollSequenceModal({ isOpen, onClose, leadId, leadName, leadPho
             </div>
           </div>
           <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <X style={{ width: 13, height: 13 }} />
+            <X size={13} weight="light" />
           </button>
         </div>
 
         <div style={{ padding: 24 }}>
           {loading && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '16px 0', justifyContent: 'center' }}>
-              <Loader2 style={{ width: 16, height: 16, color: C.blue, animation: 'spin 1s linear infinite' }} />
+              <CircleNotch size={16} weight="light" color={C.blue} style={{ animation: 'spin 1s linear infinite' }} />
               <span style={{ fontSize: 13, color: C.muted }}>Loading sequences…</span>
             </div>
           )}
@@ -125,7 +125,7 @@ export function EnrollSequenceModal({ isOpen, onClose, leadId, leadName, leadPho
 
           {error && (
             <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 12 }}>
-              <AlertCircle style={{ width: 13, height: 13, color: C.red }} />
+              <Warning size={13} weight="light" color={C.red} />
               <p style={{ fontSize: 12, color: C.red, margin: 0 }}>{error}</p>
             </div>
           )}
@@ -135,7 +135,7 @@ export function EnrollSequenceModal({ isOpen, onClose, leadId, leadName, leadPho
               <button onClick={onClose} style={{ padding: '10px 20px', background: '#F1F5F9', border: 'none', borderRadius: 10, color: C.muted, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
               <button onClick={handleEnroll} disabled={enrolling || !selected}
                 style={{ flex: 1, padding: '10px 0', background: enrolling || !selected ? '#E2E8F0' : C.blue, border: 'none', borderRadius: 10, color: enrolling || !selected ? C.label : '#fff', fontSize: 13, fontWeight: 700, cursor: enrolling || !selected ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                {enrolling ? 'Enrolling…' : <><Check style={{ width: 14, height: 14 }} /> Enroll Lead</>}
+                {enrolling ? 'Enrolling…' : <><Check size={14} weight="light" /> Enroll Lead</>}
               </button>
             </div>
           )}

@@ -11,6 +11,7 @@ import { CallModal } from '@/components/CallModal'
 import { FollowUpWriter } from '@/components/FollowUpWriter'
 import { PropertyMatcher } from '@/components/PropertyMatcher'
 import { ReassignModal } from '@/components/ReassignModal'
+import { EnrollSequenceModal } from '@/components/EnrollSequenceModal'
 import {
   ArrowLeft, Phone, Envelope, MapPin, Clock, Tag,
   TrendUp, CalendarBlank, Trash, CircleNotch, Pulse,
@@ -348,6 +349,9 @@ export default function LeadDetailPage() {
   // ── Reassign state ─────────────────────────────────────────────────────────
   const [showReassignModal, setShowReassignModal] = useState(false)
   const [assignedTo, setAssignedTo] = useState<string | null>(null)
+
+  // ── Sequence enroll state ──────────────────────────────────────────────────
+  const [showEnrollModal, setShowEnrollModal] = useState(false)
 
   // ── Tasks state ────────────────────────────────────────────────────────────
   const [tasks,       setTasks]       = useState<LeadTask[]>([])
@@ -756,6 +760,16 @@ export default function LeadDetailPage() {
                     <span style={{ fontSize: 9, fontWeight: 600, color: assignedTo ? '#7C3AED' : MUTED }}>
                       {assignedTo ? assignedTo.split(' ')[0] : 'reassign'}
                     </span>
+                  </button>
+
+                  <button onClick={() => setShowEnrollModal(true)}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', padding: 0, minWidth: 48 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', border: `1px solid ${BORDER}` }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#E2E8F0' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#F1F5F9' }}>
+                      <Lightning size={15} weight="light" color={MUTED} />
+                    </div>
+                    <span style={{ fontSize: 9, fontWeight: 600, color: MUTED }}>sequence</span>
                   </button>
                 </div>
 
@@ -1298,6 +1312,14 @@ export default function LeadDetailPage() {
         leadId={leadId}
         leadName={`${lead.name.firstName} ${lead.name.lastName}`.trim()}
         onReassigned={agentName => { setAssignedTo(agentName); setShowReassignModal(false) }}
+      />
+      <EnrollSequenceModal
+        isOpen={showEnrollModal}
+        onClose={() => setShowEnrollModal(false)}
+        leadId={leadId}
+        leadName={`${lead.name.firstName} ${lead.name.lastName}`.trim()}
+        leadPhone={lead.phones.primaryPhoneNumber ?? ''}
+        onEnrolled={() => toast.success('Lead enrolled in sequence')}
       />
 
       {/* ── Email Compose Modal ── */}
