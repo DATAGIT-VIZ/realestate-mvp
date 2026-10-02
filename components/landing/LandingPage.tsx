@@ -24,17 +24,13 @@ import { Marquee } from '@/components/ui/marquee'
 import CardSwap, { Card as SwapCard } from '@/components/ui/CardSwap'
 import dynamic from 'next/dynamic'
 const Silk = dynamic(() => import('@/components/ui/Silk'), { ssr: false, loading: () => <div style={{ width: '100%', height: '100%', background: '#0B0F3B' }} /> })
-const DotLottieReact = dynamic(
-  () => import('@lottiefiles/dotlottie-react').then(async (m) => {
-    m.setWasmUrl('/lottie/dotlottie-player.wasm')
-    return m.DotLottieReact
-  }),
-  { ssr: false, loading: () => <div className="w-full h-full" /> }
-)
-const Lottie = dynamic(() => import('lottie-react'), { ssr: false })
 import { motion, AnimatePresence, useReducedMotion, useMotionValue, useTransform, useScroll } from 'motion/react'
-import { Lock, Robot, ChartLine, ChartBar } from '@phosphor-icons/react'
+import { Lock, Robot, ChartLine, ChartBar, Play, X as PhX, CaretRight } from '@phosphor-icons/react'
 import { ContainerScroll } from '@/components/ui/container-scroll-animation'
+import HowItWorksSteps from './HowItWorksSteps'
+import ProblemStory from './ProblemStory'
+import HeroDashboard from './HeroDashboard'
+import SolutionBento from './SolutionBento'
 
 /* ─── Scroll-reveal hook ──────────────────────────────────────────────────── */
 function useScrollReveal() {
@@ -87,6 +83,42 @@ function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
   }, [to])
 
   return <span ref={ref}>{val}{suffix}</span>
+}
+
+/* ─── Scroll narrative thread ─────────────────────────────────────────────── */
+function ScrollNarrativeThread() {
+  const { scrollYProgress } = useScroll()
+  const prefersReduced = useReducedMotion()
+  const scaleY = useTransform(scrollYProgress, [0, 1], [0, 1])
+  if (prefersReduced) return null
+  return (
+    <div className="fixed left-0 top-0 h-full pointer-events-none z-[100]" style={{ width: 2, background: 'rgba(255,255,255,0.04)' }}>
+      <motion.div
+        className="w-full h-full origin-top"
+        style={{
+          scaleY,
+          background: 'linear-gradient(to bottom, #B8962E 0%, #0038A8 30%, #0038A8 65%, #059669 100%)',
+        }}
+      />
+    </div>
+  )
+}
+
+/* ─── Reveal wrapper for section headings ─────────────────────────────────── */
+function RevealText({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
+  const prefersReduced = useReducedMotion()
+  if (prefersReduced) return <div className={className}>{children}</div>
+  return (
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay }}
+    >
+      {children}
+    </motion.div>
+  )
 }
 
 /* ─── Nav ─────────────────────────────────────────────────────────────────── */
@@ -479,12 +511,14 @@ function TeakHeroCard() {
       {/* Progress dots */}
       <div className="flex justify-center items-center gap-1.5 mt-3">
         {[0, 1, 2].map(i => (
-          <div key={i} className="rounded-full" style={{
-            height: 5,
-            width: active === i ? 20 : 5,
-            background: active === i ? H_BLUE : H_BORDER,
-            transition: 'width 380ms cubic-bezier(0.22,1,0.36,1), background 380ms ease',
-          }} />
+          <motion.div
+            key={i}
+            layout
+            className="rounded-full"
+            animate={{ backgroundColor: active === i ? H_BLUE : H_BORDER }}
+            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1], layout: { duration: 0.38, ease: [0.22, 1, 0.36, 1] } }}
+            style={{ height: 5, width: active === i ? 20 : 5 }}
+          />
         ))}
       </div>
 
@@ -799,10 +833,12 @@ function HeroDashboardMock({ activeView, onViewChange }: { activeView?: string; 
 
               {/* Greeting + alert badges */}
               <div className="px-3 pt-2.5 pb-2 shrink-0" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-playfair), serif', fontStyle: 'italic', color: '#0F172A', letterSpacing: '-0.01em', lineHeight: 1.15 }}>
-                  Good morning, Rahul Sharma
+                <div style={{ fontSize: 7.5, fontWeight: 600, color: '#9AA2B8', letterSpacing: '0.1em', textTransform: 'uppercase', lineHeight: 1 }}>
+                  Friday, 2 October
                 </div>
-                <div style={{ fontSize: 7, color: '#94A3B8', marginTop: 2 }}>Friday, 14 August · Here&apos;s your pipeline overview</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.025em', lineHeight: 1.2, marginTop: 2 }}>
+                  Good afternoon, Rahul Sharma
+                </div>
                 <div className="flex items-center gap-2 mt-1.5">
                   <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
                     <div className="size-1.5 rounded-full shrink-0" style={{ background: '#EF4444', animation: 'bento-timer-pulse 1.5s ease-in-out infinite' }} />
@@ -832,59 +868,79 @@ function HeroDashboardMock({ activeView, onViewChange }: { activeView?: string; 
               {/* KPI cards */}
               <div className="grid px-3 pt-2 pb-1.5 gap-1.5 shrink-0" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
                 {[
-                  { label: 'Total Leads',    val: '105',        sub: '+0 this week',       Icon: Users,     color: '#6366F1', bg: '#EEF2FF' },
-                  { label: 'Hot Leads',      val: '52',         sub: 'Intent score 70+',   Icon: Target,    color: '#EF4444', bg: '#FEF2F2' },
-                  { label: 'Pipeline Value', val: '₹225.8 Cr',  sub: 'Combined budgets',   Icon: TrendingUp, color: '#10B981', bg: '#ECFDF5' },
-                  { label: 'Deals',          val: '7',          sub: '44 leads this month', Icon: CheckCircle, color: '#F59E0B', bg: '#FFFBEB' },
-                ].map(({ label, val, sub, Icon, color, bg }) => (
-                  <div key={label} className="rounded-lg p-2" style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="rounded flex items-center justify-center" style={{ width: 18, height: 18, background: bg }}>
-                        <Icon className="size-2.5" style={{ color }} />
+                  { label: 'Total leads',    val: '106',       badge: null,            navy: false },
+                  { label: 'Hot leads',      val: '53',        badge: { text: 'intent 70+', color: '#B45309', bg: 'rgba(245,158,11,0.12)' }, navy: false },
+                  { label: 'Pipeline value', val: '₹227.8 Cr', badge: null,            navy: true  },
+                  { label: 'Deals closed',   val: '7',         badge: { text: '+7 won', color: '#059669', bg: 'rgba(16,185,129,0.12)' }, navy: false },
+                ].map(({ label, val, badge, navy }) => (
+                  <div key={label} className="relative rounded-lg p-2" style={
+                    navy
+                      ? { background: '#0B1433', border: '1px solid #0B1433' }
+                      : { background: '#F7F8FC', border: '1px solid #E4E8F0', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }
+                  }>
+                    {badge && (
+                      <div className="absolute" style={{ top: 4, right: 4, fontSize: 5.5, fontWeight: 700, color: badge.color, background: badge.bg, padding: '1px 3px', borderRadius: 3 }}>
+                        {badge.text}
                       </div>
-                      <span className="rounded" style={{ fontSize: 5.5, fontWeight: 700, color, background: bg, padding: '1px 4px' }}>↗ 7 won</span>
-                    </div>
-                    <div style={{ fontSize: val.length > 4 ? 9 : 15, fontWeight: 800, color: '#0F172A', lineHeight: 1, letterSpacing: '-0.02em' }}>{val}</div>
-                    <div style={{ fontSize: 6.5, fontWeight: 600, color: '#94A3B8', marginTop: 2, lineHeight: 1.3 }}>{label}</div>
-                    <div style={{ fontSize: 6, color: color, fontWeight: 500, marginTop: 1 }}>{sub}</div>
+                    )}
+                    <div style={{ fontSize: 6, fontWeight: 600, color: navy ? '#AFC0EA' : '#8A95A8', lineHeight: 1 }}>{label}</div>
+                    <div style={{ fontSize: val.length > 4 ? 9 : 15, fontWeight: 800, color: navy ? '#FFFFFF' : '#0F172A', lineHeight: 1.15, letterSpacing: '-0.02em', marginTop: 3, fontVariantNumeric: 'tabular-nums' }}>{val}</div>
                   </div>
                 ))}
               </div>
 
-              {/* Pipeline Funnel */}
+              {/* Pipeline movement — line chart */}
               <div className="mx-3 mb-2 rounded-lg flex-1" style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', overflow: 'hidden', minHeight: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                <div className="px-3 py-1.5 flex items-center justify-between shrink-0" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                <div className="px-3 py-1.5 flex items-start justify-between shrink-0" style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
                   <div>
-                    <div style={{ fontSize: 8.5, fontWeight: 700, color: '#0F172A' }}>Pipeline Funnel</div>
-                    <div style={{ fontSize: 6.5, color: '#94A3B8', marginTop: 1 }}>105 leads across all stages</div>
+                    <div style={{ fontSize: 8.5, fontWeight: 700, color: '#0F172A' }}>Pipeline movement</div>
+                    <div className="flex items-baseline gap-1" style={{ marginTop: 2 }}>
+                      <span style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>₹256.2 Cr</span>
+                      <span style={{ fontSize: 6, fontWeight: 700, color: '#059669' }}>+22%</span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>₹225.8 Cr</div>
-                    <div style={{ fontSize: 6, color: '#94A3B8', marginTop: 1 }}>Total pipeline value · 105 leads</div>
+                  <div className="flex gap-0.5" style={{ marginTop: 2 }}>
+                    {['1W','1M','6M','1Y'].map((l, i) => (
+                      <span key={l} style={{ fontSize: 6, fontWeight: 600, padding: '1px 4px', borderRadius: 3, background: i === 3 ? '#EEF2FD' : 'transparent', color: i === 3 ? '#2B59E0' : '#9AA2B8' }}>{l}</span>
+                    ))}
                   </div>
                 </div>
-                <div className="flex flex-col gap-1 px-3 py-2">
-                  {[
-                    { label: 'New Inquiry',  count: 40, pct: 100, color: '#3B82F6' },
-                    { label: 'Contacted',    count: 28, pct: 70,  color: '#8B5CF6' },
-                    { label: 'Site Visit',   count: 18, pct: 45,  color: '#10B981' },
-                    { label: 'Negotiating', count: 12, pct: 30,  color: '#F59E0B' },
-                    { label: 'Closed Won',   count: 7,  pct: 17,  color: '#EF4444' },
-                  ].map(({ label, count, pct, color }, fi) => (
-                    <div key={label} className="flex items-center gap-2">
-                      <div style={{ fontSize: 6.5, color: '#94A3B8', width: 54, textAlign: 'right' as const, flexShrink: 0 }}>{label}</div>
-                      <div style={{ flex: 1, height: 14, background: '#F8FAFC', borderRadius: 3, overflow: 'hidden' }}>
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${pct}%` }}
-                          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.3 + fi * 0.07 }}
-                          style={{ height: '100%', background: color, borderRadius: 3, display: 'flex', alignItems: 'center', paddingLeft: 5 }}
-                        >
-                          <span style={{ fontSize: 6.5, fontWeight: 700, color: '#fff' }}>{count}</span>
-                        </motion.div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="relative px-3 pt-2 pb-1.5 flex-1" style={{ minHeight: 0 }}>
+                  <svg viewBox="0 0 240 52" style={{ width: '100%', height: 52, display: 'block' }} preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="pm-grad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#2B59E0" stopOpacity="0.18" />
+                        <stop offset="100%" stopColor="#2B59E0" stopOpacity="0.02" />
+                      </linearGradient>
+                    </defs>
+                    {/* Area fill — static, no animation needed for fill */}
+                    <path d="M0 48 C20 46 38 42 56 38 C74 34 84 30 100 24 C116 18 128 11 148 7 C162 3 175 5 192 2 C210 0 228 3 240 1 L240 52 L0 52 Z" fill="url(#pm-grad)" />
+                    {/* Main line — strokeDashoffset draw-in */}
+                    <motion.path
+                      d="M0 48 C20 46 38 42 56 38 C74 34 84 30 100 24 C116 18 128 11 148 7 C162 3 175 5 192 2 C210 0 228 3 240 1"
+                      stroke="#2B59E0" strokeWidth="1.6" fill="none" strokeLinecap="round"
+                      initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+                      transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
+                    />
+                    {/* Forecast dashed tail */}
+                    <path d="M192 2 C210 0 228 3 240 1" stroke="#2B59E0" strokeWidth="1" strokeDasharray="2.5 2" fill="none" opacity="0.38" />
+                    {/* Active dot */}
+                    <circle cx="178" cy="3.5" r="2.8" fill="white" stroke="#2B59E0" strokeWidth="1.5" />
+                    {/* Tooltip */}
+                    <rect x="157" y="0" width="36" height="17" rx="3" fill="#0B1433" />
+                    <text x="175" y="6.5" textAnchor="middle" fill="#AFC0EA" fontSize="4.5" fontWeight="500">Oct</text>
+                    <text x="175" y="13.5" textAnchor="middle" fill="white" fontSize="6.5" fontWeight="800">₹3.6 Cr</text>
+                  </svg>
+                  <div className="flex items-center gap-4 mt-1">
+                    <span className="flex items-center gap-1" style={{ fontSize: 6, color: '#9AA2B8' }}>
+                      <span style={{ display: 'inline-block', width: 12, height: 1.5, background: '#2B59E0', borderRadius: 1 }} />
+                      Created pipeline
+                    </span>
+                    <span className="flex items-center gap-1" style={{ fontSize: 6, color: '#9AA2B8' }}>
+                      <span style={{ display: 'inline-block', width: 12, height: 0, borderTop: '1px dashed rgba(43,89,224,0.45)' }} />
+                      Forecast
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1486,9 +1542,6 @@ function KPIDashboard() {
       <div className="max-w-5xl mx-auto">
         {/* Section label */}
         <div className="lp-in lp-in-delay-1 text-center mb-8">
-          <p className="text-[12px] font-semibold text-[#A4B1BE] uppercase tracking-[0.15em]">
-            Real-time visibility across your entire team
-          </p>
         </div>
 
         {/* Dashboard card */}
@@ -1692,38 +1745,20 @@ function KPIDashboard() {
 
 /* ─── Portal marquee ──────────────────────────────────────────────────────── */
 const PORTALS = [
-  { name: '99acres',      dot: '#DC2626' },
-  { name: 'MagicBricks',  dot: '#B91C1C' },
-  { name: 'Housing.com',  dot: '#1D4ED8' },
-  { name: 'NoBroker',     dot: '#047857' },
-  { name: 'Square Yards', dot: '#0047AB' },
-  { name: 'CommonFloor',  dot: '#7C3AED' },
-  { name: 'PropTiger',    dot: '#C2410C' },
-  { name: 'Makaan',       dot: '#0369A1' },
+  '99acres', 'MagicBricks', 'Housing.com', 'NoBroker',
+  'Square Yards', 'CommonFloor', 'PropTiger', 'Makaan',
 ]
 
 function PortalStrip() {
   return (
-    <section style={{ background: '#FAFAF8', borderTop: '1px solid #EDEAE3', borderBottom: '1px solid #EDEAE3' }}>
-      <p className="text-center text-[11px] font-bold uppercase tracking-[0.2em] pt-7 pb-2" style={{ color: '#0047AB' }}>
-        Leads auto-synced from India&apos;s top portals
-      </p>
-
-      <Marquee speed={32} pauseOnHover className="pb-6">
-        {PORTALS.map((p) => (
-          <div
-            key={p.name}
-            className="flex items-center gap-2 px-3.5 py-1.5 whitespace-nowrap select-none mx-2"
-            style={{
-              background: `${p.dot}12`,
-              border: `1px solid ${p.dot}28`,
-              borderRadius: 6,
-            }}
-          >
-            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: p.dot }} />
-            <span className="text-[13px] font-semibold tracking-tight" style={{ color: p.dot }}>
-              {p.name}
+    <section style={{ background: '#FAFAF8', borderBottom: '1px solid #EDEAE3' }}>
+      <Marquee speed={26} pauseOnHover className="py-5">
+        {PORTALS.map((name) => (
+          <div key={name} className="flex items-center gap-6 px-5 select-none whitespace-nowrap">
+            <span className="text-[13px] font-medium tracking-tight" style={{ color: '#6B6357' }}>
+              {name}
             </span>
+            <div className="w-[3px] h-[3px] rounded-full shrink-0" style={{ background: '#C4BDB5' }} />
           </div>
         ))}
       </Marquee>
@@ -1732,6 +1767,121 @@ function PortalStrip() {
 }
 
 /* ─── Bento Features (Dribbble minimal style) ─────────────────────────────── */
+
+/* ── Code-based replacement for Auto Lead Sync ──────────────────────────────── */
+function PreviewLeadSyncCode() {
+  const [lit, setLit] = useState(0)
+  const prefersReduced = useReducedMotion()
+  const sources = [
+    { name: '99acres',     color: '#E8173B' },
+    { name: 'MagicBricks', color: '#E87722' },
+    { name: 'Housing.com', color: '#0071BC' },
+    { name: 'NoBroker',    color: '#7C3AED' },
+  ]
+
+  useEffect(() => {
+    if (prefersReduced) { setLit(-1); return }
+    const id = setInterval(() => setLit(l => (l + 1) % sources.length), 900)
+    return () => clearInterval(id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefersReduced])
+
+  return (
+    <div className="absolute inset-0 flex flex-col justify-center gap-2.5 px-5 py-5"
+      style={{ background: 'linear-gradient(160deg,#F8FAFF 0%,#FDFCFB 100%)' }}>
+      <div className="text-[10px] font-bold uppercase tracking-widest mb-0.5" style={{ color: '#A4B1BE' }}>
+        Leads auto-synced live
+      </div>
+      {sources.map((s, i) => (
+        <motion.div key={s.name}
+          animate={{
+            background: lit === i ? s.color + '10' : '#FFFFFF',
+            borderColor: lit === i ? s.color + '50' : '#EBEDF0',
+          }}
+          transition={{ duration: 0.32 }}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+          style={{ border: '1px solid #EBEDF0', background: '#FFFFFF' }}
+        >
+          <div className="size-2.5 rounded-full shrink-0" style={{ background: s.color }} />
+          <span className="flex-1 text-[12px] font-semibold" style={{ color: '#263238' }}>{s.name}</span>
+          <AnimatePresence>
+            {lit === i && (
+              <motion.span
+                initial={{ opacity: 0, scale: 0.8, x: 6 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.8, x: 6 }}
+                transition={{ duration: 0.22 }}
+                className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                style={{ background: s.color + '18', color: s.color }}
+              >
+                1 new
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      ))}
+      <div className="flex items-center gap-2 mt-0.5 px-3 py-2 rounded-xl"
+        style={{ background: '#EEF6FF', border: '1px solid #BFDBFE' }}>
+        <div className="size-2 rounded-full bg-blue-500 animate-pulse shrink-0" />
+        <span className="text-[11px] font-semibold text-blue-700">All portals live in LGC inbox</span>
+      </div>
+    </div>
+  )
+}
+
+/* ── Code-based replacement for Portal Integrations ─────────────────────────── */
+function PreviewPortalGrid() {
+  const [active, setActive] = useState(-1)
+  const prefersReduced = useReducedMotion()
+  const PORTALS_GRID = [
+    { name: '99acres',     color: '#E8173B', favicon: '/portals/99acres.png'     },
+    { name: 'MagicBricks', color: '#E87722', favicon: '/portals/magicbricks.png' },
+    { name: 'Housing.com', color: '#0071BC', favicon: '/portals/housing.png'     },
+    { name: 'NoBroker',    color: '#7C3AED', favicon: '/portals/nobroker.png'    },
+    { name: 'PropTiger',   color: '#C2410C', favicon: '/portals/proptiger.png'   },
+    { name: 'CommonFloor', color: '#059669', favicon: '/portals/commonfloor.png' },
+  ]
+
+  useEffect(() => {
+    if (prefersReduced) return
+    const id = setInterval(() => setActive(a => (a + 1) % PORTALS_GRID.length), 1100)
+    return () => clearInterval(id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefersReduced])
+
+  return (
+    <div className="absolute inset-0 flex flex-col justify-center items-center gap-4 px-5"
+      style={{ background: '#F8F9FB' }}>
+      <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#A4B1BE' }}>
+        Connected portals
+      </div>
+      <div className="grid grid-cols-3 gap-3 w-full">
+        {PORTALS_GRID.map((p, i) => (
+          <motion.div key={p.name}
+            animate={{
+              scale: active === i ? 1.06 : 1,
+              boxShadow: active === i ? `0 0 0 2px ${p.color}, 0 4px 12px ${p.color}30` : '0 2px 8px rgba(0,0,0,0.06)',
+            }}
+            transition={{ duration: 0.3 }}
+            className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white"
+            style={{ border: '1px solid #EBEDF0' }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={p.favicon} alt={p.name} style={{ width: 26, height: 26, objectFit: 'contain' }} />
+            <span style={{ fontSize: 8, fontWeight: 600, color: '#78889B', textAlign: 'center' as const }}>{p.name}</span>
+            <div className="size-1.5 rounded-full transition-colors duration-300"
+              style={{ background: active === i ? p.color : '#CBD5E1' }} />
+          </motion.div>
+        ))}
+      </div>
+      <div className="flex items-center gap-2 px-3 py-2 rounded-full"
+        style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+        <div className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+        <span className="text-[11px] font-semibold text-emerald-700">All portals syncing live</span>
+      </div>
+    </div>
+  )
+}
 
 function BentoGrid({ children }: { children: React.ReactNode }) {
   return (
@@ -1763,27 +1913,9 @@ function BentoCard({
   )
 }
 
-/* ── Bento preview: Auto Lead Sync — Data Sharing Lottie ────────────────────── */
+/* ── Bento preview: Auto Lead Sync — code-based ─────────────────────────────── */
 function PreviewLeadSync() {
-  const [animData, setAnimData] = useState<object | null>(null)
-  useEffect(() => {
-    fetch('/lottie/data-sharing-service.json').then(r => r.json()).then(setAnimData)
-  }, [])
-  return (
-    <div className="absolute inset-0 overflow-hidden flex items-center justify-center">
-      {animData && Lottie ? (
-        <Lottie
-          animationData={animData}
-          loop
-          autoplay
-          rendererSettings={{ preserveAspectRatio: 'xMidYMid meet' }}
-          style={{ width: '100%', height: '100%' }}
-        />
-      ) : (
-        <div className="w-full h-full" />
-      )}
-    </div>
-  )
+  return <PreviewLeadSyncCode />
 }
 
 /* ── Bento preview: Advanced Live Stats — interactive line/bar toggle ────────── */
@@ -1898,53 +2030,14 @@ function PreviewFeed() {
   )
 }
 
-/* ── Bento preview: Portal flow lottie (used by Activity Log cell) ──────────── */
+/* ── Bento preview: Portal Integrations — code-based ────────────────────────── */
 function PreviewPortals() {
-  const [animData, setAnimData] = useState<object | null>(null)
-  useEffect(() => {
-    fetch('/leads-g2g.json').then(r => r.json()).then(setAnimData)
-  }, [])
-  return (
-    <div className="absolute inset-0 overflow-hidden flex items-center justify-center">
-      {animData && Lottie ? (
-        <Lottie
-          animationData={animData}
-          loop
-          autoplay
-          rendererSettings={{ preserveAspectRatio: 'xMidYMid meet' }}
-          style={{ width: '100%', height: '100%' }}
-        />
-      ) : (
-        <div className="w-full h-full" />
-      )}
-    </div>
-  )
+  return <PreviewPortalGrid />
 }
 
-/* ── Bento preview: Live Feed — omnichannel left, big-data-centre enlarged right ─ */
+/* ── Bento preview: Live Feed — activity log (code-based) ───────────────────── */
 function PreviewLiveFeed() {
-  return (
-    <div className="absolute inset-0 overflow-hidden flex items-center">
-      {/* Left — Omnichannel CRM, enlarged */}
-      <div className="flex items-center justify-center shrink-0" style={{ width: '42%', height: '100%' }}>
-        <DotLottieReact
-          src="/lottie/omnichannel-crm.lottie"
-          loop
-          autoplay
-          style={{ width: '100%', height: '100%' }}
-        />
-      </div>
-      {/* Right — Big Data Centre, enlarged, pulled left to close gap */}
-      <div className="flex items-center justify-center" style={{ flex: 1, height: '100%', marginLeft: '-6%' }}>
-        <DotLottieReact
-          src="/lottie/big-data-centre.lottie"
-          loop
-          autoplay
-          style={{ width: '100%', height: '100%' }}
-        />
-      </div>
-    </div>
-  )
+  return <PreviewPipeline />
 }
 
 
@@ -2569,18 +2662,17 @@ function UniqueFeatures() {
   return (
     <section ref={ref} id="unique-features" className="py-28" style={{ background: '#FAFAF8' }}>
       <div className="max-w-6xl mx-auto px-6">
-        {/* Header — exact Alytics structure */}
         <div className="text-center mb-16">
-          <div className="inline-flex items-center px-4 py-1.5 mb-6 text-[12px] font-semibold"
-            style={{ background: '#EEF2F7', color: '#0038A8', borderRadius: 20 }}>
-            Unique Features
-          </div>
-          <h2 className="text-[40px] md:text-[52px] font-extrabold text-[#0D1117] leading-[1.15] tracking-tight">
-            Make Your Platform<br className="hidden md:block" /> Work Harder For You
-          </h2>
-          <p className="text-[16px] mt-4 max-w-sm mx-auto" style={{ color: '#78889B', lineHeight: 1.6 }}>
-            Streamline your brokerage with unified lead data and AI-powered workflows — all in one place.
-          </p>
+          <RevealText>
+            <h2 className="text-[40px] md:text-[52px] font-extrabold text-[#0D1117] leading-[1.15] tracking-tight">
+              Make Your Platform<br className="hidden md:block" /> Work Harder For You
+            </h2>
+          </RevealText>
+          <RevealText delay={0.1}>
+            <p className="text-[16px] mt-4 max-w-sm mx-auto" style={{ color: '#78889B', lineHeight: 1.6 }}>
+              Streamline your brokerage with unified lead data and AI-powered workflows — all in one place.
+            </p>
+          </RevealText>
         </div>
 
         {/* 2×2 grid */}
@@ -2611,16 +2703,16 @@ function Features() {
     <section id="features" className="py-28">
       <div className="max-w-[1360px] mx-auto px-8">
         <div className="text-center mb-14">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold mb-5"
-            style={{ background: 'rgba(0,71,171,0.06)', border: '1px solid rgba(0,71,171,0.12)', color: '#0047AB' }}>
-            <Target className="w-3.5 h-3.5" /> Everything your team needs
-          </div>
-          <h2 className="text-[38px] md:text-[46px] font-extrabold text-[#1A1F27] leading-tight tracking-tight">
-            Built for how Indian real estate<br className="hidden md:block" /> teams actually work
-          </h2>
-          <p className="text-[16px] text-[#78889B] mt-4 max-w-xl mx-auto">
-            No generic SaaS fluff. Every feature built around the reality of selling apartments in India.
-          </p>
+          <RevealText>
+            <h2 className="text-[38px] md:text-[46px] font-extrabold text-[#1A1F27] leading-tight tracking-tight">
+              Built for how Indian real estate<br className="hidden md:block" /> teams actually work
+            </h2>
+          </RevealText>
+          <RevealText delay={0.1}>
+            <p className="text-[16px] text-[#78889B] mt-4 max-w-xl mx-auto">
+              No generic SaaS fluff. Every feature built around the reality of selling apartments in India.
+            </p>
+          </RevealText>
         </div>
 
         <BentoGrid>
@@ -2674,12 +2766,19 @@ function Stats() {
       <div className="max-w-5xl mx-auto px-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-6">
           {STATS.map((s, i) => (
-            <div key={s.label} className={`lp-in lp-in-delay-${i + 1} text-center`}>
+            <motion.div
+              key={s.label}
+              className="text-center"
+              initial={{ opacity: 0, scale: 0.75 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, margin: '-30px' }}
+              transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1], delay: i * 0.08 }}
+            >
               <div className="text-[44px] md:text-[52px] font-extrabold text-white leading-none mb-2">
                 <Counter to={s.value} suffix={s.suffix} />
               </div>
               <div className="text-[13px] text-[#78889B] leading-snug">{s.label}</div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
@@ -2944,22 +3043,26 @@ function HowItWorks() {
     <section id="how-it-works" ref={ref} className="py-28" style={{ background: '#111318' }}>
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-14">
-          <div className="lp-in lp-in-delay-1 inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold mb-5"
-            style={{ background: 'rgba(107,142,247,0.1)', border: '1px solid rgba(107,142,247,0.25)', color: '#6B8EF7' }}>
-            <Clock className="w-3.5 h-3.5" /> How it works
-          </div>
-          <h2 className="lp-in lp-in-delay-2 text-[38px] md:text-[48px] font-extrabold text-white leading-tight tracking-tight">
-            From portal enquiry<br className="hidden md:block" /> to closed deal — automated
-          </h2>
-          <p className="lp-in lp-in-delay-3 mt-4 text-[15px] leading-relaxed max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.45)' }}>
-            Lead Gap CRM connects your property portals, routes every lead to the right agent instantly, and uses AI to tell you exactly who to call next.
-          </p>
+          <RevealText>
+            <h2 className="text-[38px] md:text-[48px] font-extrabold text-white leading-tight tracking-tight">
+              From portal enquiry<br className="hidden md:block" /> to closed deal — automated
+            </h2>
+          </RevealText>
+          <RevealText delay={0.1}>
+            <p className="mt-4 text-[15px] leading-relaxed max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              Lead Gap CRM connects your property portals, routes every lead to the right agent instantly, and uses AI to tell you exactly who to call next.
+            </p>
+          </RevealText>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {steps.map((step, i) => (
-            <div key={step.num}
-              className={`lp-in lp-in-delay-${i + 1} rounded-2xl p-5 flex flex-col gap-5`}
+            <motion.div key={step.num}
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: i * 0.14 }}
+              className="rounded-2xl p-5 flex flex-col gap-5"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
               {/* Header row */}
               <div className="flex items-center justify-between">
@@ -2979,7 +3082,7 @@ function HowItWorks() {
                 <h3 className="text-[16px] font-bold text-white mb-1.5">{step.title}</h3>
                 <p className="text-[13px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>{step.desc}</p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
@@ -3268,28 +3371,26 @@ function ProblemSection() {
 
         {/* Left — text */}
         <div className="flex-1 min-w-0 flex flex-col gap-6">
-          <p className="lp-in lp-in-delay-1 text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: '#0038A8' }}>
-            Sound familiar?
-          </p>
-          <h2 className="lp-in lp-in-delay-2 text-[30px] sm:text-[36px] md:text-[42px] font-extrabold leading-tight tracking-tight" style={{ color: '#0F172A' }}>
-            This is how brokers lose deals every day.
-          </h2>
-          <p className="lp-in lp-in-delay-3 text-[16px] leading-relaxed" style={{ color: '#64748B', maxWidth: 400 }}>
-            Three silent problems eating your revenue every month. Every Indian broker knows them. Most never fix them.
-          </p>
+          <RevealText>
+            <h2 className="text-[30px] sm:text-[36px] md:text-[42px] font-extrabold leading-tight tracking-tight" style={{ color: '#0F172A' }}>
+              This is how brokers lose deals every day.
+            </h2>
+          </RevealText>
+          <RevealText delay={0.1}>
+            <p className="text-[16px] leading-relaxed" style={{ color: '#64748B', maxWidth: 400 }}>
+              Three silent problems eating your revenue every month. Every Indian broker knows them. Most never fix them.
+            </p>
+          </RevealText>
 
           {/* Problem list */}
-          <div className="lp-in lp-in-delay-4 flex flex-col gap-3 mt-2">
+          <div className="lp-in lp-in-delay-4 flex flex-col gap-4 mt-2">
             {[
-              { num: '01', label: 'Leads scattered across 5 portals' },
-              { num: '02', label: 'First caller wins — you call 4 hours late' },
-              { num: '03', label: 'No one knows who owns which lead' },
-            ].map(({ num, label }) => (
-              <div key={num} className="flex items-center gap-3">
-                <span className="text-[11px] font-bold tabular-nums px-2 py-0.5 rounded"
-                  style={{ background: '#E8EFFA', color: '#0038A8', border: '1px solid #C7D8F5' }}>
-                  {num}
-                </span>
+              'Leads scattered across 5 portals',
+              'First caller wins — you call 4 hours late',
+              'No one knows who owns which lead',
+            ].map((label) => (
+              <div key={label} className="flex items-center gap-3">
+                <CaretRight size={13} weight="light" style={{ color: '#B8A99A', flexShrink: 0 }} />
                 <span className="text-[14px] font-medium" style={{ color: '#334155' }}>{label}</span>
               </div>
             ))}
@@ -3610,15 +3711,16 @@ function SolutionSection() {
 
         {/* Header */}
         <div className="text-center mb-14">
-          <p className="lp-in lp-in-delay-1 text-[11px] font-bold uppercase tracking-[0.2em] mb-4" style={{ color: '#0047AB' }}>
-            How Lead Gap CRM fixes it
-          </p>
-          <h2 className="lp-in lp-in-delay-2 text-[36px] md:text-[40px] font-extrabold leading-tight tracking-tight text-[#1A1F27] mb-4">
-            One platform.<br />Every problem solved.
-          </h2>
-          <p className="lp-in lp-in-delay-3 text-[15px] leading-relaxed max-w-lg mx-auto" style={{ color: '#78889B' }}>
-            Lead Gap CRM automates the work your team does manually — and gives you visibility you&apos;ve never had before.
-          </p>
+          <RevealText>
+            <h2 className="text-[36px] md:text-[40px] font-extrabold leading-tight tracking-tight text-[#1A1F27] mb-4">
+              One platform.<br />Every problem solved.
+            </h2>
+          </RevealText>
+          <RevealText delay={0.1}>
+            <p className="text-[15px] leading-relaxed max-w-lg mx-auto" style={{ color: '#78889B' }}>
+              Lead Gap CRM automates the work your team does manually — and gives you visibility you&apos;ve never had before.
+            </p>
+          </RevealText>
         </div>
 
         {/* ── Top row: 3 equal feature cards ── */}
@@ -3858,6 +3960,300 @@ function SolutionSection() {
   )
 }
 
+/* ─── Video Section ────────────────────────────────────────────────────────── */
+const VIDEO_ID = 'YOUR_VIDEO_ID' // ← swap with YouTube video ID when ready
+
+function VideoThumbnail() {
+  return (
+    <div style={{ position: 'absolute', inset: 0, background: '#060c18', overflow: 'hidden' }}>
+      {/* Ambient glow blobs */}
+      <div style={{ position: 'absolute', top: '10%', left: '15%', width: 320, height: 220, borderRadius: '50%', background: 'rgba(29,78,216,0.18)', filter: 'blur(72px)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: '15%', right: '18%', width: 260, height: 180, borderRadius: '50%', background: 'rgba(124,58,237,0.13)', filter: 'blur(64px)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: '40%', right: '30%', width: 200, height: 160, borderRadius: '50%', background: 'rgba(184,150,46,0.08)', filter: 'blur(56px)', pointerEvents: 'none' }} />
+
+      {/* Browser chrome */}
+      <div style={{ position: 'absolute', top: 20, left: 40, right: 40, borderRadius: 4, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+        {/* Chrome bar */}
+        <div style={{ height: 24, background: '#111620', display: 'flex', alignItems: 'center', padding: '0 10px', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {['#FF5F57', '#FEBC2E', '#28C840'].map(c => <div key={c} style={{ width: 8, height: 8, borderRadius: '50%', background: c }} />)}
+          </div>
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+            <div style={{ padding: '2px 10px', borderRadius: 3, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', fontSize: 8, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>
+              app.leadgapcrm.in/dashboard
+            </div>
+          </div>
+        </div>
+
+        {/* Dashboard rows */}
+        <div style={{ display: 'flex', height: 160, background: '#0d1220' }}>
+          {/* Sidebar strip */}
+          <div style={{ width: 36, background: '#080d18', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 6, padding: 6 }}>
+            {['#3B82F6', 'rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)', 'rgba(255,255,255,0.12)'].map((c, i) => (
+              <div key={i} style={{ height: 16, borderRadius: 2, background: c === '#3B82F6' ? 'rgba(59,130,246,0.15)' : c, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: 10, height: 10, borderRadius: 2, background: c }} />
+              </div>
+            ))}
+          </div>
+
+          {/* Content area */}
+          <div style={{ flex: 1, padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {/* Greeting */}
+            <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.75)', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>Good morning, Rahul Sharma</div>
+
+            {/* KPI row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 5 }}>
+              {[
+                { label: 'Total Leads', val: '105', color: '#6366F1' },
+                { label: 'Hot Leads',   val: '52',  color: '#EF4444' },
+                { label: 'Pipeline',    val: '₹225Cr', color: '#10B981' },
+                { label: 'Deals',       val: '7',   color: '#F59E0B' },
+              ].map(({ label, val, color }) => (
+                <div key={label} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3, padding: '5px 6px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: '#F1F5F9', lineHeight: 1, letterSpacing: '-0.02em' }}>{val}</div>
+                  <div style={{ fontSize: 6, color, fontWeight: 600, marginTop: 2 }}>{label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Funnel bars */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {[
+                { label: 'New',       pct: 100, color: '#3B82F6' },
+                { label: 'Contacted', pct: 70,  color: '#8B5CF6' },
+                { label: 'Qualified', pct: 45,  color: '#10B981' },
+                { label: 'Closed',    pct: 17,  color: '#EF4444' },
+              ].map(({ label, pct, color }) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ fontSize: 6, color: 'rgba(255,255,255,0.3)', width: 44, textAlign: 'right' as const }}>{label}</div>
+                  <div style={{ flex: 1, height: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 2, overflow: 'hidden' }}>
+                    <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 2, opacity: 0.8 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom fade */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(to top, #060c18, transparent)', pointerEvents: 'none' }} />
+      {/* Top fade */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '15%', background: 'linear-gradient(to bottom, #060c18, transparent)', pointerEvents: 'none' }} />
+    </div>
+  )
+}
+
+function VideoSection() {
+  const [open, setOpen] = useState(false)
+  const reduced = useReducedMotion()
+  const ref = useScrollReveal()
+
+  useEffect(() => {
+    if (!open) return
+    const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    window.addEventListener('keydown', fn)
+    return () => window.removeEventListener('keydown', fn)
+  }, [open])
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [open])
+
+  return (
+    <>
+      <section ref={ref} id="demo-video" style={{ background: '#0C0C0B', padding: '6rem 1.5rem' }}>
+        <div style={{ maxWidth: 960, margin: '0 auto' }}>
+
+          {/* Heading */}
+          <h2 className="lp-in lp-in-delay-1" style={{
+            fontFamily: 'var(--font-playfair), serif',
+            fontStyle: 'italic',
+            fontSize: 'clamp(32px, 5vw, 52px)',
+            lineHeight: 1.1,
+            textAlign: 'center',
+            color: '#F5F0E8',
+            marginBottom: 16,
+            letterSpacing: '-0.02em',
+          }}>
+            See it in action
+          </h2>
+
+          {/* Subtext */}
+          <p className="lp-in lp-in-delay-2" style={{
+            fontSize: 16,
+            lineHeight: 1.7,
+            color: 'rgba(255,255,255,0.42)',
+            textAlign: 'center',
+            maxWidth: 440,
+            margin: '0 auto 52px',
+          }}>
+            Two minutes. Real leads. Watch how agents close more deals with LeadGap CRM.
+          </p>
+
+          {/* Video thumbnail container */}
+          <div className="lp-in lp-in-delay-3" style={{ position: 'relative' }}>
+            {/* Outer glow */}
+            <div style={{
+              position: 'absolute',
+              inset: '-50px -80px',
+              background: 'radial-gradient(ellipse 65% 55% at 50% 50%, rgba(184,150,46,0.10) 0%, transparent 70%)',
+              zIndex: 0,
+              pointerEvents: 'none',
+            }} />
+
+            {/* 16:9 frame */}
+            <div
+              role="button"
+              aria-label="Watch product demo"
+              onClick={() => setOpen(true)}
+              style={{
+                position: 'relative',
+                zIndex: 1,
+                aspectRatio: '16 / 9',
+                borderRadius: 4,
+                overflow: 'hidden',
+                border: '1px solid rgba(255,255,255,0.09)',
+                cursor: 'pointer',
+              }}
+            >
+              {/* Thumbnail */}
+              <VideoThumbnail />
+
+              {/* Dark scrim over thumbnail */}
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'rgba(6,12,24,0.52)',
+                zIndex: 1,
+              }} />
+
+              {/* Play button + label */}
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 20,
+              }}>
+                <motion.div
+                  whileHover={reduced ? {} : { scale: 1.08 }}
+                  whileTap={reduced ? {} : { scale: 0.94 }}
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: '50%',
+                    background: '#B8962E',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 0 0 16px rgba(184,150,46,0.10), 0 0 0 32px rgba(184,150,46,0.05)',
+                  }}
+                >
+                  <Play size={30} weight="fill" color="#0C0C0B" style={{ marginLeft: 5 }} />
+                </motion.div>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.04em' }}>
+                  Watch demo · 2 min
+                </span>
+              </div>
+            </div>
+
+            {/* Feature chips below video */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 28, flexWrap: 'wrap' }}>
+              {['Unified lead inbox', 'AI intent scoring', 'Today view', 'Power Dialer', 'AI Advisor'].map(label => (
+                <span key={label} style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: 'rgba(255,255,255,0.35)',
+                  padding: '4px 12px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 2,
+                  background: 'rgba(255,255,255,0.03)',
+                }}>
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Lightbox modal */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.20 }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 9999,
+              background: 'rgba(0,0,0,0.90)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '2rem',
+            }}
+            onClick={() => setOpen(false)}
+          >
+            <motion.div
+              initial={reduced ? { opacity: 0 } : { scale: 0.95, opacity: 0 }}
+              animate={reduced ? { opacity: 1 } : { scale: 1, opacity: 1 }}
+              exit={reduced ? { opacity: 0 } : { scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              style={{ position: 'relative', width: '100%', maxWidth: 960 }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Close button */}
+              <button
+                onClick={() => setOpen(false)}
+                style={{
+                  position: 'absolute',
+                  top: -44,
+                  right: 0,
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'rgba(255,255,255,0.50)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  padding: '4px 0',
+                }}
+              >
+                <PhX size={16} weight="bold" /> Close
+              </button>
+
+              {/* 16:9 iframe wrapper */}
+              <div style={{ aspectRatio: '16 / 9', borderRadius: 4, overflow: 'hidden', background: '#000' }}>
+                <iframe
+                  src={`https://www.youtube.com/embed/${VIDEO_ID}?autoplay=1&rel=0&modestbranding=1`}
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                  style={{ width: '100%', height: '100%', border: 'none' }}
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  )
+}
+
 /* ─── CTA ─────────────────────────────────────────────────────────────────── */
 function CTASection() {
   const ref = useScrollReveal()
@@ -3868,10 +4264,6 @@ function CTASection() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] opacity-20 blur-3xl pointer-events-none"
           style={{ background: 'radial-gradient(ellipse, #0047AB, transparent)' }} />
         <div className="relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold mb-6"
-            style={{ background: 'rgba(0,71,171,0.10)', border: '1px solid rgba(0,71,171,0.18)', color: '#0047AB' }}>
-            <Sparkles className="w-3.5 h-3.5" /> Free 14-day trial — no credit card
-          </div>
           <h2 className="text-[36px] md:text-[48px] font-extrabold text-white leading-tight tracking-tight mb-4">
             Ready to close more deals?
           </h2>
@@ -4020,12 +4412,11 @@ function WorkspaceSection() {
 
           {/* Left: copy */}
           <div className="flex flex-col gap-6 lp-in lp-in-delay-1">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: '#0047AB' }}>
-              Built different
-            </p>
-            <h2 className="text-[34px] md:text-[42px] font-extrabold leading-tight tracking-tight" style={{ color: '#1A1F27' }}>
-              The workspace that<br />actually gets work done.
-            </h2>
+            <RevealText>
+              <h2 className="text-[34px] md:text-[42px] font-extrabold leading-tight tracking-tight" style={{ color: '#1A1F27' }}>
+                The workspace that<br />actually gets work done.
+              </h2>
+            </RevealText>
             <p className="text-[16px] leading-relaxed" style={{ color: '#78889B', maxWidth: 380 }}>
               Most CRMs are built for software companies with IT teams and six-week onboarding. Lead Gap CRM is built for brokers — you&apos;re running leads in under 5 minutes.
             </p>
@@ -4063,6 +4454,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen" style={{ background: '#FAFAF8', fontFamily: 'var(--font-jakarta), system-ui, sans-serif' }}>
       <div className="grain-overlay" aria-hidden="true" />
+      <ScrollNarrativeThread />
       <Nav />
       {/* ── Unified Silk zone: hero text + scroll-reveal desktop ── */}
       <div className="relative overflow-hidden" style={{ background: '#1a2d8a' }}>
@@ -4071,19 +4463,27 @@ export default function LandingPage() {
         </div>
         <div style={{ position: 'relative', zIndex: 1 }}>
           <Hero />
-          <HeroScrollDash />
+          <HeroDashboard />
+          {/* <HeroScrollDash /> */}
         </div>
       </div>
+      {/* ── Narrative arc: Problem → Solution → How it works ── */}
       <PortalStrip />
-      <HowItWorks />
-      <ProblemSection />
-      <SolutionSection />
-      <WorkspaceSection />
+      <ProblemStory />
+      {/* <ProblemSection /> */}
+      <SolutionBento />
+      {/* <SolutionSection /> */}
+      <HowItWorksSteps />
+      {/* ── What you get ── */}
       <UniqueFeatures />
       <Features />
+      <WorkspaceSection />
+      {/* ── Social proof ── */}
       <Stats />
       <KPIDashboard />
       <Testimonial />
+      {/* ── Demo + CTA ── */}
+      <VideoSection />
       <CTASection />
       <CinematicFooter />
     </div>
