@@ -861,12 +861,22 @@ function PipelineArt() {
 /* ─── + · Built in ─────────────────────────────────────────────────────────── */
 function ExtrasArt() {
   const calm = useContext(Calm)
+  const pop: Variants = {
+    hidden: { opacity: 0, scale: 0.35 },
+    show: {
+      opacity: 1,
+      scale: 1,
+      transition: calm
+        ? { duration: 0 }
+        : { type: 'spring', stiffness: 520, damping: 14, delay: 0.28 },
+    },
+  }
   return (
     <div className="@container flex h-full min-h-[232px] flex-wrap content-center items-center justify-center gap-1.5 px-6 py-5 @[300px]:gap-2">
-      {EXTRAS.map(([Icon, label], i) => (
+      {EXTRAS.map(([Icon, label]) => (
         <motion.span
           key={label}
-          variants={enter(calm, 0.25 + i * 0.07, { y: 8, scale: 0.9 })}
+          variants={pop}
           className={`flex h-8 items-center gap-1.5 rounded-[10px] px-2.5 text-[12.5px] font-semibold text-[#2A3350] @[300px]:h-9 @[300px]:gap-2 @[300px]:px-3 @[300px]:text-[13px] ${CHIP}`}
         >
           <Icon className="size-4 text-[#2B59E0]" strokeWidth={2.2} />

@@ -1743,25 +1743,59 @@ function KPIDashboard() {
   )
 }
 
-/* ─── Portal marquee ──────────────────────────────────────────────────────── */
+/* ─── Portal trust bar ────────────────────────────────────────────────────── */
 const PORTALS = [
-  '99acres', 'MagicBricks', 'Housing.com', 'NoBroker',
-  'Square Yards', 'CommonFloor', 'PropTiger', 'Makaan',
+  { name: '99acres',      src: '/portals/99acres.png',     color: '#E8173B' },
+  { name: 'MagicBricks',  src: '/portals/magicbricks.png', color: '#E87722' },
+  { name: 'Housing.com',  src: '/portals/housing.png',     color: '#0071BC' },
+  { name: 'NoBroker',     src: '/portals/nobroker.png',    color: '#7C3AED' },
+  { name: 'PropTiger',    src: '/portals/proptiger.png',   color: '#C2410C' },
+  { name: 'CommonFloor',  src: '/portals/commonfloor.png', color: '#059669' },
+  { name: 'Square Yards', src: '/portals/squareyards.png', color: '#1D4ED8' },
+  { name: 'Makaan',       src: '/portals/makaan.png',      color: '#D97706' },
 ]
 
 function PortalStrip() {
   return (
-    <section style={{ background: '#FAFAF8', borderBottom: '1px solid #EDEAE3' }}>
-      <Marquee speed={26} pauseOnHover className="py-5">
-        {PORTALS.map((name) => (
-          <div key={name} className="flex items-center gap-6 px-5 select-none whitespace-nowrap">
-            <span className="text-[13px] font-medium tracking-tight" style={{ color: '#6B6357' }}>
-              {name}
-            </span>
-            <div className="w-[3px] h-[3px] rounded-full shrink-0" style={{ background: '#C4BDB5' }} />
-          </div>
-        ))}
-      </Marquee>
+    <section style={{ background: '#FAFAF8', borderTop: '1px solid rgba(0,0,0,0.09)', borderBottom: '1px solid #EDEAE3' }}>
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: '36px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+
+        {/* Eyebrow */}
+        <p style={{ margin: 0, fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase' as const, color: '#AAA09A' }}>
+          Leads auto-synced · 8 portals · zero manual entry
+        </p>
+
+        {/* Logo grid */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', alignItems: 'center' }}>
+          {PORTALS.map(({ name, src }) => (
+            <div
+              key={name}
+              title={name}
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 4,
+                border: '1px solid #E6E2DA',
+                background: '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                flexShrink: 0,
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={src} alt={name} style={{ width: 38, height: 38, objectFit: 'contain', display: 'block' }} />
+            </div>
+          ))}
+        </div>
+
+        {/* Live status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 500, color: '#8A8277' }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22C55E', display: 'inline-block', flexShrink: 0, animation: 'bento-timer-pulse 2s ease-in-out infinite' }} />
+          Every enquiry lands in your inbox the moment it arrives
+        </div>
+      </div>
     </section>
   )
 }
@@ -4474,16 +4508,16 @@ export default function LandingPage() {
       <SolutionBento />
       {/* <SolutionSection /> */}
       <HowItWorksSteps />
-      {/* ── What you get ── */}
-      <UniqueFeatures />
-      <Features />
-      <WorkspaceSection />
+      {/* ── What you get — frozen, not deleted ── */}
+      {/* <UniqueFeatures /> */}
+      {/* <Features /> */}
+      {/* <WorkspaceSection /> */}
       {/* ── Social proof ── */}
       <Stats />
-      <KPIDashboard />
+      {/* <KPIDashboard /> */}
       <Testimonial />
       {/* ── Demo + CTA ── */}
-      <VideoSection />
+      {/* <VideoSection /> */}
       <CTASection />
       <CinematicFooter />
     </div>
