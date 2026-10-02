@@ -5,6 +5,7 @@ import Link from 'next/link'
 import {
   CircleNotch, CaretRight, CaretLeft,
   Newspaper, MapPin, Receipt, Bank, House, TrendUp, CurrencyInr,
+  Users, Fire, Handshake,
 } from '@phosphor-icons/react'
 import { getRole } from '@/lib/plan'
 import { LiveActivityFeed } from '@/components/LiveActivityFeed'
@@ -147,19 +148,20 @@ function KPIMicroBars({ vals, color }: { vals: number[]; color: string }) {
 
 function KPICard({
   title, value, sub, badge, badgeColor, badgeBg,
-  accent, accentBg, dark, children,
+  accent, accentBg, dark, icon, children,
 }: {
   title: string; value: string | number; sub?: string
   badge?: string; badgeColor?: string; badgeBg?: string
   accent?: string; accentBg?: string; dark?: boolean
+  icon?: React.ReactNode
   children?: React.ReactNode
 }) {
   return (
     <div style={{ background: dark ? 'linear-gradient(150deg,#101832 0%,#1c2750 100%)' : PANEL, border: dark ? 'none' : `1px solid ${BORDER}`, borderRadius: 16, padding: 16, boxShadow: dark ? 'none' : '0 1px 2px rgba(15,23,41,.04)', position: 'relative', overflow: 'hidden' }}>
       {dark && <div style={{ position: 'absolute', right: -40, top: -40, width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle,rgba(29,78,216,.55),transparent 70%)', pointerEvents: 'none' }} />}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
-        <div style={{ width: 32, height: 32, borderRadius: 9, background: accentBg ?? BLUE_DIM, display: 'grid', placeItems: 'center' }}>
-          {dark && <span style={{ fontFamily: MONO, fontWeight: 600, fontSize: 14, color: '#a8b1cc' }}>₹</span>}
+        <div style={{ width: 32, height: 32, borderRadius: 9, background: accentBg ?? BLUE_DIM, display: 'grid', placeItems: 'center', color: dark ? '#a8b1cc' : (accent ?? BLUE) }}>
+          {icon}
         </div>
         {badge && (
           <span style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10, fontWeight: 600, color: badgeColor, background: badgeBg, padding: '4px 7px', borderRadius: 99 }}>
@@ -1001,13 +1003,13 @@ export default function DashboardPage() {
 
         {/* ── KPI Row ─────────────────────────────────────────────────────────────── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 16 }}>
-          <KPICard title="Total leads" value={metrics.total} badge={`+${metrics.thisWk} wk`} badgeColor={MUTED} badgeBg="#f1f3f9" accentBg="#dbeafe" accent={BLUE}>
+          <KPICard title="Total leads" value={metrics.total} badge={`+${metrics.thisWk} wk`} badgeColor={MUTED} badgeBg="#f1f3f9" accentBg="#dbeafe" accent={BLUE} icon={<Users size={16} weight="light" />}>
             <KPISparkline vals={weeklyVals} />
           </KPICard>
-          <KPICard title="Hot leads " sub="· intent 70+" value={metrics.hot} badge="High priority" badgeColor="#b45309" badgeBg="#fef3c7" accentBg="#fff0e4" accent={AMBER}>
+          <KPICard title="Hot leads " sub="· intent 70+" value={metrics.hot} badge="High priority" badgeColor="#b45309" badgeBg="#fef3c7" accentBg="#fff0e4" accent={AMBER} icon={<Fire size={16} weight="light" />}>
             <KPIMicroBars vals={hotBarVals} color={AMBER} />
           </KPICard>
-          <KPICard title="Pipeline value " sub="· combined budgets" value={formatPipeline(metrics.pipe)} badge={metrics.pipe > 0 ? "active" : undefined} badgeColor="#6ee7b7" badgeBg="rgba(16,185,129,.16)" dark>
+          <KPICard title="Pipeline value " sub="· combined budgets" value={formatPipeline(metrics.pipe)} badge={metrics.pipe > 0 ? "active" : undefined} badgeColor="#6ee7b7" badgeBg="rgba(16,185,129,.16)" dark icon={<CurrencyInr size={16} weight="light" />}>
             <div style={{ marginTop: 14, height: 24, display: 'flex', alignItems: 'center', gap: 7 }}>
               <div style={{ flex: 1, height: 5, borderRadius: 5, background: 'rgba(255,255,255,.14)', overflow: 'hidden' }}>
                 <div style={{ width: '74%', height: '100%', background: 'linear-gradient(90deg,#6ee7b7,#3b5cff)', borderRadius: 5 }} />
@@ -1015,7 +1017,7 @@ export default function DashboardPage() {
               <span style={{ fontFamily: MONO, fontSize: 10, color: '#a8b1cc' }}>74% weighted</span>
             </div>
           </KPICard>
-          <KPICard title="Deals closed " sub="· this month" value={metrics.closed} badge={metrics.closed > 0 ? `+${metrics.closed} won` : undefined} badgeColor="#047857" badgeBg="#e2fbef" accentBg="#e2fbef" accent={EMERALD}>
+          <KPICard title="Deals closed " sub="· this month" value={metrics.closed} badge={metrics.closed > 0 ? `+${metrics.closed} won` : undefined} badgeColor="#047857" badgeBg="#e2fbef" accentBg="#e2fbef" accent={EMERALD} icon={<Handshake size={16} weight="light" />}>
             <div style={{ display: 'flex', gap: 4, marginTop: 12, height: 24, alignItems: 'center' }}>
               {Array.from({ length: 10 }, (_, i) => (
                 <span key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: i < Math.min(metrics.closed, 10) ? EMERALD : '#e5e8f1', display: 'block' }} />
