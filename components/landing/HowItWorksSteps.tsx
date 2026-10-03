@@ -388,7 +388,7 @@ export function HowItWorksSteps({
 
             <h2
               id={`${uid}-title`}
-              className="mt-5 text-[44px] font-extrabold leading-[1.02] tracking-[-0.035em] sm:text-[60px]"
+              className="mt-5 text-[34px] font-extrabold leading-[1.06] tracking-[-0.035em] sm:text-[44px] lg:text-[46px]"
             >
               {HEADLINE.map(([word, accent], i) => (
                 <Fragment key={word}>

@@ -31,6 +31,8 @@ import HowItWorksSteps from './HowItWorksSteps'
 import ProblemStory from './ProblemStory'
 import HeroDashboard from './HeroDashboard'
 import SolutionBento from './SolutionBento'
+// import ImpressiveFeatures from './ImpressiveFeatures'  // frozen — keep file, swap replaced by FeatureShowcase
+import FeatureShowcase from './FeatureShowcase'
 
 /* ─── Scroll-reveal hook ──────────────────────────────────────────────────── */
 function useScrollReveal() {
@@ -1351,7 +1353,7 @@ function Hero() {
 
         {/* Subtitle */}
         <p
-          className="lp-fade-up leading-relaxed mb-8"
+          className="lp-fade-up leading-relaxed mb-14"
           style={{ fontSize: 14, color: 'rgba(255,255,255,0.52)', maxWidth: 360, opacity: 0, animationDelay: '0.26s' }}
         >
           Auto-capture from 99acres, MagicBricks &amp; Housing.com.
@@ -4508,6 +4510,8 @@ export default function LandingPage() {
       <SolutionBento />
       {/* <SolutionSection /> */}
       <HowItWorksSteps />
+      {/* <ImpressiveFeatures /> */}
+      <FeatureShowcase />
       {/* ── What you get — frozen, not deleted ── */}
       {/* <UniqueFeatures /> */}
       {/* <Features /> */}

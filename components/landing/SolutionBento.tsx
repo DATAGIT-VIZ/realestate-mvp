@@ -232,53 +232,43 @@ export function SolutionBento({
 
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
             {/* ── Header ── */}
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,390px)] lg:items-end lg:gap-14">
-              <div>
-                <motion.div
-                  {...rise(0)}
-                  className="flex items-center gap-3 text-[12px] font-medium uppercase tracking-[0.16em] text-[#2B59E0]"
-                  style={MONO}
+            <div className="flex flex-col gap-4">
+              <motion.div
+                {...rise(0)}
+                className="flex items-center gap-3 text-[12px] font-medium uppercase tracking-[0.16em] text-[#2B59E0]"
+                style={MONO}
+              >
+                <span className="h-[2px] w-7 rounded-full bg-[#2B59E0]" />
+                The solution
+              </motion.div>
+              <h2
+                id={`${uid}-title`}
+                className="text-[34px] font-extrabold leading-[1.06] tracking-[-0.035em] sm:text-[44px] lg:text-[46px]"
+              >
+                <motion.span
+                  className="inline-block"
+                  initial={{ opacity: 0, y: 30, filter: 'blur(10px)' }}
+                  whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  viewport={{ once: true, amount: 0.6 }}
+                  transition={{ duration: 0.7, ease: EASE, delay: 0.06 }}
                 >
-                  <span className="h-[2px] w-7 rounded-full bg-[#2B59E0]" />
-                  The solution
-                </motion.div>
-                <h2
-                  id={`${uid}-title`}
-                  className="mt-4 text-[34px] font-extrabold leading-[1.06] tracking-[-0.035em] sm:text-[44px] lg:text-[46px]"
+                  One CRM.
+                </motion.span>
+                {' '}
+                <motion.span
+                  className="inline-block"
+                  style={{ color: PRI }}
+                  initial={{ opacity: 0, y: 30, filter: 'blur(10px)' }}
+                  whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  viewport={{ once: true, amount: 0.6 }}
+                  transition={{ duration: 0.7, ease: EASE, delay: 0.2 }}
                 >
-                  {[
-                    ['One', 'CRM.'],
-                    ['Every', 'leak', 'closed.'],
-                  ].map((line, l) => (
-                    <Fragment key={l}>
-                      <span className="block">
-                        {line.map((word, w) => (
-                          <Fragment key={word}>
-                            <motion.span
-                              className="inline-block"
-                              style={{ color: l ? PRI : undefined }}
-                              initial={{ opacity: 0, y: 30, filter: 'blur(10px)' }}
-                              whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                              viewport={{ once: true, amount: 0.6 }}
-                              transition={{
-                                duration: 0.7,
-                                ease: EASE,
-                                delay: 0.06 + (l * 2 + w) * 0.07,
-                              }}
-                            >
-                              {word}
-                            </motion.span>
-                            {w < line.length - 1 && ' '}
-                          </Fragment>
-                        ))}
-                      </span>
-                    </Fragment>
-                  ))}
-                </h2>
-              </div>
+                  Every leak closed.
+                </motion.span>
+              </h2>
               <motion.p
                 {...rise(0.3)}
-                className="max-w-xl text-[16px] leading-relaxed text-[#5C6479] sm:text-[17px] lg:pb-1.5"
+                className="max-w-xl text-[16px] leading-relaxed text-[#5C6479] sm:text-[17px]"
               >
                 LeadGap catches every enquiry, tells your team who to call first and keeps every
                 follow-up and deal in view.
