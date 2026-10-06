@@ -127,7 +127,7 @@ export function AddLeadModal({ onClose, onSuccess }: Props) {
           propertyType: form.propertyType ? [form.propertyType] : undefined,
           timeline: form.timeline || undefined,
           localities: form.localities ? form.localities.split(',').map(s => s.trim()).filter(Boolean) : undefined,
-          status: 'Fresh',
+          status: 'New',
         }),
       })
       const json = await res.json()

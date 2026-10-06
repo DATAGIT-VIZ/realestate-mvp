@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import {
   CircleNotch, CaretRight, CaretLeft,
@@ -9,6 +10,12 @@ import {
 } from '@phosphor-icons/react'
 import { getRole } from '@/lib/plan'
 import { LiveActivityFeed } from '@/components/LiveActivityFeed'
+
+const NcrMap = dynamic(() => import('@/components/NcrMap'), { ssr: false, loading: () => (
+  <div style={{ width: '100%', height: '100%', background: '#f4f6fb', borderRadius: 8, display: 'grid', placeItems: 'center' }}>
+    <CircleNotch size={18} weight="light" color="#9aa2b8" style={{ animation: 'spin 1s linear infinite' }} />
+  </div>
+) })
 
 // ─── Design tokens ──────────────────────────────────────────────────────────────
 const BG     = '#eef0f6'
@@ -51,6 +58,7 @@ type CRMLead = {
   budgetMin: number | null
   budgetMax: number | null
   leadPortalId: string | null
+  city: string | null
   escalated: boolean
   createdAt: string
   updatedAt: string
@@ -606,51 +614,62 @@ function RetentionChart() {
 }
 
 // ─── Top customer locations ───────────────────────────────────────────────────────
-const LOCATIONS = [
-  { rank: 1, name: 'Gurugram',           meta: '51 leads · ₹109 Cr', pct: 48, hue: BLUE },
-  { rank: 2, name: 'Noida Extension',    meta: '33 leads · ₹71 Cr',  pct: 31, hue: '#7c5cfc' },
-  { rank: 3, name: 'Dwarka Expressway',  meta: '15 leads · ₹32 Cr',  pct: 21, hue: AMBER },
-  { rank: 4, name: 'Greater Faridabad',  meta: '7 leads · ₹16 Cr',   pct: 9,  hue: EMERALD },
-]
+const HUE_CYCLE = [BLUE, '#7c5cfc', AMBER, EMERALD, '#e11d48', '#0891b2']
 
-function TopLocations() {
+function TopLocations({ leads }: { leads: CRMLead[] }) {
+  const { locations, heatPoints } = useMemo(() => {
+    const counts: Record<string, { count: number; budget: number }> = {}
+    leads.forEach(l => {
+      const city = l.city?.trim()
+      if (!city) return
+      if (!counts[city]) counts[city] = { count: 0, budget: 0 }
+      counts[city].count++
+      counts[city].budget += l.budgetMax ?? l.budgetMin ?? 0
+    })
+    const sorted = Object.entries(counts)
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 5)
+    const total = sorted.reduce((s, [, v]) => s + v.count, 0) || 1
+    const locations = sorted.map(([name, v], i) => ({
+      rank: i + 1, name,
+      meta: `${v.count} lead${v.count !== 1 ? 's' : ''} · ₹${(v.budget / 1e7).toFixed(0)} Cr`,
+      pct: Math.round((v.count / total) * 100),
+      hue: HUE_CYCLE[i % HUE_CYCLE.length],
+    }))
+    const heatPoints = Object.entries(counts).map(([city, v]) => ({ city, count: v.count }))
+    return { locations, heatPoints }
+  }, [leads])
+
   return (
     <Card style={{ padding: 16, width: 332, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
       <CardTitle>Top customer locations</CardTitle>
 
-      {/* Map placeholder */}
-      <div style={{ position: 'relative', borderRadius: 10, border: `1px solid #e8ebf4`, background: 'repeating-linear-gradient(135deg,#f4f6fb 0 8px,#eaeef7 8px 16px)', height: 130, overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', textAlign: 'center', padding: '0 16px' }}>
-          <div>
-            <MapPin size={20} weight="light" color={LABEL} />
-            <div style={{ fontFamily: MONO, fontSize: 9.5, color: '#8d95ab', letterSpacing: '.06em', marginTop: 6, lineHeight: 1.5 }}>NCR HEAT MAP<br />connect map asset here</div>
-          </div>
-        </div>
-        {/* Zoom controls */}
-        <div style={{ position: 'absolute', left: 8, top: 8, display: 'flex', flexDirection: 'column', background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 6, overflow: 'hidden' }}>
-          {['+','−'].map((s, i) => (
-            <span key={i} style={{ width: 24, height: 24, display: 'grid', placeItems: 'center', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 13, fontWeight: 600, color: '#3c4459', cursor: 'pointer', borderBottom: i === 0 ? `1px solid #eef0f6` : 'none' }}>{s}</span>
-          ))}
-        </div>
+      {/* Live heat map */}
+      <div style={{ height: 160, borderRadius: 8, overflow: 'hidden', border: `1px solid #e8ebf4` }}>
+        <NcrMap points={heatPoints} />
       </div>
 
       {/* Location list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {LOCATIONS.map(l => (
-          <div key={l.rank} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-            <span style={{ fontFamily: MONO, fontSize: 10, color: LABEL, width: 12, flexShrink: 0 }}>{l.rank}</span>
-            <span style={{ width: 20, height: 20, flexShrink: 0, borderRadius: 6, background: `${l.hue}1f`, border: `1px solid ${l.hue}55`, display: 'block' }} />
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: 'block', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 12, fontWeight: 600, color: TEXT }}>{l.name}</span>
-              <span style={{ display: 'block', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10, color: LABEL, marginTop: 2 }}>{l.meta}</span>
-            </span>
-            <span style={{ width: 52, height: 5, borderRadius: 5, background: '#f1f3f9', overflow: 'hidden', flexShrink: 0 }}>
-              <span style={{ display: 'block', height: 5, width: `${l.pct * 2}%`, maxWidth: '100%', borderRadius: 5, background: l.hue }} />
-            </span>
-            <span style={{ fontFamily: MONO, fontSize: 10.5, fontWeight: 600, color: TEXT, width: 30, textAlign: 'right' }}>{l.pct}%</span>
-          </div>
-        ))}
-      </div>
+      {locations.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {locations.map(l => (
+            <div key={l.rank} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+              <span style={{ fontFamily: MONO, fontSize: 10, color: LABEL, width: 12, flexShrink: 0 }}>{l.rank}</span>
+              <span style={{ width: 20, height: 20, flexShrink: 0, borderRadius: 6, background: `${l.hue}1f`, border: `1px solid ${l.hue}55`, display: 'block' }} />
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 12, fontWeight: 600, color: TEXT }}>{l.name}</span>
+                <span style={{ display: 'block', fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 10, color: LABEL, marginTop: 2 }}>{l.meta}</span>
+              </span>
+              <span style={{ width: 52, height: 5, borderRadius: 5, background: '#f1f3f9', overflow: 'hidden', flexShrink: 0 }}>
+                <span style={{ display: 'block', height: 5, width: `${l.pct * 2}%`, maxWidth: '100%', borderRadius: 5, background: l.hue }} />
+              </span>
+              <span style={{ fontFamily: MONO, fontSize: 10.5, fontWeight: 600, color: TEXT, width: 30, textAlign: 'right' }}>{l.pct}%</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p style={{ fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 12, color: LABEL, textAlign: 'center', margin: 0 }}>No city data yet</p>
+      )}
     </Card>
   )
 }
@@ -1041,7 +1060,7 @@ export default function DashboardPage() {
         {/* ── Retention rate + Top locations ────────────────────────────────────── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 332px', gap: 16, marginBottom: 16 }}>
           <RetentionChart />
-          <TopLocations />
+          <TopLocations leads={leads} />
         </div>
 
         {/* ── Action Queue ──────────────────────────────────────────────────────── */}
