@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, useCallback, type ReactNode, type ElementType } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -8,51 +8,69 @@ import { type CRMLead } from '@/lib/twenty'
 import { LogActivityModal } from '@/components/LogActivityModal'
 import { WhatsAppModal } from '@/components/WhatsAppModal'
 import { CallModal } from '@/components/CallModal'
-import { FollowUpWriter } from '@/components/FollowUpWriter'
-import { PropertyMatcher } from '@/components/PropertyMatcher'
+// import { FollowUpWriter } from '@/components/FollowUpWriter'   // frozen — park until inventory is wired
+// import { PropertyMatcher } from '@/components/PropertyMatcher' // frozen — park until inventory is wired
 import { ReassignModal } from '@/components/ReassignModal'
 import { EnrollSequenceModal } from '@/components/EnrollSequenceModal'
 import {
-  ArrowLeft, Phone, Envelope, MapPin, Clock, Tag,
-  TrendUp, CalendarBlank, Trash, CircleNotch, Pulse,
-  Warning, Plus, ChatCircle, CheckCircle, XCircle,
-  MinusCircle, Question, CaretDown, User, PhoneSlash, Copy,
-  PaperPlaneTilt, Lightning, Bell, Medal,
-  ClipboardText, Moon, SunDim, Flame, Check, X, ArrowFatUp,
-  CheckSquare, UserSwitch,
+  Phone, Envelope, MapPin, Clock, Tag, TrendUp, CalendarBlank, Trash, CircleNotch, Pulse,
+  Warning, Plus, ChatCircle, CheckCircle, XCircle, MinusCircle, Question, CaretDown, CaretLeft,
+  PhoneSlash, Copy, PaperPlaneTilt, Lightning, Bell, Medal, ClipboardText, Snowflake, SunDim, Flame,
+  Check, X, ArrowFatUp, ArrowFatDown, CheckSquare, UserSwitch, WhatsappLogo, DotsThree, Gauge, Wallet,
+  ClockCounterClockwise, HourglassMedium, Receipt, Handshake, Buildings, UsersThree, NotePencil,
+  Globe, FacebookLogo, GoogleLogo, Megaphone, House,
 } from '@phosphor-icons/react'
 
-// ─── Design tokens ────────────────────────────────────────────────────────────
-const BG      = '#FAFAF8'
-const PANEL   = '#FFFFFF'
-const BORDER  = '#E8ECF0'
-const BLUE         = '#1D4ED8'
-const PRIMARY_DIM  = 'rgba(29,78,216,0.08)'
-const PRIMARY_BORDER = 'rgba(29,78,216,0.22)'
-const PRIMARY_GRAD = 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)'
-const EMERALD = '#059669'
-const RED     = '#DC2626'
-const AMBER   = '#F59E0B'
-const TEXT    = '#263238'
-const MUTED   = '#78889B'
-const MUTED2  = '#455A64'
-const WA_GRN  = '#16A34A'
+// ─── Design tokens (same as the leads list) ───────────────────────────────────
+const CANVAS   = '#FFFFFF'
+const SURFACE  = '#F9FAFB'
+const BORDER   = '#EAECF0'
+const BORDER_2 = '#D0D5DD'
+const TEXT     = '#101828'
+const TEXT_2   = '#344054'
+const MUTED    = '#475467'
+const SUBTLE   = '#667085'
+const LABEL    = '#98A2B3'
+const BLUE     = '#1D4ED8'
+const BLUE_BG  = '#EFF4FF'
+const BLUE_LN  = '#B2CCFF'
+const GREEN    = '#067647'
+const RED      = '#B42318'
+const WA_GRN   = '#16A34A'
+const XS       = '0 1px 2px rgba(16,24,40,0.05)'
+const MONO     = 'ui-monospace, SFMono-Regular, Menlo, monospace'
+const FIELD    = 'w-full rounded-[10px] border bg-white px-3.5 text-[14px] outline-none transition-[border-color,box-shadow] placeholder:text-[#98A2B3] focus:border-[#84ADFF] focus:shadow-[0_0_0_4px_rgba(29,78,216,0.12)]'
 
-const ACT_COLORS: Record<string, { icon: string; bg: string; accent: string }> = {
-  'Call Made':            { icon: '#059669', bg: '#ECFDF5', accent: '#059669' },
-  'Call Missed':          { icon: '#DC2626', bg: '#FEF2F2', accent: '#DC2626' },
-  'WhatsApp Sent':        { icon: WA_GRN,   bg: '#F0FDF4', accent: WA_GRN    },
-  'WhatsApp Received':    { icon: WA_GRN,   bg: '#F0FDF4', accent: WA_GRN    },
-  'Email Sent':           { icon: '#1D4ED8', bg: PRIMARY_DIM, accent: '#1D4ED8' },
-  'Email Received':       { icon: '#1D4ED8', bg: PRIMARY_DIM, accent: '#1D4ED8' },
-  'Site Visit Scheduled': { icon: '#F59E0B', bg: 'rgba(245,158,11,0.09)', accent: '#F59E0B' },
-  'Site Visit Done':      { icon: '#1D4ED8', bg: 'rgba(29,78,216,0.08)',  accent: '#1D4ED8' },
-  'Follow Up Set':        { icon: '#F59E0B', bg: 'rgba(245,158,11,0.09)', accent: '#F59E0B' },
-  'Note':                 { icon: BLUE,      bg: PRIMARY_DIM, accent: BLUE    },
-  'Status Changed':       { icon: '#1D4ED8', bg: PRIMARY_DIM, accent: '#1D4ED8' },
-  'Escalated':            { icon: '#D97706', bg: 'rgba(245,158,11,0.09)', accent: '#D97706' },
-  'Escalation Removed':   { icon: '#94A3B8', bg: '#F8FAFC', accent: '#94A3B8' },
+// Status colours, shared with the list page
+const STATUS_PILL: Record<string, { color: string; bg: string; border: string; dot: string }> = {
+  New:          { color: '#344054', bg: '#F9FAFB', border: '#D0D5DD', dot: '#98A2B3' },
+  Cold:         { color: '#026AA2', bg: '#F0F9FF', border: '#B9E6FE', dot: '#0BA5EC' },
+  Warm:         { color: '#B54708', bg: '#FFFAEB', border: '#FEDF89', dot: '#F79009' },
+  Hot:          { color: '#C4320A', bg: '#FFF6ED', border: '#F9DBAF', dot: '#EF6820' },
+  Closed:       { color: '#067647', bg: '#ECFDF3', border: '#ABEFC6', dot: '#17B26A' },
+  Disqualified: { color: '#C01048', bg: '#FFF1F3', border: '#FECDD6', dot: '#F63D68' },
 }
+
+const ACT_COLORS: Record<string, { icon: string; bg: string; ring: string }> = {
+  'Call Made':            { icon: '#067647', bg: '#ECFDF3', ring: '#ABEFC6' },
+  'Call Missed':          { icon: '#B42318', bg: '#FEF3F2', ring: '#FECDCA' },
+  'WhatsApp Sent':        { icon: '#15803D', bg: '#F0FDF4', ring: '#BBF7D0' },
+  'WhatsApp Received':    { icon: '#15803D', bg: '#F0FDF4', ring: '#BBF7D0' },
+  'Email Sent':           { icon: BLUE,      bg: BLUE_BG,   ring: BLUE_LN   },
+  'Email Received':       { icon: BLUE,      bg: BLUE_BG,   ring: BLUE_LN   },
+  'Site Visit Scheduled': { icon: '#B54708', bg: '#FFFAEB', ring: '#FEDF89' },
+  'Site Visit Done':      { icon: '#3538CD', bg: '#EEF4FF', ring: '#C7D7FE' },
+  'VM Done':              { icon: '#3538CD', bg: '#EEF4FF', ring: '#C7D7FE' },
+  'OBM Done':             { icon: '#3538CD', bg: '#EEF4FF', ring: '#C7D7FE' },
+  'EOI Received':         { icon: '#C4320A', bg: '#FFF6ED', ring: '#F9DBAF' },
+  'Deal Closed':          { icon: '#067647', bg: '#ECFDF3', ring: '#ABEFC6' },
+  'Follow Up Set':        { icon: '#B54708', bg: '#FFFAEB', ring: '#FEDF89' },
+  'Note':                 { icon: '#475467', bg: '#F9FAFB', ring: '#EAECF0' },
+  'Status Changed':       { icon: BLUE,      bg: BLUE_BG,   ring: BLUE_LN   },
+  'Escalated':            { icon: '#B54708', bg: '#FFFAEB', ring: '#FEDF89' },
+  'Escalation Removed':   { icon: '#667085', bg: '#F9FAFB', ring: '#EAECF0' },
+}
+const ACT_DEFAULT = { icon: '#475467', bg: '#F9FAFB', ring: '#EAECF0' }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type LeadActivity = {
@@ -92,11 +110,75 @@ function getAvatarImg(csId: string): string | null {
   return AVATAR_MAP[csId] ?? null
 }
 
+// Avatar: soft two-tone gradient, cycles deterministically by name (same as the list)
+const AVATAR_PALETTE = [
+  { from: '#E0EAFF', to: '#C7D7FE', fg: '#2D31A6' },
+  { from: '#FEF0C7', to: '#FEDF89', fg: '#93370D' },
+  { from: '#DCFAE6', to: '#ABEFC6', fg: '#085D3A' },
+  { from: '#F4EBFF', to: '#E9D7FE', fg: '#53389E' },
+  { from: '#FDF2FA', to: '#FCCEEE', fg: '#9E165F' },
+  { from: '#E0F2FE', to: '#B9E6FE', fg: '#065986' },
+  { from: '#FEF6EE', to: '#F9DBAF', fg: '#932F19' },
+  { from: '#F0F9FF', to: '#D1E9FF', fg: '#1849A9' },
+]
+function avatarColor(name: string) {
+  let h = 0
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) % AVATAR_PALETTE.length
+  return AVATAR_PALETTE[Math.abs(h)]
+}
+
+// Source → label + portal logo (public/portals) or icon (same as the list)
+type SourceMeta = { label: string; logo?: string; Icon?: typeof Globe; color?: string }
+const SOURCE_META: Record<string, SourceMeta> = {
+  OPT99ACRES:     { label: '99acres', logo: '/portals/99acres.png' },
+  '99ACRES':      { label: '99acres', logo: '/portals/99acres.png' },
+  MAGICBRICKS:    { label: 'MagicBricks', logo: '/portals/magicbricks.png' },
+  HOUSINGCOM:     { label: 'Housing.com', logo: '/portals/housing.png' },
+  HOUSING:        { label: 'Housing.com', logo: '/portals/housing.png' },
+  MAKAAN:         { label: 'Makaan', logo: '/portals/makaan.png' },
+  NOBROKER:       { label: 'NoBroker', logo: '/portals/nobroker.png' },
+  PROPTIGER:      { label: 'PropTiger', logo: '/portals/proptiger.png' },
+  SQUAREYARDS:    { label: 'Square Yards', logo: '/portals/squareyards.png' },
+  COMMONFLOOR:    { label: 'CommonFloor', logo: '/portals/commonfloor.png' },
+  FACEBOOK:       { label: 'Facebook', Icon: FacebookLogo, color: '#1877F2' },
+  GOOGLE:         { label: 'Google Ads', Icon: GoogleLogo, color: '#EA4335' },
+  CHANNELPARTNER: { label: 'Channel Partner', Icon: Handshake, color: '#7A5AF8' },
+  MARKETING:      { label: 'Marketing', Icon: Megaphone, color: '#DD2590' },
+}
+function sourceMeta(raw: string): SourceMeta {
+  const key = raw.toUpperCase().replace(/[^A-Z0-9]/g, '')
+  if (SOURCE_META[key]) return SOURCE_META[key]
+  const label = raw.length > 3 && raw === raw.toUpperCase()
+    ? raw.toLowerCase().split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+    : raw
+  return { label, Icon: Globe, color: SUBTLE }
+}
+function SourceMark({ raw, size = 20 }: { raw: string; size?: number }) {
+  const m = sourceMeta(raw)
+  if (m.logo) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={m.logo} alt="" width={size} height={size} className="shrink-0 rounded-[6px]" style={{ width: size, height: size }} />
+  }
+  const Icon = m.Icon ?? Globe
+  return (
+    <span className="grid shrink-0 place-items-center rounded-[6px] border bg-white" style={{ width: size, height: size, borderColor: BORDER }}>
+      <Icon size={size * 0.62} weight="fill" color={m.color} />
+    </span>
+  )
+}
+
 function formatBudget(min: number | null, max: number | null): string {
   const fmt = (n: number) => n >= 10_000_000 ? `${+(n / 10_000_000).toFixed(1)}Cr` : `${+(n / 100_000).toFixed(1)}L`
   if (min && max) return `₹${fmt(min)} – ₹${fmt(max)}`
   if (min) return `₹${fmt(min)}+`
   if (max) return `Up to ₹${fmt(max)}`
+  return '—'
+}
+function formatBudgetShort(min: number | null, max: number | null): string {
+  const fmt = (n: number) => n >= 10_000_000 ? `${+(n / 10_000_000).toFixed(1)}Cr` : `${+(n / 100_000).toFixed(1)}L`
+  if (min && max) return `₹${fmt(min)}–${fmt(max)}`
+  if (min) return `₹${fmt(min)}+`
+  if (max) return `≤ ₹${fmt(max)}`
   return '—'
 }
 function timeAgo(d: string) {
@@ -111,10 +193,17 @@ function formatDate(s: string) {
 function formatShortDate(s: string) {
   return new Date(s).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 }
+function dayLabel(iso: string) {
+  const d = new Date(iso), t = new Date()
+  if (d.toDateString() === t.toDateString()) return 'Today'
+  const y = new Date(t); y.setDate(t.getDate() - 1)
+  if (d.toDateString() === y.toDateString()) return 'Yesterday'
+  return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: d.getFullYear() === t.getFullYear() ? undefined : 'numeric' })
+}
 function scoreStyle(score: number) {
-  if (score >= 70) return { label: 'High Intent', color: '#1D4ED8', ring: '#1D4ED8', bg: 'rgba(29,78,216,0.08)' }
-  if (score >= 40) return { label: 'Medium',      color: '#F59E0B', ring: '#F59E0B', bg: 'rgba(245,158,11,0.09)' }
-  return               { label: 'Low',            color: '#78889B', ring: '#CBD5E1', bg: '#F0F2F5' }
+  if (score >= 70) return { label: 'High intent',   color: BLUE,      bg: BLUE_BG,   border: BLUE_LN   }
+  if (score >= 40) return { label: 'Medium intent', color: '#B54708', bg: '#FFFAEB', border: '#FEDF89' }
+  return               { label: 'Low intent',      color: MUTED,     bg: SURFACE,   border: BORDER_2  }
 }
 function scoreBreakdown(l: CRMLead) {
   const ph = getPhone(l), em = getEmail(l)
@@ -135,40 +224,24 @@ function scoreBreakdown(l: CRMLead) {
   ]
 }
 
-const OUTCOME_CFG: Record<string, { Icon: React.ElementType; color: string; bg: string }> = {
-  'Positive':    { Icon: CheckCircle, color: '#059669', bg: '#ECFDF5' },
-  'Neutral':     { Icon: MinusCircle, color: '#64748B', bg: '#F1F5F9' },
-  'Negative':    { Icon: XCircle,     color: '#DC2626', bg: '#FEF2F2' },
-  'No Response': { Icon: Question,    color: '#1D4ED8', bg: 'rgba(29,78,216,0.08)' },
+const OUTCOME_CFG: Record<string, { Icon: ElementType; color: string; bg: string; border: string }> = {
+  'Positive':    { Icon: CheckCircle, color: '#067647', bg: '#ECFDF3', border: '#ABEFC6' },
+  'Neutral':     { Icon: MinusCircle, color: '#475467', bg: '#F9FAFB', border: '#EAECF0' },
+  'Negative':    { Icon: XCircle,     color: '#B42318', bg: '#FEF3F2', border: '#FECDCA' },
+  'No Response': { Icon: Question,    color: BLUE,      bg: BLUE_BG,   border: BLUE_LN   },
 }
-const ACT_ICON: Record<string, React.ElementType> = {
-  'Call Made': Phone, 'Call Missed': Phone, 'WhatsApp Sent': ChatCircle,
-  'WhatsApp Received': ChatCircle, 'Email Sent': Envelope, 'Email Received': Envelope,
+const ACT_ICON: Record<string, ElementType> = {
+  'Call Made': Phone, 'Call Missed': PhoneSlash, 'WhatsApp Sent': WhatsappLogo,
+  'WhatsApp Received': WhatsappLogo, 'Email Sent': Envelope, 'Email Received': Envelope,
   'Site Visit Scheduled': CalendarBlank, 'Site Visit Done': MapPin, 'Follow Up Set': Clock,
-  'Note': Tag, 'Status Changed': TrendUp,
+  'Note': NotePencil, 'Status Changed': TrendUp, 'VM Done': Buildings, 'OBM Done': UsersThree,
+  'EOI Received': Receipt, 'Deal Closed': Handshake, 'Escalated': ArrowFatUp, 'Escalation Removed': ArrowFatDown,
 }
 
-const STAGES = [
-  { id: 'New',          label: 'New',          color: '#64748B', desc: 'Unworked — just assigned',            terminal: false },
-  { id: 'Cold',         label: 'Cold',         color: '#2563EB', desc: 'Calls / WhatsApp only, no engagement', terminal: false },
-  { id: 'Warm',         label: 'Warm',         color: '#F59E0B', desc: 'VM / OBM / SV done or docs requested', terminal: false },
-  { id: 'Hot',          label: 'Hot',          color: '#1D4ED8', desc: 'EOI received — high intent to book',   terminal: false },
-  { id: 'Closed',       label: 'Closed',       color: '#059669', desc: 'Deals — EOI paid',               terminal: true  },
-  { id: 'Disqualified', label: 'Disqualified', color: '#94A3B8', desc: 'Not proceeding — NC or rejected',      terminal: true  },
-]
-const BUCKETS = [
-  { label: 'New',          color: '#64748B', stages: ['New']          },
-  { label: 'Cold',         color: '#2563EB', stages: ['Cold']         },
-  { label: 'Warm',         color: '#F59E0B', stages: ['Warm']         },
-  { label: 'Hot',          color: '#1D4ED8', stages: ['Hot']          },
-  { label: 'Closed',       color: '#059669', stages: ['Closed']       },
-  { label: 'Disqualified', color: '#94A3B8', stages: ['Disqualified'] },
-]
-
-const PRIORITY_CFG: Record<string, { color: string; bg: string }> = {
-  High:   { color: '#DC2626', bg: 'rgba(220,38,38,0.09)'  },
-  Medium: { color: '#F59E0B', bg: 'rgba(245,158,11,0.09)' },
-  Low:    { color: '#78889B', bg: '#F1F5F9'               },
+const PRIORITY_CFG: Record<string, { color: string; bg: string; border: string }> = {
+  High:   { color: '#B42318', bg: '#FEF3F2', border: '#FECDCA' },
+  Medium: { color: '#B54708', bg: '#FFFAEB', border: '#FEDF89' },
+  Low:    { color: '#475467', bg: '#F9FAFB', border: '#EAECF0' },
 }
 const TASK_TYPES = ['Follow Up', 'Call Back', 'Site Visit', 'Send Brochure', 'Meeting', 'Send Proposal', 'Check In', 'Custom']
 
@@ -181,133 +254,368 @@ const TL_FILTER_CFG: { key: TLFilter; label: string }[] = [
   { key: 'tasks',    label: 'Tasks'    },
 ]
 
-// ─── Shared sub-components ────────────────────────────────────────────────────
-function SideCard({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+// Lifecycle
+const PIPELINE = ['New', 'Cold', 'Warm', 'Hot', 'Closed'] as const
+const STAGE_CFG: Record<string, { Icon: ElementType; desc: string }> = {
+  New:          { Icon: ClipboardText, desc: 'Unworked — just assigned' },
+  Cold:         { Icon: Snowflake,     desc: 'Calls / WA only' },
+  Warm:         { Icon: SunDim,        desc: 'VM / OBM / SV done' },
+  Hot:          { Icon: Flame,         desc: 'EOI received' },
+  Closed:       { Icon: Handshake,     desc: 'Deals — EOI paid' },
+  Disqualified: { Icon: X,             desc: 'NC / not proceeding' },
+}
+// Which activity type drives each stage
+const STAGE_TRIGGER: Record<string, string[]> = {
+  Cold:   ['Call Made', 'Call Missed', 'WhatsApp Sent', 'WhatsApp Received', 'Email Sent'],
+  Warm:   ['VM Done', 'OBM Done', 'Site Visit Done', 'Site Visit Scheduled'],
+  Hot:    ['EOI Received'],
+  Closed: ['Deal Closed'],
+}
+
+// ─── Small UI pieces ──────────────────────────────────────────────────────────
+
+/** Popover anchored under its trigger. Closes on outside click or Escape, stays inside the viewport. */
+function Popover({ open, onOpenChange, trigger, children, align = 'left', width = 240 }: {
+  open: boolean; onOpenChange: (open: boolean) => void; trigger: ReactNode; children: ReactNode
+  align?: 'left' | 'right'; width?: number
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const el = panelRef.current
+    if (!open || !el) return
+    el.style.transform = ''
+    const r = el.getBoundingClientRect()
+    const over = r.right - (document.documentElement.clientWidth - 12)
+    if (over > 0) el.style.transform = `translateX(${-Math.min(over, r.left - 12)}px)`
+    else if (r.left < 12) el.style.transform = `translateX(${12 - r.left}px)`
+  }, [open])
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onOpenChange(false) }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onOpenChange(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey) }
+  }, [open, onOpenChange])
   return (
-    <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 2, overflow: 'hidden', ...style }}>
+    <div ref={ref} className="relative">
+      {trigger}
+      {open && (
+        <div ref={panelRef} role="menu"
+          className={`absolute top-[calc(100%+8px)] z-40 rounded-[12px] border bg-white p-1.5 shadow-[0_12px_16px_-4px_rgba(16,24,40,0.08),0_4px_6px_-2px_rgba(16,24,40,0.03)] ${align === 'right' ? 'right-0' : 'left-0'}`}
+          style={{ borderColor: BORDER, width, maxWidth: 'calc(100vw - 24px)' }}>
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MenuAction({ icon, label, hint, onClick, disabled, tone }: {
+  icon: ReactNode; label: string; hint?: string; onClick: () => void; disabled?: boolean; tone?: string
+}) {
+  return (
+    <button type="button" role="menuitem" onClick={onClick} disabled={disabled}
+      className="flex w-full cursor-pointer items-start gap-3 rounded-[8px] px-2.5 py-2 text-left transition-colors hover:bg-[#F9FAFB] disabled:cursor-wait disabled:opacity-60">
+      <span className="mt-0.5 shrink-0" style={{ color: tone ?? MUTED }}>{icon}</span>
+      <span className="min-w-0">
+        <span className="block text-[14px] font-semibold" style={{ color: TEXT_2 }}>{label}</span>
+        {hint && <span className="block text-[12.5px]" style={{ color: SUBTLE }}>{hint}</span>}
+      </span>
+    </button>
+  )
+}
+
+/** Outlined button used across the page. */
+function Btn({ onClick, children, label, className = '', disabled }: {
+  onClick: () => void; children: ReactNode; label?: string; className?: string; disabled?: boolean
+}) {
+  return (
+    <button type="button" onClick={onClick} aria-label={label} title={label} disabled={disabled}
+      className={`inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border bg-white px-3.5 text-[14px] font-semibold transition-colors hover:bg-[#F9FAFB] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      style={{ borderColor: BORDER_2, color: TEXT_2, boxShadow: XS }}>
       {children}
-    </div>
-  )
-}
-function SideCardHeader({ title, icon: Icon, action }: { title: string; icon: React.ElementType; action?: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 16px', borderBottom: `1px solid ${BORDER}` }}>
-      <h3 style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.07em', margin: 0 }}>
-        <Icon style={{ width: 11, height: 11 }} />{title}
-      </h3>
-      {action}
-    </div>
+    </button>
   )
 }
 
-// Kirrivan-style activity card
-function KirivanCard({ act, upcoming, onLog }: { act: LeadActivity; upcoming?: boolean; onLog: () => void }) {
-  const AIcon = ACT_ICON[act.type] ?? Pulse
-  const ac    = ACT_COLORS[act.type] ?? { icon: '#64748B', bg: '#F8FAFC', accent: '#64748B' }
-  const oc    = act.outcome ? OUTCOME_CFG[act.outcome] : null
-  const OIcon = oc?.Icon
-
+function StatusPill({ status, size = 'md' }: { status: string; size?: 'md' | 'lg' }) {
+  const p = STATUS_PILL[status] ?? STATUS_PILL.New
   return (
-    <div style={{ marginBottom: 14 }}>
-      {/* Header row — outside the card, like Kirrivan */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, paddingLeft: 2 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <div style={{ width: 22, height: 22, borderRadius: '50%', background: ac.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <AIcon style={{ width: 11, height: 11, color: ac.icon }} />
-          </div>
-          <span style={{ fontSize: 12, fontWeight: 600, color: MUTED2 }}>{act.type}</span>
-          {upcoming && act.nextActionDate && (
-            <span style={{ fontSize: 11, color: BLUE, fontWeight: 500 }}>· Due {formatShortDate(act.nextActionDate)}</span>
-          )}
-        </div>
-        <span style={{ fontSize: 11, color: MUTED }}>{timeAgo(act.createdAt)}</span>
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border font-medium ${size === 'lg' ? 'px-3 py-1 text-[14px]' : 'px-2.5 py-0.5 text-[13px]'}`}
+      style={{ background: p.bg, borderColor: p.border, color: p.color }}>
+      <span className="size-1.5 rounded-full" style={{ background: p.dot }} />
+      {status}
+    </span>
+  )
+}
+
+function Chip({ children, color = TEXT_2, bg = CANVAS, border = BORDER_2, className = '' }: {
+  children: ReactNode; color?: string; bg?: string; border?: string; className?: string
+}) {
+  return (
+    <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-[7px] border px-2 py-0.5 text-[12.5px] font-medium ${className}`}
+      style={{ color, background: bg, borderColor: border }}>
+      {children}
+    </span>
+  )
+}
+
+/** KPI card — outer tinted shell with an inner white panel, like the reference. */
+function KpiCard({ icon, accent, title, value, unit, pill, children }: {
+  icon: ReactNode; accent: string; title: string; value: ReactNode; unit?: string; pill?: ReactNode; children: ReactNode
+}) {
+  return (
+    <div className="flex flex-col rounded-[18px] border p-1.5" style={{ background: SURFACE, borderColor: BORDER, boxShadow: XS }}>
+      <div className="flex items-center gap-2.5 px-2.5 pb-2.5 pt-1.5">
+        <span className="grid size-8 shrink-0 place-items-center rounded-[9px] border bg-white" style={{ borderColor: BORDER, color: accent, boxShadow: XS }}>
+          {icon}
+        </span>
+        <span className="truncate text-[14px] font-semibold" style={{ color: TEXT_2 }}>{title}</span>
       </div>
+      <div className="flex flex-1 flex-col rounded-[13px] border bg-white px-3 pb-3 pt-3.5 min-[520px]:px-4 min-[520px]:pb-3.5 min-[520px]:pt-4" style={{ borderColor: BORDER, boxShadow: XS }}>
+        <div className="flex flex-col items-start gap-2 min-[520px]:flex-row min-[520px]:justify-between">
+          <div className="flex min-w-0 max-w-full items-baseline gap-1.5">
+            <span className="truncate text-[22px] font-semibold leading-none tracking-[-0.03em] tabular-nums min-[520px]:text-[26px] sm:text-[30px]" style={{ color: TEXT }}>{value}</span>
+            {unit && <span className="shrink-0 text-[13px] min-[520px]:text-[14px]" style={{ color: SUBTLE }}>{unit}</span>}
+          </div>
+          {pill}
+        </div>
+        <div className="mt-auto pt-3.5">{children}</div>
+      </div>
+    </div>
+  )
+}
 
-      {/* Card body */}
-      <div style={{ border: `1px solid ${BORDER}`, borderRadius: 2, overflow: 'hidden', background: PANEL }}>
-        <div style={{ padding: '13px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
-            {/* Status circle (like Kirrivan checkbox) */}
-            <div style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${upcoming ? BLUE : ac.accent}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, background: oc && !upcoming ? `${ac.accent}10` : 'transparent' }}>
-              {oc && OIcon && !upcoming && <OIcon style={{ width: 11, height: 11, color: oc.color }} />}
-            </div>
+function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <section className={`rounded-[16px] border bg-white ${className}`} style={{ borderColor: BORDER, boxShadow: XS }}>
+      {children}
+    </section>
+  )
+}
 
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {/* Title + due date */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: act.notes ? 6 : 0 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{act.type}</span>
-                {act.nextActionDate && !upcoming && (
-                  <span style={{ fontSize: 11, color: BLUE, fontWeight: 600, flexShrink: 0 }}>
-                    Follow-up · {formatShortDate(act.nextActionDate)}
+function LeadAvatar({ lead, size = 64 }: { lead: CRMLead; size?: number }) {
+  const name = getDisplayName(lead)
+  const photo = getAvatarImg(getCsId(lead))
+  const av = avatarColor(name)
+  const ring = '0 0 0 3px #fff, 0 0 0 4px #EAECF0, 0 4px 8px -2px rgba(16,24,40,0.10)'
+  return photo ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={photo} alt={name} className="shrink-0 rounded-full object-cover" style={{ width: size, height: size, boxShadow: ring }} />
+  ) : (
+    <span className="grid shrink-0 place-items-center rounded-full font-semibold tracking-[-0.02em]"
+      style={{ width: size, height: size, fontSize: size * 0.36, background: `linear-gradient(140deg, ${av.from} 0%, ${av.to} 100%)`, color: av.fg, boxShadow: ring }}>
+      {getInitials(lead)}
+    </span>
+  )
+}
+
+// ─── Lifecycle track ──────────────────────────────────────────────────────────
+function LifecycleTrack({ status, activities }: { status: string; activities: LeadActivity[] }) {
+  const isDisqualified = status === 'Disqualified'
+  const currentIdx     = PIPELINE.indexOf(status as typeof PIPELINE[number])
+
+  // Build stage history from activities — what activity first reached each stage
+  const stageHistory: Record<string, { type: string; date: string }> = {}
+  const chrono = [...activities].reverse()
+  for (const act of chrono) {
+    for (const [stage, triggers] of Object.entries(STAGE_TRIGGER)) {
+      if (triggers.includes(act.type) && !stageHistory[stage]) {
+        stageHistory[stage] = { type: act.type, date: act.createdAt }
+      }
+    }
+  }
+
+  return (
+    <Card>
+      <style>{`
+        @keyframes lc-ripple {
+          0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--lc) 45%, transparent); }
+          70%  { box-shadow: 0 0 0 10px color-mix(in srgb, var(--lc) 0%, transparent); }
+          100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--lc) 0%, transparent); }
+        }
+        .lc-current { animation: lc-ripple 2.4s ease-out infinite; }
+        @media (prefers-reduced-motion: reduce) { .lc-current { animation: none; } }
+      `}</style>
+      <div className="flex flex-wrap items-center justify-between gap-2 px-5 pt-4">
+        <h2 className="m-0 text-[16px] font-semibold" style={{ color: TEXT }}>Lead lifecycle</h2>
+        <span className="text-[13px]" style={{ color: SUBTLE }}>
+          {isDisqualified ? 'Off the pipeline' : currentIdx >= 0 ? `Stage ${currentIdx + 1} of ${PIPELINE.length}` : status}
+        </span>
+      </div>
+      <div className="px-5 pb-5 pt-4 sm:overflow-x-auto sm:[scrollbar-width:thin]">
+        <ol className="m-0 flex list-none flex-col p-0 sm:min-w-[720px] sm:flex-row sm:items-start">
+          {PIPELINE.map((stage, idx) => {
+            const cfg    = STAGE_CFG[stage]
+            const pill   = STATUS_PILL[stage]
+            const isDone = !isDisqualified && currentIdx > idx
+            const isCur  = status === stage
+            const hist   = stageHistory[stage]
+            const reached = isDone || isCur
+            const linked  = !isDisqualified && currentIdx > idx
+            const next    = idx < PIPELINE.length - 1 ? STATUS_PILL[PIPELINE[idx + 1]].dot : pill.dot
+            return (
+              <li key={stage} className="flex min-w-0 gap-3.5 sm:flex-1 sm:flex-col sm:gap-0">
+                <div className="flex flex-col items-center sm:flex-row">
+                  <span className={`grid size-10 shrink-0 place-items-center rounded-full border-2 ${isCur ? 'lc-current' : ''}`}
+                    style={{
+                      ['--lc' as string]: pill.dot,
+                      background: isCur ? pill.dot : isDone ? pill.bg : CANVAS,
+                      borderColor: reached ? pill.dot : BORDER,
+                      color: isCur ? '#fff' : isDone ? pill.color : LABEL,
+                    }}>
+                    {isDone ? <Check size={17} weight="bold" /> : <cfg.Icon size={17} weight={isCur ? 'fill' : 'regular'} />}
                   </span>
-                )}
+                  {idx < PIPELINE.length - 1 && (
+                    <>
+                      <span className="my-1.5 min-h-5 w-[3px] flex-1 rounded-full sm:hidden"
+                        style={{ background: linked ? `linear-gradient(180deg, ${pill.dot}, ${next})` : BORDER }} />
+                      <span className="mx-2 hidden h-[3px] flex-1 rounded-full sm:block"
+                        style={{ background: linked ? `linear-gradient(90deg, ${pill.dot}, ${next})` : BORDER }} />
+                    </>
+                  )}
+                </div>
+                <div className="min-w-0 pb-4 pt-2 sm:pb-0 sm:pr-3 sm:pt-2.5">
+                  <div className="flex items-center gap-1.5 text-[14px] font-semibold" style={{ color: reached ? TEXT : LABEL }}>
+                    {stage}
+                    {isCur && <span className="rounded-full border px-1.5 text-[11px] font-semibold" style={{ color: pill.color, background: pill.bg, borderColor: pill.border }}>Current</span>}
+                  </div>
+                  <div className="mt-0.5 text-[12.5px] sm:truncate" style={{ color: reached ? SUBTLE : LABEL }}>
+                    {hist ? `${hist.type} · ${formatShortDate(hist.date)}` : cfg.desc}
+                  </div>
+                </div>
+              </li>
+            )
+          })}
+          {/* Off-ramp */}
+          <li className="flex gap-3.5 border-t border-dashed pt-4 sm:ml-1 sm:w-[170px] sm:shrink-0 sm:flex-col sm:gap-0 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0" style={{ borderColor: BORDER_2 }}>
+            <span className={`grid size-10 shrink-0 place-items-center rounded-full border-2 ${isDisqualified ? 'lc-current' : ''}`}
+              style={{
+                ['--lc' as string]: STATUS_PILL.Disqualified.dot,
+                background: isDisqualified ? STATUS_PILL.Disqualified.dot : CANVAS,
+                borderColor: isDisqualified ? STATUS_PILL.Disqualified.dot : BORDER,
+                color: isDisqualified ? '#fff' : LABEL,
+              }}>
+              <X size={17} weight="bold" />
+            </span>
+            <div className="pt-2 sm:pt-2.5">
+              <div className="flex items-center gap-1.5 text-[14px] font-semibold" style={{ color: isDisqualified ? TEXT : LABEL }}>
+                Disqualified
+                {isDisqualified && <span className="rounded-full border px-1.5 text-[11px] font-semibold" style={{ color: STATUS_PILL.Disqualified.color, background: STATUS_PILL.Disqualified.bg, borderColor: STATUS_PILL.Disqualified.border }}>Current</span>}
               </div>
-              {/* Notes body */}
-              {act.notes && (
-                <p style={{ fontSize: 13, color: MUTED2, margin: 0, lineHeight: 1.58 }}>{act.notes}</p>
-              )}
+              <div className="mt-0.5 text-[12.5px]" style={{ color: LABEL }}>{STAGE_CFG.Disqualified.desc}</div>
             </div>
-          </div>
-        </div>
-
-        {/* Footer metadata row */}
-        <div style={{ display: 'flex', borderTop: `1px solid ${BORDER}`, background: BG }}>
-          <div style={{ flex: 1, padding: '8px 14px', borderRight: `1px solid ${BORDER}` }}>
-            <div style={{ fontSize: 10, color: MUTED, marginBottom: 2 }}>Reminder</div>
-            <div style={{ fontSize: 11, fontWeight: 500, color: act.nextActionDate ? BLUE : MUTED }}>
-              {act.nextActionDate ? formatShortDate(act.nextActionDate) : 'No reminder'}
-            </div>
-          </div>
-          <div style={{ flex: 1, padding: '8px 14px', borderRight: `1px solid ${BORDER}` }}>
-            <div style={{ fontSize: 10, color: MUTED, marginBottom: 2 }}>Duration</div>
-            <div style={{ fontSize: 11, fontWeight: 500, color: MUTED2 }}>
-              {act.duration ? `${Math.floor(act.duration / 60)}m ${act.duration % 60}s` : '—'}
-            </div>
-          </div>
-          <div style={{ flex: 1, padding: '8px 14px' }}>
-            <div style={{ fontSize: 10, color: MUTED, marginBottom: 2 }}>Outcome</div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: oc ? oc.color : MUTED }}>
-              {act.outcome ?? '—'}
-            </div>
-          </div>
-        </div>
+          </li>
+        </ol>
       </div>
-    </div>
+    </Card>
   )
 }
 
-// ─── Compact timeline activity row ────────────────────────────────────────────
-function ActivityTLRow({ act }: { act: LeadActivity }) {
+// ─── Timeline rows ────────────────────────────────────────────────────────────
+function ActivityTLRow({ act, advancedTo, last }: { act: LeadActivity; advancedTo?: string; last: boolean }) {
   const AIcon = ACT_ICON[act.type] ?? Pulse
-  const ac    = ACT_COLORS[act.type] ?? { icon: '#64748B', bg: '#F8FAFC', accent: '#64748B' }
+  const ac    = ACT_COLORS[act.type] ?? ACT_DEFAULT
   const oc    = act.outcome ? OUTCOME_CFG[act.outcome] : null
+  const adv   = advancedTo ? (STATUS_PILL[advancedTo] ?? STATUS_PILL.New) : null
   return (
-    <div style={{ display: 'flex', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
-      <div style={{ width: 3, background: ac.accent, borderRadius: 2, flexShrink: 0, alignSelf: 'stretch', minHeight: 28 }} />
-      <div style={{ width: 28, height: 28, borderRadius: 2, background: ac.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-        <AIcon size={13} weight="light" style={{ color: ac.icon }} />
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: act.notes || act.nextActionDate ? 3 : 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: MUTED2 }}>{act.type}</span>
-            {oc && <span style={{ fontSize: 11, fontWeight: 500, color: oc.color }}>· {act.outcome}</span>}
-            {act.duration != null && act.duration > 0 && (
-              <span style={{ fontSize: 11, color: MUTED }}>· {Math.floor(act.duration / 60)}m {act.duration % 60}s</span>
-            )}
-          </div>
-          <span style={{ fontSize: 11, color: MUTED, flexShrink: 0 }}>{timeAgo(act.createdAt)}</span>
+    <li className="relative flex gap-3.5 pb-5">
+      {!last && <span aria-hidden className="absolute bottom-0 left-[17.5px] top-10 w-px" style={{ background: BORDER }} />}
+      <span className="relative grid size-9 shrink-0 place-items-center rounded-full border" style={{ background: ac.bg, borderColor: ac.ring, color: ac.icon }}>
+        <AIcon size={16} weight="bold" />
+      </span>
+      <div className="min-w-0 flex-1 pt-[7px]">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="text-[14px] font-semibold" style={{ color: TEXT }}>{act.type}</span>
+          {oc && (
+            <span className="inline-flex items-center gap-1 rounded-full border px-2 py-px text-[12px] font-medium" style={{ color: oc.color, background: oc.bg, borderColor: oc.border }}>
+              <oc.Icon size={12} weight="bold" />{act.outcome}
+            </span>
+          )}
+          {act.duration != null && act.duration > 0 && (
+            <span className="inline-flex items-center gap-1 text-[12.5px] tabular-nums" style={{ color: SUBTLE }}>
+              <Clock size={13} />{Math.floor(act.duration / 60)}m {act.duration % 60}s
+            </span>
+          )}
+          <span className="ml-auto shrink-0 text-[12.5px]" style={{ color: LABEL }} title={new Date(act.createdAt).toLocaleString('en-IN')}>{timeAgo(act.createdAt)}</span>
         </div>
         {act.nextActionDate && (
-          <div style={{ fontSize: 11, color: BLUE, marginBottom: 3 }}>
-            Follow-up · {new Date(act.nextActionDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+          <div className="mt-1.5 inline-flex items-center gap-1.5 text-[12.5px] font-semibold" style={{ color: BLUE }}>
+            <Bell size={13} weight="bold" />Follow-up · {new Date(act.nextActionDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
           </div>
         )}
         {act.notes && (
-          <p style={{ fontSize: 12, color: MUTED2, margin: 0, lineHeight: 1.55 }}>{act.notes}</p>
+          <p className="m-0 mt-2 rounded-[10px] border px-3.5 py-2.5 text-[13.5px] leading-[1.6]" style={{ background: SURFACE, borderColor: BORDER, color: TEXT_2 }}>
+            {act.notes}
+          </p>
+        )}
+        {adv && (
+          <div className="mt-2.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[12px] font-semibold" style={{ color: adv.color, background: adv.bg, borderColor: adv.border }}>
+              <TrendUp size={12} weight="bold" />Moved to {advancedTo}
+            </span>
+          </div>
         )}
       </div>
-    </div>
+    </li>
+  )
+}
+
+function TaskTLRow({ task, last, onUpdate }: { task: LeadTask; last: boolean; onUpdate: (id: string, status: 'Done' | 'Cancelled') => void }) {
+  const now2 = new Date()
+  const todayStr2 = now2.toISOString().slice(0, 10)
+  const dueDate = new Date(task.due_date)
+  const isOverdue = dueDate < now2 && dueDate.toISOString().slice(0, 10) !== todayStr2
+  const pc = PRIORITY_CFG[task.priority] ?? PRIORITY_CFG.Low
+  const isDone = task.status === 'Done'
+  const isCancelled = task.status === 'Cancelled'
+  const dueLabel = (() => {
+    const dDay = dueDate.toISOString().slice(0, 10)
+    if (dDay === todayStr2) return 'Today'
+    if (dDay === new Date(now2.getTime() + 86400000).toISOString().slice(0, 10)) return 'Tomorrow'
+    if (isOverdue) return 'Overdue'
+    return dueDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+  })()
+  const node = isDone
+    ? { bg: '#ECFDF3', ring: '#ABEFC6', color: GREEN }
+    : isCancelled ? { bg: SURFACE, ring: BORDER, color: LABEL } : { bg: pc.bg, ring: pc.border, color: pc.color }
+  return (
+    <li className="relative flex gap-3.5 pb-5" style={{ opacity: isCancelled ? 0.55 : 1 }}>
+      {!last && <span aria-hidden className="absolute bottom-0 left-[17.5px] top-10 w-px" style={{ background: BORDER }} />}
+      <span className="relative grid size-9 shrink-0 place-items-center rounded-[10px] border" style={{ background: node.bg, borderColor: node.ring, color: node.color }}>
+        <CheckSquare size={17} weight="bold" />
+      </span>
+      <div className="min-w-0 flex-1 rounded-[12px] border px-3.5 py-3" style={{ borderColor: isOverdue && !isDone && !isCancelled ? '#FECDCA' : BORDER, background: CANVAS }}>
+        <div className="flex items-start justify-between gap-3">
+          <span className="text-[14px] font-semibold leading-snug" style={{ color: isDone ? SUBTLE : TEXT, textDecoration: isDone ? 'line-through' : 'none' }}>{task.title}</span>
+          <span className="shrink-0 text-[12.5px]" style={{ color: LABEL }}>{timeAgo(task.created_at)}</span>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <Chip><CheckSquare size={12} color={SUBTLE} />{task.task_type}</Chip>
+          {isDone ? <Chip color={GREEN} bg="#ECFDF3" border="#ABEFC6"><Check size={12} weight="bold" />Done</Chip>
+            : isCancelled ? <Chip color={SUBTLE}>Cancelled</Chip>
+            : <Chip color={isOverdue ? RED : TEXT_2} bg={isOverdue ? '#FEF3F2' : CANVAS} border={isOverdue ? '#FECDCA' : BORDER_2}><CalendarBlank size={12} />Due {dueLabel}</Chip>}
+          <Chip color={pc.color} bg={pc.bg} border={pc.border}>{task.priority}</Chip>
+        </div>
+        {task.notes && <p className="m-0 mt-2 text-[13px] leading-[1.55]" style={{ color: MUTED }}>{task.notes}</p>}
+        {task.status === 'Pending' && (
+          <div className="mt-3 flex gap-2">
+            <button type="button" onClick={() => onUpdate(task.id, 'Done')}
+              className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-[8px] border px-3 text-[13px] font-semibold transition-colors hover:bg-[#DCFAE6]"
+              style={{ color: GREEN, background: '#ECFDF3', borderColor: '#ABEFC6' }}>
+              <Check size={13} weight="bold" />Mark done
+            </button>
+            <button type="button" onClick={() => onUpdate(task.id, 'Cancelled')}
+              className="inline-flex h-8 cursor-pointer items-center rounded-[8px] border bg-white px-3 text-[13px] font-semibold transition-colors hover:bg-[#F9FAFB]"
+              style={{ color: MUTED, borderColor: BORDER_2 }}>
+              Cancel
+            </button>
+          </div>
+        )}
+      </div>
+    </li>
   )
 }
 
@@ -335,6 +643,7 @@ export default function LeadDetailPage() {
   const [savingNote, setSavingNote] = useState(false)
   const [copied, setCopied]         = useState(false)
   const [nudgeDismissed, setNudgeDismissed] = useState(false)
+  const [showMore, setShowMore]     = useState(false)
 
   // ── Email compose state ────────────────────────────────────────────────────
   const [showEmailModal, setShowEmailModal] = useState(false)
@@ -489,22 +798,40 @@ export default function LeadDetailPage() {
   }
   const copyCsId = () => {
     if (!lead) return
-    navigator.clipboard.writeText(getCsId(lead)); setCopied(true); setTimeout(() => setCopied(false), 1500)
+    navigator.clipboard.writeText(getCsId(lead)).catch(() => {}); setCopied(true); setTimeout(() => setCopied(false), 1500)
   }
 
-  if (loading) return (
-    <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-      <CircleNotch size={22} weight="light" style={{ color: BLUE, animation: 'spin 0.8s linear infinite' }} />
-      <span style={{ fontSize: 14, color: MUTED }}>Loading lead…</span>
+  // ── Loading: page-shaped skeleton ────────────────────────────────────────────
+  if (loading && !lead) return (
+    <div style={{ minHeight: '100vh', background: CANVAS }} aria-busy="true" aria-label="Loading lead">
+      <div className="mx-auto max-w-[1400px] px-4 pt-7 lg:px-8">
+        <div className="flex items-center gap-4">
+          <span className="size-11 animate-pulse rounded-[12px] bg-[#F2F4F7]" />
+          <span className="size-16 animate-pulse rounded-full bg-[#F2F4F7]" />
+          <div className="flex flex-col gap-2.5">
+            <span className="h-8 w-56 animate-pulse rounded-[8px] bg-[#F2F4F7]" />
+            <span className="h-4 w-80 max-w-[60vw] animate-pulse rounded-[6px] bg-[#F9FAFB]" />
+          </div>
+        </div>
+        <div className="mt-8 grid grid-cols-2 gap-4 xl:grid-cols-4">
+          {[0, 1, 2, 3].map(i => <span key={i} className="h-[150px] animate-pulse rounded-[18px] bg-[#F9FAFB]" />)}
+        </div>
+        <span className="mt-6 block h-[130px] animate-pulse rounded-[16px] bg-[#F9FAFB]" />
+      </div>
     </div>
   )
   if (error || !lead) return (
-    <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ textAlign: 'center' }}>
-        <Warning size={40} weight="light" style={{ color: RED, margin: '0 auto 16px' }} />
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: TEXT, margin: '0 0 8px' }}>{error || 'Lead not found'}</h2>
-        <Link href="/dashboard/leads" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 2, color: TEXT, fontSize: 13, textDecoration: 'none' }}>
-          <ArrowLeft size={14} weight="light" /> Back to Leads
+    <div style={{ minHeight: '100vh', background: CANVAS }} className="grid place-items-center px-4">
+      <div className="text-center">
+        <div className="mx-auto mb-4 grid size-12 place-items-center rounded-[12px] border" style={{ borderColor: '#FECDCA', background: '#FEF3F2', color: RED }}>
+          <Warning size={22} weight="bold" />
+        </div>
+        <h2 className="m-0 mb-1 text-[18px] font-semibold" style={{ color: TEXT }}>{error || 'Lead not found'}</h2>
+        <p className="m-0 mb-5 text-[14px]" style={{ color: SUBTLE }}>It may have been removed, or the link is out of date.</p>
+        <Link href="/dashboard/leads"
+          className="inline-flex h-10 items-center gap-2 rounded-[10px] border bg-white px-4 text-[14px] font-semibold no-underline hover:bg-[#F9FAFB]"
+          style={{ borderColor: BORDER_2, color: TEXT_2, boxShadow: XS }}>
+          <CaretLeft size={15} weight="bold" /> Back to leads
         </Link>
       </div>
     </div>
@@ -516,7 +843,7 @@ export default function LeadDetailPage() {
   const phone   = getPhone(lead)
   const email   = getEmail(lead)
   const bdown   = scoreBreakdown(lead)
-  const initials = getInitials(lead)
+  const status  = lead.status ?? 'New'
 
   const TYPE_DEFAULTS: Record<string, string> = {
     'Follow Up':     `Follow up with ${lead.name.firstName}`,
@@ -536,17 +863,9 @@ export default function LeadDetailPage() {
   const daysSince  = lastAct ? Math.floor((Date.now() - new Date(lastAct.createdAt).getTime()) / 86_400_000) : null
 
   // ── Last-achieved milestone ──────────────────────────────────────────────────
-  const MILESTONE_STATUS: Record<string, string> = {
-    'Deal Closed': 'Closed', 'EOI Received': 'Hot',
-    'Site Visit Done': 'Warm', 'OBM Done': 'Warm', 'VM Done': 'Warm',
-  }
-  const MILESTONE_COLOR: Record<string, string> = {
-    Closed: '#059669', Hot: '#1D4ED8', Warm: '#F59E0B',
-  }
   const activityTypes = activities.map(a => a.type)
   const topMilestone  = ['Deal Closed', 'EOI Received', 'Site Visit Done', 'OBM Done', 'VM Done']
     .find(m => activityTypes.includes(m)) ?? null
-  const achievedStage = topMilestone ? MILESTONE_STATUS[topMilestone] : null
 
   // ── Status transition markers (simulate lifecycle engine client-side) ─────────
   const STATUS_ADV_CLIENT: Record<string, string> = {
@@ -594,6 +913,15 @@ export default function LeadDetailPage() {
     return true
   })
 
+  // Group the feed by day
+  const tlGroups: { label: string; items: TLItem[] }[] = []
+  for (const item of visibleTLItems) {
+    const label = dayLabel(item.kind === 'activity' ? item.data.createdAt : item.data.created_at)
+    const g = tlGroups[tlGroups.length - 1]
+    if (g && g.label === label) g.items.push(item)
+    else tlGroups.push({ label, items: [item] })
+  }
+
   const tlCounts: Record<TLFilter, number> = {
     all:      allTLItems.length,
     calls:    callActs.length,
@@ -608,682 +936,512 @@ export default function LeadDetailPage() {
     missed:     callActs.filter(a => a.type === 'Call Missed').length,
     noResponse: callActs.filter(a => a.outcome === 'No Response').length,
   }
+  const openTasks = tasks.filter(t => t.status === 'Pending').length
 
   // ── Smart nudge ─────────────────────────────────────────────────────────────
-  type NudgeType = { icon: React.ElementType; color: string; bg: string; border: string; text: string; sub: string; actionLabel: string; onAction: () => void }
+  type NudgeType = { icon: ElementType; color: string; bg: string; border: string; text: string; sub: string; actionLabel: string; onAction: () => void }
   let nudge: NudgeType | null = null
   if (!nudgeDismissed) {
     if (futureFU) {
       const daysUntil = Math.ceil((new Date(futureFU).getTime() - Date.now()) / 86_400_000)
-      if (daysUntil <= 2) nudge = { icon: Bell, color: AMBER, bg: 'rgba(245,158,11,0.09)', border: 'rgba(29,78,216,0.22)', text: `Follow-up ${daysUntil === 0 ? 'today' : daysUntil === 1 ? 'tomorrow' : 'in 2 days'}`, sub: `Scheduled on ${formatShortDate(futureFU)} — log the outcome when done`, actionLabel: 'Log Outcome', onAction: () => setShowActivityModal(true) }
+      if (daysUntil <= 2) nudge = { icon: Bell, color: '#B54708', bg: '#FFFAEB', border: '#FEDF89', text: `Follow-up ${daysUntil === 0 ? 'today' : daysUntil === 1 ? 'tomorrow' : 'in 2 days'}`, sub: `Scheduled on ${formatShortDate(futureFU)} — log the outcome when done`, actionLabel: 'Log Outcome', onAction: () => setShowActivityModal(true) }
     } else if (activities.length === 0) {
-      nudge = { icon: Lightning, color: BLUE, bg: PRIMARY_DIM, border: PRIMARY_BORDER, text: 'Make your first move', sub: 'This lead hasn\'t been contacted yet — a quick call increases conversion by 3×', actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
+      nudge = { icon: Lightning, color: BLUE, bg: BLUE_BG, border: BLUE_LN, text: 'Make your first move', sub: 'This lead hasn\'t been contacted yet — a quick call increases conversion by 3×', actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
     } else if (score >= 70 && ['Fresh', 'Cold', 'Attempting'].includes(lead.status || 'Fresh')) {
-      nudge = { icon: Lightning, color: '#1D4ED8', bg: 'rgba(29,78,216,0.08)', border: 'rgba(29,78,216,0.22)', text: 'High intent — move fast', sub: `Score ${score}/100 but still in early stage. Don't let a hot lead go cold`, actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
+      nudge = { icon: Lightning, color: BLUE, bg: BLUE_BG, border: BLUE_LN, text: 'High intent — move fast', sub: `Score ${score}/100 but still in early stage. Don't let a hot lead go cold`, actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
     } else if (callAttempts.length >= 2 && lastAct?.type.includes('Call') && lastAct?.outcome === 'No Response') {
-      nudge = { icon: ChatCircle, color: WA_GRN, bg: '#F0FDF4', border: '#BBF7D0', text: 'Switch to WhatsApp', sub: `${callAttempts.length} calls with no answer — leads respond 4× faster to messages`, actionLabel: 'Send WA', onAction: () => setShowWhatsAppModal(true) }
+      nudge = { icon: ChatCircle, color: '#15803D', bg: '#F0FDF4', border: '#BBF7D0', text: 'Switch to WhatsApp', sub: `${callAttempts.length} calls with no answer — leads respond 4× faster to messages`, actionLabel: 'Send WA', onAction: () => setShowWhatsAppModal(true) }
     } else if (daysSince !== null && daysSince >= 7) {
-      nudge = { icon: Warning, color: RED, bg: '#FEF2F2', border: '#FECACA', text: `No contact in ${daysSince} days`, sub: 'Lead is going cold — reach out now before they look elsewhere', actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
+      nudge = { icon: Warning, color: RED, bg: '#FEF3F2', border: '#FECDCA', text: `No contact in ${daysSince} days`, sub: 'Lead is going cold — reach out now before they look elsewhere', actionLabel: 'Call Now', onAction: () => setShowCallModal(true) }
     } else if (daysSince !== null && daysSince >= 3) {
-      nudge = { icon: Bell, color: AMBER, bg: 'rgba(245,158,11,0.09)', border: 'rgba(29,78,216,0.22)', text: `${daysSince} days since last contact`, sub: 'A quick touchpoint now keeps the lead warm and moving', actionLabel: 'Log Activity', onAction: () => setShowActivityModal(true) }
+      nudge = { icon: Bell, color: '#B54708', bg: '#FFFAEB', border: '#FEDF89', text: `${daysSince} days since last contact`, sub: 'A quick touchpoint now keeps the lead warm and moving', actionLabel: 'Log Activity', onAction: () => setShowActivityModal(true) }
     }
   }
 
+  // ── KPI values ───────────────────────────────────────────────────────────────
+  const strongSignals = bdown.filter(b => b.pos).length
+  const contactTone = daysSince === null
+    ? { label: 'Not contacted', color: TEXT_2, bg: SURFACE, border: BORDER_2 }
+    : daysSince >= 7 ? { label: 'Going cold', color: RED, bg: '#FEF3F2', border: '#FECDCA' }
+    : daysSince >= 3 ? { label: 'Follow up', color: '#B54708', bg: '#FFFAEB', border: '#FEDF89' }
+    : { label: 'Active', color: GREEN, bg: '#ECFDF3', border: '#ABEFC6' }
+  const LastIcon = lastAct ? (ACT_ICON[lastAct.type] ?? Pulse) : Pulse
+  const lastColor = lastAct ? (ACT_COLORS[lastAct.type] ?? ACT_DEFAULT) : ACT_DEFAULT
+  const budgetSet = formatBudget(lead.budgetMin, lead.budgetMax) !== '—'
+
   return (
-    <div style={{ minHeight: '100vh', background: BG }}>
-      <div className="max-w-[1320px] mx-auto px-4 pb-16 lg:px-6">
+    <div style={{ minHeight: '100vh', background: CANVAS }}>
 
-        {/* Breadcrumb */}
-        <div style={{ padding: '16px 0 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Link href="/dashboard/leads" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: MUTED, textDecoration: 'none' }}
-            onMouseEnter={e => (e.currentTarget.style.color = TEXT)} onMouseLeave={e => (e.currentTarget.style.color = MUTED)}>
-            <ArrowLeft size={14} weight="light" /> All Leads
-          </Link>
-          <span style={{ fontSize: 12, color: '#CBD5E1' }}>/</span>
-          <span style={{ fontSize: 13, color: MUTED2, fontWeight: 500 }}>{name}</span>
-        </div>
+      {/* ══ Header ══ */}
+      <div className="border-b" style={{ borderColor: BORDER }}>
+        <div className="mx-auto max-w-[1400px] px-4 pb-6 pt-6 lg:px-8">
+          <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-2 text-[13px]" style={{ color: SUBTLE }}>
+            <Link href="/dashboard/leads" className="no-underline transition-colors hover:text-[#101828]" style={{ color: SUBTLE }}>Leads</Link>
+            <span style={{ color: BORDER_2 }}>/</span>
+            <span className="truncate font-medium" style={{ color: TEXT_2 }}>{name}</span>
+          </nav>
 
-        {/* ── 3-column layout ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr 290px', gap: 16, alignItems: 'start' }}
-          className="grid-cols-1 lg:grid-flow-col">
-
-          {/* ══════════════════════════════════════════════════
-              LEFT — Profile Panel
-          ══════════════════════════════════════════════════ */}
-          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 2, overflow: 'hidden' }}>
-
-            {/* Avatar + Identity — iPhone Contacts style */}
-            <div style={{ padding: '28px 20px 22px', textAlign: 'center', borderBottom: `1px solid ${BORDER}` }}>
-
-              {/* Avatar — halo style for photo, plain initials otherwise */}
-              {(() => {
-                const avatarImg = getAvatarImg(getCsId(lead))
-                return avatarImg ? (
-                  <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
-                    <div style={{ position: 'absolute', inset: -10, borderRadius: '50%', background: `radial-gradient(circle, ${ss.color}22 0%, transparent 70%)` }} />
-                    <div style={{ position: 'absolute', inset: -4, borderRadius: '50%', border: `1.5px solid ${ss.color}28` }} />
-                    <div style={{ width: 90, height: 90, borderRadius: '50%', overflow: 'hidden', boxShadow: `0 10px 28px ${ss.color}30, 0 2px 8px rgba(0,0,0,0.06)`, position: 'relative' }}>
-                      <img src={avatarImg} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18,
-                    width: 72, height: 72, borderRadius: '50%', background: ss.bg, border: `2px solid ${ss.color}30` }}>
-                    <span style={{ fontSize: 26, fontWeight: 800, color: ss.color, letterSpacing: '-1px' }}>{initials}</span>
-                  </div>
-                )
-              })()}
-
-              {/* Name */}
-              <h2 style={{ fontSize: 20, fontWeight: 800, color: TEXT, margin: '0 0 4px', letterSpacing: '-0.04em' }}>{name}</h2>
-
-              {/* Source */}
-              <p style={{ fontSize: 12, color: MUTED, margin: '0 0 10px' }}>
-                {lead.sourcePortal ? lead.sourcePortal.replace('OPT99ACRES','99acres').replace('MAGICBRICKS','MagicBricks').replace('HOUSING_COM','Housing.com').replace('FACEBOOK','Facebook') : 'Direct'}
-              </p>
-
-              {/* CS ID */}
-              <button onClick={copyCsId}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: copied ? EMERALD : MUTED, background: copied ? '#ECFDF5' : BG, border: `1px solid ${copied ? '#A7F3D0' : BORDER}`, padding: '4px 12px', borderRadius: 99, fontFamily: 'monospace', cursor: 'pointer', marginBottom: 13, transition: 'all 0.2s' }}>
-                {copied ? '✓ Copied' : <>{getCsId(lead)} <Copy style={{ width: 9, height: 9, opacity: 0.5 }} /></>}
-              </button>
-
-              {/* Status + milestone badges */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: ss.color, background: ss.bg, padding: '4px 12px', borderRadius: 99 }}>{ss.label}</span>
-                {achievedStage && (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: MILESTONE_COLOR[achievedStage] ?? MUTED, background: `${MILESTONE_COLOR[achievedStage] ?? MUTED}12`, border: `1px solid ${MILESTONE_COLOR[achievedStage] ?? MUTED}28`, padding: '4px 10px', borderRadius: 99 }}>
-                    <Medal size={9} weight="light" />{topMilestone}
+          <div className="flex flex-wrap items-start justify-between gap-5">
+            <div className="flex min-w-0 items-start gap-4">
+              <Link href="/dashboard/leads" aria-label="Back to all leads" title="Back to all leads"
+                className="mt-2.5 hidden size-11 shrink-0 place-items-center rounded-[12px] border bg-white no-underline transition-colors hover:bg-[#F9FAFB] sm:grid"
+                style={{ borderColor: BORDER_2, color: TEXT_2, boxShadow: XS }}>
+                <CaretLeft size={18} weight="bold" />
+              </Link>
+              <LeadAvatar lead={lead} size={64} />
+              <div className="min-w-0 pt-0.5">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                  <h1 className="m-0 text-[26px] font-bold leading-tight tracking-[-0.03em] sm:text-[32px]" style={{ color: TEXT }}>{name}</h1>
+                  <StatusPill status={status} size="lg" />
+                  {lead.escalated && (
+                    <span className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[13px] font-semibold" style={{ color: '#B54708', background: '#FFFAEB', borderColor: '#FEDF89' }}>
+                      <ArrowFatUp size={13} weight="fill" />Escalated
+                    </span>
+                  )}
+                  {topMilestone && (
+                    <span className="hidden items-center gap-1 rounded-full border px-2.5 py-0.5 text-[13px] font-medium sm:inline-flex" style={{ color: TEXT_2, background: CANVAS, borderColor: BORDER_2 }}>
+                      <Medal size={13} weight="fill" color="#F79009" />{topMilestone}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[14px]" style={{ color: SUBTLE }}>
+                  <button type="button" onClick={copyCsId} title="Copy CS ID"
+                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-[7px] border px-2 py-0.5 text-[12.5px] font-medium transition-colors hover:border-[#D0D5DD]"
+                    style={{ fontFamily: MONO, color: copied ? GREEN : TEXT_2, background: copied ? '#ECFDF3' : SURFACE, borderColor: copied ? '#ABEFC6' : BORDER }}>
+                    {copied ? <><Check size={12} weight="bold" />Copied</> : <>{getCsId(lead)}<Copy size={12} color={LABEL} /></>}
+                  </button>
+                  <span className="inline-flex items-center gap-1.5">
+                    {lead.sourcePortal ? <><SourceMark raw={lead.sourcePortal} size={18} />{sourceMeta(lead.sourcePortal).label}</> : <><Globe size={16} />Direct</>}
                   </span>
-                )}
-              </div>
-
-              {/* Action buttons — two rows so the panel never overflows */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, marginBottom: 20 }}>
-
-                {/* Row 1: Contact actions */}
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
-                  {phone && (
-                    <button onClick={() => setShowCallModal(true)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', padding: 0, minWidth: 48 }}>
-                      <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(145deg,#34C759,#28a745)', boxShadow: '0 4px 12px rgba(52,199,89,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.1s' }}
-                        onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
-                        onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
-                        <Phone size={18} weight="light" style={{ color: '#fff' }} />
-                      </div>
-                      <span style={{ fontSize: 10, fontWeight: 600, color: MUTED }}>call</span>
-                    </button>
-                  )}
-                  {phone && (
-                    <button onClick={() => setShowWhatsAppModal(true)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', padding: 0, minWidth: 48 }}>
-                      <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(145deg,#25D366,#1da851)', boxShadow: '0 4px 12px rgba(37,211,102,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.1s' }}
-                        onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
-                        onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
-                        <ChatCircle size={18} weight="light" style={{ color: '#fff' }} />
-                      </div>
-                      <span style={{ fontSize: 10, fontWeight: 600, color: MUTED }}>whatsapp</span>
-                    </button>
-                  )}
-                  {email && (
-                    <button onClick={() => { setShowEmailModal(true); setEmailSent(false); setEmailError(null) }}
-                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', padding: 0, minWidth: 48 }}>
-                      <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(145deg,#1D4ED8,#3B82F6)', boxShadow: '0 4px 12px rgba(29,78,216,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.1s' }}
-                        onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
-                        onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
-                        <Envelope size={18} weight="light" style={{ color: '#fff' }} />
-                      </div>
-                      <span style={{ fontSize: 10, fontWeight: 600, color: MUTED }}>mail</span>
-                    </button>
-                  )}
-                </div>
-
-                {/* Row 2: Management actions — smaller, secondary */}
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
-                  <button onClick={handleEscalate} disabled={escalating}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: escalating ? 'wait' : 'pointer', padding: 0, minWidth: 48 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: lead?.escalated ? 'linear-gradient(145deg,#F59E0B,#D97706)' : '#F1F5F9', boxShadow: lead?.escalated ? '0 4px 12px rgba(245,158,11,0.32)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', border: lead?.escalated ? 'none' : `1px solid ${BORDER}` }}
-                      onMouseEnter={e => { if (!lead?.escalated) (e.currentTarget as HTMLElement).style.background = '#E2E8F0' }}
-                      onMouseLeave={e => { if (!lead?.escalated) (e.currentTarget as HTMLElement).style.background = '#F1F5F9' }}>
-                      <ArrowFatUp weight={lead?.escalated ? 'fill' : 'light'} size={15} color={lead?.escalated ? '#fff' : MUTED} />
-                    </div>
-                    <span style={{ fontSize: 9, fontWeight: 600, color: lead?.escalated ? '#D97706' : MUTED }}>
-                      {lead?.escalated ? 'escalated' : 'escalate'}
-                    </span>
-                  </button>
-
-                  <button onClick={() => setShowReassignModal(true)}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', padding: 0, minWidth: 48 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: assignedTo ? 'linear-gradient(145deg,#7C3AED,#6D28D9)' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', border: assignedTo ? 'none' : `1px solid ${BORDER}` }}
-                      onMouseEnter={e => { if (!assignedTo) (e.currentTarget as HTMLElement).style.background = '#E2E8F0' }}
-                      onMouseLeave={e => { if (!assignedTo) (e.currentTarget as HTMLElement).style.background = '#F1F5F9' }}>
-                      <UserSwitch size={15} weight="light" color={assignedTo ? '#fff' : MUTED} />
-                    </div>
-                    <span style={{ fontSize: 9, fontWeight: 600, color: assignedTo ? '#7C3AED' : MUTED }}>
-                      {assignedTo ? assignedTo.split(' ')[0] : 'reassign'}
-                    </span>
-                  </button>
-
-                  <button onClick={() => setShowEnrollModal(true)}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', padding: 0, minWidth: 48 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', border: `1px solid ${BORDER}` }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#E2E8F0' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#F1F5F9' }}>
-                      <Lightning size={15} weight="light" color={MUTED} />
-                    </div>
-                    <span style={{ fontSize: 9, fontWeight: 600, color: MUTED }}>sequence</span>
-                  </button>
-                </div>
-
-              </div>
-
-              {/* Meta stats row */}
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <div style={{ textAlign: 'center', padding: '0 20px', borderRight: `1px solid ${BORDER}` }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{lastAct ? timeAgo(lastAct.createdAt) : '—'}</div>
-                  <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>Last contact</div>
-                </div>
-                <div style={{ textAlign: 'center', padding: '0 20px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{daysInPipe > 0 ? `${daysInPipe}d` : 'Today'}</div>
-                  <div style={{ fontSize: 10, color: MUTED, marginTop: 2 }}>In pipeline</div>
+                  {lead.city && <span className="inline-flex items-center gap-1.5"><MapPin size={16} />{lead.city}</span>}
+                  <span className="inline-flex items-center gap-1.5"><CalendarBlank size={16} />Added {formatDate(lead.createdAt)}</span>
+                  {assignedTo && <span className="inline-flex items-center gap-1.5"><UserSwitch size={16} />Assigned to <span className="font-semibold" style={{ color: TEXT_2 }}>{assignedTo}</span></span>}
                 </div>
               </div>
             </div>
 
-            {/* Info tabs */}
-            <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}` }}>
-              {(['info', 'requirements'] as LeftTab[]).map(tab => (
-                <button key={tab} onClick={() => setLeftTab(tab)}
-                  style={{ flex: 1, padding: '10px 0', fontSize: 12, fontWeight: 600, color: leftTab === tab ? BLUE : MUTED, background: leftTab === tab ? PRIMARY_DIM : 'transparent', border: 'none', borderBottom: leftTab === tab ? `2px solid ${BLUE}` : '2px solid transparent', cursor: 'pointer' }}>
-                  {tab === 'info' ? 'Lead Info' : 'Requirement Info'}
-                </button>
-              ))}
-            </div>
-
-            {/* Lead Info */}
-            {leftTab === 'info' && (
-              <div style={{ padding: '4px 16px 12px' }}>
-                {[
-                  { icon: Envelope,      label: 'Email',  value: email || null, href: email ? `mailto:${email}` : undefined },
-                  { icon: Phone,         label: 'Phone',  value: phone || null, href: phone ? `tel:${phone}` : undefined },
-                  { icon: MapPin,        label: 'City',   value: lead.city     },
-                  { icon: Tag,           label: 'Source', value: lead.sourcePortal },
-                  { icon: CalendarBlank, label: 'Added',  value: formatDate(lead.createdAt) },
-                ].map(row => {
-                  const RowIcon = row.icon
-                  return (
-                    <div key={row.label} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', borderBottom: `1px solid ${BORDER}` }}>
-                      <RowIcon size={13} weight="light" style={{ color: '#94A3B8', marginTop: 3, flexShrink: 0 }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 10, color: '#94A3B8', marginBottom: 2 }}>{row.label}</div>
-                        {row.href
-                          ? <a href={row.href} style={{ fontSize: 12, color: BLUE, textDecoration: 'none', wordBreak: 'break-all' }}>{row.value}</a>
-                          : <span style={{ fontSize: 12, color: row.value ? MUTED2 : MUTED }}>{row.value || '—'}</span>
-                        }
-                      </div>
-                    </div>
-                  )
-                })}
-                {lead.localities && lead.localities.length > 0 && (
-                  <div style={{ display: 'flex', gap: 10, padding: '8px 0' }}>
-                    <MapPin size={13} weight="light" style={{ color: '#94A3B8', marginTop: 4, flexShrink: 0 }} />
-                    <div>
-                      <div style={{ fontSize: 10, color: '#94A3B8', marginBottom: 5 }}>Localities</div>
-                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                        {lead.localities.map(l => <span key={l} style={{ fontSize: 10, fontWeight: 600, color: BLUE, background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, padding: '2px 7px', borderRadius: 5 }}>{l}</span>)}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Requirements */}
-            {leftTab === 'requirements' && (
-              <div style={{ padding: '12px 16px' }}>
-                {lead.propertyType && lead.propertyType.length > 0 && (
-                  <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: 10, color: '#94A3B8', marginBottom: 6 }}>Property Assigned</div>
-                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                      {lead.propertyType.map(pt => <span key={pt} style={{ fontSize: 11, fontWeight: 700, color: BLUE, background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, padding: '3px 9px', borderRadius: 6 }}>{pt}</span>)}
-                    </div>
-                  </div>
-                )}
-                <div style={{ marginBottom: 12, padding: '10px 12px', background: '#F8FAFC', borderRadius: 10, border: `1px solid ${BORDER}` }}>
-                  <div style={{ fontSize: 10, color: '#94A3B8', marginBottom: 3 }}>Budget</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: formatBudget(lead.budgetMin, lead.budgetMax) !== '—' ? EMERALD : MUTED, letterSpacing: '-0.3px' }}>
-                    {formatBudget(lead.budgetMin, lead.budgetMax)}
-                  </div>
-                </div>
-                {[{ label: 'Timeline', value: lead.timeline }, { label: 'Status', value: lead.status }].map((r, i, a) => (
-                  <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderTop: `1px solid ${BORDER}`, borderBottom: i === a.length - 1 ? 'none' : undefined }}>
-                    <span style={{ fontSize: 11, color: MUTED }}>{r.label}</span>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: r.value ? MUTED2 : MUTED }}>{r.value || '—'}</span>
-                  </div>
-                ))}
-                {lead.localities && lead.localities.length > 0 && (
-                  <div style={{ marginTop: 10 }}>
-                    <div style={{ fontSize: 10, color: '#94A3B8', marginBottom: 6 }}>Preferred Areas</div>
-                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                      {lead.localities.map(l => <span key={l} style={{ fontSize: 10, fontWeight: 600, color: BLUE, background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, padding: '2px 7px', borderRadius: 5 }}>{l}</span>)}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* ══════════════════════════════════════════════════
-              CENTER — Unified Conversation Timeline
-          ══════════════════════════════════════════════════ */}
-          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 2, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-
-            {/* ── Header ── */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 16px', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>Timeline</span>
-                <span style={{ fontSize: 11, color: MUTED }}>{allTLItems.length} events</span>
-              </div>
-              <button onClick={() => setShowActivityModal(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 13px', background: BLUE, border: 'none', borderRadius: 2, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                <Plus size={12} weight="light" /> Log Activity
+            {/* Actions */}
+            <div className="flex w-full flex-wrap items-center gap-2.5 lg:w-auto">
+              {phone && (
+                <Btn onClick={() => setShowCallModal(true)} label="Call">
+                  <Phone size={18} weight="bold" color={GREEN} /><span className="hidden sm:inline">Call</span>
+                </Btn>
+              )}
+              {phone && (
+                <Btn onClick={() => setShowWhatsAppModal(true)} label="WhatsApp">
+                  <WhatsappLogo size={18} weight="bold" color={WA_GRN} /><span className="hidden sm:inline">WhatsApp</span>
+                </Btn>
+              )}
+              {email && (
+                <Btn onClick={() => { setShowEmailModal(true); setEmailSent(false); setEmailError(null) }} label="Email">
+                  <Envelope size={18} weight="bold" color={BLUE} /><span className="hidden sm:inline">Email</span>
+                </Btn>
+              )}
+              <Popover open={showMore} onOpenChange={setShowMore} align="right" width={280}
+                trigger={
+                  <Btn onClick={() => setShowMore(v => !v)} label="More actions" className="px-2.5">
+                    <DotsThree size={20} weight="bold" />
+                  </Btn>
+                }>
+                <MenuAction icon={<ArrowFatUp size={18} weight={lead.escalated ? 'fill' : 'regular'} />} tone={lead.escalated ? '#B54708' : undefined}
+                  label={escalating ? 'Updating…' : lead.escalated ? 'Remove escalation' : 'Escalate to admin'}
+                  hint={lead.escalated ? 'Currently in admin Priority Follow Up' : 'Flag for admin Priority Follow Up'}
+                  disabled={escalating} onClick={() => { setShowMore(false); handleEscalate() }} />
+                <MenuAction icon={<UserSwitch size={18} />} label="Reassign"
+                  hint={assignedTo ? `Assigned to ${assignedTo}` : 'Hand this lead to another agent'}
+                  onClick={() => { setShowMore(false); setShowReassignModal(true) }} />
+                <MenuAction icon={<Lightning size={18} />} label="Add to sequence" hint="Automated follow-up messages"
+                  onClick={() => { setShowMore(false); setShowEnrollModal(true) }} />
+              </Popover>
+              <button type="button" onClick={() => setShowActivityModal(true)}
+                className="inline-flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border px-4 text-[14px] font-semibold text-white transition-colors hover:bg-[#1A43BF] sm:flex-none"
+                style={{ background: BLUE, borderColor: BLUE, boxShadow: `${XS}, inset 0 1px 0 rgba(255,255,255,0.18)` }}>
+                <Plus size={18} weight="bold" />Log activity
               </button>
             </div>
+          </div>
+        </div>
+      </div>
 
-            {/* ── Filter chips ── */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', borderBottom: `1px solid ${BORDER}`, flexShrink: 0, overflowX: 'auto' }}>
-              {TL_FILTER_CFG.map(f => {
-                const count = tlCounts[f.key]
-                const active = tlFilter === f.key
-                return (
-                  <button key={f.key} onClick={() => setTlFilter(f.key)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', border: `1px solid ${active ? BLUE : BORDER}`, borderRadius: 2, background: active ? PRIMARY_DIM : 'transparent', fontSize: 12, fontWeight: active ? 600 : 400, color: active ? BLUE : MUTED, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s', flexShrink: 0 }}>
-                    {f.label}
-                    {count > 0 && <span style={{ fontSize: 10, fontWeight: 700 }}>({count})</span>}
-                  </button>
-                )
-              })}
+      <div className="mx-auto flex max-w-[1400px] flex-col gap-6 px-4 pb-16 pt-6 lg:px-8">
+
+        {/* ══ KPI cards ══ */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+          <KpiCard icon={<Gauge size={16} weight="bold" />} accent={ss.color} title="Intent score" value={score} unit="/ 100"
+            pill={<Chip color={ss.color} bg={ss.bg} border={ss.border} className="rounded-full">{ss.label}</Chip>}>
+            <div className="flex items-center gap-3">
+              <span className="relative h-2 flex-1 overflow-hidden rounded-full" style={{ background: '#F2F4F7' }}>
+                <span className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${Math.min(100, score)}%`, background: score >= 70 ? `linear-gradient(90deg, #528BFF, ${BLUE})` : ss.color }} />
+              </span>
+              <span className="hidden shrink-0 text-[13px] min-[520px]:inline" style={{ color: SUBTLE }}>{strongSignals} of {bdown.length} signals</span>
             </div>
+          </KpiCard>
 
-            {/* ── Smart Nudge Bar ── */}
-            {nudge && tlFilter === 'all' && (
-              <div style={{
-                margin: '10px 16px 0',
-                padding: '10px 14px',
-                background: '#FFFFFF',
-                borderTop:    `1px solid ${BORDER}`,
-                borderRight:  `1px solid ${BORDER}`,
-                borderBottom: `1px solid ${BORDER}`,
-                borderLeft:   `3px solid ${nudge.color}`,
-                borderRadius: 2,
-                display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
-              }}>
-                <nudge.icon size={13} weight="light" style={{ color: nudge.color, flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: TEXT, lineHeight: 1.3 }}>{nudge.text}</div>
-                  <div style={{ fontSize: 11, color: MUTED, marginTop: 2, lineHeight: 1.4 }}>{nudge.sub}</div>
-                </div>
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-                  <button onClick={nudge.onAction}
-                    style={{ padding: '5px 12px', background: nudge.color, border: 'none', borderRadius: 2, color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit' }}>
-                    {nudge.actionLabel}
-                  </button>
-                  <button onClick={() => setNudgeDismissed(true)}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', padding: 2 }}>
-                    <X size={12} weight="light" style={{ color: MUTED }} />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* ── Call stats strip (calls filter only) ── */}
-            {tlFilter === 'calls' && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
-                {[
-                  { label: 'Total',     value: callStats.total,      color: MUTED2  },
-                  { label: 'Connected', value: callStats.connected,  color: EMERALD },
-                  { label: 'No Answer', value: callStats.noResponse, color: AMBER   },
-                  { label: 'Missed',    value: callStats.missed,     color: RED     },
-                ].map((s, i, a) => (
-                  <div key={s.label} style={{ padding: '14px 0', textAlign: 'center', borderRight: i < a.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: s.color, letterSpacing: '-0.5px' }}>{s.value}</div>
-                    <div style={{ fontSize: 10, color: MUTED, marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* ── Task create area (tasks filter only) ── */}
-            {tlFilter === 'tasks' && (
-              <div style={{ padding: '12px 16px', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
-                {!showTaskForm ? (
-                  <button onClick={() => { setShowTaskForm(true); setTaskForm(f => ({ ...f, title: TYPE_DEFAULTS['Follow Up'] })) }}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: BLUE, background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, borderRadius: 2, padding: '7px 14px', cursor: 'pointer' }}>
-                    <Plus size={13} weight="light" /> Add Task
-                  </button>
-                ) : (
-                  <div style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 2, padding: '14px' }}>
-                    <div style={{ marginBottom: 10 }}>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 4 }}>Task Type</label>
-                      <select value={taskForm.task_type}
-                        onChange={e => { const t = e.target.value; setTaskForm(f => ({ ...f, task_type: t, title: TYPE_DEFAULTS[t] ?? f.title })) }}
-                        style={{ width: '100%', fontSize: 13, color: TEXT, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 2, padding: '7px 10px', outline: 'none' }}>
-                        {TASK_TYPES.map(t => <option key={t}>{t}</option>)}
-                      </select>
-                    </div>
-                    <div style={{ marginBottom: 10 }}>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 4 }}>Title</label>
-                      <input type="text" value={taskForm.title} placeholder="Task title…"
-                        onChange={e => setTaskForm(f => ({ ...f, title: e.target.value }))}
-                        style={{ width: '100%', fontSize: 13, color: TEXT, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 2, padding: '7px 10px', outline: 'none', boxSizing: 'border-box' }} />
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 10, marginBottom: 10 }}>
-                      <div>
-                        <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 4 }}>Due Date</label>
-                        <input type="date" value={taskForm.date} min={new Date().toISOString().slice(0, 10)}
-                          onChange={e => setTaskForm(f => ({ ...f, date: e.target.value }))}
-                          style={{ width: '100%', fontSize: 13, color: TEXT, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 2, padding: '7px 10px', outline: 'none', boxSizing: 'border-box', colorScheme: 'light' }} />
-                      </div>
-                      <div>
-                        <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 4 }}>Time</label>
-                        <input type="time" value={taskForm.time}
-                          onChange={e => setTaskForm(f => ({ ...f, time: e.target.value }))}
-                          style={{ width: '100%', fontSize: 13, color: TEXT, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 2, padding: '7px 10px', outline: 'none', boxSizing: 'border-box', colorScheme: 'light' }} />
-                      </div>
-                    </div>
-                    <div style={{ marginBottom: 10 }}>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 6 }}>Priority</label>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        {(['High', 'Medium', 'Low'] as const).map(p => {
-                          const pc = PRIORITY_CFG[p]; const isAct = taskForm.priority === p
-                          return (
-                            <button key={p} onClick={() => setTaskForm(f => ({ ...f, priority: p }))}
-                              style={{ flex: 1, fontSize: 12, fontWeight: 700, border: `1px solid ${isAct ? pc.color : BORDER}`, borderRadius: 2, padding: '6px 0', cursor: 'pointer', color: isAct ? pc.color : MUTED, background: isAct ? pc.bg : PANEL }}>
-                              {p}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                    <div style={{ marginBottom: 12 }}>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 4 }}>Notes <span style={{ fontWeight: 400 }}>(optional)</span></label>
-                      <textarea rows={2} value={taskForm.notes} placeholder="Additional context…"
-                        onChange={e => setTaskForm(f => ({ ...f, notes: e.target.value }))}
-                        style={{ width: '100%', fontSize: 13, color: TEXT, background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 2, padding: '7px 10px', outline: 'none', resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }} />
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                      <button onClick={() => setShowTaskForm(false)}
-                        style={{ fontSize: 12, fontWeight: 600, color: MUTED, background: '#F1F5F9', border: 'none', borderRadius: 2, padding: '7px 14px', cursor: 'pointer' }}>Cancel</button>
-                      <button onClick={handleCreateTask} disabled={savingTask || !taskForm.title.trim() || !taskForm.date}
-                        style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: !taskForm.title.trim() || !taskForm.date ? '#CBD5E1' : BLUE, border: 'none', borderRadius: 2, padding: '7px 16px', cursor: !taskForm.title.trim() || !taskForm.date ? 'not-allowed' : 'pointer' }}>
-                        {savingTask ? 'Saving…' : 'Add Task'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── Quick note composer (all / notes) ── */}
-            {(tlFilter === 'all' || tlFilter === 'notes') && (
-              <div style={{ padding: '10px 16px', borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                  <textarea value={quickNote} onChange={e => setQuickNote(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveQuickNote() }}
-                    placeholder="Quick note… (⌘+Enter to save)"
-                    rows={quickNote ? 3 : 1}
-                    style={{ flex: 1, border: `1px solid ${BORDER}`, borderRadius: 2, padding: '8px 12px', fontSize: 13, color: TEXT, background: BG, resize: 'none', outline: 'none', fontFamily: 'inherit' }} />
-                  {quickNote.trim() && (
-                    <button onClick={saveQuickNote} disabled={savingNote}
-                      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 13px', background: BLUE, border: 'none', borderRadius: 2, color: '#fff', fontSize: 12, fontWeight: 600, cursor: savingNote ? 'not-allowed' : 'pointer', opacity: savingNote ? 0.7 : 1, flexShrink: 0 }}>
-                      {savingNote
-                        ? <CircleNotch size={11} weight="light" style={{ animation: 'spin 0.8s linear infinite' }} />
-                        : <PaperPlaneTilt size={11} weight="light" />}
-                      Save
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* ── Unified Timeline Feed ── */}
-            <div style={{ flex: 1, padding: '12px 16px', overflowY: 'auto' }}>
-              {visibleTLItems.length === 0 ? (
-                <EmptyState icon={Clock} title="No activity yet" sub="Log a call, note, or WhatsApp to start the timeline" action={{ label: 'Log activity', onClick: () => setShowActivityModal(true) }} />
-              ) : (
-                visibleTLItems.map(item => {
-                  if (item.kind === 'activity') {
-                    const act = item.data
-                    const advancedTo = statusMarkers.get(act.id)
-                    const advColor = advancedTo
-                      ? ({ New: '#78889B', Cold: '#2E66F6', Warm: '#F59E0B', Hot: '#1D4ED8', Closed: '#059669', Disqualified: '#94A3B8' } as Record<string, string>)[advancedTo] ?? '#78889B'
-                      : null
-                    return (
-                      <div key={act.id}>
-                        <ActivityTLRow act={act} />
-                        {advancedTo && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0 8px' }}>
-                            <div style={{ flex: 1, height: 1, background: `${advColor}28` }} />
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, color: advColor!, background: `${advColor}10`, border: `1px solid ${advColor}28`, padding: '2px 10px', borderRadius: 2, whiteSpace: 'nowrap' }}>
-                              <TrendUp size={9} weight="light" /> Moved to {advancedTo}
-                            </span>
-                            <div style={{ flex: 1, height: 1, background: `${advColor}28` }} />
-                          </div>
-                        )}
-                      </div>
-                    )
-                  }
-                  const task = item.data as LeadTask
-                  const now2 = new Date()
-                  const todayStr2 = now2.toISOString().slice(0, 10)
-                  const dueDate = new Date(task.due_date)
-                  const isOverdue = dueDate < now2 && dueDate.toISOString().slice(0, 10) !== todayStr2
-                  const pc = PRIORITY_CFG[task.priority]
-                  const isDone = task.status === 'Done'
-                  const isCancelled = task.status === 'Cancelled'
-                  const dueLabel = (() => {
-                    const dDay = dueDate.toISOString().slice(0, 10)
-                    if (dDay === todayStr2) return 'Today'
-                    if (dDay === new Date(Date.now() + 86400000).toISOString().slice(0, 10)) return 'Tomorrow'
-                    if (isOverdue) return 'Overdue'
-                    return dueDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
-                  })()
-                  return (
-                    <div key={`task-${task.id}`} style={{ display: 'flex', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}`, opacity: isCancelled ? 0.5 : 1 }}>
-                      <div style={{ width: 3, background: isDone ? EMERALD : isCancelled ? '#CBD5E1' : pc.color, borderRadius: 2, flexShrink: 0, alignSelf: 'stretch', minHeight: 28 }} />
-                      <div style={{ width: 28, height: 28, borderRadius: 2, background: isDone ? 'rgba(5,150,105,0.09)' : isCancelled ? '#F1F5F9' : pc.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-                        <CheckSquare size={13} weight="light" style={{ color: isDone ? EMERALD : isCancelled ? MUTED : pc.color }} />
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 2 }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: isDone ? MUTED : TEXT, textDecoration: isDone ? 'line-through' : 'none', lineHeight: 1.4 }}>{task.title}</span>
-                          <span style={{ fontSize: 11, color: MUTED, flexShrink: 0 }}>{timeAgo(task.created_at)}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: MUTED, flexWrap: 'wrap', marginBottom: task.status === 'Pending' ? 6 : 0 }}>
-                          <span>{task.task_type}</span>
-                          <span>·</span>
-                          <span style={{ fontWeight: 600, color: isOverdue && !isDone ? RED : isDone ? EMERALD : MUTED }}>
-                            {isDone ? 'Done' : isCancelled ? 'Cancelled' : `Due ${dueLabel}`}
-                          </span>
-                          <span>·</span>
-                          <span style={{ fontWeight: 600, color: pc.color }}>{task.priority}</span>
-                        </div>
-                        {task.notes && <p style={{ fontSize: 12, color: MUTED2, margin: '0 0 6px', lineHeight: 1.5 }}>{task.notes}</p>}
-                        {task.status === 'Pending' && (
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            <button onClick={() => updateTask(task.id, 'Done')}
-                              style={{ fontSize: 11, fontWeight: 600, color: EMERALD, background: 'rgba(5,150,105,0.09)', border: 'none', borderRadius: 2, padding: '3px 10px', cursor: 'pointer' }}>
-                              Mark Done
-                            </button>
-                            <button onClick={() => updateTask(task.id, 'Cancelled')}
-                              style={{ fontSize: 11, color: MUTED, background: '#F1F5F9', border: 'none', borderRadius: 2, padding: '3px 10px', cursor: 'pointer' }}>
-                              Cancel
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })
+          <KpiCard icon={<Wallet size={16} weight="bold" />} accent={GREEN} title="Budget" value={formatBudgetShort(lead.budgetMin, lead.budgetMax)}>
+            <div className="flex min-w-0 flex-wrap gap-1.5">
+              {lead.propertyType?.slice(0, 2).map(pt => <Chip key={pt}><House size={12} color={SUBTLE} />{pt}</Chip>)}
+              {lead.timeline && <Chip><Clock size={12} color={SUBTLE} />{lead.timeline}</Chip>}
+              {!lead.timeline && !(lead.propertyType && lead.propertyType.length > 0) && (
+                <span className="text-[13px]" style={{ color: SUBTLE }}>{budgetSet ? 'No property type yet' : 'Budget not captured yet'}</span>
               )}
             </div>
-          </div>
+          </KpiCard>
 
-          {/* ══════════════════════════════════════════════════
-              RIGHT — Sidebar
-          ══════════════════════════════════════════════════ */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <KpiCard icon={<ClockCounterClockwise size={16} weight="bold" />} accent={contactTone.color === TEXT_2 ? MUTED : contactTone.color} title="Last contact"
+            value={daysSince === null ? '—' : daysSince === 0 ? 'Today' : daysSince}
+            unit={daysSince === null ? 'never' : daysSince === 0 ? undefined : daysSince === 1 ? 'day ago' : 'days ago'}
+            pill={<Chip color={contactTone.color} bg={contactTone.bg} border={contactTone.border} className="rounded-full">{contactTone.label}</Chip>}>
+            {lastAct ? (
+              <div className="flex min-w-0 items-center gap-2 text-[13px]" style={{ color: SUBTLE }}>
+                <span className="grid size-6 shrink-0 place-items-center rounded-full border" style={{ background: lastColor.bg, borderColor: lastColor.ring, color: lastColor.icon }}>
+                  <LastIcon size={12} weight="bold" />
+                </span>
+                <span className="truncate"><span className="font-semibold" style={{ color: TEXT_2 }}>{lastAct.type}</span>{lastAct.outcome ? ` · ${lastAct.outcome}` : ''}</span>
+              </div>
+            ) : <span className="text-[13px]" style={{ color: SUBTLE }}>No calls, messages or notes yet</span>}
+          </KpiCard>
 
-            {/* Lead Lifecycle */}
-            <SideCard>
-              <SideCardHeader title="Lead Lifecycle" icon={TrendUp} />
-              <div style={{ padding: '14px 12px' }}>
-                {(() => {
-                  const PIPELINE = ['New', 'Cold', 'Warm', 'Hot', 'Closed'] as const
-                  const STAGE_CFG: Record<string, { color: string; Icon: React.ElementType; desc: string }> = {
-                    New:          { color: '#64748B', Icon: ClipboardText, desc: 'Unworked — just assigned' },
-                    Cold:         { color: '#2563EB', Icon: Moon,          desc: 'Calls / WA only' },
-                    Warm:         { color: '#F59E0B', Icon: SunDim,        desc: 'VM / OBM / SV done' },
-                    Hot:          { color: '#1D4ED8', Icon: Flame,         desc: 'EOI received' },
-                    Closed:       { color: '#059669', Icon: Check,         desc: 'Deals' },
-                    Disqualified: { color: '#94A3B8', Icon: X,             desc: 'NC / not proceeding' },
-                  }
-                  // Which activity type drives each stage
-                  const STAGE_TRIGGER: Record<string, string[]> = {
-                    Cold:   ['Call Made', 'Call Missed', 'WhatsApp Sent', 'WhatsApp Received', 'Email Sent'],
-                    Warm:   ['VM Done', 'OBM Done', 'Site Visit Done', 'Site Visit Scheduled'],
-                    Hot:    ['EOI Received'],
-                    Closed: ['Deal Closed'],
-                  }
+          <KpiCard icon={<HourglassMedium size={16} weight="bold" />} accent={BLUE} title="In pipeline"
+            value={daysInPipe > 0 ? daysInPipe : 'Today'} unit={daysInPipe > 0 ? (daysInPipe === 1 ? 'day' : 'days') : undefined}
+            pill={openTasks > 0
+              ? <Chip color="#B54708" bg="#FFFAEB" border="#FEDF89" className="rounded-full tabular-nums">{openTasks} open {openTasks === 1 ? 'task' : 'tasks'}</Chip>
+              : <Chip className="rounded-full tabular-nums">{activities.length} {activities.length === 1 ? 'touch' : 'touches'}</Chip>}>
+            <div className="flex min-w-0 items-center gap-2 text-[13px]" style={{ color: SUBTLE }}>
+              <Bell size={15} weight="bold" color={futureFU ? BLUE : LABEL} className="shrink-0" />
+              <span className="truncate">
+                {futureFU ? <>Next follow-up <span className="font-semibold" style={{ color: TEXT_2 }}>{formatShortDate(futureFU)}</span></> : 'No follow-up scheduled'}
+              </span>
+            </div>
+          </KpiCard>
+        </div>
 
-                  const currentStatus  = lead.status ?? 'New'
-                  const isDisqualified = currentStatus === 'Disqualified'
-                  const currentIdx     = PIPELINE.indexOf(currentStatus as typeof PIPELINE[number])
+        {/* ══ Lifecycle ══ */}
+        <LifecycleTrack status={status} activities={activities} />
 
-                  // Build stage history from activities — what activity first reached each stage
-                  const stageHistory: Record<string, { type: string; date: string }> = {}
-                  const chrono = [...activities].reverse()
-                  for (const act of chrono) {
-                    for (const [stage, triggers] of Object.entries(STAGE_TRIGGER)) {
-                      if (triggers.includes(act.type) && !stageHistory[stage]) {
-                        stageHistory[stage] = { type: act.type, date: act.createdAt }
-                      }
-                    }
-                  }
+        {/* ══ Main: activity + details ══ */}
+        <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_380px]">
 
-                  const curCfg = STAGE_CFG[currentStatus] ?? STAGE_CFG['New']
+          {/* ── Activity ── */}
+          <Card className="min-w-0">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-5 pb-3 pt-4">
+              <div className="flex items-center gap-2.5">
+                <h2 className="m-0 text-[16px] font-semibold" style={{ color: TEXT }}>Activity</h2>
+                <span className="rounded-full border px-2 text-[12px] font-semibold tabular-nums" style={{ borderColor: BORDER, color: MUTED, background: SURFACE }}>{allTLItems.length}</span>
+              </div>
+              {tlFilter === 'tasks' && !showTaskForm && (
+                <Btn onClick={() => { setShowTaskForm(true); setTaskForm(f => ({ ...f, title: TYPE_DEFAULTS['Follow Up'] })) }}>
+                  <Plus size={16} weight="bold" />Add task
+                </Btn>
+              )}
+            </div>
 
+            {/* Filters */}
+            <div className="px-5">
+              <div role="tablist" aria-label="Filter activity" className="flex gap-0.5 overflow-x-auto rounded-[10px] border p-[3px] [scrollbar-width:none]" style={{ background: SURFACE, borderColor: BORDER }}>
+                {TL_FILTER_CFG.map(f => {
+                  const count = tlCounts[f.key]
+                  const active = tlFilter === f.key
                   return (
-                    <div>
-                      <style>{`
-                        @keyframes lc-ripple {
-                          0%   { box-shadow: 0 0 0 0 ${curCfg.color}70, 0 0 0 0 ${curCfg.color}35; }
-                          70%  { box-shadow: 0 0 0 8px ${curCfg.color}00, 0 0 0 16px ${curCfg.color}00; }
-                          100% { box-shadow: 0 0 0 0 ${curCfg.color}00, 0 0 0 0  ${curCfg.color}00; }
-                        }
-                        @keyframes lc-shine {
-                          0%   { background-position: -220% center; }
-                          100% { background-position: 220% center; }
-                        }
-                        @keyframes lc-flow {
-                          0%, 100% { opacity: 0.45; }
-                          50%       { opacity: 1; }
-                        }
-                      `}</style>
+                    <button key={f.key} type="button" role="tab" aria-selected={active} onClick={() => setTlFilter(f.key)}
+                      className="flex h-8 flex-1 shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-[7px] px-3 text-[13.5px] font-semibold transition-colors"
+                      style={active
+                        ? { background: CANVAS, color: TEXT, boxShadow: '0 1px 3px rgba(16,24,40,0.1), 0 1px 2px rgba(16,24,40,0.06)' }
+                        : { background: 'transparent', color: SUBTLE }}>
+                      {f.label}
+                      {count > 0 && <span className="text-[12px] font-medium tabular-nums" style={{ color: active ? MUTED : LABEL }}>{count}</span>}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
 
-                      {PIPELINE.map((stage, idx) => {
-                        const cfg      = STAGE_CFG[stage]
-                        const isDone   = !isDisqualified && currentIdx > idx
-                        const isCur    = currentStatus === stage
-                        const isFuture = currentIdx < idx
-                        const hist     = stageHistory[stage]
+            <div className="flex flex-col gap-3 px-5 pt-4">
+              {/* Smart nudge */}
+              {nudge && tlFilter === 'all' && (
+                <div className="flex flex-wrap items-center gap-3 rounded-[12px] border p-3 sm:flex-nowrap" style={{ background: nudge.bg, borderColor: nudge.border }}>
+                  <span className="grid size-9 shrink-0 place-items-center rounded-[10px] border bg-white" style={{ borderColor: nudge.border, color: nudge.color }}>
+                    <nudge.icon size={18} weight="bold" />
+                  </span>
+                  <div className="min-w-0 flex-1 basis-[200px]">
+                    <div className="text-[14px] font-semibold" style={{ color: TEXT }}>{nudge.text}</div>
+                    <div className="text-[13px] leading-snug" style={{ color: MUTED }}>{nudge.sub}</div>
+                  </div>
+                  <div className="ml-auto flex shrink-0 items-center gap-1">
+                    <button type="button" onClick={nudge.onAction}
+                      className="inline-flex h-9 cursor-pointer items-center rounded-[9px] px-3.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
+                      style={{ background: nudge.color, boxShadow: XS }}>
+                      {nudge.actionLabel}
+                    </button>
+                    <button type="button" onClick={() => setNudgeDismissed(true)} aria-label="Dismiss suggestion"
+                      className="grid size-9 cursor-pointer place-items-center rounded-[9px] transition-colors hover:bg-black/5" style={{ color: SUBTLE }}>
+                      <X size={15} weight="bold" />
+                    </button>
+                  </div>
+                </div>
+              )}
 
+              {/* Call stats (calls filter) */}
+              {tlFilter === 'calls' && (
+                <div className="grid grid-cols-2 overflow-hidden rounded-[12px] border sm:grid-cols-4" style={{ borderColor: BORDER }}>
+                  {[
+                    { label: 'Total',     value: callStats.total,      color: TEXT      },
+                    { label: 'Connected', value: callStats.connected,  color: GREEN     },
+                    { label: 'No answer', value: callStats.noResponse, color: '#B54708' },
+                    { label: 'Missed',    value: callStats.missed,     color: RED       },
+                  ].map((s, i) => (
+                    <div key={s.label} className={`px-4 py-3 ${i % 2 === 0 ? 'border-r' : 'sm:border-r'} ${i < 2 ? 'border-b sm:border-b-0' : ''} ${i === 3 ? 'sm:border-r-0' : ''}`} style={{ borderColor: BORDER }}>
+                      <div className="text-[12.5px] font-medium" style={{ color: SUBTLE }}>{s.label}</div>
+                      <div className="mt-0.5 text-[24px] font-semibold leading-tight tabular-nums" style={{ color: s.color }}>{s.value}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Task form (tasks filter) */}
+              {tlFilter === 'tasks' && showTaskForm && (
+                <div className="rounded-[12px] border p-4" style={{ background: SURFACE, borderColor: BORDER }}>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="mb-1.5 block text-[13px] font-medium" style={{ color: TEXT_2 }}>Task type</span>
+                      <span className="relative block">
+                        <select value={taskForm.task_type}
+                          onChange={e => { const t = e.target.value; setTaskForm(f => ({ ...f, task_type: t, title: TYPE_DEFAULTS[t] ?? f.title })) }}
+                          className={`${FIELD} h-10 cursor-pointer appearance-none pr-9`} style={{ borderColor: BORDER_2, color: TEXT, boxShadow: XS }}>
+                          {TASK_TYPES.map(t => <option key={t}>{t}</option>)}
+                        </select>
+                        <CaretDown size={14} weight="bold" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" color={SUBTLE} />
+                      </span>
+                    </label>
+                    <label className="block">
+                      <span className="mb-1.5 block text-[13px] font-medium" style={{ color: TEXT_2 }}>Title</span>
+                      <input type="text" value={taskForm.title} placeholder="Task title…"
+                        onChange={e => setTaskForm(f => ({ ...f, title: e.target.value }))}
+                        className={`${FIELD} h-10`} style={{ borderColor: BORDER_2, color: TEXT, boxShadow: XS }} />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1.5 block text-[13px] font-medium" style={{ color: TEXT_2 }}>Due date</span>
+                      <input type="date" value={taskForm.date} min={new Date().toISOString().slice(0, 10)}
+                        onChange={e => setTaskForm(f => ({ ...f, date: e.target.value }))}
+                        className={`${FIELD} h-10`} style={{ borderColor: BORDER_2, color: TEXT, boxShadow: XS, colorScheme: 'light' }} />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1.5 block text-[13px] font-medium" style={{ color: TEXT_2 }}>Time</span>
+                      <input type="time" value={taskForm.time}
+                        onChange={e => setTaskForm(f => ({ ...f, time: e.target.value }))}
+                        className={`${FIELD} h-10`} style={{ borderColor: BORDER_2, color: TEXT, boxShadow: XS, colorScheme: 'light' }} />
+                    </label>
+                  </div>
+                  <div className="mt-3">
+                    <span className="mb-1.5 block text-[13px] font-medium" style={{ color: TEXT_2 }}>Priority</span>
+                    <div className="flex gap-1 rounded-[10px] border bg-white p-[3px]" style={{ borderColor: BORDER_2 }}>
+                      {(['High', 'Medium', 'Low'] as const).map(p => {
+                        const pc = PRIORITY_CFG[p]; const isAct = taskForm.priority === p
                         return (
-                          <div key={stage}>
-                            <div style={{
-                              display: 'flex', alignItems: 'center', gap: 10,
-                              padding: '9px 10px', borderRadius: 10,
-                              // shimmer sweep on current stage
-                              background: isCur
-                                ? `linear-gradient(105deg, ${cfg.color}0e 20%, ${cfg.color}28 50%, ${cfg.color}0e 80%)`
-                                : 'transparent',
-                              backgroundSize: isCur ? '250% 100%' : undefined,
-                              animation: isCur ? 'lc-shine 3.5s ease-in-out infinite' : 'none',
-                              outline: isCur ? `1.5px solid ${cfg.color}30` : 'none',
-                            }}>
-                              {/* Circle — ripple on current */}
-                              <div style={{
-                                width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                                background: isDone
-                                  ? `linear-gradient(145deg, ${cfg.color}, ${cfg.color}cc)`
-                                  : isCur ? `linear-gradient(145deg, ${cfg.color}, ${cfg.color}dd)` : '#F1F5F9',
-                                border: `2px solid ${isDone || isCur ? cfg.color : '#E2E8F0'}`,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                animation: isCur ? 'lc-ripple 2.4s ease-out infinite' : 'none',
-                                position: 'relative',
-                              }}>
-                                {isDone
-                                  ? <Check weight="light" size={15} color="#fff" />
-                                  : <cfg.Icon weight="light" size={15} color={isCur ? '#fff' : isFuture ? '#CBD5E1' : cfg.color} />}
-                              </div>
-
-                              {/* Text */}
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 13, fontWeight: isCur ? 700 : isDone ? 600 : 400, color: isCur ? cfg.color : isDone ? cfg.color : isFuture ? '#CBD5E1' : '#94A3B8', display: 'flex', alignItems: 'center', gap: 5 }}>
-                                  {stage}
-                                  {isCur && <span style={{ fontSize: 10, fontWeight: 700, background: `${cfg.color}20`, color: cfg.color, padding: '1px 6px', borderRadius: 99 }}>Current</span>}
-                                </div>
-                                {hist && !isCur ? (
-                                  <div style={{ fontSize: 10, color: isDone ? cfg.color : MUTED, marginTop: 1, opacity: 0.8 }}>
-                                    {hist.type} · {formatShortDate(hist.date)}
-                                  </div>
-                                ) : (
-                                  <div style={{ fontSize: 10, color: isFuture ? '#CBD5E1' : MUTED, marginTop: 1 }}>{cfg.desc}</div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Connector — liquid pulse on done segments */}
-                            {idx < PIPELINE.length - 1 && (
-                              <div style={{
-                                marginLeft: 25, width: 2, height: 10, borderRadius: 1,
-                                background: isDone ? cfg.color : '#E2E8F0',
-                                animation: isDone ? 'lc-flow 2s ease-in-out infinite' : 'none',
-                              }} />
-                            )}
-                          </div>
+                          <button key={p} type="button" onClick={() => setTaskForm(f => ({ ...f, priority: p }))} aria-pressed={isAct}
+                            className="h-8 flex-1 cursor-pointer rounded-[7px] border text-[13px] font-semibold transition-colors"
+                            style={isAct ? { color: pc.color, background: pc.bg, borderColor: pc.border } : { color: SUBTLE, background: 'transparent', borderColor: 'transparent' }}>
+                            {p}
+                          </button>
                         )
                       })}
-
-                      {/* Disqualified */}
-                      <div style={{ marginTop: 10, borderTop: `1px dashed ${BORDER}`, paddingTop: 10 }}>
-                        <div style={{
-                          display: 'flex', alignItems: 'center', gap: 10,
-                          padding: '8px 10px', borderRadius: 9,
-                          background: isDisqualified ? 'rgba(148,163,184,0.12)' : 'transparent',
-                          outline: isDisqualified ? '2px solid rgba(148,163,184,0.3)' : 'none',
-                        }}>
-                          <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: isDisqualified ? '#94A3B8' : '#F1F5F9', border: `2px solid ${isDisqualified ? '#94A3B8' : '#E2E8F0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {isDisqualified
-                              ? <X weight="light" size={14} color="#fff" />
-                              : <X weight="light" size={14} color="#94A3B8" style={{ opacity: 0.3 }} />}
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 13, fontWeight: isDisqualified ? 700 : 400, color: isDisqualified ? '#94A3B8' : '#CBD5E1', display: 'flex', alignItems: 'center', gap: 5 }}>
-                              Disqualified
-                              {isDisqualified && <span style={{ fontSize: 10, fontWeight: 700, background: 'rgba(148,163,184,0.2)', color: '#94A3B8', padding: '1px 6px', borderRadius: 99 }}>Current</span>}
-                            </div>
-                            <div style={{ fontSize: 10, color: '#CBD5E1', marginTop: 1 }}>NC / not proceeding</div>
-                          </div>
-                        </div>
-                      </div>
                     </div>
-                  )
-                })()}
+                  </div>
+                  <label className="mt-3 block">
+                    <span className="mb-1.5 block text-[13px] font-medium" style={{ color: TEXT_2 }}>Notes <span className="font-normal" style={{ color: LABEL }}>(optional)</span></span>
+                    <textarea rows={2} value={taskForm.notes} placeholder="Additional context…"
+                      onChange={e => setTaskForm(f => ({ ...f, notes: e.target.value }))}
+                      className={`${FIELD} resize-y py-2.5 font-[inherit]`} style={{ borderColor: BORDER_2, color: TEXT, boxShadow: XS }} />
+                  </label>
+                  <div className="mt-4 flex justify-end gap-2">
+                    <Btn onClick={() => setShowTaskForm(false)}>Cancel</Btn>
+                    <button type="button" onClick={handleCreateTask} disabled={savingTask || !taskForm.title.trim() || !taskForm.date}
+                      className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-[10px] px-4 text-[14px] font-semibold text-white transition-colors hover:bg-[#1A43BF] disabled:cursor-not-allowed disabled:bg-[#B2CCFF]"
+                      style={{ background: !taskForm.title.trim() || !taskForm.date ? undefined : BLUE, boxShadow: XS }}>
+                      {savingTask ? <CircleNotch size={15} weight="bold" className="animate-spin" /> : <Plus size={15} weight="bold" />}
+                      {savingTask ? 'Saving…' : 'Add task'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Quick note (all / notes) */}
+              {(tlFilter === 'all' || tlFilter === 'notes') && (
+                <div className="rounded-[12px] border bg-white transition-[border-color,box-shadow] focus-within:border-[#84ADFF] focus-within:shadow-[0_0_0_4px_rgba(29,78,216,0.12)]" style={{ borderColor: BORDER_2, boxShadow: XS }}>
+                  <textarea value={quickNote} onChange={e => setQuickNote(e.target.value)} aria-label="Quick note"
+                    onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveQuickNote() }}
+                    placeholder={`Add a note about ${lead.name.firstName}…`}
+                    rows={quickNote ? 3 : 2}
+                    className="block w-full resize-none border-0 bg-transparent px-3.5 pt-3 text-[14px] outline-none placeholder:text-[#98A2B3]"
+                    style={{ color: TEXT, fontFamily: 'inherit' }} />
+                  <div className="flex items-center justify-between gap-3 px-3 pb-2.5 pt-1">
+                    <span className="hidden items-center gap-1 text-[12px] sm:inline-flex" style={{ color: LABEL }}>
+                      <kbd className="rounded-[5px] border px-1.5 font-sans text-[11px]" style={{ borderColor: BORDER, background: SURFACE }}>⌘</kbd>
+                      <kbd className="rounded-[5px] border px-1.5 font-sans text-[11px]" style={{ borderColor: BORDER, background: SURFACE }}>Enter</kbd>
+                      to save
+                    </span>
+                    <button type="button" onClick={saveQuickNote} disabled={savingNote || !quickNote.trim()}
+                      className="ml-auto inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-[8px] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#1A43BF] disabled:cursor-not-allowed disabled:bg-[#D0D5DD]"
+                      style={{ background: quickNote.trim() ? BLUE : undefined }}>
+                      {savingNote ? <CircleNotch size={13} weight="bold" className="animate-spin" /> : <PaperPlaneTilt size={13} weight="bold" />}
+                      Save note
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Feed */}
+            <div className="px-5 pb-3 pt-5">
+              {visibleTLItems.length === 0 ? (
+                <div className="flex flex-col items-center px-5 pb-8 pt-4 text-center">
+                  <div className="mb-3 grid size-12 place-items-center rounded-[12px] border" style={{ borderColor: BORDER, boxShadow: XS, color: TEXT_2 }}>
+                    <Clock size={22} />
+                  </div>
+                  <p className="m-0 mb-1 text-[15px] font-semibold" style={{ color: TEXT }}>{tlFilter === 'tasks' ? 'No tasks yet' : 'No activity yet'}</p>
+                  <p className="m-0 mb-4 max-w-[260px] text-[13.5px]" style={{ color: SUBTLE }}>
+                    {tlFilter === 'tasks' ? 'Add a task to remind yourself of the next step' : 'Log a call, note, or WhatsApp to start the timeline'}
+                  </p>
+                  {tlFilter === 'tasks'
+                    ? (!showTaskForm && <Btn onClick={() => { setShowTaskForm(true); setTaskForm(f => ({ ...f, title: TYPE_DEFAULTS['Follow Up'] })) }}><Plus size={16} weight="bold" />Add task</Btn>)
+                    : <Btn onClick={() => setShowActivityModal(true)}><Plus size={16} weight="bold" />Log activity</Btn>}
+                </div>
+              ) : (
+                tlGroups.map(group => (
+                  <div key={group.label}>
+                    <div className="mb-3 flex items-center gap-3">
+                      <span className="text-[12px] font-semibold uppercase tracking-[0.06em]" style={{ color: LABEL }}>{group.label}</span>
+                      <span className="h-px flex-1" style={{ background: BORDER }} />
+                    </div>
+                    <ol className="m-0 list-none p-0">
+                      {group.items.map((item, i) => {
+                        const last = i === group.items.length - 1
+                        return item.kind === 'activity'
+                          ? <ActivityTLRow key={item.data.id} act={item.data} advancedTo={statusMarkers.get(item.data.id)} last={last} />
+                          : <TaskTLRow key={`task-${item.data.id}`} task={item.data} last={last} onUpdate={updateTask} />
+                      })}
+                    </ol>
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
+
+          {/* ── Right column ── */}
+          <div className="grid min-w-0 grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-1">
+
+            {/* Details */}
+            <Card>
+              <div className="flex items-center justify-between gap-3 px-5 pb-3 pt-4">
+                <h2 className="m-0 text-[16px] font-semibold" style={{ color: TEXT }}>Details</h2>
+                <div role="tablist" aria-label="Lead details" className="flex gap-0.5 rounded-[10px] border p-[3px]" style={{ background: SURFACE, borderColor: BORDER }}>
+                  {(['info', 'requirements'] as LeftTab[]).map(tab => (
+                    <button key={tab} type="button" role="tab" aria-selected={leftTab === tab} onClick={() => setLeftTab(tab)}
+                      className="h-7 cursor-pointer rounded-[7px] px-2.5 text-[13px] font-semibold transition-colors"
+                      style={leftTab === tab
+                        ? { background: CANVAS, color: TEXT, boxShadow: '0 1px 3px rgba(16,24,40,0.1), 0 1px 2px rgba(16,24,40,0.06)' }
+                        : { background: 'transparent', color: SUBTLE }}>
+                      {tab === 'info' ? 'Lead info' : 'Requirements'}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </SideCard>
 
-            <PropertyMatcher lead={{ name, city: lead.city ?? null, budgetMin: lead.budgetMin ?? null, budgetMax: lead.budgetMax ?? null, propertyType: lead.propertyType ?? null, timeline: lead.timeline ?? null, localities: lead.localities ?? null, phone: phone || null }} />
-            <FollowUpWriter lead={{ leadId, name, city: lead.city ?? null, budget: formatBudget(lead.budgetMin, lead.budgetMax) !== '—' ? formatBudget(lead.budgetMin, lead.budgetMax) : null, propertyType: lead.propertyType?.join(', ') ?? null, timeline: lead.timeline ?? null, score, lastActivity: activities[0]?.type ?? null, status: lead.status ?? null, phone: phone || null }} />
+              {leftTab === 'info' && (
+                <dl className="m-0 px-5 pb-2">
+                  {[
+                    { icon: Envelope,      label: 'Email',  value: email || null, href: email ? `mailto:${email}` : undefined },
+                    { icon: Phone,         label: 'Phone',  value: phone || null, href: phone ? `tel:${phone}` : undefined },
+                    { icon: MapPin,        label: 'City',   value: lead.city },
+                    { icon: Tag,           label: 'Source', value: lead.sourcePortal ? sourceMeta(lead.sourcePortal).label : null, logo: lead.sourcePortal },
+                    { icon: CalendarBlank, label: 'Added',  value: formatDate(lead.createdAt) },
+                  ].map(row => {
+                    const RowIcon = row.icon
+                    return (
+                      <div key={row.label} className="flex items-start justify-between gap-4 border-t py-3" style={{ borderColor: BORDER }}>
+                        <dt className="flex shrink-0 items-center gap-2 text-[13.5px]" style={{ color: SUBTLE }}>
+                          <RowIcon size={16} />{row.label}
+                        </dt>
+                        <dd className="m-0 min-w-0 text-right text-[14px] font-medium" style={{ color: row.value ? TEXT_2 : LABEL }}>
+                          {row.href
+                            ? <a href={row.href} className="break-all no-underline hover:underline" style={{ color: BLUE }}>{row.value}</a>
+                            : row.logo
+                              ? <span className="inline-flex items-center gap-1.5"><SourceMark raw={row.logo} size={18} />{row.value}</span>
+                              : row.value || '—'}
+                        </dd>
+                      </div>
+                    )
+                  })}
+                  {lead.localities && lead.localities.length > 0 && (
+                    <div className="border-t py-3" style={{ borderColor: BORDER }}>
+                      <dt className="mb-2 flex items-center gap-2 text-[13.5px]" style={{ color: SUBTLE }}><MapPin size={16} />Localities</dt>
+                      <dd className="m-0 flex flex-wrap gap-1.5">
+                        {lead.localities.map(l => <Chip key={l} color={BLUE} bg={BLUE_BG} border={BLUE_LN}>{l}</Chip>)}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              )}
 
+              {leftTab === 'requirements' && (
+                <div className="px-5 pb-4">
+                  <div className="rounded-[12px] border px-4 py-3.5" style={{ background: SURFACE, borderColor: BORDER }}>
+                    <div className="text-[13px] font-medium" style={{ color: SUBTLE }}>Budget</div>
+                    <div className="mt-0.5 text-[22px] font-semibold tracking-[-0.02em] tabular-nums" style={{ color: budgetSet ? TEXT : LABEL }}>
+                      {formatBudget(lead.budgetMin, lead.budgetMax)}
+                    </div>
+                  </div>
+                  <dl className="m-0 mt-2">
+                    <div className="flex items-start justify-between gap-4 py-3">
+                      <dt className="text-[13.5px]" style={{ color: SUBTLE }}>Property assigned</dt>
+                      <dd className="m-0 flex flex-wrap justify-end gap-1.5">
+                        {lead.propertyType && lead.propertyType.length > 0
+                          ? lead.propertyType.map(pt => <Chip key={pt} color={BLUE} bg={BLUE_BG} border={BLUE_LN}><House size={12} />{pt}</Chip>)
+                          : <span className="text-[14px]" style={{ color: LABEL }}>—</span>}
+                      </dd>
+                    </div>
+                    {[{ label: 'Timeline', value: lead.timeline }, { label: 'Status', value: lead.status }].map(r => (
+                      <div key={r.label} className="flex items-center justify-between gap-4 border-t py-3" style={{ borderColor: BORDER }}>
+                        <dt className="text-[13.5px]" style={{ color: SUBTLE }}>{r.label}</dt>
+                        <dd className="m-0 text-[14px] font-medium" style={{ color: r.value ? TEXT_2 : LABEL }}>
+                          {r.label === 'Status' && r.value ? <StatusPill status={r.value} /> : r.value || '—'}
+                        </dd>
+                      </div>
+                    ))}
+                    {lead.localities && lead.localities.length > 0 && (
+                      <div className="border-t py-3" style={{ borderColor: BORDER }}>
+                        <dt className="mb-2 text-[13.5px]" style={{ color: SUBTLE }}>Preferred areas</dt>
+                        <dd className="m-0 flex flex-wrap gap-1.5">
+                          {lead.localities.map(l => <Chip key={l} color={BLUE} bg={BLUE_BG} border={BLUE_LN}>{l}</Chip>)}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                </div>
+              )}
+            </Card>
+
+            {/* Intent signals */}
+            <Card>
+              <div className="flex items-center justify-between gap-3 px-5 pb-1 pt-4">
+                <h2 className="m-0 text-[16px] font-semibold" style={{ color: TEXT }}>Intent signals</h2>
+                <span className="text-[13px] font-medium tabular-nums" style={{ color: SUBTLE }}>{strongSignals}/{bdown.length} strong</span>
+              </div>
+              <ul className="m-0 list-none px-5 pb-3 pt-2">
+                {bdown.map(b => (
+                  <li key={b.label} className="flex items-center gap-3 py-2">
+                    <span className="grid size-6 shrink-0 place-items-center rounded-full border"
+                      style={b.pos ? { background: '#ECFDF3', borderColor: '#ABEFC6', color: GREEN } : { background: SURFACE, borderColor: BORDER, color: LABEL }}>
+                      {b.pos ? <Check size={12} weight="bold" /> : <X size={11} weight="bold" />}
+                    </span>
+                    <span className="text-[14px]" style={{ color: TEXT_2 }}>{b.label}</span>
+                    <span className="ml-auto truncate text-right text-[13.5px] font-medium" style={{ color: b.pos ? TEXT_2 : LABEL }}>{b.value}</span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+
+            {/* <PropertyMatcher … /> — frozen until own inventory is wired */}
+            {/* <FollowUpWriter … /> — frozen until inventory + AI config is ready */}
           </div>
         </div>
       </div>
@@ -1324,79 +1482,66 @@ export default function LeadDetailPage() {
 
       {/* ── Email Compose Modal ── */}
       {showEmailModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(16,24,40,0.55)' }}
           onClick={e => e.target === e.currentTarget && !sendingEmail && setShowEmailModal(false)}>
-          <div style={{ background: PANEL, borderRadius: 20, width: '100%', maxWidth: 520, boxShadow: '0 24px 64px rgba(0,0,0,0.18)', overflow: 'hidden' }}>
-            {/* Header */}
-            <div style={{ padding: '18px 22px 14px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: PRIMARY_DIM, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Envelope size={16} weight="light" style={{ color: BLUE }} />
-                </div>
+          <div role="dialog" aria-modal="true" aria-label="New email" className="w-full max-w-[540px] overflow-hidden rounded-[16px] bg-white shadow-[0_24px_48px_-12px_rgba(16,24,40,0.18)]">
+            <div className="flex items-start justify-between gap-3 border-b px-6 pb-4 pt-5" style={{ borderColor: BORDER }}>
+              <div className="flex items-center gap-3">
+                <span className="grid size-10 place-items-center rounded-[10px] border" style={{ borderColor: BORDER, color: BLUE, boxShadow: XS }}>
+                  <Envelope size={18} weight="bold" />
+                </span>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>New Email</div>
-                  <div style={{ fontSize: 11, color: MUTED }}>To: {name} &lt;{email}&gt;</div>
+                  <div className="text-[16px] font-semibold" style={{ color: TEXT }}>New email</div>
+                  <div className="text-[13px]" style={{ color: SUBTLE }}>To: {name} &lt;{email}&gt;</div>
                 </div>
               </div>
-              <button onClick={() => !sendingEmail && setShowEmailModal(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED, fontSize: 18, lineHeight: 1, padding: 4 }}>✕</button>
+              <button type="button" onClick={() => !sendingEmail && setShowEmailModal(false)} aria-label="Close"
+                className="grid size-9 cursor-pointer place-items-center rounded-[8px] transition-colors hover:bg-[#F9FAFB]" style={{ color: SUBTLE }}>
+                <X size={18} weight="bold" />
+              </button>
             </div>
 
-            {/* Body */}
             {emailSent ? (
-              <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-                <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
-                  <CheckCircle size={26} weight="light" style={{ color: EMERALD }} />
+              <div className="px-6 py-12 text-center">
+                <div className="mx-auto mb-3.5 grid size-14 place-items-center rounded-full" style={{ background: '#ECFDF3', color: GREEN }}>
+                  <CheckCircle size={28} weight="fill" />
                 </div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: TEXT, marginBottom: 6 }}>Email sent!</div>
-                <div style={{ fontSize: 13, color: MUTED }}>Activity logged on this lead's timeline.</div>
+                <div className="mb-1 text-[16px] font-semibold" style={{ color: TEXT }}>Email sent!</div>
+                <div className="text-[14px]" style={{ color: SUBTLE }}>Activity logged on this lead&apos;s timeline.</div>
               </div>
             ) : (
-              <div style={{ padding: '16px 22px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {/* Subject */}
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 5 }}>SUBJECT</label>
-                  <input
-                    value={emailForm.subject}
+              <div className="flex flex-col gap-4 px-6 pb-6 pt-5">
+                <label className="block">
+                  <span className="mb-1.5 block text-[13px] font-medium" style={{ color: TEXT_2 }}>Subject</span>
+                  <input value={emailForm.subject}
                     onChange={e => setEmailForm(f => ({ ...f, subject: e.target.value }))}
                     placeholder="e.g. Following up on your enquiry"
-                    style={{ width: '100%', padding: '9px 12px', fontSize: 13, border: `1.5px solid ${BORDER}`, borderRadius: 10, outline: 'none', color: TEXT, background: '#FAFBFC', boxSizing: 'border-box' }}
-                    onFocus={e => (e.currentTarget.style.borderColor = BLUE)}
-                    onBlur={e => (e.currentTarget.style.borderColor = BORDER)}
-                  />
-                </div>
-                {/* Body */}
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 5 }}>MESSAGE</label>
-                  <textarea
-                    value={emailForm.body}
+                    className={`${FIELD} h-10`} style={{ borderColor: BORDER_2, color: TEXT, boxShadow: XS }} />
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-[13px] font-medium" style={{ color: TEXT_2 }}>Message</span>
+                  <textarea value={emailForm.body}
                     onChange={e => setEmailForm(f => ({ ...f, body: e.target.value }))}
                     placeholder={`Hi ${lead.name.firstName},\n\nThank you for your interest in…`}
                     rows={8}
-                    style={{ width: '100%', padding: '10px 12px', fontSize: 13, border: `1.5px solid ${BORDER}`, borderRadius: 10, outline: 'none', color: TEXT, background: '#FAFBFC', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6, boxSizing: 'border-box' }}
-                    onFocus={e => (e.currentTarget.style.borderColor = BLUE)}
-                    onBlur={e => (e.currentTarget.style.borderColor = BORDER)}
-                  />
-                </div>
+                    className={`${FIELD} resize-y py-2.5 leading-[1.6]`} style={{ borderColor: BORDER_2, color: TEXT, boxShadow: XS, fontFamily: 'inherit' }} />
+                </label>
 
                 {emailError && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 2 }}>
-                    <Warning size={14} weight="light" style={{ color: RED, flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, color: RED }}>{emailError}</span>
+                  <div className="flex items-center gap-2 rounded-[10px] border px-3 py-2.5" style={{ background: '#FEF3F2', borderColor: '#FECDCA' }}>
+                    <Warning size={15} weight="bold" color={RED} className="shrink-0" />
+                    <span className="text-[13px]" style={{ color: RED }}>{emailError}</span>
                   </div>
                 )}
 
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                  <button onClick={() => setShowEmailModal(false)}
-                    style={{ flex: 1, padding: '10px 0', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 10, color: MUTED, fontSize: 13, cursor: 'pointer' }}>
-                    Cancel
-                  </button>
-                  <button onClick={handleSendEmail} disabled={sendingEmail || !emailForm.subject.trim() || !emailForm.body.trim()}
-                    style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 0', background: sendingEmail ? '#ccc' : PRIMARY_GRAD, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: sendingEmail ? 'not-allowed' : 'pointer', opacity: (!emailForm.subject.trim() || !emailForm.body.trim()) ? 0.5 : 1, transition: 'opacity 0.2s' }}>
+                <div className="mt-1 flex gap-3">
+                  <Btn onClick={() => setShowEmailModal(false)} className="flex-1">Cancel</Btn>
+                  <button type="button" onClick={handleSendEmail} disabled={sendingEmail || !emailForm.subject.trim() || !emailForm.body.trim()}
+                    className="inline-flex h-10 flex-[2] cursor-pointer items-center justify-center gap-2 rounded-[10px] text-[14px] font-semibold text-white transition-[background-color,opacity] hover:bg-[#1A43BF] disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{ background: BLUE, boxShadow: XS }}>
                     {sendingEmail
-                      ? <><CircleNotch size={14} weight="light" style={{ animation: 'spin 0.8s linear infinite' }} /> Sending…</>
-                      : <><PaperPlaneTilt size={14} weight="light" /> Send Email</>}
+                      ? <><CircleNotch size={15} weight="bold" className="animate-spin" /> Sending…</>
+                      : <><PaperPlaneTilt size={15} weight="bold" /> Send email</>}
                   </button>
                 </div>
               </div>
@@ -1406,43 +1551,25 @@ export default function LeadDetailPage() {
       )}
 
       {showDeleteConfirm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(16,24,40,0.6)' }}
           onClick={e => e.target === e.currentTarget && setShowDeleteConfirm(false)}>
-          <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 20, padding: 28, maxWidth: 400, width: '100%', textAlign: 'center' }}>
-            <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              <Trash size={20} weight="light" style={{ color: RED }} />
+          <div role="dialog" aria-modal="true" aria-label="Delete lead" className="w-full max-w-[400px] rounded-[16px] bg-white p-6 text-center shadow-[0_24px_48px_-12px_rgba(16,24,40,0.18)]">
+            <div className="mx-auto mb-4 grid size-12 place-items-center rounded-full" style={{ background: '#FEE4E2', color: RED }}>
+              <Trash size={22} weight="bold" />
             </div>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: TEXT, margin: '0 0 8px' }}>Delete Lead?</h3>
-            <p style={{ fontSize: 13, color: MUTED, margin: '0 0 24px' }}>Permanently delete <strong style={{ color: TEXT }}>{name}</strong> and all activity history.</p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setShowDeleteConfirm(false)} style={{ flex: 1, padding: '10px 0', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 10, color: MUTED, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleDelete} disabled={deleting}
-                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 0', background: RED, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 600, cursor: deleting ? 'not-allowed' : 'pointer', opacity: deleting ? 0.7 : 1 }}>
-                {deleting ? <CircleNotch size={13} weight="light" style={{ animation: 'spin 0.8s linear infinite' }} /> : null}
-                {deleting ? 'Deleting…' : 'Delete Lead'}
+            <h3 className="m-0 mb-2 text-[18px] font-semibold" style={{ color: TEXT }}>Delete lead?</h3>
+            <p className="m-0 mb-6 text-[14px]" style={{ color: SUBTLE }}>Permanently delete <strong style={{ color: TEXT }}>{name}</strong> and all activity history.</p>
+            <div className="flex gap-3">
+              <Btn onClick={() => setShowDeleteConfirm(false)} className="flex-1">Cancel</Btn>
+              <button type="button" onClick={handleDelete} disabled={deleting}
+                className="inline-flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[10px] text-[14px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+                style={{ background: '#D92D20', boxShadow: XS }}>
+                {deleting ? <CircleNotch size={15} weight="bold" className="animate-spin" /> : null}
+                {deleting ? 'Deleting…' : 'Delete lead'}
               </button>
             </div>
           </div>
         </div>
-      )}
-    </div>
-  )
-}
-
-// ─── Shared empty state ───────────────────────────────────────────────────────
-function EmptyState({ icon: Icon, title, sub, action, waStyle }: { icon: React.ElementType; title: string; sub: string; action?: { label: string; onClick: () => void }; waStyle?: boolean }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '28px 20px', textAlign: 'center', background: waStyle ? 'transparent' : undefined }}>
-      <div style={{ width: 48, height: 48, borderRadius: 2, background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-        <Icon size={22} weight="light" style={{ color: '#94A3B8' }} />
-      </div>
-      <p style={{ fontSize: 14, fontWeight: 600, color: '#334155', margin: '0 0 4px' }}>{title}</p>
-      <p style={{ fontSize: 12, color: '#94A3B8', margin: '0 0 16px', maxWidth: 220 }}>{sub}</p>
-      {action && (
-        <button onClick={action.onClick}
-          style={{ padding: '8px 18px', background: PRIMARY_DIM, border: `1px solid ${PRIMARY_BORDER}`, borderRadius: 2, color: BLUE, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-          {action.label}
-        </button>
       )}
     </div>
   )

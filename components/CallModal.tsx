@@ -13,19 +13,21 @@ const C = {
   text:    '#0C0C0B',
   muted:   '#78889B',
   label:   '#A4B1BE',
-  emerald: '#059669',
+  emerald: '#1D4ED8',
   red:     '#DC2626',
   amber:   '#3B82F6',
   blue:    '#1D4ED8',
   orange:  '#1D4ED8',
+  blueDim: '#EEF3FF',
+  blueMid: '#93AEFF',
 }
 
 const OUTCOMES = [
-  { key: 'Answered',   label: 'Answered',   icon: Phone,      color: C.emerald },
-  { key: 'No Answer',  label: 'No Answer',  icon: PhoneX,     color: C.amber   },
-  { key: 'Busy',       label: 'Busy',       icon: PhoneSlash, color: C.orange  },
-  { key: 'Wrong Num',  label: 'Wrong #',    icon: X,          color: C.red     },
-  { key: 'Call Back',  label: 'Call Back',  icon: Clock,      color: C.blue    },
+  { key: 'Answered',   label: 'Answered',   icon: Phone,      color: '#1D4ED8' },
+  { key: 'No Answer',  label: 'No Answer',  icon: PhoneX,     color: '#78889B' },
+  { key: 'Busy',       label: 'Busy',       icon: PhoneSlash, color: '#78889B' },
+  { key: 'Wrong Num',  label: 'Wrong #',    icon: X,          color: '#DC2626' },
+  { key: 'Call Back',  label: 'Call Back',  icon: Clock,      color: '#1D4ED8' },
 ]
 
 type Stage = 'setup' | 'calling' | 'log' | 'summary'
@@ -214,40 +216,40 @@ export function CallModal({ isOpen, onClose, leadId, leadName, leadPhone, onLogg
       <div style={{ background: C.panel, borderRadius: 2, border: `1px solid ${C.border}`, width: 420, overflow: 'hidden' }}>
 
         {/* ── Header ── */}
-        <div style={{ background: stage === 'calling' ? 'linear-gradient(135deg,#064E3B,#065F46)' : C.bg, padding: '20px 20px 16px', borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ background: stage === 'calling' ? C.blue : C.bg, padding: '20px 20px 16px', borderBottom: `1px solid ${stage === 'calling' ? 'rgba(255,255,255,0.12)' : C.border}` }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: stage === 'calling' ? 16 : 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 2, background: stage === 'calling' ? 'rgba(5,150,105,0.3)' : stage === 'summary' ? 'rgba(146,119,58,0.12)' : 'rgba(5,150,105,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 32, height: 32, borderRadius: 2, background: stage === 'calling' ? 'rgba(255,255,255,0.15)' : stage === 'summary' ? 'rgba(146,119,58,0.12)' : C.blueDim, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {stage === 'calling'
-                  ? <PhoneCall size={16} weight="light" color="#34D399" />
+                  ? <PhoneCall size={16} weight="light" color="#fff" />
                   : stage === 'log'
-                  ? <Check size={16} weight="light" color={C.emerald} />
+                  ? <Check size={16} weight="light" color={C.blue} />
                   : stage === 'summary'
                   ? <Sparkle size={16} weight="light" color="#8A6E35" />
-                  : <Phone size={16} weight="light" color={C.emerald} />
+                  : <Phone size={16} weight="light" color={C.blue} />
                 }
               </div>
               <div>
-                <p style={{ fontSize: 13, fontWeight: 700, color: stage === 'calling' ? '#F0FDF4' : stage === 'summary' ? '#8A6E35' : C.text, margin: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: stage === 'calling' ? '#fff' : stage === 'summary' ? '#8A6E35' : C.text, margin: 0 }}>
                   {stage === 'setup' ? 'Call Lead' : stage === 'calling' ? 'Call in Progress' : stage === 'log' ? 'Log Outcome' : 'AI Call Summary'}
                 </p>
-                <p style={{ fontSize: 11, color: stage === 'calling' ? '#6EE7B7' : stage === 'summary' ? '#92773A' : C.muted, margin: 0 }}>
+                <p style={{ fontSize: 11, color: stage === 'calling' ? 'rgba(255,255,255,0.65)' : stage === 'summary' ? '#92773A' : C.muted, margin: 0 }}>
                   {stage === 'summary' ? 'Generated from your call notes' : leadName}
                 </p>
               </div>
             </div>
-            <button onClick={onClose} style={{ width: 26, height: 26, borderRadius: 2, border: `1px solid ${stage === 'calling' ? 'rgba(255,255,255,0.15)' : C.border}`, background: 'transparent', color: stage === 'calling' ? '#6EE7B7' : C.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button onClick={onClose} style={{ width: 26, height: 26, borderRadius: 2, border: `1px solid ${stage === 'calling' ? 'rgba(255,255,255,0.2)' : C.border}`, background: 'transparent', color: stage === 'calling' ? 'rgba(255,255,255,0.7)' : C.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <X size={12} weight="light" />
             </button>
           </div>
 
           {stage === 'calling' && (
             <div style={{ textAlign: 'center', padding: '8px 0 4px' }}>
-              <p style={{ fontSize: 38, fontWeight: 700, color: '#F0FDF4', fontVariantNumeric: 'tabular-nums', letterSpacing: '-1px', margin: 0 }}>
+              <p style={{ fontSize: 38, fontWeight: 700, color: '#fff', fontVariantNumeric: 'tabular-nums', letterSpacing: '-1px', margin: 0 }}>
                 {formatDuration(elapsed)}
               </p>
-              <p style={{ fontSize: 12, color: '#6EE7B7', margin: '6px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34D399', display: 'inline-block', animation: 'callpulse 1.5s ease-in-out infinite' }} />
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', margin: '6px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.blueMid, display: 'inline-block', animation: 'callpulse 1.5s ease-in-out infinite' }} />
                 {callSid ? 'Connected via Exotel' : 'Manual timer'}
               </p>
             </div>
@@ -285,7 +287,7 @@ export function CallModal({ isOpen, onClose, leadId, leadName, leadPhone, onLogg
               )}
 
               <button onClick={handleStartCall}
-                style={{ width: '100%', padding: '12px 0', background: C.emerald, border: 'none', borderRadius: 2, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}
+                style={{ width: '100%', padding: '12px 0', background: C.blue, border: 'none', borderRadius: 2, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}
               >
                 <Phone size={15} weight="light" />
                 {exoAvail ? 'Start Call via Exotel' : 'Start Call'}

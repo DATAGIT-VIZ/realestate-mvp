@@ -8,68 +8,99 @@
  * Interakt webhook docs: https://developers.interakt.ai/reference/webhooks
  *
  * Configure in Interakt: Settings → Webhooks → URL = https://yourapp.com/api/whatsapp/webhook
+ *
+ * A reply from a known lead is saved to Supabase as a `WhatsApp Received`
+ * activity, so it shows on the lead's timeline and AI Workflows can read it.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { gql } from '@/lib/twenty'
+import { getAdminClient } from '@/lib/supabase-admin'
 import { normalisePhone } from '@/lib/dedup'
-import { LEAD_FIELDS, type CRMLead } from '@/lib/twenty'
+import { resolveLeadState } from '@/lib/resolveLeadState'
+import { recalcLeadScore } from '@/lib/leadScore'
 
+// Interakt has sent replies as `user_message` with data.text, and as
+// `message_received` with data.message.message. Both are accepted.
 type InteraktEvent = {
-  type: 'message_status' | 'user_message'
-  data: {
-    message?: {
-      id: string
-      status?: 'sent' | 'delivered' | 'read' | 'failed'
-    }
+  type?: string
+  data?: {
     customer?: {
-      phone_number: string
+      phone_number?: string
+      channel_phone_number?: string
+      country_code?: string
       name?: string
     }
-    // User reply fields
     text?: string
-    type?: string
+    message?: {
+      id?: string
+      status?: string
+      message?: string
+      text?: string
+      message_content_type?: string
+    }
   }
 }
 
-async function findLeadByPhone(phone: string): Promise<string | null> {
-  const norm = normalisePhone(phone)
-  const result = await gql<{ people: { edges: { node: CRMLead }[] } }>(`
-    query FindByPhone($phone: StringFilter) {
-      people(filter: { phones: { primaryPhoneNumber: $phone } }, first: 1) {
-        edges { node { ${LEAD_FIELDS} } }
-      }
-    }
-  `, { phone: { eq: norm } })
+const REPLY_TYPES = new Set(['user_message', 'message_received'])
 
-  return result.data?.people.edges[0]?.node.id ?? null
+function replyOf(event: InteraktEvent) {
+  const d = event.data ?? {}
+  const phone = d.customer?.phone_number ?? d.customer?.channel_phone_number ?? ''
+  const raw   = d.text ?? d.message?.message ?? d.message?.text ?? ''
+  const text  = typeof raw === 'string' ? raw.trim() : ''
+  return { phone, text, messageId: d.message?.id ?? null }
 }
 
-async function logReplyActivity(leadId: string, replyText: string, from: string) {
-  const createNote = /* GraphQL */ `
-    mutation CreateNote($data: NoteCreateInput!) {
-      createNote(data: $data) { id }
-    }
-  `
-  const noteResult = await gql<{ createNote: { id: string } }>(createNote, {
-    data: {
-      title: 'WhatsApp Received',
-      body: JSON.stringify({
-        notes: replyText,
-        outcome: 'Positive',
-        metadata: { from, channel: 'whatsapp', type: 'reply' },
-      }),
+async function saveReply(phone: string, text: string, messageId: string | null) {
+  const sb = getAdminClient()
+  if (!sb) return
+  const last10 = normalisePhone(phone).slice(-10)
+  if (last10.length !== 10) return
+
+  // Phones are stored as +91XXXXXXXXXX, but imports can carry other formats
+  const { data: leads } = await sb
+    .from('leads')
+    .select('id, agent_id, status, failed_contact_attempts, hold_previous_status')
+    .ilike('phone', `%${last10}`)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+  const lead = leads?.[0]
+  if (!lead) return // we don't auto-create leads from a WhatsApp reply
+
+  const { data: existing } = await sb.from('lead_activities').select('activity_type').eq('lead_id', lead.id)
+  const resolution = resolveLeadState(
+    {
+      status:                  (lead.status as string) ?? 'New',
+      failed_contact_attempts: (lead.failed_contact_attempts as number) ?? 0,
+      hold_previous_status:    (lead.hold_previous_status as string | null) ?? null,
+      hold_until:              null,
+    },
+    { type: 'WhatsApp Received' },
+    (existing ?? []).map((a: { activity_type: string }) => a.activity_type),
+  )
+
+  // A reply on a Closed or Disqualified lead is still saved, without a stage change
+  const changes = resolution.blockedReason ? null : resolution
+  await sb.from('lead_activities').insert({
+    lead_id:       lead.id,
+    agent_id:      lead.agent_id ?? null,
+    activity_type: 'WhatsApp Received',
+    activity_data: {
+      notes:     text,
+      outcome:   null,
+      auditNote: changes?.auditNote ?? null,
+      channel:   'whatsapp',
+      from:      phone,
+      messageId,
     },
   })
 
-  const noteId = noteResult.data?.createNote.id
-  if (!noteId) return
+  const update: Record<string, unknown> = { last_activity_date: new Date().toISOString() }
+  if (changes?.newStatus)                 update.status                  = changes.newStatus
+  if (changes?.newFailedAttempts != null) update.failed_contact_attempts = changes.newFailedAttempts
+  await sb.from('leads').update(update).eq('id', lead.id)
 
-  await gql(`
-    mutation CreateNoteTarget($data: NoteTargetCreateInput!) {
-      createNoteTarget(data: $data) { id }
-    }
-  `, { data: { noteId, personId: leadId } })
+  recalcLeadScore(lead.id as string).catch(() => {})
 }
 
 export async function POST(req: NextRequest) {
@@ -81,17 +112,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true })
     }
 
-    if (event.type === 'user_message') {
-      const phone = event.data.customer?.phone_number
-      const text  = event.data.text
-
-      if (phone && text) {
-        const leadId = await findLeadByPhone(phone)
-        if (leadId) {
-          await logReplyActivity(leadId, text, phone)
-        }
-        // If lead not found, no action — we don't auto-create from a WhatsApp reply
-      }
+    if (REPLY_TYPES.has(event.type)) {
+      const { phone, text, messageId } = replyOf(event)
+      if (phone && text) await saveReply(phone, text, messageId)
     }
 
     // message_status events (sent/delivered/read/failed) — no action needed right now

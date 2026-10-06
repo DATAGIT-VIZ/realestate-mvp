@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import {
   House, Users, Megaphone, CheckSquare, ChartBar,
   Robot, Gear, Lock, CaretLeft, CaretRight, SignOut, CalendarCheck,
+  UserPlus, Question,
 } from '@phosphor-icons/react'
 import { CircleNotch } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
@@ -52,7 +53,7 @@ const NAV_ITEMS: NavItem[] = [
     activePaths: ['/dashboard/outreach', '/dashboard/calls'],
   },
   {
-    name: 'Workspace',
+    name: 'Tasks',
     href: '/dashboard/tasks',
     icon: CheckSquare,
     activePaths: ['/dashboard/tasks', '/dashboard/team'],
@@ -268,8 +269,38 @@ export function Sidebar({
           })}
         </nav>
 
+        {/* Utility links — Invite team + Help center */}
+        <div className="px-2 pt-2 pb-1" style={{ borderTop: '1px solid rgba(0,56,168,0.08)' }}>
+          {[
+            { label: 'Invite team', href: '/dashboard/team',  Icon: UserPlus },
+            { label: 'Help center', href: '/dashboard/help',  Icon: Question },
+          ].map(({ label, href, Icon }) => (
+            <Link
+              key={label}
+              href={href}
+              title={collapsed ? label : undefined}
+              className={cn(
+                'group relative flex items-center gap-2.5 text-[13px] font-medium transition-all duration-150 border-l-2 border-transparent',
+                collapsed ? 'justify-center w-9 h-9 mx-auto' : 'px-3 py-2',
+              )}
+              style={{ color: 'rgba(0,56,168,0.65)' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(0,56,168,0.05)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '' }}
+            >
+              <Icon size={collapsed ? 18 : 16} weight="light" />
+              {!collapsed && label}
+              {collapsed && (
+                <span className="pointer-events-none absolute left-full ml-3 hidden px-2.5 py-1.5 text-xs whitespace-nowrap z-50 group-hover:block"
+                  style={{ background: '#0038A8', color: '#fff', borderRadius: 2 }}>
+                  {label}
+                </span>
+              )}
+            </Link>
+          ))}
+        </div>
+
         {/* Settings pinned above user profile */}
-        <div className="px-2 pb-2 pt-2" style={{ borderTop: '1px solid rgba(0,56,168,0.08)' }}>
+        <div className="px-2 pb-2 pt-1">
           <NavItemEl
             item={settingsItem}
             collapsed={collapsed}

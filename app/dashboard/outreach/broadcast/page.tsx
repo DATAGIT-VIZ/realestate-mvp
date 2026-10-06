@@ -1,454 +1,514 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
-  MessageCircle, Users, Filter, Send, CheckCircle,
-  AlertCircle, Loader2, Sparkles, Info,
-} from 'lucide-react'
+  WhatsappLogo, UsersThree, PaperPlaneTilt, Check, CaretLeft, CaretRight, CaretDown, CaretUp, ArrowCounterClockwise,
+  Buildings, CalendarCheck, Confetti, ChartLineUp, ChatCircleText, NotePencil, CircleNotch, WarningCircle,
+  MagnifyingGlass, Info,
+} from '@phosphor-icons/react'
 import { PageTabBar } from '@/components/layout/PageTabBar'
+import {
+  OUTREACH_TABS, CANVAS, SURFACE, BORDER, BORDER_2, TEXT, TEXT_2, SUBTLE, LABEL, BLUE, BLUE_BG, BLUE_LN, XS,
+  STAGE, stageOf, type StageId, Avatar, StagePill, Pill, Btn, Chip, Field, Select, inputCls, inputStyle, textareaCls,
+  PageHeader, Badge, Panel, Insight, Dialog, Toast, useToast, MergeTagBar, WaPhone, WaBubble, personalise, usesTag,
+  SAMPLE_MERGE, pct,
+} from '@/components/outreach/OutreachKit'
 
-const OUTREACH_TABS = [
-  { label: 'Broadcast',    href: '/dashboard/outreach/broadcast' },
-  { label: 'Sequences',    href: '/dashboard/outreach/sequences' },
-  { label: 'Power Dialer', href: '/dashboard/calls' },
+// ─── Audience ─────────────────────────────────────────────────────────────────
+type StageFilter = 'open' | 'New' | 'Cold' | 'Warm' | 'Hot' | 'all'
+const STAGE_CHIPS: { id: StageFilter; label: string; hint: string }[] = [
+  { id: 'open', label: 'All open leads', hint: 'New, Cold, Warm and Hot' },
+  { id: 'New',  label: 'New',  hint: STAGE.New.meaning },
+  { id: 'Cold', label: 'Cold', hint: STAGE.Cold.meaning },
+  { id: 'Warm', label: 'Warm', hint: STAGE.Warm.meaning },
+  { id: 'Hot',  label: 'Hot',  hint: STAGE.Hot.meaning },
+  { id: 'all',  label: 'Everyone', hint: 'Includes closed, dropped and on-hold leads' },
 ]
 
-const C = {
-  bg:      '#F8FAFC',
-  panel:   '#FFFFFF',
-  border:  '#E2E8F0',
-  text:    '#0F172A',
-  muted:   '#64748B',
-  label:   '#94A3B8',
-  violet:  '#1D4ED8',
-  emerald: '#059669',
-  amber:   '#3B82F6',
-  red:     '#EF4444',
-  wa:      '#25D366',
-  waDark:  '#128C7E',
-}
-
-const inp: React.CSSProperties = {
-  width: '100%', padding: '10px 12px', border: `1px solid ${C.border}`,
-  borderRadius: 10, fontSize: 13, color: C.text, outline: 'none',
-  background: C.panel, boxSizing: 'border-box',
-}
-const lbl: React.CSSProperties = {
-  display: 'block', fontSize: 11, fontWeight: 600, color: C.muted,
-  textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6,
-}
-
-type LeadPreview = { id: string; name: string; phone: string; city: string | null; score: number | null; status: string | null }
-type Filters     = { status: string; source: string; city: string; minScore: string; maxScore: string }
-const EMPTY: Filters = { status: '', source: '', city: '', minScore: '', maxScore: '' }
-
-const QUICK_MESSAGES = [
-  { label: 'New Property Alert', body: `Hi {{name}}! We have a new property in {{city}} that matches your requirements perfectly. It's within your budget and ready to move. Shall I share the details?` },
-  { label: 'Site Visit Invite',  body: `Hi {{name}}, we're organising a site visit this weekend for a premium project in {{city}}. This is a great opportunity to explore before prices go up. Would you like to join?` },
-  { label: 'Festival Offer',     body: `Hi {{name}}, festive greetings! We have a special limited-time offer on select properties in {{city}} — no GST + free modular kitchen. Valid only till end of this month. Interested?` },
-  { label: 'Market Update',      body: `Hi {{name}}, property prices in {{city}} have gone up 8% this quarter. If you've been planning to buy, now is the right time before another price revision. Let's connect for 10 minutes?` },
-  { label: 'Checking In',        body: `Hi {{name}}, hope you're doing well! Just checking in on your property search in {{city}}. I have some fresh options that might interest you. Want me to share?` },
+// value = text the API matches inside the lead's source (case and punctuation ignored)
+const SOURCES: [string, string][] = [
+  ['', 'All sources'], ['magicbricks', 'MagicBricks'], ['99acres', '99acres'], ['housing', 'Housing.com'],
+  ['nobroker', 'NoBroker'], ['facebook', 'Facebook'], ['google', 'Google Ads'], ['channel', 'Channel Partner'],
+  ['website', 'Website'], ['referral', 'Referral'], ['walk', 'Walk-in'],
 ]
+const PROPERTY_TYPES = ['1 BHK', '2 BHK', '3 BHK', '4 BHK', 'Villa', 'Plot', 'Penthouse', 'Office', 'Shop']
 
-const STATUS_OPTIONS  = ['', 'Hot', 'Warm', 'New', 'Cold']
-const SOURCE_OPTIONS  = ['', 'MagicBricks', '99acres', 'Housing.com', 'Facebook Ads', 'Referral', 'Walk-in']
-
-// ─── WhatsApp Phone Preview ────────────────────────────────────────────────────
-function PhonePreview({ message, recipientCount }: { message: string; recipientCount: number }) {
-  const preview = message
-    .replace(/\{\{name\}\}/g, 'Rahul')
-    .replace(/\{\{city\}\}/g, 'Mumbai')
-    .replace(/\{\{budget\}\}/g, '₹1.2Cr')
-
-  return (
-    <div style={{ background: '#E5DDD5', borderRadius: 16, overflow: 'hidden', border: `2px solid #D1D5DB` }}>
-      {/* Status bar */}
-      <div style={{ background: C.waDark, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: 11, fontWeight: 800, color: '#fff' }}>R</span>
-        </div>
-        <div style={{ flex: 1 }}>
-          <p style={{ fontSize: 12, fontWeight: 700, color: '#fff', margin: 0 }}>Rahul Sharma</p>
-          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', margin: 0 }}>online</p>
-        </div>
-      </div>
-
-      {/* Chat area */}
-      <div style={{ padding: '16px 12px', minHeight: 120 }}>
-        {message ? (
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <div style={{ background: '#DCF8C6', borderRadius: '10px 10px 0 10px', padding: '8px 12px', maxWidth: '85%' }}>
-              <p style={{ fontSize: 12, color: '#0F172A', margin: 0, lineHeight: 1.55, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{preview}</p>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                <span style={{ fontSize: 9.5, color: '#8B9B8B' }}>10:02 AM</span>
-                <span style={{ fontSize: 11, color: C.waDark }}>✓✓</span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <p style={{ fontSize: 12, color: C.label, textAlign: 'center', marginTop: 20 }}>Your message will appear here</p>
-        )}
-      </div>
-
-      {/* Footer */}
-      <div style={{ background: '#F0F0F0', padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <div style={{ flex: 1, background: '#fff', borderRadius: 20, padding: '7px 14px' }}>
-          <span style={{ fontSize: 11.5, color: C.label }}>Type a message</span>
-        </div>
-        <div style={{ width: 32, height: 32, borderRadius: '50%', background: C.waDark, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Send style={{ width: 13, height: 13, color: '#fff' }} />
-        </div>
-      </div>
-
-      {recipientCount > 0 && (
-        <div style={{ background: C.waDark, padding: '8px 14px', textAlign: 'center' }}>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>
-            × {recipientCount} recipients
-          </span>
-        </div>
-      )}
-    </div>
-  )
+type Intent = 'any' | 'high' | 'medium' | 'low' | 'custom'
+const INTENT: Record<Intent, { label: string; min?: number; max?: number }> = {
+  any:    { label: 'Any score' },
+  high:   { label: 'High intent (70+)', min: 70 },
+  medium: { label: 'Medium (40–69)', min: 40, max: 69 },
+  low:    { label: 'Low (under 40)', max: 39 },
+  custom: { label: 'Custom range' },
 }
 
-// ─── Status badge ─────────────────────────────────────────────────────────────
-function StatusBadge({ status }: { status: string | null }) {
-  const map: Record<string, { bg: string; color: string }> = {
-    Hot:  { bg: 'rgba(239,68,68,0.1)', color: C.red },
-    Warm: { bg: 'rgba(59,130,246,0.1)', color: C.amber },
-    New:  { bg: 'rgba(29,78,216,0.1)', color: C.violet },
-    Cold: { bg: 'rgba(100,116,139,0.1)', color: C.muted },
+type Filters = { stage: StageFilter; source: string; city: string; propType: string; intent: Intent; minScore: string; maxScore: string }
+const EMPTY: Filters = { stage: 'open', source: '', city: '', propType: '', intent: 'any', minScore: '', maxScore: '' }
+
+/** What the API filters on (GET preview and POST send use the same shape) */
+function apiFilters(f: Filters) {
+  const out: Record<string, string> = {}
+  if (f.stage !== 'all') out.status = f.stage
+  if (f.source) out.source = f.source
+  if (f.city.trim()) out.city = f.city.trim()
+  if (f.propType.trim()) out.propType = f.propType.trim()
+  const min = f.intent === 'custom' ? f.minScore : INTENT[f.intent].min?.toString() ?? ''
+  const max = f.intent === 'custom' ? f.maxScore : INTENT[f.intent].max?.toString() ?? ''
+  if (min) out.minScore = min
+  if (max) out.maxScore = max
+  return out
+}
+
+function audienceLabel(f: Filters) {
+  const parts = [STAGE_CHIPS.find(c => c.id === f.stage)!.label]
+  if (f.source) parts.push(SOURCES.find(s => s[0] === f.source)?.[1] ?? f.source)
+  if (f.city.trim()) parts.push(f.city.trim())
+  if (f.propType.trim()) parts.push(f.propType.trim())
+  if (f.intent !== 'any') {
+    parts.push(f.intent === 'custom'
+      ? `Score ${f.minScore || 0}–${f.maxScore || 100}`
+      : INTENT[f.intent].label)
   }
-  const s = status ?? 'New'
-  const style = map[s] ?? map.New
-  return (
-    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: style.bg, color: style.color }}>{s}</span>
-  )
+  return parts.join(' · ')
+}
+
+type Recipient = { id: string; name: string; phone: string; city: string | null; score: number | null; status: string | null }
+type Preview = { total: number; reachable: number; leads: Recipient[]; byStatus?: Record<string, number> }
+
+// ─── Message templates ────────────────────────────────────────────────────────
+const TEMPLATES: { label: string; icon: ReactNode; body: string }[] = [
+  { label: 'New property alert', icon: <Buildings size={18} />, body: `Hi {{name}}! A new property in {{city}} matches what you're looking for, within your budget. Shall I share the details?` },
+  { label: 'Site visit invite',  icon: <CalendarCheck size={18} />, body: `Hi {{name}}, we're organising a site visit this weekend for a project in {{city}}. It's a good chance to see the homes in person. Would you like to join?` },
+  { label: 'Festival offer',     icon: <Confetti size={18} />, body: `Hi {{name}}, festive greetings from our team! There are festive offers on select projects in {{city}} this month. Want me to send you the ones that fit your budget?` },
+  { label: 'Market update',      icon: <ChartLineUp size={18} />, body: `Hi {{name}}, a quick update on {{city}}: there are new launches and price revisions in the areas you were looking at. Shall I share the latest options within your budget?` },
+  { label: 'Checking in',        icon: <ChatCircleText size={18} />, body: `Hi {{name}}, hope you're doing well! Just checking in on your property search in {{city}}. I have some fresh options that might interest you. Want me to share?` },
+]
+const WA_LIMIT = 1024
+
+const ROUTES = [
+  { id: 'all',   label: 'All agents, in turn', hint: 'Replies are shared out evenly across the team' },
+  { id: 'top',   label: 'Top performer',       hint: 'The agent with the highest activity score' },
+  { id: 'agent', label: 'A specific agent',    hint: 'Name one agent to take every reply' },
+]
+
+async function fetchAudience(f: Filters): Promise<{ data: Preview | null; error: string | null }> {
+  try {
+    const res = await fetch(`/api/outreach/broadcast?${new URLSearchParams(apiFilters(f))}`)
+    const json = await res.json()
+    if (!res.ok || json.error) return { data: null, error: json.error ?? 'Could not load the audience' }
+    return { data: json.data as Preview, error: null }
+  } catch {
+    return { data: null, error: 'Could not load the audience. Check your connection and try again.' }
+  }
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function BroadcastPage() {
-  const [filters,     setFilters]     = useState<Filters>(EMPTY)
-  const [preview,     setPreview]     = useState<{ total: number; reachable: number; leads: LeadPreview[] } | null>(null)
-  const [previewing,  setPreviewing]  = useState(false)
-  const [message,     setMessage]     = useState(QUICK_MESSAGES[0].body)
-  const [activeQuick, setActiveQuick] = useState(0)
-  const [sending,     setSending]     = useState(false)
-  const [result,      setResult]      = useState<{ sent: number; failed: number } | null>(null)
-  const [error,       setError]       = useState<string | null>(null)
-  const [showConfirm, setShowConfirm] = useState(false)
-  const [routeTo,     setRouteTo]     = useState('all')
-  const [routeAgent,  setRouteAgent]  = useState('')
+  const [filters, setFilters] = useState<Filters>(EMPTY)
+  const [preview, setPreview] = useState<Preview | null>(null)
+  const [loadingAud, setLoadingAud] = useState(true)
+  const [audError, setAudError] = useState<string | null>(null)
+  const [showAll, setShowAll] = useState(false)
+  const [message, setMessage] = useState(TEMPLATES[0].body)
+  const [template, setTemplate] = useState(0)
+  const [previewIdx, setPreviewIdx] = useState(0)
+  const [routeTo, setRouteTo] = useState('all')
+  const [routeAgent, setRouteAgent] = useState('')
+  const [confirm, setConfirm] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [result, setResult] = useState<{ sent: number; failed: number; simulated: boolean } | null>(null)
+  const [sendError, setSendError] = useState<string | null>(null)
+  const [reload, setReload] = useState(0)
+  const textRef = useRef<HTMLTextAreaElement>(null)
+  const reqId = useRef(0)
+  const { toast, show: showToast, hide: hideToast } = useToast()
 
-  const buildQuery = (f: Filters) => {
-    const p = new URLSearchParams()
-    if (f.status)   p.set('status',   f.status)
-    if (f.source)   p.set('source',   f.source)
-    if (f.city)     p.set('city',     f.city)
-    if (f.minScore) p.set('minScore', f.minScore)
-    if (f.maxScore) p.set('maxScore', f.maxScore)
-    return p.toString()
+  const set = <K extends keyof Filters>(k: K, v: Filters[K]) => { setFilters(f => ({ ...f, [k]: v })); setResult(null) }
+
+  // Debounced audience count; only the latest request is applied
+  useEffect(() => {
+    const id = ++reqId.current
+    const t = setTimeout(() => {
+      setLoadingAud(true)
+      fetchAudience(filters).then(r => {
+        if (id !== reqId.current) return
+        setLoadingAud(false)
+        setAudError(r.error)
+        if (r.data) { setPreview(r.data); setPreviewIdx(0) }
+      })
+    }, 450)
+    return () => clearTimeout(t)
+  }, [filters, reload])
+
+  const recipients = useMemo(() => preview?.leads ?? [], [preview])
+  const reachable = preview?.reachable ?? 0
+  const skipped = preview ? preview.total - preview.reachable : 0
+  const shown = showAll ? recipients : recipients.slice(0, 8)
+  const sample = recipients[previewIdx] ?? null
+  const merge = sample ? { name: sample.name, city: sample.city, budget: null } : SAMPLE_MERGE
+  const rendered = personalise(message, merge)
+  const noCity = recipients.filter(r => !r.city).length
+  const tooLong = message.length > WA_LIMIT
+  const msgOk = message.trim().length >= 10 && !tooLong
+  const canSend = reachable > 0 && msgOk && !sending && !loadingAud && (routeTo !== 'agent' || routeAgent.trim().length > 0)
+  const why = loadingAud ? 'Counting your audience…'
+    : reachable === 0 ? 'Pick an audience with at least one lead who has a mobile number.'
+    : !msgOk ? (tooLong ? `Shorten the message to ${WA_LIMIT.toLocaleString('en-IN')} characters or fewer.` : 'Write a message of at least 10 characters.')
+    : routeTo === 'agent' && !routeAgent.trim() ? 'Name the agent who should take the replies.'
+    : null
+
+  // Stage counts cover the whole audience (the list below shows up to 50)
+  const stageMix = useMemo(() => {
+    const m = new Map<StageId, number>()
+    if (preview?.byStatus) for (const [st, n] of Object.entries(preview.byStatus)) m.set(stageOf(st), (m.get(stageOf(st)) ?? 0) + n)
+    else for (const r of recipients) m.set(stageOf(r.status), (m.get(stageOf(r.status)) ?? 0) + 1)
+    return [...m.entries()].sort((a, b) => b[1] - a[1])
+  }, [preview, recipients])
+
+  const pickTemplate = (i: number) => {
+    setTemplate(i)
+    setMessage(i >= 0 ? TEMPLATES[i].body : '')
+    setResult(null)
+    if (i < 0) requestAnimationFrame(() => textRef.current?.focus())
   }
 
-  const fetchPreview = useCallback(async () => {
-    setPreviewing(true)
-    setResult(null)
-    setError(null)
-    try {
-      const res  = await fetch(`/api/outreach/broadcast?${buildQuery(filters)}`)
-      const json = await res.json()
-      if (json.error) throw new Error(json.error)
-      setPreview(json.data)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Preview failed')
-    } finally { setPreviewing(false) }
-  }, [filters])
+  const reset = () => {
+    setFilters(EMPTY); setTemplate(0); setMessage(TEMPLATES[0].body); setRouteTo('all'); setRouteAgent('')
+    setResult(null); setSendError(null); setShowAll(false)
+  }
 
-  useEffect(() => {
-    const t = setTimeout(fetchPreview, 600)
-    return () => clearTimeout(t)
-  }, [fetchPreview])
-
-  const handleSend = async () => {
-    setShowConfirm(false)
-    setSending(true)
-    setResult(null)
-    setError(null)
+  const send = useCallback(async () => {
+    setConfirm(false); setSending(true); setSendError(null); setResult(null)
     try {
-      const res  = await fetch('/api/outreach/broadcast', {
+      const res = await fetch('/api/outreach/broadcast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filters, templateName: 'custom', messageBody: message }),
+        body: JSON.stringify({
+          filters: apiFilters(filters),
+          templateName: 'custom',
+          messageBody: message,
+          routing: { mode: routeTo, agent: routeTo === 'agent' ? routeAgent.trim() : null },
+        }),
       })
-      const json = await res.json()
-      // Demo mode: if Interakt not configured, show simulated success
-      if (json.error?.includes('INTERAKT') || json.error?.includes('not configured')) {
-        setResult({ sent: preview?.reachable ?? 0, failed: 0 })
-      } else if (json.error) {
-        throw new Error(json.error)
+      const json = await res.json().catch(() => ({}))
+      const err: string | null = json.error ?? (res.ok ? null : 'Broadcast failed')
+      if (err && /interakt|not configured/i.test(err)) {
+        // Interakt isn't connected yet: nothing leaves the CRM
+        setResult({ sent: reachable, failed: 0, simulated: true })
+        showToast({ text: 'Test run finished. Nothing was sent.', tone: 'ok' })
+      } else if (err) {
+        setSendError(err)
       } else {
-        setResult(json.data)
+        const sent = json.data?.sent ?? 0, failed = json.data?.failed ?? 0
+        setResult({ sent, failed, simulated: false })
+        showToast({ text: `Sent to ${sent.toLocaleString('en-IN')} lead${sent === 1 ? '' : 's'}`, tone: 'ok' })
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Broadcast failed')
-    } finally { setSending(false) }
-  }
+    } catch {
+      setSendError('Could not reach the server. Nothing was sent, please try again.')
+    } finally {
+      setSending(false)
+    }
+  }, [filters, message, routeTo, routeAgent, reachable, showToast])
 
-  const canSend = message.trim().length > 10 && (preview?.reachable ?? 0) > 0 && !sending
+  const steps = [
+    { n: 1, title: 'Audience', done: reachable > 0, status: loadingAud ? 'Counting…' : `${reachable.toLocaleString('en-IN')} lead${reachable === 1 ? '' : 's'}`, target: 'audience' },
+    { n: 2, title: 'Message', done: msgOk, status: template >= 0 && message === TEMPLATES[template].body ? TEMPLATES[template].label : msgOk ? 'Your own message' : 'Not written yet', target: 'message' },
+    { n: 3, title: 'Send', done: !!result, status: result ? (result.simulated ? 'Test run done' : 'Sent') : canSend ? 'Ready to send' : 'Finish steps 1 and 2', target: 'send' },
+  ]
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg }}>
+    <div style={{ minHeight: '100vh', background: CANVAS }}>
       <PageTabBar tabs={OUTREACH_TABS} />
-      <div style={{ maxWidth: 1060, margin: '0 auto', padding: '0 24px 80px' }}>
+      <PageHeader
+        title="Broadcast"
+        badge={<Badge tone="green"><WhatsappLogo size={15} weight="fill" />WhatsApp</Badge>}
+        sub="Pick who gets it, write one message, and send it to all of them on WhatsApp. Every lead sees their own name and city."
+        actions={<Btn onClick={reset}><ArrowCounterClockwise size={18} />Start over</Btn>}
+      />
 
-        {/* Header */}
-        <div style={{ padding: '28px 0 24px', borderBottom: `1px solid ${C.border}`, marginBottom: 28, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0 }}>Bulk WhatsApp Broadcast</h1>
-            <p style={{ fontSize: 13, color: C.muted, margin: '4px 0 0' }}>Segment your leads, write your message, send to everyone in one shot</p>
-          </div>
-          <div style={{ width: 44, height: 44, borderRadius: 13, background: 'rgba(37,211,102,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <MessageCircle style={{ width: 22, height: 22, color: C.wa }} />
-          </div>
-        </div>
+      <div className="mx-auto max-w-[1400px] px-4 pb-24 lg:px-8">
+        {/* ── Progress ── */}
+        <ol className="m-0 mb-6 grid list-none grid-cols-3 gap-2 p-0 sm:gap-3">
+          {steps.map(s => (
+            <li key={s.n} className="min-w-0">
+              <button type="button" onClick={() => document.getElementById(s.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                className="flex w-full min-w-0 cursor-pointer flex-col items-start gap-1.5 rounded-[12px] border px-3 py-2.5 text-left transition-colors hover:bg-[#F9FAFB] sm:flex-row sm:items-center sm:gap-3 sm:px-4 sm:py-3"
+                style={{ borderColor: s.done ? '#ABEFC6' : BORDER, background: s.done ? '#F6FEF9' : CANVAS, boxShadow: XS }}>
+                <span className="grid size-7 shrink-0 place-items-center rounded-full text-[13px] font-bold sm:size-8"
+                  style={s.done ? { background: '#17B26A', color: '#fff' } : { background: BLUE_BG, color: BLUE, boxShadow: `inset 0 0 0 1px ${BLUE_LN}` }}>
+                  {s.done ? <Check size={14} weight="bold" /> : s.n}
+                </span>
+                <span className="w-full min-w-0">
+                  <span className="block truncate text-[13.5px] font-semibold sm:text-[14px]" style={{ color: TEXT }}>{s.title}</span>
+                  <span className="hidden truncate text-[12.5px] sm:block" style={{ color: SUBTLE }}>{s.status}</span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ol>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 24, alignItems: 'start' }}>
+        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
+          <div className="flex min-w-0 flex-col gap-6">
+            {/* ── 1. Audience ── */}
+            <Panel id="audience" step={1} title="Choose who gets it" sub="Leads without a valid mobile number are skipped automatically."
+              right={JSON.stringify(filters) !== JSON.stringify(EMPTY) && <Btn variant="ghost" size="sm" onClick={() => { setFilters(EMPTY); setResult(null) }}>Clear filters</Btn>}>
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Stage">
+                {STAGE_CHIPS.map(c => (
+                  <span key={c.id} title={c.hint} className="inline-flex">
+                    <Chip on={filters.stage === c.id} onClick={() => set('stage', c.id)}
+                      icon={c.id !== 'open' && c.id !== 'all' ? <span className="size-2 rounded-full" style={{ background: STAGE[c.id as StageId].dot }} /> : undefined}>
+                      {c.label}
+                    </Chip>
+                  </span>
+                ))}
+              </div>
 
-          {/* ── Left ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-
-            {/* Step 1 — Segment */}
-            <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 22 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(29,78,216,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Filter style={{ width: 13, height: 13, color: C.violet }} />
+              <div className="mt-5 grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
+                <Field label="Source" htmlFor="b-source">
+                  <Select id="b-source" value={filters.source} onChange={v => set('source', v)}>
+                    {SOURCES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                  </Select>
+                </Field>
+                <Field label="City" htmlFor="b-city">
+                  <input id="b-city" value={filters.city} onChange={e => set('city', e.target.value)} placeholder="Any city, e.g. Pune" className={inputCls} style={inputStyle} />
+                </Field>
+                <Field label="Property type" htmlFor="b-prop">
+                  <input id="b-prop" list="b-prop-list" value={filters.propType} onChange={e => set('propType', e.target.value)} placeholder="Any, e.g. 3 BHK" className={inputCls} style={inputStyle} />
+                  <datalist id="b-prop-list">{PROPERTY_TYPES.map(p => <option key={p} value={p} />)}</datalist>
+                </Field>
+                <Field label="Intent score" htmlFor="b-intent">
+                  <Select id="b-intent" value={filters.intent} onChange={v => set('intent', v as Intent)}>
+                    {(Object.keys(INTENT) as Intent[]).map(k => <option key={k} value={k}>{INTENT[k].label}</option>)}
+                  </Select>
+                </Field>
+              </div>
+              {filters.intent === 'custom' && (
+                <div className="mt-3 flex items-center gap-2.5">
+                  <input type="number" min={0} max={100} inputMode="numeric" aria-label="Lowest score" value={filters.minScore} onChange={e => set('minScore', e.target.value)} placeholder="0" className={`${inputCls} max-w-[110px]`} style={inputStyle} />
+                  <span className="text-[13px]" style={{ color: SUBTLE }}>to</span>
+                  <input type="number" min={0} max={100} inputMode="numeric" aria-label="Highest score" value={filters.maxScore} onChange={e => set('maxScore', e.target.value)} placeholder="100" className={`${inputCls} max-w-[110px]`} style={inputStyle} />
                 </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: C.text, margin: 0 }}>Step 1 — Select Audience</p>
-                  <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Filter which leads receive this broadcast</p>
+              )}
+
+              {/* Recipients */}
+              <div className="-mx-4 mt-5 border-t px-4 pt-5 sm:-mx-5 sm:px-5" style={{ borderColor: BORDER }}>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-baseline gap-2">
+                    {loadingAud && !preview
+                      ? <span className="block h-8 w-16 animate-pulse rounded-[8px] bg-[#F2F4F7]" />
+                      : <span className="text-[28px] font-semibold leading-none tracking-[-0.03em] tabular-nums" style={{ color: TEXT }}>{reachable.toLocaleString('en-IN')}</span>}
+                    <span className="text-[14px]" style={{ color: SUBTLE }}>lead{reachable === 1 ? '' : 's'} will get this</span>
+                    {loadingAud && preview && <CircleNotch size={16} className="animate-spin self-center" style={{ color: LABEL }} />}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {skipped > 0 && <Pill tone="amber">{skipped} skipped, no valid mobile</Pill>}
+                    {stageMix.slice(0, 4).map(([s, n]) => (
+                      <span key={s} className="inline-flex items-center gap-1 text-[12.5px]" style={{ color: SUBTLE }}>
+                        <span className="size-2 rounded-full" style={{ background: STAGE[s].dot }} />{STAGE[s].label} <b className="font-semibold tabular-nums" style={{ color: TEXT_2 }}>{n}</b>
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <button onClick={() => setFilters(EMPTY)}
-                  style={{ fontSize: 12, color: C.muted, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
-                  Clear
+
+                {audError && (
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border px-4 py-3" style={{ background: '#FEF3F2', borderColor: '#FECDCA' }}>
+                    <p className="m-0 text-[14px]" style={{ color: '#B42318' }}>{audError}</p>
+                    <Btn size="sm" onClick={() => setReload(n => n + 1)}>Try again</Btn>
+                  </div>
+                )}
+
+                {!audError && !loadingAud && reachable === 0 && (
+                  <div className="mt-4 flex flex-col items-center rounded-[12px] border border-dashed px-4 py-8 text-center" style={{ borderColor: BORDER_2 }}>
+                    <MagnifyingGlass size={22} style={{ color: LABEL }} />
+                    <p className="m-0 mt-2 text-[14px] font-semibold" style={{ color: TEXT }}>No leads match these filters</p>
+                    <p className="m-0 mt-1 text-[13px]" style={{ color: SUBTLE }}>Try a wider stage, another source, or clear the city.</p>
+                  </div>
+                )}
+
+                {recipients.length > 0 && (
+                  <>
+                    <ul className={`m-0 mt-4 grid list-none gap-1 p-0 md:grid-cols-2 ${showAll ? 'max-h-[420px] overflow-y-auto pr-1' : ''}`}>
+                      {shown.map(r => (
+                        <li key={r.id}>
+                          <button type="button" onClick={() => setPreviewIdx(recipients.indexOf(r))} title="Preview the message for this lead"
+                            className="flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-[10px] px-2 py-2 text-left transition-colors hover:bg-[#F9FAFB]"
+                            style={recipients.indexOf(r) === previewIdx ? { background: SURFACE } : undefined}>
+                            <Avatar name={r.name} score={r.score} size={34} />
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[14px] font-semibold" style={{ color: TEXT }}>{r.name || 'Unnamed'}</span>
+                              <span className="block truncate text-[12.5px]" style={{ color: r.city ? SUBTLE : LABEL }}>{r.city ?? 'No city on file'}</span>
+                            </span>
+                            <StagePill stage={stageOf(r.status)} small />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                      {recipients.length > 8 && (
+                        <button type="button" onClick={() => setShowAll(v => !v)} className="inline-flex cursor-pointer items-center gap-1 text-[13.5px] font-semibold" style={{ color: BLUE }}>
+                          {showAll ? <>Show fewer <CaretUp size={13} weight="bold" /></> : <>Show all {recipients.length} <CaretDown size={13} weight="bold" /></>}
+                        </button>
+                      )}
+                      {reachable > recipients.length && (
+                        <span className="text-[12.5px]" style={{ color: LABEL }}>and {(reachable - recipients.length).toLocaleString('en-IN')} more not listed here</span>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            </Panel>
+
+            {/* ── 2. Message ── */}
+            <Panel id="message" step={2} title="Write the message" sub="Start from a template or write your own. Tags fill in each lead's details.">
+              <div className="grid gap-2.5 sm:grid-cols-2 2xl:grid-cols-3">
+                {TEMPLATES.map((t, i) => {
+                  const on = template === i
+                  return (
+                    <button key={t.label} type="button" onClick={() => pickTemplate(i)} aria-pressed={on}
+                      className="flex min-w-0 cursor-pointer items-start gap-3 rounded-[12px] border p-3 text-left transition-[border-color,box-shadow,background]"
+                      style={on ? { borderColor: BLUE, background: BLUE_BG, boxShadow: '0 0 0 3px rgba(29,78,216,0.10)' } : { borderColor: BORDER, background: CANVAS, boxShadow: XS }}>
+                      <span className="grid size-8 shrink-0 place-items-center rounded-[9px] border bg-white" style={{ borderColor: on ? BLUE_LN : BORDER, color: on ? BLUE : TEXT_2 }}>{t.icon}</span>
+                      <span className="min-w-0">
+                        <span className="block text-[14px] font-semibold" style={{ color: on ? BLUE : TEXT }}>{t.label}</span>
+                        <span className="mt-0.5 line-clamp-2 text-[12.5px] leading-snug" style={{ color: SUBTLE }}>{personalise(t.body, SAMPLE_MERGE)}</span>
+                      </span>
+                    </button>
+                  )
+                })}
+                <button type="button" onClick={() => pickTemplate(-1)} aria-pressed={template === -1}
+                  className="flex min-w-0 cursor-pointer items-center gap-3 rounded-[12px] border border-dashed p-3 text-left transition-colors hover:bg-[#F9FAFB]"
+                  style={template === -1 ? { borderColor: BLUE, background: BLUE_BG } : { borderColor: BORDER_2 }}>
+                  <span className="grid size-8 shrink-0 place-items-center rounded-[9px] border bg-white" style={{ borderColor: BORDER, color: TEXT_2 }}><NotePencil size={18} /></span>
+                  <span>
+                    <span className="block text-[14px] font-semibold" style={{ color: template === -1 ? BLUE : TEXT }}>Write your own</span>
+                    <span className="block text-[12.5px]" style={{ color: SUBTLE }}>Start from a blank message</span>
+                  </span>
                 </button>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-                <div>
-                  <label style={lbl}>Lead Status</label>
-                  <select value={filters.status} onChange={e => setFilters(f => ({ ...f, status: e.target.value }))} style={inp}>
-                    {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s || 'All statuses'}</option>)}
-                  </select>
+              <div className="mt-5">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <label htmlFor="b-msg" className="text-[13px] font-semibold" style={{ color: TEXT_2 }}>Message</label>
+                  <MergeTagBar targetRef={textRef} value={message} onChange={v => { setMessage(v); setResult(null) }} />
                 </div>
-                <div>
-                  <label style={lbl}>Source Portal</label>
-                  <select value={filters.source} onChange={e => setFilters(f => ({ ...f, source: e.target.value }))} style={inp}>
-                    {SOURCE_OPTIONS.map(s => <option key={s} value={s}>{s || 'All sources'}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={lbl}>City</label>
-                  <input value={filters.city} onChange={e => setFilters(f => ({ ...f, city: e.target.value }))} placeholder="e.g. Mumbai" style={inp} />
-                </div>
-                <div>
-                  <label style={lbl}>Min Score</label>
-                  <input type="number" min={0} max={100} value={filters.minScore} onChange={e => setFilters(f => ({ ...f, minScore: e.target.value }))} placeholder="0" style={inp} />
-                </div>
-                <div>
-                  <label style={lbl}>Max Score</label>
-                  <input type="number" min={0} max={100} value={filters.maxScore} onChange={e => setFilters(f => ({ ...f, maxScore: e.target.value }))} placeholder="100" style={inp} />
+                <textarea id="b-msg" ref={textRef} value={message} rows={6}
+                  onChange={e => { setMessage(e.target.value); setTemplate(TEMPLATES.findIndex(t => t.body === e.target.value)); setResult(null) }}
+                  placeholder="Hi {{name}}, …"
+                  className={textareaCls} style={{ ...inputStyle, borderColor: tooLong ? '#FDA29B' : BORDER_2 }} />
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[12.5px]" style={{ color: SUBTLE }}>
+                  <span>Use <code className="rounded bg-[#F2F4F7] px-1">*bold*</code> and <code className="rounded bg-[#F2F4F7] px-1">_italic_</code> like in WhatsApp.</span>
+                  <span className="tabular-nums" style={{ color: tooLong ? '#B42318' : SUBTLE, fontWeight: tooLong ? 600 : 400 }}>
+                    {message.length.toLocaleString('en-IN')} / {WA_LIMIT.toLocaleString('en-IN')}
+                  </span>
                 </div>
               </div>
-            </div>
-
-            {/* Step 2 — Message */}
-            <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 22 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(37,211,102,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <MessageCircle style={{ width: 13, height: 13, color: C.wa }} />
-                </div>
-                <div>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: C.text, margin: 0 }}>Step 2 — Write Message</p>
-                  <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>Personalised per lead using merge tags</p>
-                </div>
-              </div>
-
-              {/* Quick pick */}
-              <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px' }}>Quick templates</p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 16 }}>
-                {QUICK_MESSAGES.map((q, i) => (
-                  <button key={i} onClick={() => { setActiveQuick(i); setMessage(q.body) }}
-                    style={{ padding: '5px 13px', borderRadius: 20, border: `1.5px solid ${activeQuick === i ? C.wa : C.border}`, background: activeQuick === i ? 'rgba(37,211,102,0.07)' : C.panel, color: activeQuick === i ? C.waDark : C.muted, fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.12s' }}>
-                    {q.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Composer */}
-              <textarea
-                value={message}
-                onChange={e => { setMessage(e.target.value); setActiveQuick(-1) }}
-                rows={5}
-                placeholder="Write your WhatsApp message here… Use {{name}}, {{city}}, {{budget}} for personalisation"
-                style={{ width: '100%', padding: '12px 14px', border: `1.5px solid ${C.border}`, borderRadius: 12, fontSize: 13, color: C.text, resize: 'vertical', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', lineHeight: 1.6, transition: 'border-color 0.15s' }}
-                onFocus={e => (e.target.style.borderColor = C.wa)}
-                onBlur={e  => (e.target.style.borderColor = C.border)}
-              />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                <p style={{ fontSize: 11, color: C.label, margin: 0, flex: 1 }}>
-                  Merge tags: <code style={{ background: '#F1F5F9', padding: '1px 5px', borderRadius: 4 }}>{'{{name}}'}</code>{' '}
-                  <code style={{ background: '#F1F5F9', padding: '1px 5px', borderRadius: 4 }}>{'{{city}}'}</code>{' '}
-                  <code style={{ background: '#F1F5F9', padding: '1px 5px', borderRadius: 4 }}>{'{{budget}}'}</code>
-                </p>
-                <span style={{ fontSize: 11, color: message.length > 400 ? C.amber : C.label }}>{message.length} chars</span>
-              </div>
-            </div>
+            </Panel>
           </div>
 
-          {/* ── Right ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'sticky', top: 24 }}>
-
-            {/* Audience count */}
-            <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, overflow: 'hidden' }}>
-              <div style={{ padding: '16px 20px', background: `linear-gradient(135deg, #064E3B, ${C.waDark})` }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <Users style={{ width: 14, height: 14, color: 'rgba(255,255,255,0.8)' }} />
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 600 }}>Audience</span>
-                  {previewing && <Loader2 style={{ width: 12, height: 12, color: 'rgba(255,255,255,0.6)', animation: 'spin 1s linear infinite', marginLeft: 'auto' }} />}
+          {/* ── Right column ── */}
+          <div className="grid min-w-0 items-start gap-6 md:grid-cols-2 xl:sticky xl:top-6 xl:flex xl:flex-col xl:items-stretch">
+            <Panel title="Preview" sub={sample ? 'Exactly what this lead will see' : 'Shown with sample details'}
+              right={recipients.length > 1 && (
+                <div className="flex items-center gap-1">
+                  <Btn size="sm" label="Previous lead" onClick={() => setPreviewIdx(i => (i - 1 + recipients.length) % recipients.length)}><CaretLeft size={14} weight="bold" /></Btn>
+                  <span className="min-w-[44px] text-center text-[12.5px] tabular-nums" style={{ color: SUBTLE }}>{previewIdx + 1}/{recipients.length}</span>
+                  <Btn size="sm" label="Next lead" onClick={() => setPreviewIdx(i => (i + 1) % recipients.length)}><CaretRight size={14} weight="bold" /></Btn>
                 </div>
-                <p style={{ fontSize: 34, fontWeight: 800, color: '#fff', margin: 0, lineHeight: 1 }}>
-                  {preview?.reachable ?? '—'}
+              )}>
+              <WaPhone contact={sample?.name || 'Rahul Sharma'}>
+                {message.trim()
+                  ? <WaBubble text={rendered} />
+                  : <p className="m-auto text-[13px]" style={{ color: '#667781' }}>Your message will appear here</p>}
+              </WaPhone>
+              {message.trim() && usesTag(message, 'city') && noCity > 0 && (
+                <p className="m-0 mt-3 flex gap-2 text-[12.5px] leading-snug" style={{ color: '#B54708' }}>
+                  <WarningCircle size={16} className="mt-px shrink-0" />
+                  {noCity} of these {recipients.length} leads have no city on file, so {'{{city}}'} will be left blank for them.
                 </p>
-                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', margin: '4px 0 0' }}>
-                  leads with WhatsApp
-                  {preview && preview.total !== preview.reachable && <> · {preview.total - preview.reachable} skipped</>}
-                </p>
-              </div>
-
-              <div style={{ maxHeight: 180, overflowY: 'auto' }}>
-                {(preview?.leads ?? []).slice(0, 10).map(l => (
-                  <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', borderBottom: `1px solid ${C.border}` }}>
-                    <div style={{ width: 26, height: 26, borderRadius: 8, background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: C.muted, flexShrink: 0 }}>
-                      {l.name[0]}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 12, fontWeight: 600, color: C.text, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.name}</p>
-                      <p style={{ fontSize: 11, color: C.label, margin: 0 }}>{l.city ?? '—'} · {l.score ?? '—'}</p>
-                    </div>
-                    <StatusBadge status={l.status} />
-                  </div>
-                ))}
-                {(preview?.leads?.length ?? 0) === 0 && !previewing && (
-                  <div style={{ padding: '16px 0', textAlign: 'center', color: C.label, fontSize: 12 }}>No matching leads</div>
-                )}
-                {(preview?.reachable ?? 0) > 10 && (
-                  <div style={{ padding: '9px 16px', fontSize: 11, color: C.muted, textAlign: 'center' }}>
-                    + {(preview?.reachable ?? 0) - 10} more leads
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Follow-up routing */}
-            <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 14, padding: '14px 16px' }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 10px' }}>Route follow-up leads to</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {[
-                  { id: 'all',    label: 'All agents (round-robin)',   desc: 'Distribute evenly across team' },
-                  { id: 'top',    label: 'Top performer',              desc: 'Agent with highest activity score' },
-                  { id: 'agent',  label: 'Specific agent',             desc: 'Assign to one agent by name' },
-                ].map(opt => (
-                  <button key={opt.id} onClick={() => setRouteTo(opt.id)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 10, border: `1.5px solid ${routeTo === opt.id ? C.violet : C.border}`, background: routeTo === opt.id ? 'rgba(29,78,216,0.05)' : 'transparent', cursor: 'pointer', textAlign: 'left' }}>
-                    <div style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${routeTo === opt.id ? C.violet : C.border}`, background: routeTo === opt.id ? C.violet : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {routeTo === opt.id && <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#fff' }} />}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: routeTo === opt.id ? C.violet : C.text }}>{opt.label}</div>
-                      <div style={{ fontSize: 10, color: C.label }}>{opt.desc}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-              {routeTo === 'agent' && (
-                <input value={routeAgent} onChange={e => setRouteAgent(e.target.value)} placeholder="Agent name or email…"
-                  style={{ marginTop: 8, width: '100%', padding: '8px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, color: C.text, outline: 'none', boxSizing: 'border-box' }} />
               )}
-            </div>
+              {message.trim() && usesTag(message, 'budget') && (
+                <p className="m-0 mt-3 flex gap-2 text-[12.5px] leading-snug" style={{ color: SUBTLE }}>
+                  <Info size={16} className="mt-px shrink-0" />
+                  {'{{budget}}'} is filled from each lead&apos;s maximum budget when it&apos;s sent.
+                </p>
+              )}
+            </Panel>
 
-            {/* Phone preview */}
-            <PhonePreview message={message} recipientCount={preview?.reachable ?? 0} />
-
-            {/* Result */}
-            {result && (
-              <div style={{ background: 'rgba(5,150,105,0.05)', border: '1px solid rgba(5,150,105,0.2)', borderRadius: 12, padding: '14px 16px', display: 'flex', gap: 10, alignItems: 'center' }}>
-                <CheckCircle style={{ width: 18, height: 18, color: C.emerald, flexShrink: 0 }} />
-                <div>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: C.emerald, margin: 0 }}>Broadcast sent!</p>
-                  <p style={{ fontSize: 12, color: C.muted, margin: '2px 0 0' }}>{result.sent} messages sent · {result.failed} failed</p>
+            <Panel id="send" step={3} title="Review and send">
+              <dl className="m-0 grid gap-3 text-[13.5px]">
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt style={{ color: SUBTLE }}>Recipients</dt>
+                  <dd className="m-0 text-right text-[15px] font-semibold tabular-nums" style={{ color: TEXT }}>{loadingAud ? '…' : reachable.toLocaleString('en-IN')}</dd>
                 </div>
-              </div>
-            )}
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="shrink-0" style={{ color: SUBTLE }}>Audience</dt>
+                  <dd className="m-0 min-w-0 text-right font-medium" style={{ color: TEXT_2 }}>{audienceLabel(filters)}</dd>
+                </div>
+                <div className="flex items-baseline justify-between gap-3">
+                  <dt className="shrink-0" style={{ color: SUBTLE }}>Message</dt>
+                  <dd className="m-0 min-w-0 truncate text-right font-medium" style={{ color: TEXT_2 }}>{steps[1].status}</dd>
+                </div>
+              </dl>
 
-            {error && !error.includes('INTERAKT') && (
-              <div style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12, padding: '12px 14px', display: 'flex', gap: 8, alignItems: 'center' }}>
-                <AlertCircle style={{ width: 14, height: 14, color: C.red, flexShrink: 0 }} />
-                <p style={{ fontSize: 12, color: C.red, margin: 0 }}>{error}</p>
+              <div className="mt-4 border-t pt-4" style={{ borderColor: BORDER }}>
+                <Field label="Replies go to" htmlFor="b-route" hint={ROUTES.find(r => r.id === routeTo)?.hint}>
+                  <Select id="b-route" value={routeTo} onChange={setRouteTo}>
+                    {ROUTES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
+                  </Select>
+                </Field>
+                {routeTo === 'agent' && (
+                  <input value={routeAgent} onChange={e => setRouteAgent(e.target.value)} placeholder="Agent name or email" aria-label="Agent name or email"
+                    className={`${inputCls} mt-2.5`} style={inputStyle} />
+                )}
               </div>
-            )}
 
-            {/* Interakt note */}
-            <div style={{ background: 'rgba(29,78,216,0.04)', border: '1px solid rgba(29,78,216,0.15)', borderRadius: 12, padding: '11px 14px', display: 'flex', gap: 8 }}>
-              <Info style={{ width: 13, height: 13, color: C.violet, flexShrink: 0, marginTop: 1 }} />
-              <p style={{ fontSize: 11.5, color: C.violet, margin: 0, lineHeight: 1.5 }}>
-                Connects to <strong>Interakt Business API</strong> when configured. Demo mode simulates sends.
+              <Btn variant="primary" size="lg" className="mt-5 w-full" disabled={!canSend} onClick={() => setConfirm(true)}>
+                {sending
+                  ? <><CircleNotch size={18} className="animate-spin" />Sending…</>
+                  : <><PaperPlaneTilt size={18} weight="fill" />Send to {reachable.toLocaleString('en-IN')} lead{reachable === 1 ? '' : 's'}</>}
+              </Btn>
+              {why && !sending && <p className="m-0 mt-2 text-center text-[12.5px]" style={{ color: SUBTLE }}>{why}</p>}
+
+              {sendError && <div className="mt-4"><Insight tone="red" icon={<WarningCircle size={15} weight="bold" />} title="The broadcast didn't go out">{sendError}</Insight></div>}
+              {result && (
+                <div className="mt-4">
+                  {result.simulated
+                    ? <Insight tone="amber" icon={<Info size={15} weight="bold" />} title="Test run, nothing was sent">
+                        WhatsApp sending isn&apos;t connected yet, so no lead got this message. Once Interakt is set up, the same send reaches {result.sent.toLocaleString('en-IN')} lead{result.sent === 1 ? '' : 's'}.
+                      </Insight>
+                    : <Insight tone="green" icon={<Check size={15} weight="bold" />} title={`Sent to ${result.sent.toLocaleString('en-IN')} lead${result.sent === 1 ? '' : 's'}`}>
+                        {result.failed ? `${result.failed} couldn't be delivered.` : 'Every message was accepted for delivery.'}
+                      </Insight>}
+                </div>
+              )}
+              <p className="m-0 mt-4 flex gap-2 text-[12.5px] leading-snug" style={{ color: LABEL }}>
+                <UsersThree size={16} className="mt-px shrink-0" />
+                Sends go through Interakt. Each send is limited to leads with a valid Indian mobile number, and you can send 5 broadcasts an hour.
               </p>
-            </div>
-
-            {/* Send button */}
-            <button
-              onClick={() => setShowConfirm(true)}
-              disabled={!canSend}
-              style={{ padding: '14px 0', borderRadius: 12, border: 'none', background: canSend ? `linear-gradient(135deg, #128C7E, ${C.wa})` : '#E2E8F0', color: canSend ? '#fff' : C.label, fontSize: 14, fontWeight: 700, cursor: canSend ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: canSend ? '0 2px 12px rgba(37,211,102,0.3)' : 'none', transition: 'all 0.15s' }}>
-              {sending
-                ? <><Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> Sending…</>
-                : <><Send style={{ width: 16, height: 16 }} /> Send to {preview?.reachable ?? 0} Leads</>
-              }
-            </button>
+            </Panel>
           </div>
         </div>
       </div>
 
-      {/* Confirm modal */}
-      {showConfirm && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(4px)' }}
-          onClick={e => e.target === e.currentTarget && setShowConfirm(false)}>
-          <div style={{ background: C.panel, borderRadius: 20, border: `1px solid ${C.border}`, padding: 28, width: 400, boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
-            <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(37,211,102,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              <Send style={{ width: 22, height: 22, color: C.wa }} />
-            </div>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: '0 0 10px', textAlign: 'center' }}>Send Broadcast?</h3>
-
-            {/* Message preview */}
-            <div style={{ background: '#F8FAFC', border: `1px solid ${C.border}`, borderRadius: 10, padding: '12px 14px', marginBottom: 16, maxHeight: 100, overflow: 'hidden' }}>
-              <p style={{ fontSize: 12, color: C.muted, margin: 0, lineHeight: 1.5 }}>{message.slice(0, 160)}{message.length > 160 ? '…' : ''}</p>
-            </div>
-
-            <p style={{ fontSize: 13, color: C.muted, margin: '0 0 6px', textAlign: 'center' }}>
-              This will send to <strong style={{ color: C.text }}>{preview?.reachable} leads</strong> on WhatsApp.
-            </p>
-            <p style={{ fontSize: 11, color: C.label, margin: '0 0 22px', textAlign: 'center' }}>This action cannot be undone.</p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setShowConfirm(false)} style={{ flex: 1, padding: '11px 0', background: '#F1F5F9', border: 'none', borderRadius: 10, color: C.muted, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={handleSend} style={{ flex: 1, padding: '11px 0', background: `linear-gradient(135deg,#128C7E,${C.wa})`, border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                Confirm Send
-              </button>
-            </div>
-          </div>
+      <Dialog open={confirm} onClose={() => setConfirm(false)} width={460}
+        icon={<PaperPlaneTilt size={20} />}
+        title={`Send this to ${reachable.toLocaleString('en-IN')} lead${reachable === 1 ? '' : 's'}?`}
+        sub="Everyone in this audience gets it on WhatsApp straight away. You can't unsend it."
+        footer={<>
+          <Btn onClick={() => setConfirm(false)}>Cancel</Btn>
+          <Btn variant="primary" onClick={send}><PaperPlaneTilt size={16} weight="fill" />Send now</Btn>
+        </>}>
+        <div className="rounded-[12px] p-3" style={{ background: '#EFEAE2' }}>
+          <WaBubble text={rendered} />
         </div>
-      )}
+        <dl className="m-0 mt-4 grid gap-2 text-[13.5px]">
+          <div className="flex justify-between gap-3"><dt style={{ color: SUBTLE }}>Audience</dt><dd className="m-0 text-right font-medium" style={{ color: TEXT_2 }}>{audienceLabel(filters)}</dd></div>
+          <div className="flex justify-between gap-3"><dt style={{ color: SUBTLE }}>Replies go to</dt><dd className="m-0 text-right font-medium" style={{ color: TEXT_2 }}>{routeTo === 'agent' ? routeAgent : ROUTES.find(r => r.id === routeTo)?.label}</dd></div>
+          {skipped > 0 && <div className="flex justify-between gap-3"><dt style={{ color: SUBTLE }}>Skipped</dt><dd className="m-0 text-right font-medium" style={{ color: TEXT_2 }}>{skipped} without a valid mobile ({pct(skipped, preview?.total ?? 0)}%)</dd></div>}
+        </dl>
+      </Dialog>
 
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <Toast toast={toast} onClose={hideToast} />
     </div>
   )
 }
