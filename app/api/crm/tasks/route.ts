@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminClient } from '@/lib/supabase-admin'
+import { requireAuth } from '@/lib/auth'
 
 export const runtime = 'nodejs'
 
-// GET /api/crm/tasks — all tasks, enriched with lead + team member names
+// Dev bypass: imported leads have agent_id NULL, so don't filter by agent_id (same rule as /api/crm/leads)
+const DEV_AGENT = '00000000-0000-0000-0000-000000000001'
+
+// GET /api/crm/tasks — tasks on the signed-in user's leads, enriched with lead + team member names
 // Query params:
 //   source=self|assigned   filter by source
 //   agent=<uuid>           filter by assigned_to team member UUID
 //   status=Pending|Done|Cancelled  (default: omitted = all)
 export async function GET(req: NextRequest) {
+  const { userId, response } = await requireAuth()
+  if (response) return response
+
   const sb = getAdminClient()
   if (!sb) return NextResponse.json({ error: 'DB not configured' }, { status: 503 })
 
@@ -16,13 +23,15 @@ export async function GET(req: NextRequest) {
   const sourceFilter = searchParams.get('source')   // 'self' | 'assigned' | null
   const agentFilter  = searchParams.get('agent')    // team_member UUID | null
   const statusFilter = searchParams.get('status')   // 'Pending' | 'Done' | 'Cancelled' | null
+  const isDevBypass  = userId === DEV_AGENT
 
-  // Fetch tasks
+  // Fetch tasks. The inner join keeps only tasks whose lead belongs to this user.
   let q = sb
     .from('lead_tasks')
-    .select('*, leads(id, name, phone)')
+    .select('*, leads!inner(id, name, phone, agent_id)')
     .order('due_date', { ascending: true })
 
+  if (!isDevBypass) q = q.eq('leads.agent_id', userId!)
   if (sourceFilter) q = q.eq('source', sourceFilter)
   if (agentFilter)  q = q.eq('assigned_to', agentFilter)
   if (statusFilter) q = q.eq('status', statusFilter)
@@ -37,11 +46,15 @@ export async function GET(req: NextRequest) {
   const memberMap: Record<string, { name: string; role: string }> =
     Object.fromEntries((members ?? []).map(m => [m.id, { name: m.name, role: m.role }]))
 
-  const enriched = (tasks ?? []).map(t => ({
-    ...t,
-    assignee: t.assigned_to ? (memberMap[t.assigned_to] ?? null) : null,
-    creator:  t.created_by  ? (memberMap[t.created_by]  ?? null) : null,
-  }))
+  const enriched = (tasks ?? []).map(t => {
+    const l = t.leads as { id: string; name: string; phone: string | null } | null
+    return {
+      ...t,
+      leads:    l ? { id: l.id, name: l.name, phone: l.phone } : null,   // agent_id stays server-side
+      assignee: t.assigned_to ? (memberMap[t.assigned_to] ?? null) : null,
+      creator:  t.created_by  ? (memberMap[t.created_by]  ?? null) : null,
+    }
+  })
 
   return NextResponse.json({ tasks: enriched, members: members ?? [] })
 }
@@ -49,6 +62,9 @@ export async function GET(req: NextRequest) {
 // POST /api/crm/tasks — create a task directly from the task board
 // Body: { lead_id, title, task_type, due_date, priority, notes?, assigned_to?, created_by? }
 export async function POST(req: NextRequest) {
+  const { userId, response } = await requireAuth()
+  if (response) return response
+
   const sb = getAdminClient()
   if (!sb) return NextResponse.json({ error: 'DB not configured' }, { status: 503 })
 
@@ -58,6 +74,12 @@ export async function POST(req: NextRequest) {
   if (!lead_id)        return NextResponse.json({ error: 'lead_id is required' },  { status: 400 })
   if (!title?.trim())  return NextResponse.json({ error: 'title is required' },     { status: 400 })
   if (!due_date)       return NextResponse.json({ error: 'due_date is required' },  { status: 400 })
+
+  // Only allow tasks on the user's own leads
+  if (userId !== DEV_AGENT) {
+    const { data: lead } = await sb.from('leads').select('id').eq('id', lead_id).eq('agent_id', userId!).maybeSingle()
+    if (!lead) return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
+  }
 
   const source = assigned_to ? 'assigned' : 'self'
 
