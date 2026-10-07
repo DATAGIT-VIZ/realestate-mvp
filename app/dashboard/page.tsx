@@ -459,7 +459,7 @@ function FunnelCard({ leads }: { leads: CRMLead[] }) {
             <div key={s.name} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 96, flexShrink: 0, fontFamily: "'Plus Jakarta Sans',system-ui", fontSize: 11.5, fontWeight: 500, color: '#3c4459' }}>{s.name}</div>
               <div style={{ flex: 1, height: 30, borderRadius: 8, background: '#f4f5f9', overflow: 'hidden', position: 'relative' }}>
-                <div style={{ height: 30, width: `${w}%`, borderRadius: 8, background: `linear-gradient(90deg,${color},${color}cc)`, transition: 'width .35s cubic-bezier(.4,0,.2,1)' }} />
+                <div style={{ height: 30, width: '100%', borderRadius: 8, background: `linear-gradient(90deg,${color},${color}cc)`, transform: `scaleX(${w / 100})`, transformOrigin: 'left', transition: 'transform .35s cubic-bezier(.4,0,.2,1)' }} />
                 <span style={{ position: 'absolute', top: 0, height: 30, left: inside ? 0 : `calc(${w}% + 10px)`, width: inside ? `${w}%` : undefined, display: 'flex', alignItems: 'center', justifyContent: inside ? 'flex-end' : 'flex-start', paddingRight: inside ? 10 : 0, fontFamily: MONO, fontSize: 10, color: inside ? 'rgba(255,255,255,.9)' : '#7c8499' }}>
                   {formatPipeline(s.pipeline)}
                 </span>
@@ -893,7 +893,7 @@ function ActionQueue({ leads, escalatedCount }: { leads: CRMLead[]; escalatedCou
               </div>
             </div>
             <div style={{ height: 5, background: '#f4f5f9', borderRadius: 4, overflow: 'hidden' }}>
-              <div style={{ height: '100%', borderRadius: 4, background: `linear-gradient(90deg,${b.color}cc,${b.color})`, width: animated ? `${(b.count / max) * 100}%` : '0%', transition: `width .75s cubic-bezier(.34,1.56,.64,1) ${i * .09 + .15}s` }} />
+              <div style={{ height: '100%', borderRadius: 4, background: `linear-gradient(90deg,${b.color}cc,${b.color})`, width: '100%', transform: animated ? `scaleX(${b.count / max})` : 'scaleX(0)', transformOrigin: 'left', transition: `transform .75s cubic-bezier(0,0,.2,1) ${i * .09 + .15}s` }} />
             </div>
           </div>
         ))}
