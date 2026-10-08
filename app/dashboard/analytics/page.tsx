@@ -1,649 +1,901 @@
 'use client'
 
-import { useEffect, useState, useMemo, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import type { CRMLead } from '@/lib/twenty'
+// Analytics: how leads turn into deals, where they slip, and what to fix first. Every number comes from the
+// signed-in user's own leads and the activity logged on them. Nothing on this page is sample data.
+
+import { useMemo, useState, type ReactNode } from 'react'
+import Link from 'next/link'
 import {
-  AreaChart, Area, BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell,
-} from 'recharts'
-import {
-  Flame, DollarSign, RefreshCw, Loader2,
-  ChevronRight, BarChart3, Sparkles, TrendingUp,
-} from 'lucide-react'
-import { format, subDays, subMonths, differenceInHours } from 'date-fns'
+  Funnel, Timer, Lightning, ChartBar, Plugs, Target, MapPin, Clock, ArrowRight, Hourglass,
+  Gauge, ListChecks, Phone, Trophy, WarningCircle, Sparkle,
+} from '@phosphor-icons/react'
 import { PageTabBar } from '@/components/layout/PageTabBar'
+import {
+  CANVAS, SURFACE, BORDER, TEXT, TEXT_2, SUBTLE, LABEL, BLUE, BLUE_LN, GREEN, GREEN_D, XS, DAY, HOUR,
+  STAGE, type StageId, displayName, inr, sourceMeta, SourceMark, LeadAvatar, StagePill, Pill, Seg, Panel,
+  StatCard, StackBar, Insight, EmptyState, Badge, PageHeader,
+} from '@/components/outreach/OutreachKit'
+import {
+  INSIGHTS_TABS, useInsights, type InsightLead, type InsightActivity, type Journey, type StepKey, type RollId, ROLL,
+  STEPS, ORDER, buildJourneys, reached, responseMs, kindOf, isCallAttempt, isConnected, stageOfLead, isOpenLead,
+  scoreOf, valueOf, ms, created, closedAt, sum, nf, plural, share, median, dur, rollWindow, bucketIndex, cellOf,
+  emptyGrid, WEEKDAYS, SLOTS, Delta, MiniBars, Meter, Basis, SortTh, useSort, CallLink, WaLink, BarChart, Legend,
+  Heatmap, PageSkeleton, LoadError, RefreshBtn, Figure, KIND, type ActKind,
+} from '@/components/insights/InsightsKit'
 
-const INSIGHTS_TABS = [
-  { label: 'Analytics',      href: '/dashboard/analytics', exact: true },
-  { label: 'Team Analytics', href: '/dashboard/team/analytics', teamsOnly: true },
-  { label: 'Reports',        href: '/dashboard/reports' },
-  { label: 'Calculators',    href: '/dashboard/calculators' },
+// ─── Rules ────────────────────────────────────────────────────────────────────
+const MIN_GROUP = 5          // a group needs this many leads before the page compares it with another
+const MIN_CELL_CALLS = 3     // a heatmap cell needs this many calls before it shows a connect rate
+const HOT_SCORE = 70
+const SPEED = [
+  { label: 'Under 5 min',  max: 5 * 60_000 },
+  { label: '5–30 min',     max: 30 * 60_000 },
+  { label: '30 min – 1 h', max: HOUR },
+  { label: '1–4 hours',    max: 4 * HOUR },
+  { label: '4–24 hours',   max: DAY },
+  { label: '1–3 days',     max: 3 * DAY },
+  { label: '3+ days',      max: Infinity },
 ]
+const SCORE_BANDS = [
+  { label: '70–100', sub: 'High intent', min: 70, max: 101, color: BLUE },
+  { label: '40–69',  sub: 'Medium',      min: 40, max: 70,  color: '#F79009' },
+  { label: '0–39',   sub: 'Low',         min: 0,  max: 40,  color: '#98A2B3' },
+]
+const BUDGETS = [
+  { label: 'Under ₹50 L',  min: 1,   max: 5e6 },
+  { label: '₹50 L – 1 Cr', min: 5e6, max: 1e7 },
+  { label: '₹1 – 2 Cr',    min: 1e7, max: 2e7 },
+  { label: '₹2 – 5 Cr',    min: 2e7, max: 5e7 },
+  { label: '₹5 Cr and up', min: 5e7, max: Infinity },
+]
+const DROP_TEXT: Record<StepKey, string> = {
+  in: 'never contacted', contacted: 'never got through', spoke: 'not qualified yet', qualified: 'no EOI yet', eoi: 'not closed yet', won: '',
+}
+const STALL_TITLE: Record<StepKey, string> = {
+  in: 'Never contacted', contacted: 'Contacted, never got through', spoke: 'Spoke, requirements not confirmed',
+  qualified: 'Warm, no EOI yet', eoi: 'Hot, not closed yet', won: '',
+}
+const FLOW_PARTS = [
+  { key: 'hour',    label: 'Reached within an hour', color: BLUE },
+  { key: 'day',     label: 'Same day',               color: '#528BFF' },
+  { key: 'later',   label: 'Later',                  color: '#B2CCFF' },
+  { key: 'waiting', label: 'Not contacted yet',      color: '#FEC84B' },
+] as const
 
-// ─── Design tokens ─────────────────────────────────────────────────────────
-const C = {
-  bg: '#F8FAFC', panel: '#FFFFFF', border: '#E2E8F0',
-  amber: '#3B82F6', amberDim: 'rgba(59,130,246,0.08)',
-  emerald: '#059669', red: '#EF4444', blue: '#1D4ED8',
-  orange: '#1D4ED8', purple: '#1D4ED8',
-  purpleDim: 'rgba(29,78,216,0.08)', purpleBorder: 'rgba(29,78,216,0.25)',
-  purpleGrad: 'linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%)',
-  muted: '#64748B', label: '#94A3B8', text: '#0F172A',
+// ─── Working out the numbers ──────────────────────────────────────────────────
+type StepRow = { key: StepKey; label: string; help: string; count: number; prevCount: number; ofIn: number; prevOfIn: number; ofPrev: number }
+type SourceRow = {
+  label: string; raw: string | null; leads: number; contacted: number; spoke: number; qualified: number; won: number
+  response: number | null; avgScore: number; budget: number
+}
+type Analysis = ReturnType<typeof analyse>
+
+function analyse(leads: InsightLead[], acts: InsightActivity[], period: RollId, now: number) {
+  const w = rollWindow(period, now)
+  const inWin = (t: number) => t >= w.start && t < w.end
+  const cohort = leads.filter(l => inWin(created(l)))
+  const prevCohort = leads.filter(l => { const t = created(l); return t >= w.prevStart && t < w.prevEnd })
+  const journeys = buildJourneys([...cohort, ...prevCohort], acts)
+  const j = (l: InsightLead) => journeys.get(l.id)
+  const winActs = acts.filter(a => inWin(ms(a.createdAt)))
+
+  // Journey
+  const countAt = (xs: InsightLead[], k: StepKey) => xs.filter(l => reached(j(l), k)).length
+  const steps: StepRow[] = STEPS.map((s, i) => {
+    const count = countAt(cohort, s.key), prevCount = countAt(prevCohort, s.key)
+    const before = i ? countAt(cohort, STEPS[i - 1].key) : count
+    return { key: s.key, label: s.label, help: s.help, count, prevCount, ofIn: share(count, cohort.length), prevOfIn: share(prevCount, prevCohort.length), ofPrev: share(count, before) }
+  })
+  const stalled = {} as Record<StepKey, InsightLead[]>
+  STEPS.forEach((s, i) => {
+    const next = STEPS[i + 1]
+    stalled[s.key] = next ? cohort.filter(l => reached(j(l), s.key) && !reached(j(l), next.key)) : []
+  })
+  let dropKey: StepKey | null = null, dropN = 0
+  STEPS.slice(0, -1).forEach((s, i) => {
+    const n = steps[i].count - steps[i + 1].count
+    if (n > dropN) { dropN = n; dropKey = s.key }
+  })
+  const closeDays = cohort.filter(l => stageOfLead(l) === 'Closed').map(l => (closedAt(l) - created(l)) / DAY)
+  const nowStages = ORDER.map(st => ({ st, n: cohort.filter(l => stageOfLead(l) === st).length }))
+
+  // Speed to lead
+  const resp = (xs: InsightLead[]) => xs.map(l => responseMs(l, j(l))).filter((x): x is number => x != null)
+  const respNow = resp(cohort), respPrev = resp(prevCohort)
+  const speedRows = SPEED.map((b, i) => {
+    const lo = i ? SPEED[i - 1].max : -1
+    const xs = cohort.filter(l => { const r = responseMs(l, j(l)); return r != null && r > lo && r <= b.max })
+    return { label: b.label, n: xs.length, qualified: xs.filter(l => reached(j(l), 'qualified')).length }
+  })
+  const unknownTime = cohort.filter(l => j(l)?.contacted && responseMs(l, j(l)) == null)
+  const waiting = cohort.filter(l => !j(l)?.contacted && isOpenLead(l) && stageOfLead(l) !== 'Hold')
+  const fast = cohort.filter(l => { const r = responseMs(l, j(l)); return r != null && r <= HOUR })
+  const slow = cohort.filter(l => { const r = responseMs(l, j(l)); return r != null && r > HOUR })
+
+  // Inflow by how fast leads were reached
+  const flow = w.buckets.map(b => ({ b, hour: 0, day: 0, later: 0, waiting: 0, prev: 0 }))
+  for (const l of cohort) {
+    const i = bucketIndex(w.buckets, created(l))
+    if (i < 0) continue
+    const r = responseMs(l, j(l))
+    if (!j(l)?.contacted) flow[i].waiting++
+    else if (r != null && r <= HOUR) flow[i].hour++
+    else if (r != null && r <= DAY) flow[i].day++
+    else flow[i].later++
+  }
+  const shift = w.start - w.prevStart
+  for (const l of prevCohort) {
+    const i = bucketIndex(w.buckets, created(l) + shift)
+    if (i >= 0) flow[i].prev++
+  }
+
+  // Sources
+  const bySource = new Map<string, InsightLead[]>()
+  for (const l of cohort) {
+    const k = sourceMeta(l.sourcePortal).label
+    const xs = bySource.get(k); if (xs) xs.push(l); else bySource.set(k, [l])
+  }
+  const sources: SourceRow[] = [...bySource.entries()].map(([label, xs]) => ({
+    label, raw: xs[0].sourcePortal, leads: xs.length,
+    contacted: xs.filter(l => reached(j(l), 'contacted')).length,
+    spoke: xs.filter(l => reached(j(l), 'spoke')).length,
+    qualified: xs.filter(l => reached(j(l), 'qualified')).length,
+    won: xs.filter(l => reached(j(l), 'won')).length,
+    response: median(resp(xs)),
+    avgScore: Math.round(sum(xs, scoreOf) / xs.length),
+    budget: sum(xs, valueOf),
+  }))
+
+  // Timing
+  const attempts = emptyGrid(), connected = emptyGrid(), arrivals = emptyGrid()
+  for (const a of winActs) {
+    if (!isCallAttempt(a)) continue
+    const c = cellOf(ms(a.createdAt))
+    attempts[c.day][c.slot]++
+    if (isConnected(a)) connected[c.day][c.slot]++
+  }
+  for (const l of cohort) { const c = cellOf(created(l)); arrivals[c.day][c.slot]++ }
+
+  // Channels
+  const leadById = new Map(leads.map(l => [l.id, l]))
+  const firstBy = (k: ActKind) => {
+    const m = new Map<string, number>()
+    for (const a of winActs) if (kindOf(a.type) === k) { const t = ms(a.createdAt); const x = m.get(a.leadId); if (x == null || t < x) m.set(a.leadId, t) }
+    return m
+  }
+  const actsByLead = new Map<string, InsightActivity[]>()
+  for (const x of acts) { const xs = actsByLead.get(x.leadId); if (xs) xs.push(x); else actsByLead.set(x.leadId, [x]) }
+  // Leads where one of `k` followed their first `first` activity (within `within`)
+  const anyAfter = (k: ActKind[], first: Map<string, number>, within = Infinity) => {
+    let n = 0
+    for (const [id, t] of first) {
+      if ((actsByLead.get(id) ?? []).some(x => k.includes(kindOf(x.type)) && ms(x.createdAt) > t && ms(x.createdAt) - t <= within)) n++
+    }
+    return n
+  }
+  const hotNow = (first: Map<string, number>) => [...first.keys()].filter(id => { const l = leadById.get(id); return !!l && ['Hot', 'Closed'].includes(stageOfLead(l)) }).length
+  const callActs = winActs.filter(isCallAttempt)
+  const talk = callActs.filter(a => isConnected(a) && (a.duration ?? 0) > 0).map(a => a.duration ?? 0)
+  const wa = firstBy('whatsapp'), em = firstBy('email'), vb = firstBy('visitBooked'), vd = firstBy('visit'), mt = firstBy('meeting')
+  const count = (k: ActKind) => winActs.filter(a => kindOf(a.type) === k).length
+  const channels = [
+    { kind: 'call' as ActKind, n: callActs.length, leads: new Set(callActs.map(a => a.leadId)).size, rate: share(callActs.filter(isConnected).length, callActs.length),
+      rateLabel: 'got through', extra: talk.length ? `median talk ${dur(median(talk)! * 1000)}` : null },
+    { kind: 'whatsapp' as ActKind, n: count('whatsapp'), leads: wa.size, rate: share(anyAfter(['reply'], wa, 3 * DAY), wa.size), rateLabel: 'replied within 3 days', extra: null },
+    { kind: 'email' as ActKind, n: count('email'), leads: em.size, rate: share(anyAfter(['reply'], em, 7 * DAY), em.size), rateLabel: 'replied within 7 days', extra: null },
+    { kind: 'visitBooked' as ActKind, n: count('visitBooked'), leads: vb.size, rate: share(anyAfter(['visit'], vb), vb.size), rateLabel: 'visit happened', extra: null },
+    { kind: 'visit' as ActKind, n: count('visit'), leads: vd.size, rate: share(hotNow(vd), vd.size), rateLabel: 'now Hot or Closed', extra: null },
+    { kind: 'meeting' as ActKind, n: count('meeting'), leads: mt.size, rate: share(hotNow(mt), mt.size), rateLabel: 'now Hot or Closed', extra: null },
+  ]
+
+  // Intent score
+  const buckets10 = Array.from({ length: 10 }, (_, i) => ({ min: i * 10, n: cohort.filter(l => { const s = scoreOf(l); return s >= i * 10 && (i === 9 ? s <= 100 : s < i * 10 + 10) }).length }))
+  const bands = SCORE_BANDS.map(b => {
+    const xs = cohort.filter(l => scoreOf(l) >= b.min && scoreOf(l) < b.max)
+    return { ...b, n: xs.length, qualified: xs.filter(l => reached(j(l), 'qualified')).length, won: xs.filter(l => reached(j(l), 'won')).length, budget: sum(xs, valueOf) }
+  })
+  const hotOpen = leads.filter(l => isOpenLead(l) && stageOfLead(l) !== 'Hold' && (stageOfLead(l) === 'Hot' || scoreOf(l) >= HOT_SCORE))
+
+  // To act on: open leads with the highest intent, any age
+  const actOn = leads.filter(l => isOpenLead(l) && stageOfLead(l) !== 'Hold')
+    .sort((a, b) => scoreOf(b) - scoreOf(a) || valueOf(b) - valueOf(a)).slice(0, 8)
+
+  return {
+    w, cohort, prevCohort, journeys, steps, stalled, dropKey: dropKey as StepKey | null, dropN, closeDays, nowStages,
+    respNow, respPrev, speedRows, unknownTime, waiting, fast, slow, flow, sources, attempts, connected, arrivals,
+    channels, buckets10, bands, hotOpen, actOn, winActs,
+  }
 }
 
-type Timeframe = 'week' | 'month' | 'quarter' | 'year'
-
-const TF_DAYS: Record<Timeframe, number> = { week: 7, month: 30, quarter: 90, year: 365 }
-const TF_LABEL: Record<Timeframe, string> = {
-  week: 'Weekly', month: 'Monthly', quarter: 'Quarterly', year: 'Yearly',
+function findings(a: Analysis, now: number) {
+  const out: { key: string; tone: 'blue' | 'amber' | 'green' | 'red'; icon: ReactNode; title: string; body: string; jump?: StepKey; href?: string; cta?: string }[] = []
+  const j = (l: InsightLead) => a.journeys.get(l.id)
+  if (a.waiting.length) {
+    const oldest = Math.max(...a.waiting.map(l => now - created(l)))
+    out.push({ key: 'wait', tone: 'amber', icon: <Hourglass size={15} weight="bold" />, title: `${plural(a.waiting.length, 'lead')} still waiting for a first contact`,
+      body: `The longest has waited ${dur(oldest)}. Every hour a new enquiry waits, it cools.`, href: '/dashboard/calls', cta: 'Start calling' })
+  }
+  if (a.dropKey && a.dropN > 0 && a.cohort.length >= MIN_GROUP) {
+    const i = STEPS.findIndex(s => s.key === a.dropKey)
+    const from = a.steps[i], to = a.steps[i + 1]
+    out.push({ key: 'drop', tone: 'red', icon: <Funnel size={15} weight="bold" />, title: `Biggest drop: ${from.label.toLowerCase()} to ${to.label.toLowerCase()}`,
+      body: `${nf(a.dropN)} of ${nf(from.count)} leads (${share(a.dropN, from.count)}%) stopped here.`, jump: a.dropKey, cta: 'See who' })
+  }
+  if (a.fast.length >= MIN_GROUP && a.slow.length >= MIN_GROUP) {
+    const f = share(a.fast.filter(l => reached(j(l), 'qualified')).length, a.fast.length)
+    const s = share(a.slow.filter(l => reached(j(l), 'qualified')).length, a.slow.length)
+    if (f !== s) out.push({ key: 'speed', tone: f > s ? 'green' : 'blue', icon: <Timer size={15} weight="bold" />,
+      title: f > s ? 'Fast replies pay off' : 'Speed isn\'t the bottleneck here',
+      body: `${f}% of leads reached within an hour got to Warm, against ${s}% of those reached later (${nf(a.fast.length)} and ${nf(a.slow.length)} leads).` })
+  }
+  const big = a.sources.filter(s => s.leads >= MIN_GROUP)
+  if (big.length >= 2) {
+    const best = [...big].sort((x, y) => share(y.qualified, y.leads) - share(x.qualified, x.leads))[0]
+    const all = share(a.steps[3].count, a.cohort.length)
+    const r = share(best.qualified, best.leads)
+    if (r > all) out.push({ key: 'src', tone: 'blue', icon: <Plugs size={15} weight="bold" />, title: `${best.label} leads qualify most often`,
+      body: `${r}% reached Warm or better, against ${all}% across all sources (${plural(best.leads, 'lead')}).` })
+  }
+  const total = sum(a.attempts.flat(), x => x)
+  if (total >= 40) {
+    let bd = -1, bs = -1, br = -1
+    a.attempts.forEach((row, d) => row.forEach((n, s) => { if (n >= 15) { const r = share(a.connected[d][s], n); if (r > br) { br = r; bd = d; bs = s } } }))
+    if (bd >= 0) out.push({ key: 'time', tone: 'green', icon: <Clock size={15} weight="bold" />, title: `Calls get through best on ${WEEKDAYS[bd]} ${SLOTS[bs]}`,
+      body: `${br}% of calls in that slot connected, against ${share(sum(a.connected.flat(), x => x), total)}% overall.` })
+  }
+  return out.slice(0, 3)
 }
 
-type ActivityRow = {
-  id: string
-  personId: string | null
-  type: string
-  notes: string | null
-  outcome: string | null
-  createdAt: string
-}
+// ─── Page ─────────────────────────────────────────────────────────────────────
+export default function AnalyticsPage() {
+  const [period, setPeriod] = useState<RollId>('30d')
+  const [focus, setFocus] = useState<StepKey | null>(null)
+  const { data, error, pending, refreshing, refresh } = useInsights(ROLL[period].days * 2 + 2)
+  const now = data?.at ?? 0
+  const a = useMemo(() => (data && !pending ? analyse(data.leads, data.acts, period, now) : null), [data, pending, period, now])
+  const found = useMemo(() => (a ? findings(a, now) : []), [a, now])
+  const P = ROLL[period]
 
-function displayName(l: CRMLead) {
-  return `${l.name.firstName} ${l.name.lastName}`.trim() || 'Unnamed'
-}
-function formatINR(n: number): string {
-  if (n >= 10_000_000) return `₹${(n / 10_000_000).toFixed(1)}Cr`
-  if (n >= 100_000)    return `₹${(n / 100_000).toFixed(1)}L`
-  return `₹${n.toLocaleString('en-IN')}`
-}
+  const jump = (k: StepKey) => {
+    setFocus(k)
+    document.getElementById('journey')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const Tip = ({ active, payload, label }: any) => {
-  if (!active || !payload?.length) return null
   return (
-    <div style={{ background: '#fff', border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 14px', fontSize: 12, color: C.text, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-      <p style={{ color: C.muted, marginBottom: 4 }}>{label}</p>
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      {payload.map((p: any, i: number) => (
-        <p key={i} style={{ color: p.color ?? C.amber }}>{p.name}: <strong>{p.value}</strong></p>
-      ))}
+    <div className="min-h-screen" style={{ background: CANVAS }}>
+      <PageTabBar tabs={INSIGHTS_TABS} />
+      <PageHeader title="Analytics" backHref="/dashboard"
+        badge={data ? <Badge tone="blue">{plural(data.leads.length, 'lead')}</Badge> : undefined}
+        sub="How your leads turn into deals, where they slip, and what to fix first."
+        actions={<>
+          <Seg label="Period" value={period} onChange={p => { setPeriod(p); setFocus(null) }}
+            options={(Object.keys(ROLL) as RollId[]).map(id => ({ id, label: ROLL[id].label }))} />
+          <RefreshBtn refreshing={refreshing} onRefresh={refresh} />
+        </>}
+      />
+
+      <div className="mx-auto max-w-[1400px] px-4 pb-24 lg:px-8">
+        {error && !data ? <LoadError text={error} onRetry={refresh} /> : !a || !data ? <PageSkeleton /> : data.leads.length === 0 ? (
+          <EmptyState icon={<ChartBar size={22} />} title="No leads to analyse yet"
+            actions={<Link href="/dashboard/leads" className="inline-flex h-10 items-center rounded-[10px] px-3.5 text-[14px] font-semibold text-white no-underline" style={{ background: BLUE }}>Go to Leads</Link>}>
+            Once leads come in from your portals or you add them, this page shows how they move from enquiry to deal.
+          </EmptyState>
+        ) : (
+          <>
+            {data.demo && (
+              <div className="mb-4 flex items-start gap-2.5 rounded-[4px] border px-3.5 py-2.5 text-[13.5px]" style={{ borderColor: '#D0D5DD', background: '#F9FAFB', color: '#344054' }}>
+                <Sparkle size={16} className="mt-0.5 shrink-0" style={{ color: '#667085' }} />
+                <span>Activity data hasn&apos;t been logged yet, so these charts are showing <strong>sample data</strong> to illustrate the layout. Numbers will update automatically once you start logging calls and activities on your leads.</span>
+              </div>
+            )}
+            {(data.activitiesFailed || data.capped.leads || data.capped.activities) && (
+              <div className="mb-4 flex items-start gap-2.5 rounded-[4px] border px-3.5 py-2.5 text-[13.5px]" style={{ borderColor: '#FEDF89', background: '#FFFAEB', color: '#B54708' }}>
+                <WarningCircle size={18} weight="bold" className="mt-px shrink-0" />
+                <span>{data.activitiesFailed ? 'Activity couldn\'t load, so contact and speed numbers only use lead stages. ' : ''}
+                  {data.capped.leads ? 'Only your latest 20,000 leads are counted. ' : ''}{data.capped.activities ? 'Only the latest 40,000 activities are counted.' : ''}</span>
+              </div>
+            )}
+
+            {found.length > 0 && (
+              <div className={`mb-6 grid gap-3 ${found.length >= 3 ? 'lg:grid-cols-3' : found.length === 2 ? 'lg:grid-cols-2' : ''}`}>
+                {found.map(f => (
+                  <Insight key={f.key} tone={f.tone} icon={f.icon} title={f.title}>
+                    <span>{f.body}</span>
+                    {f.cta && (
+                      <div className="mt-2">
+                        {f.href
+                          ? <Link href={f.href} className="inline-flex items-center gap-1 text-[13px] font-semibold no-underline" style={{ color: BLUE }}>{f.cta}<ArrowRight size={13} weight="bold" /></Link>
+                          : <button type="button" onClick={() => f.jump && jump(f.jump)} className="inline-flex cursor-pointer items-center gap-1 text-[13px] font-semibold" style={{ color: BLUE }}>{f.cta}<ArrowRight size={13} weight="bold" /></button>}
+                      </div>
+                    )}
+                  </Insight>
+                ))}
+              </div>
+            )}
+
+            <Kpis a={a} period={period} />
+
+            <div className="mt-6"><Journey a={a} period={period} now={now} focus={focus} onFocus={setFocus} /></div>
+
+            <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+              <Speed a={a} />
+              <Flow a={a} period={period} />
+            </div>
+
+            <div className="mt-6"><Sources a={a} long={P.long} /></div>
+
+            <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+              <Timing a={a} long={P.long} />
+              <Channels a={a} long={P.long} />
+            </div>
+
+            <div className="mt-6 grid gap-6 xl:grid-cols-2">
+              <Scores a={a} long={P.long} />
+              <Demand cohort={a.cohort} journeys={a.journeys} long={P.long} />
+            </div>
+
+            <div className="mt-6"><ActOn a={a} now={now} /></div>
+          </>
+        )}
+      </div>
     </div>
   )
 }
 
-export default function AnalyticsPage() {
-  const router = useRouter()
-  const [leads, setLeads]           = useState<CRMLead[]>([])
-  const [activities, setActivities] = useState<ActivityRow[]>([])
-  const [loading, setLoading]       = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [timeframe, setTimeframe]   = useState<Timeframe>('month')
-
-  const since = useMemo(() => subDays(new Date(), TF_DAYS[timeframe]).toISOString(), [timeframe])
-
-  const fetchData = useCallback(async () => {
-    try {
-      const [leadsRes, actsRes] = await Promise.all([
-        fetch('/api/crm/leads?limit=200').then(r => r.json()),
-        fetch(`/api/crm/activities?since=${encodeURIComponent(since)}&limit=500`).then(r => r.json()),
-      ])
-      setLeads(leadsRes.data?.leads ?? [])
-      setActivities(actsRes.data?.activities ?? [])
-    } catch (e) {
-      console.error('Analytics fetch error', e)
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [since])
-
-  useEffect(() => { fetchData() }, [fetchData])
-  const handleRefresh = () => { setRefreshing(true); fetchData() }
-
-  // ── Lead KPIs ────────────────────────────────────────────────────────────
-  const leadSummary = useMemo(() => {
-    const now   = new Date()
-    const hot   = leads.filter(l => (l.intentScore ?? 0) >= 70)
-    const prev  = hot.filter(l => new Date(l.createdAt) < subDays(now, 7))
-    const hotTrend = prev.length > 0
-      ? Math.round(((hot.length - prev.length) / prev.length) * 100)
-      : hot.length > 0 ? 100 : 0
-    const hotPipeline = hot.reduce((s, l) => s + (l.budgetMax ?? 0), 0)
-    const avgScore    = leads.length > 0
-      ? Math.round(leads.reduce((s, l) => s + (l.intentScore ?? 0), 0) / leads.length) : 0
-    return { total: leads.length, hotCount: hot.length, hotTrend, hotPipeline, avgScore }
-  }, [leads])
-
-  // ── Daily timeline ───────────────────────────────────────────────────────
-  const dailyTimeline = useMemo(() => {
-    const days = TF_DAYS[timeframe] > 90 ? 90 : TF_DAYS[timeframe]
-    const now  = new Date()
-    return Array.from({ length: days }, (_, i) => {
-      const d      = subDays(now, days - 1 - i)
-      const label  = format(d, days <= 7 ? 'EEE' : 'MMM d')
-      const dayStr = format(d, 'yyyy-MM-dd')
-      const dl     = leads.filter(l => l.createdAt.startsWith(dayStr))
-      const da     = activities.filter(a => a.createdAt.startsWith(dayStr))
-      return { date: label, leads: dl.length, hot: dl.filter(l => (l.intentScore ?? 0) >= 70).length, activities: da.length }
-    })
-  }, [leads, activities, timeframe])
-
-  // ── Monthly timeline (year view) ─────────────────────────────────────────
-  const monthlyTimeline = useMemo(() => {
-    const now = new Date()
-    return Array.from({ length: 12 }, (_, i) => {
-      const d       = subMonths(now, 11 - i)
-      const mStr    = format(d, 'yyyy-MM')
-      const dl      = leads.filter(l => l.createdAt.startsWith(mStr))
-      const da      = activities.filter(a => a.createdAt.startsWith(mStr))
-      return { date: format(d, 'MMM'), leads: dl.length, hot: dl.filter(l => (l.intentScore ?? 0) >= 70).length, activities: da.length }
-    })
-  }, [leads, activities])
-
-  const timeline = timeframe === 'year' ? monthlyTimeline : dailyTimeline
-
-  // ── Portal breakdown ─────────────────────────────────────────────────────
-  const portalBreakdown = useMemo(() => {
-    const map: Record<string, { count: number; hot: number }> = {}
-    for (const l of leads) {
-      const src = l.sourcePortal || 'Unknown'
-      if (!map[src]) map[src] = { count: 0, hot: 0 }
-      map[src].count++
-      if ((l.intentScore ?? 0) >= 70) map[src].hot++
-    }
-    return Object.entries(map)
-      .map(([portal, d]) => ({ portal, count: d.count, hot: d.hot, conversion: d.count > 0 ? Math.round((d.hot / d.count) * 100) : 0 }))
-      .sort((a, b) => b.count - a.count).slice(0, 8)
-  }, [leads])
-
-  // ── Response-time histogram ──────────────────────────────────────────────
-  const responseHistogram = useMemo(() => {
-    const buckets = [
-      { label: '< 1h', min: 0, max: 1 }, { label: '1–4h', min: 1, max: 4 },
-      { label: '4–24h', min: 4, max: 24 }, { label: '1–3d', min: 24, max: 72 },
-      { label: '3d+', min: 72, max: Infinity }, { label: 'No resp', min: -1, max: -1 },
-    ]
-    const counts = buckets.map(b => ({ label: b.label, count: 0 }))
-    for (const lead of leads) {
-      const firstAct = activities.filter(a => a.personId === lead.id)
-        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0]
-      if (!firstAct) { counts[5].count++; continue }
-      const hours = differenceInHours(new Date(firstAct.createdAt), new Date(lead.createdAt))
-      const idx   = buckets.findIndex(b => b.min >= 0 && hours >= b.min && hours < b.max)
-      if (idx >= 0) counts[idx].count++; else counts[5].count++
-    }
-    return counts
-  }, [leads, activities])
-
-  // ── Source performance ───────────────────────────────────────────────────
-  const sourcePerformance = useMemo(() => {
-    const map: Record<string, { count: number; hot: number; totalScore: number }> = {}
-    for (const l of leads) {
-      const src = l.sourcePortal || 'Direct'
-      if (!map[src]) map[src] = { count: 0, hot: 0, totalScore: 0 }
-      map[src].count++
-      map[src].totalScore += l.intentScore ?? 0
-      if ((l.intentScore ?? 0) >= 70) map[src].hot++
-    }
-    return Object.entries(map)
-      .map(([source, d]) => ({ source, count: d.count, avgScore: d.count > 0 ? Math.round(d.totalScore / d.count) : 0, conversionRate: d.count > 0 ? Math.round((d.hot / d.count) * 100) : 0 }))
-      .sort((a, b) => b.conversionRate - a.conversionRate)
-  }, [leads])
-
-  // ── Lead funnel ──────────────────────────────────────────────────────────
-  const funnel = useMemo(() => {
-    const total     = leads.length
-    const contacted = leads.filter(l => activities.some(a => a.personId === l.id)).length
-    const warm      = leads.filter(l => (l.intentScore ?? 0) >= 40 && (l.intentScore ?? 0) < 70).length
-    const hot       = leads.filter(l => (l.intentScore ?? 0) >= 70).length
-    const toP = (n: number) => total > 0 ? Math.round((n / total) * 100) : 0
-    return [
-      { stage: 'Total Leads', count: total,        pct: 100 },
-      { stage: 'Contacted',   count: contacted,    pct: toP(contacted) },
-      { stage: 'Warm+',       count: warm + hot,   pct: toP(warm + hot) },
-      { stage: 'Hot 🔥',      count: hot,          pct: toP(hot) },
-    ]
-  }, [leads, activities])
-
-  // ── Activity effectiveness ───────────────────────────────────────────────
-  const activityEffectiveness = useMemo(() => {
-    const types = ['Call Made', 'WhatsApp Sent', 'Email Sent', 'Site Visit Done', 'Follow Up Set', 'Note']
-    return types.map(type => {
-      const actsOfType     = activities.filter(a => a.type === type)
-      const hotConversions = actsOfType.filter(a => {
-        const lead = leads.find(l => l.id === a.personId)
-        return lead && (lead.intentScore ?? 0) >= 70
-      }).length
-      return { type, count: actsOfType.length, conversionRate: actsOfType.length > 0 ? Math.round((hotConversions / actsOfType.length) * 100) : 0 }
-    }).sort((a, b) => b.count - a.count)
-  }, [leads, activities])
-
-  // ── Score distribution ───────────────────────────────────────────────────
-  const scoreDistribution = useMemo(() => {
-    const buckets = [
-      { range: '0–9', min: 0 }, { range: '10–19', min: 10 }, { range: '20–29', min: 20 },
-      { range: '30–39', min: 30 }, { range: '40–49', min: 40 }, { range: '50–59', min: 50 },
-      { range: '60–69', min: 60 }, { range: '70–79', min: 70 }, { range: '80–89', min: 80 }, { range: '90–100', min: 90 },
-    ]
-    return buckets.map(b => ({
-      range: b.range,
-      count: leads.filter(l => { const s = l.intentScore ?? 0; return s >= b.min && s < b.min + 10 }).length,
-      bucket: b.min >= 70 ? 'hot' : b.min >= 40 ? 'warm' : 'cold',
-    }))
-  }, [leads])
-
-  // ── Top leads ────────────────────────────────────────────────────────────
-  const topLeads = useMemo(() => {
-    return [...leads]
-      .sort((a, b) => (b.intentScore ?? 0) - (a.intentScore ?? 0))
-      .slice(0, 10)
-      .map(l => {
-        const score      = l.intentScore ?? 0
-        const lastAct    = activities.filter(a => a.personId === l.id)
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
-        const hoursSince = lastAct ? differenceInHours(new Date(), new Date(lastAct.createdAt)) : 9999
-        let nextAction   = 'Schedule follow-up call'
-        if (score >= 80) nextAction = 'Schedule site visit — high intent'
-        else if (score >= 60) nextAction = 'Share property shortlist'
-        if (hoursSince > 72) nextAction = `Inactive ${Math.round(hoursSince / 24)}d — reach out now`
-        return { lead: l, score, nextAction, hoursSince }
-      })
-  }, [leads, activities])
-
-  // ── City breakdown ───────────────────────────────────────────────────────
-  const cityBreakdown = useMemo(() => {
-    const map: Record<string, { count: number; hot: number }> = {}
-    for (const l of leads) {
-      const city = l.city || 'Unknown'
-      if (!map[city]) map[city] = { count: 0, hot: 0 }
-      map[city].count++
-      if ((l.intentScore ?? 0) >= 70) map[city].hot++
-    }
-    return Object.entries(map).map(([city, d]) => ({ city, count: d.count, hot: d.hot })).sort((a, b) => b.count - a.count).slice(0, 8)
-  }, [leads])
-
-  // ── Pipeline stages ──────────────────────────────────────────────────────
-  const pipelineStages = useMemo(() => {
-    const stages = ['New', 'Contacted', 'Qualified', 'Negotiation', 'Won', 'Lost']
-    const stageColors: Record<string, string> = {
-      New: C.label, Contacted: C.blue, Qualified: C.purple,
-      Negotiation: C.amber, Won: C.emerald, Lost: C.red,
-    }
-    return stages.map(stage => ({ stage, count: leads.filter(l => l.status === stage).length, color: stageColors[stage] }))
-  }, [leads])
-
-  // ── AI insight ───────────────────────────────────────────────────────────
-  const insight = useMemo(() => {
-    const top = topLeads[0]
-    if (!top) return { text: 'Add more leads to unlock insights.', cta: 'Add leads', href: '/dashboard/leads' }
-    if (top.hoursSince > 72) return {
-      text: `${displayName(top.lead)} (score ${top.score}) hasn't been touched in ${Math.round(top.hoursSince / 24)} days — act now.`,
-      cta: 'View lead', href: `/dashboard/leads/${top.lead.id}`,
-    }
-    if (leadSummary.hotCount === 0) return {
-      text: 'No hot leads yet. Call leads faster — first response time is your biggest lever.',
-      cta: 'View leads', href: '/dashboard/leads',
-    }
-    const best = sourcePerformance[0]
-    if (best && best.conversionRate > 0) return {
-      text: `${best.source} is your best-converting source at ${best.conversionRate}% — consider getting more leads from there.`,
-      cta: 'See sources', href: '#sources',
-    }
-    return {
-      text: `You have ${leadSummary.hotCount} hot leads worth ${formatINR(leadSummary.hotPipeline)} in pipeline. Keep the momentum going.`,
-      cta: 'View leads', href: '/dashboard/leads',
-    }
-  }, [topLeads, leadSummary, sourcePerformance])
-
-  // ─── Loading ──────────────────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <Loader2 style={{ width: 32, height: 32, color: C.purple, margin: '0 auto 12px', animation: 'spin 1s linear infinite' }} />
-          <p style={{ color: C.muted, fontSize: 14 }}>Loading insights…</p>
-        </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    )
-  }
-
-  if (leads.length < 3) {
-    return (
-      <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-        <div style={{ textAlign: 'center', maxWidth: 480 }}>
-          <div style={{ width: 72, height: 72, borderRadius: 20, background: C.purpleDim, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-            <BarChart3 style={{ width: 32, height: 32, color: C.purple }} />
-          </div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: C.text, margin: '0 0 12px' }}>Not enough data yet</h1>
-          <p style={{ color: C.muted, marginBottom: 32, lineHeight: 1.6 }}>Add at least 3 leads and log some activities to unlock analytics.</p>
-          <button onClick={() => router.push('/dashboard/leads')}
-            style={{ padding: '12px 28px', background: C.purpleGrad, color: '#fff', fontWeight: 600, borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 14 }}>
-            Go to Leads
-          </button>
-        </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    )
-  }
-
-  // ─── Main render ──────────────────────────────────────────────────────────
+// ─── KPI cards ────────────────────────────────────────────────────────────────
+function Kpis({ a, period }: { a: Analysis; period: RollId }) {
+  const P = ROLL[period]
+  const prevUnit = `previous ${P.long.replace('last ', '')}`
+  const n = a.cohort.length
+  const contacted = a.steps[1].count, prevContacted = a.steps[1].prevCount
+  const cRate = share(contacted, n), cPrev = share(prevContacted, a.prevCohort.length)
+  const med = median(a.respNow), medPrev = median(a.respPrev)
+  const within = share(a.respNow.filter(x => x <= HOUR).length, a.respNow.length)
+  const q = a.steps[3].count, won = a.steps[5].count
+  const avg = n ? Math.round(sum(a.cohort, scoreOf) / n) : 0
+  const counts = a.flow.map(f => f.hour + f.day + f.later + f.waiting)
   return (
-    <div style={{ minHeight: '100vh', background: C.bg }}>
-      <PageTabBar tabs={INSIGHTS_TABS} />
-      <div className="max-w-[1280px] mx-auto px-4 pb-16 lg:px-6">
-
-        {/* ── Header ── */}
-        <div style={{ padding: '18px 0 14px', borderBottom: `1px solid ${C.border}`, marginBottom: 16 }}>
-          {/* Title row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
-            <h1 className="hidden lg:block" style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: 0, letterSpacing: '-0.3px' }}>Insights</h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {/* Timeframe selector */}
-              <div style={{ display: 'flex', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, padding: 3, gap: 2 }}>
-                {(['week', 'month', 'quarter', 'year'] as Timeframe[]).map(tf => (
-                  <button key={tf} onClick={() => setTimeframe(tf)}
-                    style={{ padding: '5px 11px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500, background: timeframe === tf ? C.blue : 'transparent', color: timeframe === tf ? '#fff' : C.muted, transition: 'all 0.15s' }}>
-                    {TF_LABEL[tf]}
-                  </button>
-                ))}
-              </div>
-              <button onClick={handleRefresh} disabled={refreshing}
-                style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 10, cursor: 'pointer' }}>
-                <RefreshCw style={{ width: 14, height: 14, color: C.muted, animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
-              </button>
-            </div>
-          </div>
-
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+      <StatCard icon={<Sparkle size={16} weight="bold" />} accent={BLUE} label="Leads in" value={nf(n)}
+        pill={<Delta cur={n} prev={a.prevCohort.length} unit={prevUnit} />}
+        sub={n ? `Average intent ${avg}` : `None in the ${P.long}`}>
+        <MiniBars values={counts} label={`Leads per ${P.unit}`} />
+      </StatCard>
+      <StatCard icon={<Phone size={16} weight="bold" />} accent={GREEN_D} label="Contacted" value={`${cRate}%`}
+        pill={a.prevCohort.length ? <Delta cur={cRate} prev={cPrev} unit={prevUnit} points /> : undefined}
+        sub={a.waiting.length ? <span style={{ color: '#B54708' }}>{nf(a.waiting.length)} still waiting</span> : n ? 'Every lead reached' : '—'}>
+        <div className="flex h-9 items-center"><div className="w-full"><Meter value={contacted} max={n} color={GREEN} height={10} /></div></div>
+      </StatCard>
+      <StatCard icon={<Timer size={16} weight="bold" />} accent="#7A5AF8" label="Speed to lead" value={med != null ? dur(med) : '—'}
+        pill={med != null && medPrev != null && medPrev > 0 ? <Delta cur={Math.round(med / 60_000)} prev={Math.round(medPrev / 60_000)} unit={prevUnit} invert /> : undefined}
+        sub={a.respNow.length ? `${within}% reached within an hour` : 'No first contacts logged'}>
+        <div className="flex h-9 items-end gap-[3px]" role="img" aria-label="First contact times">
+          {a.speedRows.map((r, i) => {
+            const max = Math.max(1, ...a.speedRows.map(x => x.n))
+            return <span key={r.label} title={`${r.label}: ${r.n}`} className="min-w-0 flex-1 rounded-[2px]"
+              style={{ height: r.n ? `${Math.max(12, (r.n / max) * 100)}%` : 2, background: r.n ? (i < 3 ? '#7A5AF8' : '#D9D6FE') : '#EAECF0' }} />
+          })}
         </div>
-
-        {/* ── AI insight strip (both tabs) ── */}
-        <div style={{ background: 'linear-gradient(135deg, rgba(29,78,216,0.06) 0%, rgba(29,78,216,0.02) 100%)', border: '1px solid rgba(29,78,216,0.18)', borderRadius: 14, padding: '12px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.purpleDim, border: `1px solid ${C.purpleBorder}`, borderRadius: 20, padding: '4px 12px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-            <Sparkles style={{ width: 12, height: 12, color: C.purple }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: C.purple, letterSpacing: '0.05em', textTransform: 'uppercase' }}>AI Insight</span>
+      </StatCard>
+      <StatCard icon={<Target size={16} weight="bold" />} accent="#EF6820" label="Reached Warm+" value={`${share(q, n)}%`}
+        pill={won ? <Pill tone="green" small><Trophy size={11} weight="bold" />{nf(won)} won</Pill> : undefined}
+        sub={n ? `${nf(q)} of ${nf(n)} leads qualified` : '—'}>
+        <div className="flex h-9 items-center">
+          <div className="w-full">
+            <StackBar legend={false} parts={[
+              { label: 'Warm', value: a.nowStages.find(x => x.st === 'Warm')!.n, color: STAGE.Warm.dot },
+              { label: 'Hot', value: a.nowStages.find(x => x.st === 'Hot')!.n, color: STAGE.Hot.dot },
+              { label: 'Closed', value: a.nowStages.find(x => x.st === 'Closed')!.n, color: STAGE.Closed.dot },
+              { label: 'Not yet', value: n - q, color: '#EAECF0' },
+            ]} />
           </div>
-          <p style={{ fontSize: 13, color: C.text, margin: 0, lineHeight: 1.5, flex: 1 }}>{insight.text}</p>
-          <button onClick={() => router.push(insight.href)}
-            style={{ padding: '6px 14px', background: C.purpleGrad, color: '#fff', fontWeight: 600, borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap', flexShrink: 0 }}>
-            {insight.cta} →
-          </button>
         </div>
+      </StatCard>
+    </div>
+  )
+}
 
-        {/* ── Lead Analytics ── */}
-        <>
+// ─── Lead journey ─────────────────────────────────────────────────────────────
+const STEP_COLOR = ['#1A2E9E', '#1D4ED8', '#2E6BF0', '#528BFF', '#84ADFF', '#17B26A']
 
-            {/* KPI cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-[14px] mb-5">
-              {[
-                { label: 'Total Leads',  value: leadSummary.total,                  sub: TF_LABEL[timeframe],     icon: <BarChart3 style={{ width: 17, height: 17, color: C.blue }} />,    accent: C.blue   },
-                { label: 'Hot Leads',    value: leadSummary.hotCount,               sub: 'score ≥ 70',             icon: <Flame style={{ width: 17, height: 17, color: C.orange }} />,       accent: C.orange, trend: leadSummary.hotTrend },
-                { label: 'Hot Pipeline', value: formatINR(leadSummary.hotPipeline), sub: 'total max budget',       icon: <DollarSign style={{ width: 17, height: 17, color: C.emerald }} />, accent: C.emerald },
-                { label: 'Avg Score',    value: `${leadSummary.avgScore}`,          sub: 'intent score / 100',     icon: <TrendingUp style={{ width: 17, height: 17, color: C.purple }} />,  accent: C.purple  },
-              ].map((kpi, i) => (
-                <div key={i} style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '18px 20px', position: 'relative', overflow: 'hidden' }}>
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${kpi.accent}70, transparent)` }} />
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{kpi.label}</span>
-                    <div style={{ width: 30, height: 30, borderRadius: 8, background: `${kpi.accent}14`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{kpi.icon}</div>
+function Journey({ a, period, now, focus, onFocus }: { a: Analysis; period: RollId; now: number; focus: StepKey | null; onFocus: (k: StepKey) => void }) {
+  const P = ROLL[period]
+  const top = Math.max(1, a.steps[0].count)
+  const sel = focus ?? a.dropKey ?? 'in'
+  const selIdx = STEPS.findIndex(s => s.key === sel)
+  const list = (a.stalled[sel] ?? []).filter(l => isOpenLead(l) && stageOfLead(l) !== 'Hold')
+    .sort((x, y) => scoreOf(y) - scoreOf(x) || created(x) - created(y))
+  const medClose = median(a.closeDays)
+  return (
+    <Panel id="journey" icon={<Funnel size={18} weight="bold" />} title="Lead journey"
+      sub={`Leads that came in during the ${P.long} and how far each one got. Tap a drop to see who stopped there.`}
+      right={<Legend items={[{ label: 'This period', color: BLUE }, { label: 'Period before', color: '#101828', ring: true }]} />}>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="min-w-0">
+          {a.steps.map((s, i) => {
+            const next = a.steps[i + 1]
+            const drop = next ? s.count - next.count : 0
+            const on = next && s.key === sel
+            return (
+              <div key={s.key}>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 sm:grid-cols-[180px_minmax(0,1fr)_96px]">
+                  <div className="min-w-0">
+                    <div className="truncate text-[14px] font-semibold" style={{ color: TEXT }} title={s.help}>{s.label}</div>
+                    <div className="truncate text-[12.5px] sm:hidden" style={{ color: SUBTLE }}>{s.help}</div>
                   </div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: C.text, letterSpacing: '-0.5px', lineHeight: 1 }}>{kpi.value}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-                    <span style={{ fontSize: 11, color: C.muted }}>{kpi.sub}</span>
-                    {'trend' in kpi && kpi.trend !== undefined && (
-                      <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 600, color: kpi.trend >= 0 ? C.emerald : C.red, background: kpi.trend >= 0 ? 'rgba(5,150,105,0.1)' : 'rgba(239,68,68,0.1)', padding: '1px 7px', borderRadius: 20 }}>
-                        {kpi.trend >= 0 ? '↑' : '↓'} {Math.abs(kpi.trend)}%
+                  <div className="text-right sm:order-3">
+                    <div className="text-[18px] font-semibold leading-none tabular-nums" style={{ color: TEXT }}>{nf(s.count)}</div>
+                    <div className="mt-1 text-[12px] tabular-nums" style={{ color: SUBTLE }}>{i ? `${s.ofIn}% of all` : P.label}</div>
+                  </div>
+                  <div className="relative col-span-2 h-9 sm:order-2 sm:col-span-1" title={`${s.help}. ${s.prevCount} in the period before (${s.prevOfIn}%).`}>
+                    <div className="absolute inset-y-0 left-0 rounded-[8px]" style={{ width: '100%', background: '#F5F8FF' }} />
+                    <div className="absolute inset-y-0 left-0 rounded-[8px] transition-[width] duration-700"
+                      style={{ width: `${Math.max(s.count ? 3 : 0, (s.count / top) * 100)}%`, background: STEP_COLOR[i] }} />
+                    {i > 0 && s.ofPrev > 0 && (
+                      // Inside the bar when it is wide enough, otherwise just past its end
+                      <span className="absolute top-1/2 -translate-y-1/2 whitespace-nowrap text-[12px] font-semibold"
+                        style={s.count / top > 0.45 ? { left: 10, color: 'rgba(255,255,255,0.92)' } : { left: `calc(${Math.max(3, (s.count / top) * 100)}% + 8px)`, color: SUBTLE }}>
+                        {s.ofPrev}% of step before
                       </span>
+                    )}
+                    {a.prevCohort.length > 0 && (
+                      <span aria-hidden className="absolute top-0 z-10 size-[11px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-white"
+                        style={{ left: `${Math.min(100, s.prevOfIn)}%`, borderColor: '#101828' }} />
                     )}
                   </div>
                 </div>
-              ))}
-            </div>
-
-            {/* Lead Volume + Portal Breakdown */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-[14px] mb-[14px]">
-              <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '20px 20px 14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-                  <div>
-                    <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>Lead Volume</h2>
-                    <p style={{ fontSize: 12, color: C.muted, margin: '3px 0 0' }}>Leads coming in over time</p>
+                {next && (
+                  <div className="flex py-1.5 sm:pl-[196px]">
+                    <button type="button" onClick={() => onFocus(s.key)} disabled={drop <= 0} aria-pressed={!!on}
+                      className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 text-[12.5px] font-semibold tabular-nums transition-colors disabled:cursor-default"
+                      style={on ? { background: '#FEF3F2', borderColor: '#FDA29B', color: '#B42318' }
+                        : drop > 0 ? { background: CANVAS, borderColor: BORDER, color: SUBTLE } : { background: CANVAS, borderColor: 'transparent', color: LABEL }}>
+                      <ArrowRight size={12} weight="bold" className="rotate-90" />
+                      {drop > 0 ? `${nf(drop)} ${DROP_TEXT[s.key]} · ${100 - next.ofPrev}%` : 'No drop'}
+                    </button>
                   </div>
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    {[{ label: 'All', color: C.blue }, { label: 'Hot', color: C.orange }].map(l => (
-                      <span key={l.label} style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 5, color: C.muted }}>
-                        <span style={{ width: 10, height: 2, background: l.color, display: 'inline-block', borderRadius: 4 }} />
-                        {l.label}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <ResponsiveContainer width="100%" height={200}>
-                  <AreaChart data={timeline} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="gBlue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={C.blue} stopOpacity={0.2} /><stop offset="95%" stopColor={C.blue} stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="gOrange" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={C.orange} stopOpacity={0.15} /><stop offset="95%" stopColor={C.orange} stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-                    <XAxis dataKey="date" tick={{ fill: C.label, fontSize: 11 }} axisLine={false} tickLine={false} interval={Math.floor(timeline.length / 6)} />
-                    <YAxis tick={{ fill: C.label, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                    <Tooltip content={<Tip />} />
-                    <Area type="monotone" dataKey="leads" stroke={C.blue}   strokeWidth={2} fill="url(#gBlue)"   name="Leads"     dot={false} />
-                    <Area type="monotone" dataKey="hot"   stroke={C.orange} strokeWidth={2} fill="url(#gOrange)" name="Hot leads" dot={false} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '20px 20px 14px' }}>
-                <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: '0 0 4px' }}>Portal Breakdown</h2>
-                <p style={{ fontSize: 12, color: C.muted, margin: '0 0 16px' }}>Leads per source</p>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={portalBreakdown} margin={{ top: 4, right: 10, left: -20, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-                    <XAxis dataKey="portal" tick={{ fill: C.label, fontSize: 10 }} axisLine={false} tickLine={false} angle={-20} textAnchor="end" height={40} />
-                    <YAxis tick={{ fill: C.label, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                    <Tooltip content={<Tip />} />
-                    <Bar dataKey="count" name="Total" radius={[6, 6, 0, 0]}>
-                      {portalBreakdown.map((_, i) => {
-                        const colors = [C.purple, C.emerald, '#3B82F6', '#BFDBFE', C.red]
-                        return <Cell key={i} fill={colors[i % colors.length]} fillOpacity={0.8} />
-                      })}
-                    </Bar>
-                    <Bar dataKey="hot" name="Hot" radius={[6, 6, 0, 0]}>
-                      {portalBreakdown.map((_, i) => {
-                        const colors = [C.purple, C.emerald, '#3B82F6', '#BFDBFE', C.red]
-                        return <Cell key={i} fill={colors[i % colors.length]} />
-                      })}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Funnel + Source Conversion */}
-            <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-[14px] mb-[14px]">
-              <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 22 }}>
-                <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: '0 0 4px' }}>Lead Funnel</h2>
-                <p style={{ fontSize: 12, color: C.muted, margin: '0 0 20px' }}>Conversion by stage</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  {funnel.map((s, i) => {
-                    const colors = [C.label, C.purple, '#3B82F6', C.orange]
-                    return (
-                      <div key={i}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                          <span style={{ fontSize: 13, color: C.text }}>{s.stage}</span>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: colors[i] }}>{s.count} <span style={{ color: C.muted, fontWeight: 400 }}>({s.pct}%)</span></span>
-                        </div>
-                        <div style={{ height: 6, background: '#F1F5F9', borderRadius: 99 }}>
-                          <div style={{ height: '100%', width: `${s.pct}%`, background: colors[i], borderRadius: 99, transition: 'width 0.6s ease' }} />
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <div id="sources" style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 22 }}>
-                <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: '0 0 4px' }}>Source Conversion Rate</h2>
-                <p style={{ fontSize: 12, color: C.muted, margin: '0 0 20px' }}>% of leads per source that became hot</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {sourcePerformance.slice(0, 6).map((s, i) => (
-                    <div key={i}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ fontSize: 13, color: C.text, fontWeight: 500 }}>{s.source}</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span style={{ fontSize: 12, color: C.muted }}>{s.count} leads</span>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: s.conversionRate >= 30 ? C.emerald : s.conversionRate >= 15 ? C.amber : C.muted }}>
-                            {s.conversionRate}%
-                          </span>
-                        </div>
-                      </div>
-                      <div style={{ height: 5, background: '#F1F5F9', borderRadius: 99 }}>
-                        <div style={{ height: '100%', width: `${Math.min(100, s.conversionRate)}%`, background: s.conversionRate >= 30 ? C.emerald : s.conversionRate >= 15 ? C.amber : C.label, borderRadius: 99, transition: 'width 0.6s' }} />
-                      </div>
-                    </div>
-                  ))}
-                  {sourcePerformance.length === 0 && <p style={{ fontSize: 13, color: C.label }}>No source data yet.</p>}
-                </div>
-              </div>
-            </div>
-
-            {/* Score Distribution */}
-            <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '20px 20px 14px', marginBottom: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-                <div>
-                  <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>Score Distribution</h2>
-                  <p style={{ fontSize: 12, color: C.muted, margin: '3px 0 0' }}>Intent score buckets across all leads</p>
-                </div>
-                <div style={{ display: 'flex', gap: 12 }}>
-                  {[{ label: 'Cold', color: C.label }, { label: 'Warm', color: C.amber }, { label: 'Hot', color: C.orange }].map(l => (
-                    <span key={l.label} style={{ fontSize: 11, display: 'flex', alignItems: 'center', gap: 5, color: C.muted }}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: l.color, display: 'inline-block' }} />
-                      {l.label}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <ResponsiveContainer width="100%" height={150}>
-                <BarChart data={scoreDistribution} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-                  <XAxis dataKey="range" tick={{ fill: C.label, fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: C.label, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                  <Tooltip content={<Tip />} />
-                  <Bar dataKey="count" name="Leads" radius={[6, 6, 0, 0]}>
-                    {scoreDistribution.map((b, i) => (
-                      <Cell key={i} fill={b.bucket === 'hot' ? C.orange : b.bucket === 'warm' ? C.amber : C.label} fillOpacity={0.85} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Top Leads */}
-            <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 22, marginBottom: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-                <div>
-                  <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: 0 }}>Top Leads to Act On</h2>
-                  <p style={{ fontSize: 12, color: C.muted, margin: '3px 0 0' }}>Ranked by intent score</p>
-                </div>
-                <button onClick={() => router.push('/dashboard/leads')}
-                  style={{ fontSize: 12, color: C.blue, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  View all <ChevronRight style={{ width: 14, height: 14 }} />
-                </button>
-              </div>
-              <div className="grid grid-cols-[1fr_50px] sm:grid-cols-[2fr_1fr_1fr_2fr] gap-3 px-3 pb-2 mb-1" style={{ borderBottom: `1px solid ${C.border}` }}>
-                {[{ h: 'Lead', hide: false }, { h: 'Score', hide: false }, { h: 'Portal', hide: true }, { h: 'Next Action', hide: true }].map(({ h, hide }) => (
-                  <span key={h} className={hide ? 'hidden sm:block' : ''} style={{ fontSize: 11, fontWeight: 600, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</span>
-                ))}
-              </div>
-              {topLeads.map(({ lead, score, nextAction }) => {
-                const dotColor = score >= 70 ? C.orange : score >= 40 ? C.amber : C.label
-                return (
-                  <div key={lead.id} onClick={() => router.push(`/dashboard/leads/${lead.id}`)}
-                    className="grid grid-cols-[1fr_50px] sm:grid-cols-[2fr_1fr_1fr_2fr] gap-3 px-3 rounded-[10px]"
-                    style={{ padding: '10px 12px', cursor: 'pointer', transition: 'background 0.12s' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#F8FAFC')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor, flexShrink: 0 }} />
-                      <div>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: C.text, margin: 0 }}>{displayName(lead)}</p>
-                        <p style={{ fontSize: 11, color: C.muted, margin: 0 }}>{lead.phones.primaryPhoneNumber ?? '—'}</p>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: dotColor }}>{score}</span>
-                      <span style={{ fontSize: 11, color: C.label, marginLeft: 3 }}>/100</span>
-                    </div>
-                    <div className="hidden sm:flex items-center">
-                      <span style={{ fontSize: 12, color: C.muted }}>{lead.sourcePortal ?? '—'}</span>
-                    </div>
-                    <div className="hidden sm:flex items-center">
-                      <span style={{ fontSize: 12, color: C.muted, lineHeight: 1.4 }}>{nextAction}</span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* City + Pipeline */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-[14px] mb-[14px]">
-              <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: '20px 20px 14px' }}>
-                <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: '0 0 4px' }}>Leads by City</h2>
-                <p style={{ fontSize: 12, color: C.muted, margin: '0 0 14px' }}>Volume and hot lead count per location</p>
-                {cityBreakdown.length === 0 ? (
-                  <p style={{ fontSize: 13, color: C.label, padding: '20px 0' }}>No city data yet.</p>
-                ) : (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={cityBreakdown} margin={{ top: 4, right: 10, left: -20, bottom: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-                      <XAxis dataKey="city" tick={{ fill: C.label, fontSize: 10 }} axisLine={false} tickLine={false} angle={-15} textAnchor="end" height={40} />
-                      <YAxis tick={{ fill: C.label, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                      <Tooltip content={<Tip />} />
-                      <Bar dataKey="count" name="Total leads" radius={[6, 6, 0, 0]} fill={C.blue} fillOpacity={0.7} />
-                      <Bar dataKey="hot"   name="Hot leads"   radius={[6, 6, 0, 0]} fill={C.orange} />
-                    </BarChart>
-                  </ResponsiveContainer>
                 )}
               </div>
+            )
+          })}
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Figure label="Contact to Warm+" value={`${share(a.steps[3].count, a.steps[1].count)}%`} sub="of leads contacted" />
+            <Figure label="Warm+ to won" value={`${share(a.steps[5].count, a.steps[3].count)}%`} sub="of qualified leads" />
+            <Figure label="Time to close" value={medClose != null ? `${Math.round(medClose)} days` : '—'} sub={a.closeDays.length ? `median of ${plural(a.closeDays.length, 'deal')}` : 'No deals closed yet'} />
+          </div>
+          <div className="mt-5">
+            <div className="mb-2 text-[13px] font-semibold" style={{ color: TEXT_2 }}>Where these leads are now</div>
+            <StackBar parts={a.nowStages.filter(x => x.n > 0).map(x => ({ label: STAGE[x.st].label, value: x.n, color: STAGE[x.st].dot }))} />
+          </div>
+        </div>
 
-              <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 22 }}>
-                <h2 style={{ fontSize: 14, fontWeight: 600, color: C.text, margin: '0 0 4px' }}>Pipeline Stages</h2>
-                <p style={{ fontSize: 12, color: C.muted, margin: '0 0 18px' }}>How leads are distributed</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {pipelineStages.map((s, i) => {
-                    const pct = leadSummary.total > 0 ? Math.round((s.count / leadSummary.total) * 100) : 0
-                    return (
-                      <div key={i}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
-                            <span style={{ fontSize: 12, color: C.text, fontWeight: 500 }}>{s.stage}</span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontSize: 12, color: C.muted }}>{s.count}</span>
-                            <span style={{ fontSize: 11, fontWeight: 600, color: s.color, background: `${s.color}14`, padding: '1px 7px', borderRadius: 20, minWidth: 40, textAlign: 'center' }}>{pct}%</span>
-                          </div>
-                        </div>
-                        <div style={{ height: 5, background: '#F1F5F9', borderRadius: 99 }}>
-                          <div style={{ height: '100%', width: `${pct}%`, background: s.color, borderRadius: 99, transition: 'width 0.6s ease', opacity: 0.85 }} />
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
+        <div className="min-w-0 rounded-[14px] border p-4" style={{ borderColor: BORDER, background: SURFACE }}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[12px] font-semibold uppercase tracking-[0.08em]" style={{ color: LABEL }}>Stopped after step {selIdx + 1}</div>
+              <div className="mt-1 text-[15px] font-semibold" style={{ color: TEXT }}>{STALL_TITLE[sel]}</div>
             </div>
-          </>
-
-        {/* Team Analytics is at /dashboard/team/analytics */}
-
+            <Pill tone="red">{nf(a.stalled[sel]?.length ?? 0)}</Pill>
+          </div>
+          <p className="m-0 mt-1.5 text-[13px] leading-snug" style={{ color: SUBTLE }}>
+            {list.length ? 'Still open, highest intent first. These are the ones worth another try.' : (a.stalled[sel]?.length ? 'None of them are open any more.' : 'Nobody stopped here.')}
+          </p>
+          <div className="mt-3 flex flex-col gap-2">
+            {list.slice(0, 6).map(l => (
+              <div key={l.id} className="flex items-center gap-3 rounded-[12px] border bg-white px-3 py-2.5" style={{ borderColor: BORDER, boxShadow: XS }}>
+                <Link href={`/dashboard/leads/${l.id}`} className="flex min-w-0 flex-1 items-center gap-3 no-underline">
+                  <LeadAvatar lead={l} size={34} />
+                  <span className="min-w-0">
+                    <span className="block truncate text-[14px] font-semibold" style={{ color: TEXT }}>{displayName(l)}</span>
+                    <span className="block truncate text-[12.5px]" style={{ color: SUBTLE }}>
+                      {STAGE[stageOfLead(l)].label} · came in {dur(now - created(l))} ago{valueOf(l) ? ` · ${inr(valueOf(l))}` : ''}
+                    </span>
+                  </span>
+                </Link>
+                <CallLink phone={l.phones?.primaryPhoneNumber} name={l.name?.firstName || displayName(l)} />
+                <WaLink phone={l.phones?.primaryPhoneNumber} name={l.name?.firstName || displayName(l)} />
+              </div>
+            ))}
+          </div>
+          {list.length > 6 && (
+            <Link href="/dashboard/leads" className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold no-underline" style={{ color: BLUE }}>
+              {nf(list.length - 6)} more in Leads <ArrowRight size={13} weight="bold" />
+            </Link>
+          )}
+        </div>
       </div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
+    </Panel>
   )
 }
+
+// ─── Speed to lead ────────────────────────────────────────────────────────────
+function Speed({ a }: { a: Analysis }) {
+  const max = Math.max(1, ...a.speedRows.map(r => r.n), a.waiting.length)
+  const rows = [...a.speedRows.map((r, i) => ({ ...r, color: i < 3 ? '#7A5AF8' : i < 5 ? '#9B8AFB' : '#D9D6FE' })),
+    ...(a.unknownTime.length ? [{ label: 'Time not logged', n: a.unknownTime.length, qualified: a.unknownTime.filter(l => reached(a.journeys.get(l.id), 'qualified')).length, color: '#E4E7EC' }] : []),
+    { label: 'Not contacted yet', n: a.waiting.length, qualified: 0, color: '#FEC84B' }]
+  return (
+    <Panel icon={<Timer size={18} weight="bold" />} title="Speed to lead" sub="Time from a lead arriving to the first call, message or email, and how many of each went on to Warm">
+      <div className="-mx-1 overflow-x-auto px-1">
+        <table className="w-full min-w-[280px] border-collapse">
+          <thead>
+            <tr className="text-[12px] font-semibold" style={{ color: SUBTLE }}>
+              <th className="pb-2 text-left font-semibold">First contact</th>
+              <th className="pb-2 text-left font-semibold">Leads</th>
+              <th className="pb-2 text-right font-semibold"><span className="sm:hidden">Warm+</span><span className="hidden sm:inline">Reached Warm+</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(r => (
+              <tr key={r.label} className="border-t" style={{ borderColor: '#F2F4F7' }}>
+                <td className="whitespace-nowrap py-2 pr-3 text-[13.5px]" style={{ color: TEXT_2 }}>{r.label}</td>
+                <td className="w-full py-2 pr-3">
+                  <div className="flex items-center gap-2.5">
+                    <Meter value={r.n} max={max} color={r.color} height={8} className="flex-1" />
+                    <span className="w-8 shrink-0 text-right text-[13px] font-semibold tabular-nums" style={{ color: TEXT }}>{nf(r.n)}</span>
+                  </div>
+                </td>
+                <td className="whitespace-nowrap py-2 text-right text-[13px] tabular-nums" style={{ color: r.n >= MIN_GROUP ? TEXT_2 : LABEL }}
+                  title={r.n < MIN_GROUP && r.n > 0 ? 'Too few leads to read much into' : undefined}>
+                  {r.label === 'Not contacted yet' ? '—' : r.n ? `${share(r.qualified, r.n)}%` : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <Basis>Median {dur(median(a.respNow))} across {plural(a.respNow.length, 'lead')} with a logged first contact. Rates in grey come from fewer than {MIN_GROUP} leads.</Basis>
+    </Panel>
+  )
+}
+
+// ─── Inflow chart ─────────────────────────────────────────────────────────────
+function Flow({ a, period }: { a: Analysis; period: RollId }) {
+  const P = ROLL[period]
+  const every: [number, number] = period === '30d' ? [5, 5] : period === '90d' ? [2, 3] : period === '12m' ? [1, 2] : [1, 1]
+  const points = a.flow.map(f => ({
+    tick: f.b.tick, label: f.b.label, ghost: f.prev,
+    parts: FLOW_PARTS.map(p => ({ key: p.key, label: p.label, color: p.color, value: f[p.key] })),
+  }))
+  return (
+    <Panel icon={<ChartBar size={18} weight="bold" />} title="Leads in, and how fast you reached them"
+      sub={`New leads per ${P.unit}, split by how soon the first contact happened`} className="h-full"
+      right={<Legend items={[...FLOW_PARTS.map(p => ({ label: p.label, color: p.color })), { label: 'Period before', color: '#98A2B3', dashed: true }]} />}>
+      <BarChart points={points} every={every} height={240} ghostLabel="Period before" unit={n => plural(n, 'lead')} empty={`No leads in the ${P.long}`} />
+    </Panel>
+  )
+}
+
+// ─── Sources ──────────────────────────────────────────────────────────────────
+type SrcKey = 'leads' | 'contacted' | 'spoke' | 'qualified' | 'won' | 'response' | 'avgScore' | 'budget'
+function Sources({ a, long }: { a: Analysis; long: string }) {
+  const { sort, onSort } = useSort<SrcKey>('leads')
+  const val = (r: SourceRow, k: SrcKey) => k === 'contacted' || k === 'spoke' || k === 'qualified' ? share(r[k], r.leads) : k === 'response' ? (r.response ?? Infinity) : r[k]
+  const rows = [...a.sources].sort((x, y) => (val(x, sort.key) - val(y, sort.key)) * sort.dir || y.leads - x.leads)
+  const tot = {
+    leads: a.cohort.length, contacted: a.steps[1].count, spoke: a.steps[2].count, qualified: a.steps[3].count, won: a.steps[5].count,
+    response: median(a.respNow), budget: sum(a.cohort, valueOf), avgScore: a.cohort.length ? Math.round(sum(a.cohort, scoreOf) / a.cohort.length) : 0,
+  }
+  const rate = (n: number, d: number, color: string, small: boolean) => (
+    <div className="ml-auto flex w-[104px] items-center gap-2">
+      <Meter value={n} max={d} color={color} className="flex-1" />
+      <span className="w-9 text-right text-[13px] font-semibold tabular-nums" style={{ color: small ? LABEL : TEXT }}>{share(n, d)}%</span>
+    </div>
+  )
+  return (
+    <Panel icon={<Plugs size={18} weight="bold" />} title="Source quality"
+      sub={`For each portal and channel: how many of its leads you reached, spoke to, qualified and closed (${long})`}>
+      {rows.length === 0 ? <p className="m-0 py-6 text-center text-[14px]" style={{ color: LABEL }}>No leads in this period.</p> : (
+        <>
+          <div className="-mx-4 hidden overflow-x-auto sm:-mx-5 md:block">
+            <table className="w-full min-w-[920px] border-collapse">
+              <thead>
+                <tr className="border-y" style={{ borderColor: BORDER, background: SURFACE }}>
+                  <th className="px-5 py-2.5 text-left text-[12px] font-semibold" style={{ color: SUBTLE }}>Source</th>
+                  <SortTh id="leads" sort={sort} onSort={onSort}>Leads</SortTh>
+                  <SortTh id="contacted" sort={sort} onSort={onSort}>Contacted</SortTh>
+                  <SortTh id="spoke" sort={sort} onSort={onSort}>Spoke</SortTh>
+                  <SortTh id="qualified" sort={sort} onSort={onSort}>Warm+</SortTh>
+                  <SortTh id="won" sort={sort} onSort={onSort}>Won</SortTh>
+                  <SortTh id="response" sort={sort} onSort={onSort}>First contact</SortTh>
+                  <SortTh id="avgScore" sort={sort} onSort={onSort}>Avg intent</SortTh>
+                  <SortTh id="budget" sort={sort} onSort={onSort} className="pr-5">Budgets</SortTh>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(r => {
+                  const small = r.leads < MIN_GROUP
+                  return (
+                    <tr key={r.label} className="border-b transition-colors hover:bg-[#F9FAFB]" style={{ borderColor: '#F2F4F7' }}>
+                      <td className="px-5 py-3">
+                        <span className="flex items-center gap-2.5"><SourceMark raw={r.raw} size={24} />
+                          <span className="text-[14px] font-semibold" style={{ color: TEXT }}>{r.label}</span></span>
+                      </td>
+                      <td className="px-3 py-3 text-right text-[14px] font-semibold tabular-nums" style={{ color: TEXT }}>{nf(r.leads)}</td>
+                      <td className="px-3 py-3">{rate(r.contacted, r.leads, GREEN, small)}</td>
+                      <td className="px-3 py-3">{rate(r.spoke, r.leads, '#0BA5EC', small)}</td>
+                      <td className="px-3 py-3">{rate(r.qualified, r.leads, '#F79009', small)}</td>
+                      <td className="px-3 py-3 text-right text-[14px] tabular-nums" style={{ color: r.won ? GREEN_D : LABEL, fontWeight: r.won ? 600 : 400 }}>{r.won || '—'}</td>
+                      <td className="whitespace-nowrap px-3 py-3 text-right text-[13.5px] tabular-nums" style={{ color: TEXT_2 }}>{r.response != null ? dur(r.response) : '—'}</td>
+                      <td className="px-3 py-3 text-right text-[13.5px] tabular-nums" style={{ color: TEXT_2 }}>{r.avgScore}</td>
+                      <td className="whitespace-nowrap px-3 py-3 pr-5 text-right text-[13.5px] tabular-nums" style={{ color: TEXT_2 }}>{r.budget ? inr(r.budget) : '—'}</td>
+                    </tr>
+                  )
+                })}
+                <tr style={{ background: SURFACE }}>
+                  <td className="px-5 py-3 text-[13.5px] font-semibold" style={{ color: TEXT }}>All sources</td>
+                  <td className="px-3 py-3 text-right text-[14px] font-semibold tabular-nums" style={{ color: TEXT }}>{nf(tot.leads)}</td>
+                  <td className="px-3 py-3">{rate(tot.contacted, tot.leads, GREEN, false)}</td>
+                  <td className="px-3 py-3">{rate(tot.spoke, tot.leads, '#0BA5EC', false)}</td>
+                  <td className="px-3 py-3">{rate(tot.qualified, tot.leads, '#F79009', false)}</td>
+                  <td className="px-3 py-3 text-right text-[14px] font-semibold tabular-nums" style={{ color: TEXT }}>{tot.won || '—'}</td>
+                  <td className="px-3 py-3 text-right text-[13.5px] font-semibold tabular-nums" style={{ color: TEXT }}>{tot.response != null ? dur(tot.response) : '—'}</td>
+                  <td className="px-3 py-3 text-right text-[13.5px] font-semibold tabular-nums" style={{ color: TEXT }}>{tot.avgScore}</td>
+                  <td className="whitespace-nowrap px-3 py-3 pr-5 text-right text-[13.5px] font-semibold tabular-nums" style={{ color: TEXT }}>{tot.budget ? inr(tot.budget) : '—'}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex flex-col gap-2.5 md:hidden">
+            <Seg label="Sort sources" value={sort.key} onChange={k => onSort(k)} full options={[
+              { id: 'leads', label: 'Leads' }, { id: 'qualified', label: 'Warm+' }, { id: 'response', label: 'Speed' }, { id: 'budget', label: '₹' },
+            ]} />
+            {rows.map(r => (
+              <div key={r.label} className="rounded-[14px] border p-3.5" style={{ borderColor: BORDER, boxShadow: XS }}>
+                <div className="flex items-center gap-2.5">
+                  <SourceMark raw={r.raw} size={26} />
+                  <span className="min-w-0 flex-1 truncate text-[15px] font-semibold" style={{ color: TEXT }}>{r.label}</span>
+                  <span className="text-[15px] font-semibold tabular-nums" style={{ color: TEXT }}>{nf(r.leads)}</span>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                  {[['Contacted', r.contacted], ['Spoke', r.spoke], ['Warm+', r.qualified]].map(([k, v]) => (
+                    <div key={k as string} className="rounded-[10px] py-2" style={{ background: SURFACE }}>
+                      <div className="text-[16px] font-semibold tabular-nums" style={{ color: r.leads < MIN_GROUP ? SUBTLE : TEXT }}>{share(v as number, r.leads)}%</div>
+                      <div className="text-[11.5px]" style={{ color: SUBTLE }}>{k}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1 text-[12.5px]" style={{ color: SUBTLE }}>
+                  <span>First contact <b className="font-semibold" style={{ color: TEXT_2 }}>{r.response != null ? dur(r.response) : '—'}</b></span>
+                  <span>Won <b className="font-semibold" style={{ color: TEXT_2 }}>{r.won}</b></span>
+                  <span>Intent <b className="font-semibold" style={{ color: TEXT_2 }}>{r.avgScore}</b></span>
+                  {r.budget > 0 && <span>{inr(r.budget)}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+          <Basis>Sources are grouped by name, so MagicBricks and MAGICBRICKS count once. Rates in grey come from fewer than {MIN_GROUP} leads.</Basis>
+        </>
+      )}
+    </Panel>
+  )
+}
+
+// ─── Best time to call ────────────────────────────────────────────────────────
+type TimingMode = 'connect' | 'calls' | 'arrivals'
+function Timing({ a, long }: { a: Analysis; long: string }) {
+  const [mode, setMode] = useState<TimingMode>('connect')
+  const totalCalls = sum(a.attempts.flat(), x => x)
+  const grid = mode === 'arrivals' ? a.arrivals : mode === 'calls' ? a.attempts
+    : a.attempts.map((row, d) => row.map((n, s) => (n >= MIN_CELL_CALLS ? share(a.connected[d][s], n) : 0)))
+  const best = useMemo(() => {
+    let v = -1, d = -1, s = -1
+    grid.forEach((row, di) => row.forEach((x, si) => { if (x > v) { v = x; d = di; s = si } }))
+    return v > 0 ? { v, d, s } : null
+  }, [grid])
+  const sub = mode === 'connect' ? `Share of calls that got through, by day and time (${long})`
+    : mode === 'calls' ? `Calls made by day and time (${long})` : `When new leads arrived (${long})`
+  return (
+    <Panel icon={<Clock size={18} weight="bold" />} title="Best time to reach leads" sub={sub}
+      right={<Seg label="Show" value={mode} onChange={setMode} options={[
+        { id: 'connect', label: 'Got through' }, { id: 'calls', label: 'Calls' }, { id: 'arrivals', label: 'Leads in' },
+      ]} />}>
+      <Heatmap grid={grid} color={mode === 'arrivals' ? '247,144,9' : mode === 'connect' ? '23,178,106' : '29,78,216'}
+        text={mode === 'connect' ? (d, s, v) => (a.attempts[d][s] >= MIN_CELL_CALLS ? `${v}%` : '·') : undefined}
+        cellTitle={(d, s, v) => mode === 'connect'
+          ? (a.attempts[d][s] >= MIN_CELL_CALLS ? `${WEEKDAYS[d]} ${SLOTS[s]}: ${a.connected[d][s]} of ${a.attempts[d][s]} calls got through` : `${WEEKDAYS[d]} ${SLOTS[s]}: ${a.attempts[d][s]} calls, too few to show a rate`)
+          : `${WEEKDAYS[d]} ${SLOTS[s]}: ${plural(v, mode === 'calls' ? 'call' : 'lead')}`} />
+      <Basis>
+        {best ? <>Best slot: <b className="font-semibold" style={{ color: TEXT_2 }}>{WEEKDAYS[best.d]} {SLOTS[best.s]}</b> ({mode === 'connect' ? `${best.v}% got through` : plural(best.v, mode === 'calls' ? 'call' : 'lead')}). </> : null}
+        {mode === 'connect' ? `Based on ${plural(totalCalls, 'call')}. A slot needs ${MIN_CELL_CALLS} calls before it shows a rate.` : 'Times are in your local time.'}
+      </Basis>
+    </Panel>
+  )
+}
+
+// ─── Channels ─────────────────────────────────────────────────────────────────
+function Channels({ a, long }: { a: Analysis; long: string }) {
+  const used = a.channels.filter(c => c.n > 0)
+  return (
+    <Panel icon={<Gauge size={18} weight="bold" />} title="How each channel performs" sub={`What came of the calls, messages, visits and meetings in the ${long}`} className="h-full">
+      {used.length === 0 ? <p className="m-0 py-6 text-center text-[14px]" style={{ color: LABEL }}>No calls, messages or visits logged in this period.</p> : (
+        <div className="flex flex-col gap-2.5">
+          {used.map(c => {
+            const K = KIND[c.kind]
+            return (
+              <div key={c.kind} className="flex items-center gap-3 rounded-[12px] border px-3 py-2.5" style={{ borderColor: BORDER }}>
+                <span className="grid size-9 shrink-0 place-items-center rounded-[10px]" style={{ background: `${K.color}18`, color: K.color }}><K.Icon size={17} weight="fill" /></span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-[14px] font-semibold" style={{ color: TEXT }}>{K.plural}</span>
+                    <span className="shrink-0 text-[14px] font-semibold tabular-nums" style={{ color: TEXT }}>{nf(c.n)}</span>
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-2.5">
+                    <Meter value={c.rate} max={100} color={K.color} className="flex-1" />
+                    <span className="shrink-0 text-[12.5px] tabular-nums" style={{ color: SUBTLE }}><b className="font-semibold" style={{ color: TEXT_2 }}>{c.rate}%</b> {c.rateLabel}</span>
+                  </div>
+                  <div className="mt-1 text-[12px]" style={{ color: LABEL }}>{plural(c.leads, 'lead')}{c.extra ? ` · ${c.extra}` : ''}</div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      <Basis>Each rate only counts that channel&apos;s own leads. A lead often gets several kinds of contact, so this shows what tends to go with progress, not what caused it.</Basis>
+    </Panel>
+  )
+}
+
+// ─── Intent score ─────────────────────────────────────────────────────────────
+function Scores({ a, long }: { a: Analysis; long: string }) {
+  const max = Math.max(1, ...a.buckets10.map(b => b.n))
+  const hi = a.bands[0], lo = a.bands[2]
+  const hiR = share(hi.qualified, hi.n), loR = share(lo.qualified, lo.n)
+  return (
+    <Panel icon={<Lightning size={18} weight="bold" />} title="Does the intent score hold up?" sub={`Score of the leads that came in during the ${long}, and how each band turned out`} className="h-full">
+      <div className="grid grid-cols-2 gap-3">
+        <Figure label="Hot leads open" value={nf(a.hotOpen.length)} sub="Hot stage or score 70+" />
+        <Figure label="Their budgets" value={inr(sum(a.hotOpen, valueOf))} sub="Hot pipeline" />
+      </div>
+      <div className="mt-5 flex h-[120px] items-end gap-1.5" role="img" aria-label="Leads by intent score">
+        {a.buckets10.map(b => {
+          const band = SCORE_BANDS.find(x => b.min >= x.min && b.min < x.max)!
+          return (
+            <div key={b.min} className="flex h-full min-w-0 flex-1 flex-col justify-end" title={`Score ${b.min}–${b.min === 90 ? 100 : b.min + 9}: ${plural(b.n, 'lead')}`}>
+              <span className="text-center text-[11px] font-semibold tabular-nums" style={{ color: b.n ? TEXT_2 : 'transparent' }}>{b.n}</span>
+              <span className="mt-0.5 rounded-t-[4px]" style={{ height: b.n ? `${Math.max(4, (b.n / max) * 82)}%` : 2, background: b.n ? band.color : '#EAECF0', opacity: b.n ? 0.9 : 1 }} />
+            </div>
+          )
+        })}
+      </div>
+      <div className="mt-1.5 flex gap-1.5" aria-hidden>
+        {a.buckets10.map(b => <span key={b.min} className="min-w-0 flex-1 text-center text-[10.5px] tabular-nums" style={{ color: LABEL }}>{b.min}</span>)}
+      </div>
+      <div className="mt-5 flex flex-col">
+        {a.bands.map(b => (
+          <div key={b.label} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-4 border-t py-2.5" style={{ borderColor: '#F2F4F7' }}>
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="size-2.5 shrink-0 rounded-full" style={{ background: b.color }} />
+              <span className="truncate text-[13.5px]" style={{ color: TEXT_2 }}><b className="font-semibold" style={{ color: TEXT }}>{b.label}</b> <span className="hidden sm:inline">{b.sub} · </span>{plural(b.n, 'lead')}</span>
+            </span>
+            <span className="text-right text-[13px] tabular-nums" style={{ color: b.n >= MIN_GROUP ? TEXT_2 : LABEL }}>{b.n ? `${share(b.qualified, b.n)}% Warm+` : '—'}</span>
+            <span className="w-16 text-right text-[13px] tabular-nums" style={{ color: b.won ? GREEN_D : LABEL }}>{b.won ? `${b.won} won` : '—'}</span>
+          </div>
+        ))}
+      </div>
+      {hi.n >= MIN_GROUP && lo.n >= MIN_GROUP && (
+        <div className="mt-3">
+          <Insight tone={hiR > loR ? 'green' : 'amber'} title={hiR > loR ? 'The score is pointing the right way' : 'The score isn\'t separating leads well'}>
+            {hiR > loR ? `${hiR}% of 70+ leads reached Warm, against ${loR}% of those under 40. Call the high scores first.`
+              : `Leads under 40 reached Warm as often as 70+ ones (${loR}% against ${hiR}%). Don't skip low scores.`}
+          </Insight>
+        </div>
+      )}
+    </Panel>
+  )
+}
+
+// ─── Demand ───────────────────────────────────────────────────────────────────
+type DemandId = 'city' | 'area' | 'budget' | 'type'
+function Demand({ cohort, journeys, long }: { cohort: InsightLead[]; journeys: Map<string, Journey>; long: string }) {
+  const [by, setBy] = useState<DemandId>('city')
+  const rows = useMemo(() => {
+    const groups = new Map<string, InsightLead[]>()
+    const add = (k: string, l: InsightLead) => { const xs = groups.get(k); if (xs) xs.push(l); else groups.set(k, [l]) }
+    for (const l of cohort) {
+      if (by === 'city') add(l.city?.trim() || 'City not set', l)
+      else if (by === 'area') { const ls = (l.localities ?? []).filter(Boolean); if (ls.length) ls.forEach(x => add(x.trim(), l)); else add('Locality not set', l) }
+      else if (by === 'type') { const ts = (l.propertyType ?? []).filter(Boolean); if (ts.length) ts.forEach(x => add(x, l)); else add('Type not set', l) }
+      else { const v = valueOf(l); add(v ? (BUDGETS.find(b => v >= b.min && v < b.max)?.label ?? 'Budget not set') : 'Budget not set', l) }
+    }
+    const list = [...groups.entries()].map(([label, xs]) => ({
+      label, n: xs.length, hot: xs.filter(l => scoreOf(l) >= HOT_SCORE).length,
+      qualified: xs.filter(l => reached(journeys.get(l.id), 'qualified')).length,
+      budget: median(xs.map(valueOf).filter(v => v > 0)),
+    }))
+    return by === 'budget'
+      ? list.sort((x, y) => { const ix = BUDGETS.findIndex(b => b.label === x.label), iy = BUDGETS.findIndex(b => b.label === y.label); return (ix < 0 ? 99 : ix) - (iy < 0 ? 99 : iy) })
+      : list.sort((x, y) => y.n - x.n).slice(0, 8)
+  }, [cohort, journeys, by])
+  const max = Math.max(1, ...rows.map(r => r.n))
+  return (
+    <Panel icon={<MapPin size={18} weight="bold" />} title="Where the demand is" sub={`What the leads of the ${long} are asking for, and which asks turn into Warm leads`} className="h-full"
+      right={<Seg label="Group by" value={by} onChange={setBy} options={[{ id: 'city', label: 'City' }, { id: 'area', label: 'Locality' }, { id: 'budget', label: 'Budget' }, { id: 'type', label: 'Type' }]} />}>
+      {rows.length === 0 ? <p className="m-0 py-6 text-center text-[14px]" style={{ color: LABEL }}>No leads in this period.</p> : (
+        <div className="-mx-1 overflow-x-auto px-1">
+          <table className="w-full min-w-[380px] border-collapse">
+            <thead>
+              <tr className="text-[12px]" style={{ color: SUBTLE }}>
+                <th className="pb-2 text-left font-semibold">{by === 'city' ? 'City' : by === 'area' ? 'Locality' : by === 'budget' ? 'Budget' : 'Property type'}</th>
+                <th className="pb-2 text-left font-semibold">Leads</th>
+                <th className="whitespace-nowrap pb-2 pr-3 text-right font-semibold">Score 70+</th>
+                <th className="pb-2 text-right font-semibold">Warm+</th>
+                {by !== 'budget' && <th className="pb-2 text-right font-semibold">Typical budget</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(r => (
+                <tr key={r.label} className="border-t" style={{ borderColor: '#F2F4F7' }}>
+                  <td className="max-w-[160px] truncate py-2.5 pr-3 text-[13.5px] font-medium" style={{ color: r.label.endsWith('not set') ? LABEL : TEXT }}>{r.label}</td>
+                  <td className="w-[34%] py-2.5 pr-3">
+                    <div className="flex items-center gap-2"><Meter value={r.n} max={max} color={BLUE_LN} height={8} className="flex-1" />
+                      <span className="w-7 text-right text-[13px] font-semibold tabular-nums" style={{ color: TEXT }}>{r.n}</span></div>
+                  </td>
+                  <td className="py-2.5 pr-3 text-right text-[13px] tabular-nums" style={{ color: r.hot ? TEXT_2 : LABEL }}>{r.hot || '—'}</td>
+                  <td className="py-2.5 text-right text-[13px] tabular-nums" style={{ color: r.n >= MIN_GROUP ? TEXT_2 : LABEL }}>{share(r.qualified, r.n)}%</td>
+                  {by !== 'budget' && <td className="whitespace-nowrap py-2.5 pl-3 text-right text-[13px] tabular-nums" style={{ color: TEXT_2 }}>{r.budget ? inr(r.budget) : '—'}</td>}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <Basis>A lead asking for two localities or types counts in both. Typical budget is the median.</Basis>
+    </Panel>
+  )
+}
+
+// ─── Leads to act on ──────────────────────────────────────────────────────────
+function nextStep(l: InsightLead, j: Journey | undefined, now: number): { text: string; tone: 'red' | 'amber' | 'blue' | 'green' | 'neutral' } {
+  const st = stageOfLead(l)
+  const idle = Math.floor((now - ms(l.updatedAt || l.createdAt)) / DAY)
+  if (st === 'New' && !j?.contacted) return { text: `First call. Waiting ${dur(now - created(l))}`, tone: 'red' }
+  if (st === 'Hot' && idle >= 2) return { text: `Hot, quiet ${idle} days. Call today`, tone: 'red' }
+  if (idle >= 7) return { text: `Gone quiet ${idle} days. Re-engage`, tone: 'amber' }
+  if (st === 'Hot') return { text: 'Push for the booking', tone: 'green' }
+  if (st === 'Warm') return { text: scoreOf(l) >= 80 ? 'Book a site visit' : 'Share a shortlist', tone: 'blue' }
+  if (st === 'Cold') return { text: 'Get them on a call', tone: 'blue' }
+  return { text: 'Follow up', tone: 'neutral' }
+}
+function ActOn({ a, now }: { a: Analysis; now: number }) {
+  const js = useMemo(() => buildJourneys(a.actOn, a.winActs), [a.actOn, a.winActs])
+  return (
+    <Panel icon={<ListChecks size={18} weight="bold" />} title="Leads to act on" sub="Open leads with the highest intent, whenever they came in, and the next step for each"
+      right={<Link href="/dashboard/leads" className="inline-flex items-center gap-1 text-[13.5px] font-semibold no-underline" style={{ color: BLUE }}>All leads<ArrowRight size={13} weight="bold" /></Link>}>
+      {a.actOn.length === 0 ? <p className="m-0 py-6 text-center text-[14px]" style={{ color: LABEL }}>No open leads right now.</p> : (
+        <div className="-mx-4 sm:-mx-5">
+          <div className="hidden grid-cols-[minmax(0,2.2fr)_110px_minmax(0,1.1fr)_110px_minmax(0,1.6fr)_80px] gap-3 border-y px-5 py-2.5 text-[12px] font-semibold lg:grid" style={{ borderColor: BORDER, background: SURFACE, color: SUBTLE }}>
+            <span>Lead</span><span>Stage</span><span>Source</span><span>Last update</span><span>Next step</span><span />
+          </div>
+          {a.actOn.map(l => {
+            const step = nextStep(l, js.get(l.id), now)
+            const first = l.name?.firstName || displayName(l)
+            return (
+              <div key={l.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-b px-4 py-3 last:border-b-0 sm:px-5 lg:grid-cols-[minmax(0,2.2fr)_110px_minmax(0,1.1fr)_110px_minmax(0,1.6fr)_80px]" style={{ borderColor: '#F2F4F7' }}>
+                <Link href={`/dashboard/leads/${l.id}`} className="flex min-w-0 items-center gap-3 no-underline">
+                  <LeadAvatar lead={l} size={36} />
+                  <span className="min-w-0">
+                    <span className="block truncate text-[14px] font-semibold" style={{ color: TEXT }}>{displayName(l)}</span>
+                    <span className="block truncate text-[12.5px]" style={{ color: SUBTLE }}>{[valueOf(l) ? inr(valueOf(l)) : null, l.city].filter(Boolean).join(' · ') || '—'}</span>
+                  </span>
+                </Link>
+                <span className="flex items-center gap-1.5 lg:order-last lg:justify-end">
+                  <CallLink phone={l.phones?.primaryPhoneNumber} name={first} />
+                  <WaLink phone={l.phones?.primaryPhoneNumber} name={first} />
+                </span>
+                <span className="col-span-2 flex flex-wrap items-center gap-2 lg:contents">
+                  <span><StagePill stage={stageOfLead(l) as StageId} small /></span>
+                  <span className="flex min-w-0 items-center gap-1.5 text-[13px]" style={{ color: TEXT_2 }}><SourceMark raw={l.sourcePortal} size={18} /><span className="truncate">{sourceMeta(l.sourcePortal).label}</span></span>
+                  <span className="text-[13px] tabular-nums" style={{ color: SUBTLE }}>{agoShort(ms(l.updatedAt || l.createdAt), now)}</span>
+                  <span className="min-w-0"><Pill tone={step.tone} small>{step.text}</Pill></span>
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </Panel>
+  )
+}
+const agoShort = (t: number, now: number) => { const d = Math.floor((now - t) / DAY); return d <= 0 ? 'Today' : d === 1 ? 'Yesterday' : `${d} days ago` }

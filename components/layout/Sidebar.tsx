@@ -272,7 +272,7 @@ export function Sidebar({
         {/* Utility links — Invite team + Help center */}
         <div className="px-2 pt-2 pb-1" style={{ borderTop: '1px solid rgba(0,56,168,0.08)' }}>
           {[
-            { label: 'Invite team', href: '/dashboard/team',  Icon: UserPlus },
+            { label: 'Invite team', href: '/dashboard/invite', Icon: UserPlus },
             { label: 'Help center', href: '/dashboard/help',  Icon: Question },
           ].map(({ label, href, Icon }) => (
             <Link
