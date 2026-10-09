@@ -22,6 +22,7 @@ import { AnimatedDock } from '@/components/ui/animated-dock'
 import MacOSDock, { type DockApp } from '@/components/ui/mac-os-dock'
 import { Marquee } from '@/components/ui/marquee'
 import CardSwap, { Card as SwapCard } from '@/components/ui/CardSwap'
+import PricingSection from './PricingSection'
 import dynamic from 'next/dynamic'
 const Silk = dynamic(() => import('@/components/ui/Silk'), { ssr: false, loading: () => <div style={{ width: '100%', height: '100%', background: '#0B0F3B' }} /> })
 import { motion, AnimatePresence, useReducedMotion, useMotionValue, useTransform, useScroll } from 'motion/react'
@@ -4520,6 +4521,8 @@ export default function LandingPage() {
       <Stats />
       {/* <KPIDashboard /> */}
       <Testimonial />
+      {/* ── Pricing ── */}
+      <PricingSection />
       {/* ── Demo + CTA ── */}
       {/* <VideoSection /> */}
       <CTASection />
